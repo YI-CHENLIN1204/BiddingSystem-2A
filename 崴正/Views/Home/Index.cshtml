@@ -1,0 +1,31 @@
+﻿@model List<崴正.Models.ProjectMaster>
+
+@{
+    ViewData["Title"] = "專案列表";
+}
+
+<h2>專案列表</h2>
+
+<table border="1" cellpadding="8">
+    <thead>
+        <tr>
+            <th>專案編號</th>
+            <th>專案名稱</th>
+            <th>總樓地板面積</th>
+            <th>開始日期</th>
+            <th>是否刪除</th>
+        </tr>
+    </thead>
+    <tbody>
+        @foreach (var item in Model)
+        {
+            <tr>
+                <td>@item.ProjectId</td>
+                <td>@item.ProjectName</td>
+                <td>@item.TotalFloorArea</td>
+                <td>@item.StartDate?.ToString("yyyy-MM-dd")</td>
+                <td>@item.IsDeleted</td>
+            </tr>
+        }
+    </tbody>
+</table>
