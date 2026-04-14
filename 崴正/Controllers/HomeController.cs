@@ -18,8 +18,8 @@ public class HomeController : Controller
 
     public IActionResult Index()
     {
-        var projects = _context.ProjectMasters.ToList();
-        return View(projects);
+        var transactions = _context.HistoricalTransactions.ToList();
+        return View(transactions);
     }
 
     [ResponseCache(Duration = 0, Location = ResponseCacheLocation.None, NoStore = true)]
@@ -30,6 +30,10 @@ public class HomeController : Controller
 
     [HttpGet]
     public IActionResult Error()
+    {
+        return View();
+    }
+    public IActionResult EstimationUI()
     {
         return View();
     }

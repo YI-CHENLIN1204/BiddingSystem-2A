@@ -89,7 +89,8 @@ namespace 崴正.Controllers
                     Calculated_Z_Score = Math.Round(zScore, 2),
                     Is_Abnormal = isAbnormal,
                     Predicted_Unit_Price = Math.Round(predictedPrice, 0),
-                    Reference_Total_Price = Math.Round(refTotalPrice, 0)
+                    Reference_Total_Price = Math.Round(refTotalPrice, 0),
+                    Suggested_Quantity = Math.Round(historyMean, 2)
                 });
             }
 

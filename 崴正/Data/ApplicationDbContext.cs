@@ -45,7 +45,7 @@ public DbSet<HistoricalTransaction> HistoricalTransactions { get; set; }
                 entity.ToTable("quantity_rule_base");
                 entity.HasKey(e => e.RuleID);
                 
-                // 加上這幾行翻譯蒟蒻，告訴 EF Core 對應到資料庫裡真實的小寫欄位名稱
+               
                 entity.Property(e => e.RuleID).HasColumnName("rule_id");
                 entity.Property(e => e.Material_ID).HasColumnName("material_id");
                 entity.Property(e => e.Base_Unit_Ratio).HasColumnName("base_unit_ratio");
@@ -57,13 +57,14 @@ public DbSet<HistoricalTransaction> HistoricalTransactions { get; set; }
                 entity.ToTable("historical_transaction");
                 entity.HasKey(e => e.Transaction_ID);
 
-                // 歷史紀錄表也一樣要加翻譯
+            
                 entity.Property(e => e.Transaction_ID).HasColumnName("transaction_id");
                 entity.Property(e => e.Project_ID).HasColumnName("project_id");
                 entity.Property(e => e.Material_ID).HasColumnName("material_id");
                 entity.Property(e => e.Actual_Quantity).HasColumnName("actual_quantity");
                 entity.Property(e => e.Unit_Price).HasColumnName("unit_price");
                 entity.Property(e => e.Transaction_Date).HasColumnName("transaction_date");
+                entity.Property(e => e.IsDeleted).HasColumnName("is_deleted");
             });
             
         }

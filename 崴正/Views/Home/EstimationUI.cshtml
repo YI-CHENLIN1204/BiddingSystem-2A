@@ -1,0 +1,73 @@
+@{
+    ViewData["Title"] = "標單異常偵測系統";
+}
+
+<div class="container mt-4">
+    <h2>標單異常偵測 (Z-Score 引擎分析)</h2>
+    <p class="text-muted">點擊下方按鈕，系統將自動讀取標單，並交由後端邏輯引擎進行防弊分析。</p>
+    
+    <button id="btnAnalyze" class="btn btn-primary mb-4">啟動分析引擎</button>
+
+    <table class="table table-bordered table-hover" id="resultTable" style="display:none;">
+        <thead class="table-dark">
+            <tr>
+                <th>建材編號</th>
+                <th>樓層區塊</th>
+                <th>Z-Score 分數</th>
+                <th>判定狀態</th>
+                <th>系統推估合理總價</th>
+            </tr>
+        </thead>
+        <tbody id="resultBody">
+            </tbody>
+    </table>
+</div>
+
+@section Scripts {
+    <script>
+        document.getElementById('btnAnalyze').addEventListener('click', function() {
+            // 1. 這裡就是我們之前在 Swagger 貼的「點餐單」
+            const testData = {
+              "project_Id": 1,
+              "items": [
+                { "material_Id": 101, "floor_Zone": "B1-B3", "input_Quantity": 510 },
+                { "material_Id": 101, "floor_Zone": "B1-B3", "input_Quantity": 15 },
+                { "material_Id": 101, "floor_Zone": "1F-15F", "input_Quantity": 800 }
+              ]
+            };
+
+            // 2. 透過 Fetch API 把單子送給你的 C# 引擎
+            fetch('/api/Estimation/analyze', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify(testData)
+            })
+            .then(response => response.json())
+            .then(data => {
+                // 3. 拿到結果後，把隱藏的表格顯示出來
+                document.getElementById('resultTable').style.display = 'table';
+                const tbody = document.getElementById('resultBody');
+                tbody.innerHTML = ''; // 清空舊資料
+                
+                // 4. 把引擎算出來的結果畫成表格
+                data.results.forEach(item => {
+                    // 如果判定異常，整行標紅底 (table-danger)；正常則標綠底 (table-success)
+                    const rowClass = item.is_Abnormal ? 'table-danger' : 'table-success';
+                    const statusText = item.is_Abnormal ? '⚠️ 異常 (數量過高)' : '✅ 正常';
+                    
+                    const tr = `
+                        <tr class="${rowClass}">
+                            <td>${item.material_Id}</td>
+                            <td>${item.floor_Zone}</td>
+                            <td><strong>${item.calculated_Z_Score}</strong></td>
+                            <td class="text-danger fw-bold">${statusText}</td>
+                            <td>$${item.reference_Total_Price.toLocaleString()}</td>
+                        </tr>
+                    `;
+                    tbody.innerHTML += tr;
+                });
+            })
+            .catch(error => alert('連線引擎失敗：' + error));
+        });
+    </script>
+}

@@ -1,31 +1,115 @@
-﻿@model List<崴正.Models.ProjectMaster>
+﻿@model List<崴正.Models.HistoricalTransaction>
 
 @{
-    ViewData["Title"] = "專案列表";
+    ViewData["Title"] = "歷史資料列表";
 }
 
-<h2>專案列表</h2>
+<div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 15px;">
+    <h2>歷史資料列表</h2>
+    <button id="btnAnalyzeHome" style="background-color: #0d6efd; color: white; font-weight: bold; padding: 8px 18px; border: none; border-radius: 6px; cursor: pointer; box-shadow: 0 4px 6px rgba(0,0,0,0.1); transition: 0.2s;">
+        執行 Z-Score 異常偵測
+    </button>
+</div>
 
-<table border="1" cellpadding="8">
-    <thead>
+<table border="1" cellpadding="8" id="historyTable" style="border-collapse: collapse; width: 100%; text-align: center;">
+    <thead style="background-color: #f2f2f2;">
         <tr>
+            <th>交易編號</th>
             <th>專案編號</th>
-            <th>專案名稱</th>
-            <th>總樓地板面積</th>
-            <th>開始日期</th>
+            <th>材料編號</th>
+            <th>實際數量</th>
+            <th>單價</th>
+            <th>交易日期</th>
             <th>是否刪除</th>
+            <th class="result-col" style="display:none; background-color: #e8daef;">Z-Score 分數</th>
+            <th class="result-col" style="display:none; background-color: #e8daef;">防弊判定</th>
+            <th class="result-col" style="display:none; background-color: #d4e6f1;">建議用量</th>
         </tr>
     </thead>
     <tbody>
-        @foreach (var item in Model)
+        @foreach (HistoricalTransaction item in Model)
         {
             <tr>
-                <td>@item.ProjectId</td>
-                <td>@item.ProjectName</td>
-                <td>@item.TotalFloorArea</td>
-                <td>@item.StartDate?.ToString("yyyy-MM-dd")</td>
+                <td>@item.Transaction_ID</td>
+                <td>@item.Project_ID</td>
+                <td class="mat-val">@item.Material_ID</td>
+                <td class="qty-val">@item.Actual_Quantity</td>
+                <td>@item.Unit_Price</td>
+                <td>@item.Transaction_Date.ToString("yyyy-MM-dd")</td>
                 <td>@item.IsDeleted</td>
+                <td class="z-score-val result-col" style="display:none; font-weight: bold;"></td>
+                <td class="status-val result-col" style="display:none; font-weight: bold;"></td>
+                <td class="suggested-qty-val result-col" style="display:none; font-weight: bold; color: #0275d8;"></td>
             </tr>
         }
     </tbody>
 </table>
+
+@section Scripts {
+    <script>
+        document.getElementById('btnAnalyzeHome').addEventListener('click', function() {
+            let items = [];
+            let rows = document.querySelectorAll('#historyTable tbody tr');
+
+            // 1. 抓取畫面上表格裡的每一筆資料，做成點餐單 (JSON)
+            rows.forEach((row, index) => {
+                let matId = parseInt(row.querySelector('.mat-val').innerText);
+                let qty = parseFloat(row.querySelector('.qty-val').innerText);
+                
+                // 巧妙利用 index 當作 Floor_Zone，這樣 API 算完回來我們才知道是哪一列
+                let uniqueRowId = "Row-" + index;
+                row.dataset.rowId = uniqueRowId; 
+
+                items.push({
+                    "material_Id": matId,
+                    "floor_Zone": uniqueRowId, 
+                    "input_Quantity": qty
+                });
+            });
+
+            let requestData = {
+                "project_Id": 999, // 首頁測試用，隨便帶個 ID
+                "items": items
+            };
+
+            // 2. 把隱藏的結果欄位顯示出來
+            document.querySelectorAll('.result-col').forEach(el => el.style.display = 'table-cell');
+
+            // 3. 把資料送給你的 API 引擎
+            fetch('/api/Estimation/analyze', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify(requestData)
+            })
+            .then(response => response.json())
+            .then(data => {
+                // 4. 拿到 Z-Score 結果後，一列一列畫上紅綠燈
+                rows.forEach(row => {
+                    let uniqueRowId = row.dataset.rowId;
+                    let matId = parseInt(row.querySelector('.mat-val').innerText);
+                    
+                    // 從 API 結果中找出屬於這一列的答案
+                    let result = data.results.find(r => r.material_Id === matId && r.floor_Zone === uniqueRowId);
+
+                    if (result) {
+                        row.querySelector('.z-score-val').innerText = result.calculated_Z_Score;
+                        row.querySelector('.suggested-qty-val').innerText = result.suggested_Quantity;
+                        let statusCell = row.querySelector('.status-val');
+
+                        // 判斷是否異常，並改變顏色
+                        if (result.is_Abnormal) {
+                            statusCell.innerText = '異常高估';
+                            statusCell.style.color = 'red';
+                            row.style.backgroundColor = '#fdedec'; // 整行標紅底
+                        } else {
+                            statusCell.innerText = '合理';
+                            statusCell.style.color = 'green';
+                            row.style.backgroundColor = '#eaeded'; // 整行標綠底
+                        }
+                    }
+                });
+            })
+            .catch(err => alert('連線引擎失敗，請確認伺服器狀態：' + err));
+        });
+    </script>
+}

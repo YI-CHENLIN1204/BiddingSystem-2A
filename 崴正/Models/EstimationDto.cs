@@ -31,5 +31,7 @@ namespace 崴正.Models
         public bool Is_Abnormal { get; set; }
         public decimal Predicted_Unit_Price { get; set; } 
         public decimal Reference_Total_Price { get; set; }
+        public decimal Suggested_Quantity { get; set; }
+        public decimal Floor_Area { get; set; }
     }
 }
