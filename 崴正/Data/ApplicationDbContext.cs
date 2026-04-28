@@ -65,6 +65,7 @@ public DbSet<HistoricalTransaction> HistoricalTransactions { get; set; }
                 entity.Property(e => e.Unit_Price).HasColumnName("unit_price");
                 entity.Property(e => e.Transaction_Date).HasColumnName("transaction_date");
                 entity.Property(e => e.IsDeleted).HasColumnName("is_deleted");
+                entity.Property(e => e.Is_Outlier).HasColumnName("is_outlier");
             });
             
         }

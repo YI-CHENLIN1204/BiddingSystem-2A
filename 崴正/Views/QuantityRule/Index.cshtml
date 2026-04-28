@@ -1,0 +1,30 @@
+@model IEnumerable<崴正.Models.QuantityRuleBase>
+
+<div class="container mt-4">
+    <h2>⚙️ 估算參數管理後台</h2>
+    <p class="text-muted">提供估算部主管調整各建材的防弊門檻與預設參數。</p>
+
+    <table class="table table-bordered table-hover text-center">
+        <thead class="table-dark">
+            <tr>
+                <th>材料編號</th>
+                <th>Z-Score 門檻</th>
+                <th>基本單位換算率</th>
+                <th>操作</th>
+            </tr>
+        </thead>
+        <tbody>
+            @foreach (var item in Model)
+            {
+                <tr>
+                    <td class="fw-bold">@item.Material_ID</td>
+                    <td>@item.Z_Score_Threshold</td>
+                    <td>@item.Base_Unit_Ratio</td>
+                    <td>
+                        <a asp-action="Edit" asp-route-id="@item.RuleID" class="btn btn-sm btn-primary">✏️ 編輯</a>
+                    </td>
+                </tr>
+            }
+        </tbody>
+    </table>
+</div>

@@ -11,5 +11,7 @@ namespace 崴正.Models
         public decimal Unit_Price { get; set; }
         public DateTime Transaction_Date { get; set; }
         public bool IsDeleted { get; set; }
+
+        public bool Is_Outlier { get; set; }
     }
 }

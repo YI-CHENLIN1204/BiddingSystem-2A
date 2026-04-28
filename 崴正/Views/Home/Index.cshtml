@@ -91,22 +91,37 @@
                     // 從 API 結果中找出屬於這一列的答案
                     let result = data.results.find(r => r.material_Id === matId && r.floor_Zone === uniqueRowId);
 
+                    
                     if (result) {
                         row.querySelector('.z-score-val').innerText = result.calculated_Z_Score;
                         row.querySelector('.suggested-qty-val').innerText = result.suggested_Quantity;
-                        let statusCell = row.querySelector('.status-val');
 
-                        // 判斷是否異常，並改變顏色
-                        if (result.is_Abnormal) {
-                            statusCell.innerText = '異常高估';
+                        let statusCell = row.querySelector('.status-val');
+                        statusCell.innerText = result.status_Message; 
+
+                        // 根據訊息內容，給予不同的顏色標籤
+                        if (result.status_Message.includes('需人工首筆核定')) {
+                            // 例外處理：橘色警告 (Warning)
+                            statusCell.style.color = '#d35400';
+                            row.style.backgroundColor = '#fcf3cf'; 
+                        } 
+                        else if (result.status_Message.includes('無基準資料')) {
+                            // 例外處理：灰色標示 (Secondary)
+                            statusCell.style.color = '#7f8c8d';
+                            row.style.backgroundColor = '#f2f3f4';
+                        }
+                        else if (result.is_Abnormal) {
+                            // 異常防弊：紅色警告 (Danger)
                             statusCell.style.color = 'red';
-                            row.style.backgroundColor = '#fdedec'; // 整行標紅底
-                        } else {
-                            statusCell.innerText = '合理';
+                            row.style.backgroundColor = '#fdedec';
+                        } 
+                        else {
+                            // 正常合理：綠色通過 (Success)
                             statusCell.style.color = 'green';
-                            row.style.backgroundColor = '#eaeded'; // 整行標綠底
+                            row.style.backgroundColor = '#eaeded';
                         }
                     }
+                    // ...
                 });
             })
             .catch(err => alert('連線引擎失敗，請確認伺服器狀態：' + err));

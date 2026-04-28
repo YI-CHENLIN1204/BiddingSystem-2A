@@ -1,0 +1,29 @@
+@model 崴正.Models.QuantityRuleBase
+
+<div class="container mt-4">
+    <h2>✏️ 編輯建材參數 (材料編號：@Model.Material_ID)</h2>
+    <hr />
+
+    <div class="row">
+        <div class="col-md-6">
+            <form asp-action="Edit" method="post">
+                <input type="hidden" asp-for="RuleID" />
+                <input type="hidden" asp-for="Material_ID" />
+
+                <div class="mb-3">
+                    <label class="form-label fw-bold">Z-Score 異常判定門檻</label>
+                    <input asp-for="Z_Score_Threshold" class="form-control" type="number" step="0.01" />
+                    <small class="text-muted">預設為 2.0。數值越小，系統越嚴格（越容易亮紅燈）。</small>
+                </div>
+
+                <div class="mb-3">
+                    <label class="form-label fw-bold">基本單位換算率 (Base Unit Ratio)</label>
+                    <input asp-for="Base_Unit_Ratio" class="form-control" type="number" step="0.01" />
+                </div>
+
+                <button type="submit" class="btn btn-success">💾 儲存修改</button>
+                <a asp-action="Index" class="btn btn-secondary">取消並返回</a>
+            </form>
+        </div>
+    </div>
+</div>
