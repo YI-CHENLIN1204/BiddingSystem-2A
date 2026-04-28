@@ -18,8 +18,7 @@ public class HomeController : Controller
 
     public IActionResult Index()
     {
-        var transactions = _context.HistoricalTransactions.ToList();
-        return View(transactions);
+        return View();
     }
 
     [ResponseCache(Duration = 0, Location = ResponseCacheLocation.None, NoStore = true)]

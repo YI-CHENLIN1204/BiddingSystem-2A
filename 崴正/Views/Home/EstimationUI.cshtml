@@ -3,71 +3,147 @@
 }
 
 <div class="container mt-4">
-    <h2>標單異常偵測 (Z-Score 引擎分析)</h2>
-    <p class="text-muted">點擊下方按鈕，系統將自動讀取標單，並交由後端邏輯引擎進行防弊分析。</p>
-    
-    <button id="btnAnalyze" class="btn btn-primary mb-4">啟動分析引擎</button>
+    <h2>標單異常偵測</h2>
+    <p class="text-muted">
+        上傳 Excel 標單後，系統會直接檢測本次 Excel 內的資料，不會顯示歷史資料，也不會把本次標單存進資料庫。
+    </p>
 
-    <table class="table table-bordered table-hover" id="resultTable" style="display:none;">
-        <thead class="table-dark">
-            <tr>
-                <th>建材編號</th>
-                <th>樓層區塊</th>
-                <th>Z-Score 分數</th>
-                <th>判定狀態</th>
-                <th>系統推估合理總價</th>
-            </tr>
-        </thead>
-        <tbody id="resultBody">
-            </tbody>
-    </table>
+    <div class="card mb-4">
+        <div class="card-body">
+            <label for="excelFile" class="form-label fw-bold">選擇要檢測的 Excel 檔案</label>
+            <input type="file" id="excelFile" class="form-control mb-3" accept=".xlsx" />
+            <button id="btnAnalyze" class="btn btn-primary">異常偵測</button>
+            <span id="loadingText" class="ms-3 text-muted" style="display:none;">正在讀取與分析 Excel...</span>
+        </div>
+    </div>
+
+    <div id="summaryBox" class="alert alert-info" style="display:none;"></div>
+
+    <div class="table-responsive">
+        <table class="table table-bordered table-hover align-middle" id="resultTable" style="display:none; font-size: 14px;">
+            <thead class="table-dark text-center">
+                <tr>
+                    <th>狀態</th>
+                    <th>工作表</th>
+                    <th>列號</th>
+                    <th>項次</th>
+                    <th>分類</th>
+                    <th>項目名稱</th>
+                    <th>規格</th>
+                    <th>單位</th>
+                    <th>數量</th>
+                    <th>單價</th>
+                    <th>複價</th>
+                    <th>數量 Z</th>
+                    <th>單價 Z</th>
+                    <th>異常原因</th>
+                </tr>
+            </thead>
+            <tbody id="resultBody"></tbody>
+        </table>
+    </div>
 </div>
 
 @section Scripts {
     <script>
-        document.getElementById('btnAnalyze').addEventListener('click', function() {
-            // 1. 這裡就是我們之前在 Swagger 貼的「點餐單」
-            const testData = {
-              "project_Id": 1,
-              "items": [
-                { "material_Id": 101, "floor_Zone": "B1-B3", "input_Quantity": 510 },
-                { "material_Id": 101, "floor_Zone": "B1-B3", "input_Quantity": 15 },
-                { "material_Id": 101, "floor_Zone": "1F-15F", "input_Quantity": 800 }
-              ]
-            };
+        const btnAnalyze = document.getElementById('btnAnalyze');
+        const excelFile = document.getElementById('excelFile');
+        const loadingText = document.getElementById('loadingText');
+        const summaryBox = document.getElementById('summaryBox');
+        const resultTable = document.getElementById('resultTable');
+        const resultBody = document.getElementById('resultBody');
 
-            // 2. 透過 Fetch API 把單子送給你的 C# 引擎
-            fetch('/api/Estimation/analyze', {
-                method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify(testData)
-            })
-            .then(response => response.json())
-            .then(data => {
-                // 3. 拿到結果後，把隱藏的表格顯示出來
-                document.getElementById('resultTable').style.display = 'table';
-                const tbody = document.getElementById('resultBody');
-                tbody.innerHTML = ''; // 清空舊資料
-                
-                // 4. 把引擎算出來的結果畫成表格
-                data.results.forEach(item => {
-                    // 如果判定異常，整行標紅底 (table-danger)；正常則標綠底 (table-success)
-                    const rowClass = item.is_Abnormal ? 'table-danger' : 'table-success';
-                    const statusText = item.is_Abnormal ? '⚠️ 異常 (數量過高)' : '✅ 正常';
-                    
-                    const tr = `
-                        <tr class="${rowClass}">
-                            <td>${item.material_Id}</td>
-                            <td>${item.floor_Zone}</td>
-                            <td><strong>${item.calculated_Z_Score}</strong></td>
-                            <td class="text-danger fw-bold">${statusText}</td>
-                            <td>$${item.reference_Total_Price.toLocaleString()}</td>
-                        </tr>
-                    `;
-                    tbody.innerHTML += tr;
+        btnAnalyze.addEventListener('click', async function () {
+            if (!excelFile.files || excelFile.files.length === 0) {
+                alert('請先選擇 Excel 檔案');
+                return;
+            }
+
+            const file = excelFile.files[0];
+            const formData = new FormData();
+            formData.append('excelFile', file);
+
+            loadingText.style.display = 'inline';
+            btnAnalyze.disabled = true;
+            summaryBox.style.display = 'none';
+            resultTable.style.display = 'none';
+            resultBody.innerHTML = '';
+
+            try {
+                const response = await fetch('/api/Estimation/analyze-excel', {
+                    method: 'POST',
+                    body: formData
                 });
-            })
-            .catch(error => alert('連線引擎失敗：' + error));
+
+                const data = await response.json();
+
+                if (!response.ok) {
+                    alert(data.message || 'Excel 分析失敗');
+                    return;
+                }
+
+                summaryBox.style.display = 'block';
+                summaryBox.innerHTML = `
+                    檔案：<strong>${escapeHtml(file.name)}</strong><br>
+                    共讀取 <strong>${data.totalCount}</strong> 筆資料，
+                    發現 <strong class="text-danger">${data.abnormalCount}</strong> 筆異常資料。
+                `;
+
+                data.results.forEach(item => {
+                    const rowClass = item.isAbnormal ? 'table-danger' : '';
+                    const statusText = item.isAbnormal ? '異常' : '正常';
+                    const statusClass = item.isAbnormal ? 'text-danger fw-bold' : 'text-success';
+                    const categoryText = [item.category1, item.category2, item.category3]
+                        .filter(x => x && x.trim() !== '')
+                        .join(' / ');
+
+                    const tr = document.createElement('tr');
+                    tr.className = rowClass;
+                    tr.innerHTML = `
+                        <td class="text-center ${statusClass}">${statusText}</td>
+                        <td>${escapeHtml(item.sheetName)}</td>
+                        <td class="text-end">${item.rowNumber}</td>
+                        <td>${escapeHtml(item.itemCode)}</td>
+                        <td>${escapeHtml(categoryText)}</td>
+                        <td>${escapeHtml(item.itemName)}</td>
+                        <td>${escapeHtml(item.spec)}</td>
+                        <td class="text-center">${escapeHtml(item.unit)}</td>
+                        <td class="text-end">${formatNumber(item.qty)}</td>
+                        <td class="text-end">${formatNumber(item.unitPrice)}</td>
+                        <td class="text-end">${formatNumber(item.amount)}</td>
+                        <td class="text-end">${formatNumber(item.qtyZScore)}</td>
+                        <td class="text-end">${formatNumber(item.unitPriceZScore)}</td>
+                        <td>${escapeHtml(item.statusMessage)}</td>
+                    `;
+                    resultBody.appendChild(tr);
+                });
+
+                resultTable.style.display = 'table';
+            }
+            catch (error) {
+                alert('連線或分析失敗：' + error);
+            }
+            finally {
+                loadingText.style.display = 'none';
+                btnAnalyze.disabled = false;
+            }
         });
+
+        function formatNumber(value) {
+            if (value === null || value === undefined || value === '') return '';
+            const num = Number(value);
+            if (Number.isNaN(num)) return value;
+            return num.toLocaleString();
+        }
+
+        function escapeHtml(value) {
+            if (value === null || value === undefined) return '';
+            return String(value)
+                .replaceAll('&', '&amp;')
+                .replaceAll('<', '&lt;')
+                .replaceAll('>', '&gt;')
+                .replaceAll('"', '&quot;')
+                .replaceAll("'", '&#039;');
+        }
     </script>
 }

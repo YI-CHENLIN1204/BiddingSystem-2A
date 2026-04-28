@@ -1,130 +1,149 @@
-﻿@model List<崴正.Models.HistoricalTransaction>
-
 @{
-    ViewData["Title"] = "歷史資料列表";
+    ViewData["Title"] = "標單異常偵測系統";
 }
 
-<div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 15px;">
-    <h2>歷史資料列表</h2>
-    <button id="btnAnalyzeHome" style="background-color: #0d6efd; color: white; font-weight: bold; padding: 8px 18px; border: none; border-radius: 6px; cursor: pointer; box-shadow: 0 4px 6px rgba(0,0,0,0.1); transition: 0.2s;">
-        執行 Z-Score 異常偵測
-    </button>
-</div>
+<div class="container mt-4">
+    <h2>標單異常偵測</h2>
+    <p class="text-muted">
+        上傳 Excel 標單後，系統會直接檢測本次 Excel 內的資料，不會顯示歷史資料，也不會把本次標單存進資料庫。
+    </p>
 
-<table border="1" cellpadding="8" id="historyTable" style="border-collapse: collapse; width: 100%; text-align: center;">
-    <thead style="background-color: #f2f2f2;">
-        <tr>
-            <th>交易編號</th>
-            <th>專案編號</th>
-            <th>材料編號</th>
-            <th>實際數量</th>
-            <th>單價</th>
-            <th>交易日期</th>
-            <th>是否刪除</th>
-            <th class="result-col" style="display:none; background-color: #e8daef;">Z-Score 分數</th>
-            <th class="result-col" style="display:none; background-color: #e8daef;">防弊判定</th>
-            <th class="result-col" style="display:none; background-color: #d4e6f1;">建議用量</th>
-        </tr>
-    </thead>
-    <tbody>
-        @foreach (HistoricalTransaction item in Model)
-        {
-            <tr>
-                <td>@item.Transaction_ID</td>
-                <td>@item.Project_ID</td>
-                <td class="mat-val">@item.Material_ID</td>
-                <td class="qty-val">@item.Actual_Quantity</td>
-                <td>@item.Unit_Price</td>
-                <td>@item.Transaction_Date.ToString("yyyy-MM-dd")</td>
-                <td>@item.IsDeleted</td>
-                <td class="z-score-val result-col" style="display:none; font-weight: bold;"></td>
-                <td class="status-val result-col" style="display:none; font-weight: bold;"></td>
-                <td class="suggested-qty-val result-col" style="display:none; font-weight: bold; color: #0275d8;"></td>
-            </tr>
-        }
-    </tbody>
-</table>
+    <div class="card mb-4">
+        <div class="card-body">
+            <label for="excelFile" class="form-label fw-bold">選擇要檢測的 Excel 檔案</label>
+            <input type="file" id="excelFile" class="form-control mb-3" accept=".xlsx" />
+            <button id="btnAnalyze" class="btn btn-primary">異常偵測</button>
+            <span id="loadingText" class="ms-3 text-muted" style="display:none;">正在讀取與分析 Excel...</span>
+        </div>
+    </div>
+
+    <div id="summaryBox" class="alert alert-info" style="display:none;"></div>
+
+    <div class="table-responsive">
+        <table class="table table-bordered table-hover align-middle" id="resultTable" style="display:none; font-size: 14px;">
+            <thead class="table-dark text-center">
+                <tr>
+                    <th>狀態</th>
+                    <th>工作表</th>
+                    <th>列號</th>
+                    <th>項次</th>
+                    <th>分類</th>
+                    <th>項目名稱</th>
+                    <th>規格</th>
+                    <th>單位</th>
+                    <th>數量</th>
+                    <th>單價</th>
+                    <th>複價</th>
+                    <th>數量 Z</th>
+                    <th>單價 Z</th>
+                    <th>異常原因</th>
+                </tr>
+            </thead>
+            <tbody id="resultBody"></tbody>
+        </table>
+    </div>
+</div>
 
 @section Scripts {
     <script>
-        document.getElementById('btnAnalyzeHome').addEventListener('click', function() {
-            let items = [];
-            let rows = document.querySelectorAll('#historyTable tbody tr');
+        const btnAnalyze = document.getElementById('btnAnalyze');
+        const excelFile = document.getElementById('excelFile');
+        const loadingText = document.getElementById('loadingText');
+        const summaryBox = document.getElementById('summaryBox');
+        const resultTable = document.getElementById('resultTable');
+        const resultBody = document.getElementById('resultBody');
 
-            // 1. 抓取畫面上表格裡的每一筆資料，做成點餐單 (JSON)
-            rows.forEach((row, index) => {
-                let matId = parseInt(row.querySelector('.mat-val').innerText);
-                let qty = parseFloat(row.querySelector('.qty-val').innerText);
-                
-                // 巧妙利用 index 當作 Floor_Zone，這樣 API 算完回來我們才知道是哪一列
-                let uniqueRowId = "Row-" + index;
-                row.dataset.rowId = uniqueRowId; 
+        btnAnalyze.addEventListener('click', async function () {
+            if (!excelFile.files || excelFile.files.length === 0) {
+                alert('請先選擇 Excel 檔案');
+                return;
+            }
 
-                items.push({
-                    "material_Id": matId,
-                    "floor_Zone": uniqueRowId, 
-                    "input_Quantity": qty
+            const file = excelFile.files[0];
+            const formData = new FormData();
+            formData.append('excelFile', file);
+
+            loadingText.style.display = 'inline';
+            btnAnalyze.disabled = true;
+            summaryBox.style.display = 'none';
+            resultTable.style.display = 'none';
+            resultBody.innerHTML = '';
+
+            try {
+                const response = await fetch('/api/Estimation/analyze-excel', {
+                    method: 'POST',
+                    body: formData
                 });
-            });
 
-            let requestData = {
-                "project_Id": 999, // 首頁測試用，隨便帶個 ID
-                "items": items
-            };
+                const data = await response.json();
 
-            // 2. 把隱藏的結果欄位顯示出來
-            document.querySelectorAll('.result-col').forEach(el => el.style.display = 'table-cell');
+                if (!response.ok) {
+                    alert(data.message || 'Excel 分析失敗');
+                    return;
+                }
 
-            // 3. 把資料送給你的 API 引擎
-            fetch('/api/Estimation/analyze', {
-                method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify(requestData)
-            })
-            .then(response => response.json())
-            .then(data => {
-                // 4. 拿到 Z-Score 結果後，一列一列畫上紅綠燈
-                rows.forEach(row => {
-                    let uniqueRowId = row.dataset.rowId;
-                    let matId = parseInt(row.querySelector('.mat-val').innerText);
-                    
-                    // 從 API 結果中找出屬於這一列的答案
-                    let result = data.results.find(r => r.material_Id === matId && r.floor_Zone === uniqueRowId);
+                summaryBox.style.display = 'block';
+                summaryBox.innerHTML = `
+                    檔案：<strong>${escapeHtml(file.name)}</strong><br>
+                    共讀取 <strong>${data.totalCount}</strong> 筆資料，
+                    發現 <strong class="text-danger">${data.abnormalCount}</strong> 筆異常資料。
+                `;
 
-                    
-                    if (result) {
-                        row.querySelector('.z-score-val').innerText = result.calculated_Z_Score;
-                        row.querySelector('.suggested-qty-val').innerText = result.suggested_Quantity;
+                data.results.forEach(item => {
+                    const rowClass = item.isAbnormal ? 'table-danger' : '';
+                    const statusText = item.isAbnormal ? '異常' : '正常';
+                    const statusClass = item.isAbnormal ? 'text-danger fw-bold' : 'text-success';
+                    const categoryText = [item.category1, item.category2, item.category3]
+                        .filter(x => x && x.trim() !== '')
+                        .join(' / ');
 
-                        let statusCell = row.querySelector('.status-val');
-                        statusCell.innerText = result.status_Message; 
-
-                        // 根據訊息內容，給予不同的顏色標籤
-                        if (result.status_Message.includes('需人工首筆核定')) {
-                            // 例外處理：橘色警告 (Warning)
-                            statusCell.style.color = '#d35400';
-                            row.style.backgroundColor = '#fcf3cf'; 
-                        } 
-                        else if (result.status_Message.includes('無基準資料')) {
-                            // 例外處理：灰色標示 (Secondary)
-                            statusCell.style.color = '#7f8c8d';
-                            row.style.backgroundColor = '#f2f3f4';
-                        }
-                        else if (result.is_Abnormal) {
-                            // 異常防弊：紅色警告 (Danger)
-                            statusCell.style.color = 'red';
-                            row.style.backgroundColor = '#fdedec';
-                        } 
-                        else {
-                            // 正常合理：綠色通過 (Success)
-                            statusCell.style.color = 'green';
-                            row.style.backgroundColor = '#eaeded';
-                        }
-                    }
-                    // ...
+                    const tr = document.createElement('tr');
+                    tr.className = rowClass;
+                    tr.innerHTML = `
+                        <td class="text-center ${statusClass}">${statusText}</td>
+                        <td>${escapeHtml(item.sheetName)}</td>
+                        <td class="text-end">${item.rowNumber}</td>
+                        <td>${escapeHtml(item.itemCode)}</td>
+                        <td>${escapeHtml(categoryText)}</td>
+                        <td>${escapeHtml(item.itemName)}</td>
+                        <td>${escapeHtml(item.spec)}</td>
+                        <td class="text-center">${escapeHtml(item.unit)}</td>
+                        <td class="text-end">${formatNumber(item.qty)}</td>
+                        <td class="text-end">${formatNumber(item.unitPrice)}</td>
+                        <td class="text-end">${formatNumber(item.amount)}</td>
+                        <td class="text-end">${formatNumber(item.qtyZScore)}</td>
+                        <td class="text-end">${formatNumber(item.unitPriceZScore)}</td>
+                        <td>${escapeHtml(item.statusMessage)}</td>
+                    `;
+                    resultBody.appendChild(tr);
                 });
-            })
-            .catch(err => alert('連線引擎失敗，請確認伺服器狀態：' + err));
+
+                resultTable.style.display = 'table';
+            }
+            catch (error) {
+                alert('連線或分析失敗：' + error);
+            }
+            finally {
+                loadingText.style.display = 'none';
+                btnAnalyze.disabled = false;
+            }
         });
+
+        function formatNumber(value) {
+            if (value === null || value === undefined || value === '') return '';
+            const num = Number(value);
+            if (Number.isNaN(num)) return value;
+            return num.toLocaleString();
+        }
+
+        function escapeHtml(value) {
+            if (value === null || value === undefined) return '';
+            return String(value)
+                .replaceAll('&', '&amp;')
+                .replaceAll('<', '&lt;')
+                .replaceAll('>', '&gt;')
+                .replaceAll('"', '&quot;')
+                .replaceAll("'", '&#039;');
+        }
     </script>
 }
