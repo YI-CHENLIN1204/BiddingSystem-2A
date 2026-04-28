@@ -24,10 +24,20 @@ namespace 崴正.Models
 
     public class TenderAnomalyResultDto : TenderImportRowDto
     {
+        public string? MatchedMaterialName { get; set; }
+        public bool IsTargetMaterial { get; set; }
+
         public bool IsAbnormal { get; set; }
         public string StatusMessage { get; set; } = "正常";
+
+        public decimal? HistoricalAvgQty { get; set; }
+        public decimal? HistoricalStdQty { get; set; }
         public decimal? QtyZScore { get; set; }
+
+        public decimal? HistoricalAvgUnitPrice { get; set; }
+        public decimal? HistoricalStdUnitPrice { get; set; }
         public decimal? UnitPriceZScore { get; set; }
+
         public decimal? ExpectedAmount { get; set; }
         public decimal? AmountDifference { get; set; }
     }
@@ -35,6 +45,7 @@ namespace 崴正.Models
     public class TenderAnomalyResponseDto
     {
         public int TotalCount { get; set; }
+        public int TargetCount { get; set; }
         public int AbnormalCount { get; set; }
         public List<TenderAnomalyResultDto> Results { get; set; } = new();
     }

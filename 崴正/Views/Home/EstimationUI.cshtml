@@ -5,7 +5,7 @@
 <div class="container mt-4">
     <h2>標單異常偵測</h2>
     <p class="text-muted">
-        上傳 Excel 標單後，系統會直接檢測本次 Excel 內的資料，不會顯示歷史資料，也不會把本次標單存進資料庫。
+        上傳 Excel 標單後，系統會顯示所有資料；其中只有「磁磚、混凝土、鋼筋」會拿資料庫歷史資料計算平均值、標準差與 Z 分數，本次上傳的標單不會寫入資料庫。
     </p>
 
     <div class="card mb-4">
@@ -13,7 +13,7 @@
             <label for="excelFile" class="form-label fw-bold">選擇要檢測的 Excel 檔案</label>
             <input type="file" id="excelFile" class="form-control mb-3" accept=".xlsx" />
             <button id="btnAnalyze" class="btn btn-primary">異常偵測</button>
-            <span id="loadingText" class="ms-3 text-muted" style="display:none;">正在讀取與分析 Excel...</span>
+            <span id="loadingText" class="ms-3 text-muted" style="display:none;">正在讀取 Excel 並比對歷史資料...</span>
         </div>
     </div>
 
@@ -29,13 +29,18 @@
                     <th>項次</th>
                     <th>分類</th>
                     <th>項目名稱</th>
+                    <th>檢測材料</th>
                     <th>規格</th>
                     <th>單位</th>
                     <th>數量</th>
-                    <th>單價</th>
-                    <th>複價</th>
+                    <th>歷史平均數量</th>
+                    <th>歷史數量SD</th>
                     <th>數量 Z</th>
+                    <th>單價</th>
+                    <th>歷史平均單價</th>
+                    <th>歷史單價SD</th>
                     <th>單價 Z</th>
+                    <th>複價</th>
                     <th>異常原因</th>
                 </tr>
             </thead>
@@ -86,6 +91,7 @@
                 summaryBox.innerHTML = `
                     檔案：<strong>${escapeHtml(file.name)}</strong><br>
                     共讀取 <strong>${data.totalCount}</strong> 筆資料，
+                    其中 <strong>${data.targetCount ?? 0}</strong> 筆屬於磁磚／混凝土／鋼筋，
                     發現 <strong class="text-danger">${data.abnormalCount}</strong> 筆異常資料。
                 `;
 
@@ -106,13 +112,18 @@
                         <td>${escapeHtml(item.itemCode)}</td>
                         <td>${escapeHtml(categoryText)}</td>
                         <td>${escapeHtml(item.itemName)}</td>
+                        <td>${escapeHtml(item.matchedMaterialName || '-')}</td>
                         <td>${escapeHtml(item.spec)}</td>
                         <td class="text-center">${escapeHtml(item.unit)}</td>
                         <td class="text-end">${formatNumber(item.qty)}</td>
-                        <td class="text-end">${formatNumber(item.unitPrice)}</td>
-                        <td class="text-end">${formatNumber(item.amount)}</td>
+                        <td class="text-end">${formatNumber(item.historicalAvgQty)}</td>
+                        <td class="text-end">${formatNumber(item.historicalStdQty)}</td>
                         <td class="text-end">${formatNumber(item.qtyZScore)}</td>
+                        <td class="text-end">${formatNumber(item.unitPrice)}</td>
+                        <td class="text-end">${formatNumber(item.historicalAvgUnitPrice)}</td>
+                        <td class="text-end">${formatNumber(item.historicalStdUnitPrice)}</td>
                         <td class="text-end">${formatNumber(item.unitPriceZScore)}</td>
+                        <td class="text-end">${formatNumber(item.amount)}</td>
                         <td>${escapeHtml(item.statusMessage)}</td>
                     `;
                     resultBody.appendChild(tr);
@@ -133,7 +144,7 @@
             if (value === null || value === undefined || value === '') return '';
             const num = Number(value);
             if (Number.isNaN(num)) return value;
-            return num.toLocaleString();
+            return num.toLocaleString(undefined, { maximumFractionDigits: 2 });
         }
 
         function escapeHtml(value) {

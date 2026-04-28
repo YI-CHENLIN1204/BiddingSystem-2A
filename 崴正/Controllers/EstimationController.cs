@@ -113,7 +113,7 @@ namespace 崴正.Controllers
             return Ok(finalReport);
         }
 
-        // 新版：直接上傳 Excel，不讀歷史資料庫，不儲存本次標單，只針對本次 Excel 內部資料做異常偵測。
+        // 新版：上傳 Excel 後，不儲存本次標單；只針對「磁磚、混凝土、鋼筋」查資料庫歷史資料計算 Z 分數。
         [HttpPost("analyze-excel")]
         public IActionResult AnalyzeExcel(IFormFile excelFile)
         {
@@ -134,22 +134,23 @@ namespace 崴正.Controllers
                     rows = parser.Parse(stream, excelFile.FileName);
                 }
 
-                var results = AnalyzeRowsWithoutHistory(rows);
+                var results = AnalyzeRowsWithHistory(rows);
 
                 return Ok(new TenderAnomalyResponseDto
                 {
                     TotalCount = results.Count,
+                    TargetCount = results.Count(x => x.IsTargetMaterial),
                     AbnormalCount = results.Count(x => x.IsAbnormal),
                     Results = results
                 });
             }
             catch (Exception ex)
             {
-                return BadRequest(new { message = "Excel 解析失敗：" + ex.Message });
+                return BadRequest(new { message = "Excel 解析或歷史資料比對失敗：" + ex.Message });
             }
         }
 
-        private static List<TenderAnomalyResultDto> AnalyzeRowsWithoutHistory(List<TenderImportRowDto> rows)
+        private List<TenderAnomalyResultDto> AnalyzeRowsWithHistory(List<TenderImportRowDto> rows)
         {
             var results = rows.Select(r => new TenderAnomalyResultDto
             {
@@ -167,11 +168,45 @@ namespace 崴正.Controllers
                 UnitPrice = r.UnitPrice,
                 Amount = r.Amount,
                 Note = r.Note,
-                StatusMessage = "正常"
+                IsAbnormal = false,
+                IsTargetMaterial = false,
+                StatusMessage = "非目前檢測材料"
             }).ToList();
+
+            var targetMaterialNames = new[] { "磁磚", "混凝土", "鋼筋" };
+
+            var materials = _context.MaterialMasters
+                .Where(m => targetMaterialNames.Contains(m.MaterialName))
+                .ToList();
 
             foreach (var item in results)
             {
+                var matchedName = MatchTargetMaterialName(item.ItemName);
+
+                if (matchedName == null)
+                {
+                    item.StatusMessage = "非目前檢測材料（僅檢測磁磚、混凝土、鋼筋）";
+                    continue;
+                }
+
+                item.IsTargetMaterial = true;
+                item.MatchedMaterialName = matchedName;
+
+                var material = materials.FirstOrDefault(m => m.MaterialName == matchedName);
+                if (material == null)
+                {
+                    item.IsAbnormal = true;
+                    item.StatusMessage = $"資料庫找不到材料主檔：{matchedName}";
+                    continue;
+                }
+
+                if (!IsSameUnit(item.Unit, material.BaseUnit))
+                {
+                    item.IsAbnormal = true;
+                    item.StatusMessage = $"單位不符，資料庫標準單位為 {material.BaseUnit}";
+                    continue;
+                }
+
                 var reasons = new List<string>();
 
                 if (item.Qty == null || item.Qty <= 0)
@@ -197,54 +232,124 @@ namespace 崴正.Controllers
                     }
                 }
 
-                if (reasons.Any())
-                {
-                    item.IsAbnormal = true;
-                    item.StatusMessage = string.Join("、", reasons);
-                }
-            }
+                var histories = _context.HistoricalTransactions
+                    .Where(h => h.Material_ID == material.MaterialId)
+                    .Where(h => h.IsDeleted == false)
+                    .Where(h => h.Is_Outlier == false)
+                    .Select(h => new
+                    {
+                        h.Actual_Quantity,
+                        h.Unit_Price
+                    })
+                    .ToList();
 
-            ApplyZScoreByUnit(results, x => x.Qty, (x, z) => x.QtyZScore = z, "數量偏離本次標單同單位資料");
-            ApplyZScoreByUnit(results, x => x.UnitPrice, (x, z) => x.UnitPriceZScore = z, "單價偏離本次標單同單位資料");
+                if (histories.Count < 2)
+                {
+                    reasons.Add("歷史資料不足，無法計算 Z 分數");
+                    item.IsAbnormal = reasons.Any(r => r != "歷史資料不足，無法計算 Z 分數");
+                    item.StatusMessage = reasons.Any() ? string.Join("、", reasons) : "歷史資料不足，無法計算 Z 分數";
+                    continue;
+                }
+
+                var qtyValues = histories.Select(h => h.Actual_Quantity).ToList();
+                var priceValues = histories.Select(h => h.Unit_Price).ToList();
+
+                item.HistoricalAvgQty = Math.Round(qtyValues.Average(), 2);
+                item.HistoricalStdQty = Math.Round(CalculateStdDev(qtyValues), 2);
+                item.HistoricalAvgUnitPrice = Math.Round(priceValues.Average(), 2);
+                item.HistoricalStdUnitPrice = Math.Round(CalculateStdDev(priceValues), 2);
+
+                decimal threshold = GetZScoreThreshold(material.MaterialId);
+
+                if (item.Qty != null && item.HistoricalStdQty > 0)
+                {
+                    item.QtyZScore = Math.Round(Math.Abs((item.Qty.Value - item.HistoricalAvgQty.Value) / item.HistoricalStdQty.Value), 2);
+                    if (item.QtyZScore >= threshold)
+                        reasons.Add($"數量與歷史資料差異過大，Z={item.QtyZScore}");
+                }
+                else if (item.HistoricalStdQty == 0)
+                {
+                    reasons.Add("歷史數量標準差為 0，無法計算數量 Z 分數");
+                }
+
+                if (item.UnitPrice != null && item.HistoricalStdUnitPrice > 0)
+                {
+                    item.UnitPriceZScore = Math.Round(Math.Abs((item.UnitPrice.Value - item.HistoricalAvgUnitPrice.Value) / item.HistoricalStdUnitPrice.Value), 2);
+                    if (item.UnitPriceZScore >= threshold)
+                        reasons.Add($"單價與歷史資料差異過大，Z={item.UnitPriceZScore}");
+                }
+                else if (item.HistoricalStdUnitPrice == 0)
+                {
+                    reasons.Add("歷史單價標準差為 0，無法計算單價 Z 分數");
+                }
+
+                item.IsAbnormal = reasons.Any(r =>
+                    !r.Contains("標準差為 0") &&
+                    !r.Contains("歷史資料不足"));
+
+                item.StatusMessage = reasons.Any() ? string.Join("、", reasons) : "正常";
+            }
 
             return results;
         }
 
-        private static void ApplyZScoreByUnit(
-            List<TenderAnomalyResultDto> results,
-            Func<TenderAnomalyResultDto, decimal?> valueSelector,
-            Action<TenderAnomalyResultDto, decimal> zSetter,
-            string reason)
+        private static string? MatchTargetMaterialName(string itemName)
         {
-            var groups = results
-                .Where(x => !string.IsNullOrWhiteSpace(x.Unit) && valueSelector(x) != null)
-                .GroupBy(x => x.Unit.Trim());
+            if (string.IsNullOrWhiteSpace(itemName))
+                return null;
 
-            foreach (var group in groups)
-            {
-                var values = group.Select(x => valueSelector(x)!.Value).ToList();
-                if (values.Count < 3) continue;
+            var text = itemName.Trim();
 
-                decimal mean = values.Average();
-                double variance = values.Average(v => Math.Pow((double)(v - mean), 2));
-                decimal sd = (decimal)Math.Sqrt(variance);
-                if (sd == 0) continue;
+            if (text.Contains("磁磚"))
+                return "磁磚";
 
-                foreach (var item in group)
-                {
-                    decimal value = valueSelector(item)!.Value;
-                    decimal z = Math.Round(Math.Abs((value - mean) / sd), 2);
-                    zSetter(item, z);
+            if (text.Contains("混凝土") || text.Contains("CLSM", StringComparison.OrdinalIgnoreCase))
+                return "混凝土";
 
-                    if (z >= 2.0m)
-                    {
-                        item.IsAbnormal = true;
-                        item.StatusMessage = item.StatusMessage == "正常" || string.IsNullOrWhiteSpace(item.StatusMessage)
-                            ? $"{reason}，Z-Score={z}"
-                            : item.StatusMessage + $"、{reason}，Z-Score={z}";
-                    }
-                }
-            }
+            if (text.Contains("鋼筋"))
+                return "鋼筋";
+
+            return null;
+        }
+
+        private static bool IsSameUnit(string excelUnit, string dbUnit)
+        {
+            return string.Equals(
+                NormalizeUnit(excelUnit),
+                NormalizeUnit(dbUnit),
+                StringComparison.OrdinalIgnoreCase);
+        }
+
+        private static string NormalizeUnit(string unit)
+        {
+            if (string.IsNullOrWhiteSpace(unit))
+                return "";
+
+            return unit.Trim()
+                .Replace("㎡", "m2")
+                .Replace("平方公尺", "m2")
+                .Replace("立方公尺", "m3")
+                .ToLowerInvariant();
+        }
+
+        private decimal GetZScoreThreshold(int materialId)
+        {
+            var threshold = _context.QuantityRuleBases
+                .Where(r => r.Material_ID == materialId)
+                .Select(r => r.Z_Score_Threshold)
+                .FirstOrDefault();
+
+            return threshold > 0 ? threshold : 2.0m;
+        }
+
+        private static decimal CalculateStdDev(List<decimal> values)
+        {
+            if (values == null || values.Count < 2)
+                return 0;
+
+            decimal avg = values.Average();
+            double variance = values.Average(v => Math.Pow((double)(v - avg), 2));
+            return (decimal)Math.Sqrt(variance);
         }
     }
 }
