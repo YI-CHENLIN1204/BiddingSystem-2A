@@ -1,29 +1,84 @@
 @model 崴正.Models.QuantityRuleBase
 
-<div class="container mt-4">
-    <h2>✏️ 編輯建材參數 (材料編號：@Model.Material_ID)</h2>
-    <hr />
+@{
+    ViewData["Title"] = "編輯參數規則";
+}
 
-    <div class="row">
-        <div class="col-md-6">
-            <form asp-action="Edit" method="post">
-                <input type="hidden" asp-for="RuleID" />
-                <input type="hidden" asp-for="Material_ID" />
+<style>
+    :root { --wz-primary: #321fdb; --wz-bg: #f6faff; --wz-text: #141d23; --wz-muted: #6c757d; }
+    body { background: var(--wz-bg); color: var(--wz-text); }
+    .admin-main-card { background: #fff; border-radius: 8px; box-shadow: 0 6px 20px rgba(20, 29, 35, 0.06); }
+    .btn-wz-primary { background: var(--wz-primary); color: white; border-radius: 6px; padding: 7px 16px; font-weight: 700; border: none; }
+    .btn-wz-primary:hover { color: white; filter: brightness(.96); }
+    .btn-wz-outline { border: 1px solid #bcb3ff; color: var(--wz-primary); border-radius: 6px; padding: 7px 16px; font-weight: 700; text-decoration: none; background: white; }
+    .btn-wz-outline:hover { background: #ebe8ff; color: var(--wz-primary); }
+    .section-title { font-size: 1.1rem; color: var(--wz-primary); font-weight: 800; border-bottom: 2px solid #ebe8ff; padding-bottom: 8px; margin-bottom: 20px; margin-top: 10px; }
+</style>
 
-                <div class="mb-3">
-                    <label class="form-label fw-bold">Z-Score 異常判定門檻</label>
-                    <input asp-for="Z_Score_Threshold" class="form-control" type="number" step="0.01" />
-                    <small class="text-muted">預設為 2.0。數值越小，系統越嚴格（越容易亮紅燈）。</small>
+<div class="container mt-4" style="max-width: 900px;">
+    <h2 class="fw-bold mb-1">✏️ 編輯建材參數</h2>
+    <p class="text-muted mb-4">
+        目前正在編輯：<span class="badge bg-primary fs-6 ms-2">@ViewBag.MaterialName (@ViewBag.BaseUnit)</span>
+    </p>
+
+    <div class="admin-main-card p-4 p-md-5">
+        <form asp-action="Edit" method="post">
+            <input type="hidden" asp-for="RuleID" />
+            <input type="hidden" asp-for="Material_ID" />
+
+            <div class="section-title">1. 適用情境 (維度條件)</div>
+            <div class="row mb-4 g-3">
+                <div class="col-md-4">
+                    <label asp-for="Project_Type" class="form-label fw-bold">建案類型</label>
+                    <select asp-for="Project_Type" class="form-select">
+                        <option value="">-- 通用 (不分專案) --</option>
+                        <option value="住宅">住宅</option>
+                        <option value="廠房">廠房</option>
+                        <option value="辦公大樓">辦公大樓</option>
+                        <option value="公共工程">公共工程</option>
+                    </select>
                 </div>
-
-                <div class="mb-3">
-                    <label class="form-label fw-bold">基本單位換算率 (Base Unit Ratio)</label>
-                    <input asp-for="Base_Unit_Ratio" class="form-control" type="number" step="0.01" />
+                <div class="col-md-4">
+                    <label asp-for="Structure_Type" class="form-label fw-bold">結構類型</label>
+                    <select asp-for="Structure_Type" class="form-select">
+                        <option value="">-- 通用 (不分結構) --</option>
+                        <option value="RC">RC (鋼筋混凝土)</option>
+                        <option value="SC">SC (鋼骨)</option>
+                        <option value="SRC">SRC (鋼骨鋼筋混凝土)</option>
+                    </select>
                 </div>
+                <div class="col-md-4">
+                    <label asp-for="Floor_Zone" class="form-label fw-bold">樓層區塊</label>
+                    <select asp-for="Floor_Zone" class="form-select">
+                        <option value="">-- 通用 (不分樓層) --</option>
+                        <option value="地下室">地下室 (B1以下)</option>
+                        <option value="低樓層">低樓層 (1F-5F)</option>
+                        <option value="中高樓層">中高樓層 (6F以上)</option>
+                        <option value="屋頂">屋頂突出物 (R1-R2)</option>
+                    </select>
+                </div>
+            </div>
 
-                <button type="submit" class="btn btn-success">💾 儲存修改</button>
-                <a asp-action="Index" class="btn btn-secondary">取消並返回</a>
-            </form>
-        </div>
+            <div class="section-title">2. 估算數值與防弊參數</div>
+            <div class="row mb-5 g-3">
+                <div class="col-md-4">
+                    <label asp-for="Unit_Consumption" class="form-label fw-bold text-primary">單位基準用量 <span class="text-danger">*</span></label>
+                    <input asp-for="Unit_Consumption" class="form-control" type="number" step="0.0001" required />
+                </div>
+                <div class="col-md-4">
+                    <label asp-for="Waste_Rate_Percent" class="form-label fw-bold text-primary">預估耗損率 (%) <span class="text-danger">*</span></label>
+                    <input asp-for="Waste_Rate_Percent" class="form-control" type="number" step="0.1" required />
+                </div>
+                <div class="col-md-4">
+                    <label asp-for="Z_Score_Threshold" class="form-label fw-bold text-danger">Z-Score 異常門檻 <span class="text-danger">*</span></label>
+                    <input asp-for="Z_Score_Threshold" class="form-control" type="number" step="0.01" required />
+                </div>
+            </div>
+
+            <div class="d-flex justify-content-end gap-3 mt-2 border-top pt-4">
+                <a asp-action="Index" class="btn-wz-outline">取消返回</a>
+                <button type="submit" class="btn-wz-primary">💾 儲存修改</button>
+            </div>
+        </form>
     </div>
 </div>

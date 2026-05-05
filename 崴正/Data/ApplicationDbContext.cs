@@ -48,7 +48,11 @@ public DbSet<HistoricalTransaction> HistoricalTransactions { get; set; }
                
                 entity.Property(e => e.RuleID).HasColumnName("rule_id");
                 entity.Property(e => e.Material_ID).HasColumnName("material_id");
-                entity.Property(e => e.Base_Unit_Ratio).HasColumnName("base_unit_ratio");
+                entity.Property(e => e.Unit_Consumption).HasColumnName("unit_consumption");
+                entity.Property(e => e.Project_Type).HasColumnName("project_type");
+                entity.Property(e => e.Structure_Type).HasColumnName("structure_type");
+                entity.Property(e => e.Floor_Zone).HasColumnName("floor_zone");
+                entity.Property(e => e.Waste_Rate_Percent).HasColumnName("waste_rate_percent");
                 entity.Property(e => e.Z_Score_Threshold).HasColumnName("z_score_threshold");
             });
 

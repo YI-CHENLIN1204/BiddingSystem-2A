@@ -1,30 +1,229 @@
-@model IEnumerable<崴正.Models.QuantityRuleBase>
+@model IEnumerable<崴正.Controllers.QuantityRuleViewModel>
 
-<div class="container mt-4">
-    <h2>⚙️ 估算參數管理後台</h2>
-    <p class="text-muted">提供估算部主管調整各建材的防弊門檻與預設參數。</p>
+@{
+    ViewData["Title"] = "估算參數管理後台";
+}
 
-    <table class="table table-bordered table-hover text-center">
-        <thead class="table-dark">
-            <tr>
-                <th>材料編號</th>
-                <th>Z-Score 門檻</th>
-                <th>基本單位換算率</th>
-                <th>操作</th>
-            </tr>
-        </thead>
-        <tbody>
-            @foreach (var item in Model)
-            {
-                <tr>
-                    <td class="fw-bold">@item.Material_ID</td>
-                    <td>@item.Z_Score_Threshold</td>
-                    <td>@item.Base_Unit_Ratio</td>
-                    <td>
-                        <a asp-action="Edit" asp-route-id="@item.RuleID" class="btn btn-sm btn-primary">✏️ 編輯</a>
-                    </td>
-                </tr>
-            }
-        </tbody>
-    </table>
+<style>
+    /* 完美繼承工程估算頁面的企業色系與卡片風格 */
+    :root {
+        --wz-primary: #321fdb;
+        --wz-primary-soft: #ebe8ff;
+        --wz-green: #2eb85c;
+        --wz-dark-table: #6f7a7d;
+        --wz-bg: #f6faff;
+        --wz-text: #141d23;
+        --wz-muted: #6c757d;
+    }
+
+    body {
+        background: var(--wz-bg);
+        color: var(--wz-text);
+    }
+
+    .admin-page {
+        max-width: 96vw;
+        margin: 0 auto;
+        padding-bottom: 40px;
+    }
+
+    .page-title {
+        font-size: 1.55rem;
+        font-weight: 800;
+        margin-bottom: 6px;
+    }
+
+    .page-desc {
+        color: var(--wz-muted);
+        font-size: 14px;
+        margin-bottom: 18px;
+    }
+
+    .admin-main-card {
+        background: #fff;
+        border-radius: 8px;
+        box-shadow: 0 6px 20px rgba(20, 29, 35, 0.06);
+        overflow: hidden;
+    }
+
+    .toolbar-bar {
+        margin: 0;
+        padding: 14px 18px;
+        border-bottom: 2px solid var(--wz-primary-soft);
+        background: #fff;
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+    }
+
+    .toolbar-title {
+        color: var(--wz-primary);
+        font-weight: 900;
+        font-size: 1.15rem;
+        margin: 0;
+    }
+
+    .btn-wz-primary {
+        border: none;
+        background: var(--wz-primary);
+        color: white;
+        border-radius: 6px;
+        padding: 7px 16px;
+        font-weight: 700;
+        text-decoration: none;
+        font-size: 14px;
+    }
+
+    .btn-wz-primary:hover {
+        color: white;
+        filter: brightness(.96);
+    }
+
+    .btn-wz-outline {
+        border: 1px solid #bcb3ff;
+        background: white;
+        color: var(--wz-primary);
+        border-radius: 6px;
+        padding: 5px 12px;
+        font-weight: 700;
+        text-decoration: none;
+        font-size: 13px;
+        transition: all 0.2s;
+    }
+
+    .btn-wz-outline:hover {
+        background: var(--wz-primary-soft);
+        color: var(--wz-primary);
+    }
+
+    .admin-table-wrapper {
+        overflow-x: auto;
+    }
+
+    .admin-table {
+        width: 100%;
+        border-collapse: collapse;
+        font-size: 14px;
+        background: white;
+    }
+
+    .admin-table thead th {
+        background: var(--wz-dark-table);
+        color: white;
+        padding: 12px 16px;
+        text-align: center;
+        font-weight: 800;
+        border-right: 1px solid rgba(255,255,255,.25);
+        white-space: nowrap;
+    }
+
+    .admin-table tbody td {
+        padding: 12px 16px;
+        border-bottom: 1px solid #e5e7eb;
+        vertical-align: middle;
+        text-align: center;
+    }
+
+    .admin-table tbody tr:hover {
+        background-color: #f8f9fa;
+    }
+
+    .material-badge {
+        background: #eef2f5;
+        border: 1px solid #d8dbe0;
+        padding: 4px 10px;
+        border-radius: 6px;
+        font-weight: 700;
+        color: #333;
+        display: inline-block;
+    }
+
+    .unit-text {
+        color: var(--wz-muted);
+        font-size: 12px;
+        font-weight: 600;
+        margin-left: 4px;
+    }
+</style>
+
+<div class="admin-page mt-4">
+    <h2 class="page-title">⚙️ 估算參數管理後台</h2>
+    <p class="page-desc">
+        提供估算部主管調整各建材的防弊門檻 (Z-Score) 與基本單位換算率。
+    </p>
+    <!-- 顯示成功或失敗的提示訊息 -->
+    @if (TempData["SuccessMessage"] != null)
+    {
+        <div class="alert alert-success alert-dismissible fade show shadow-sm" role="alert">
+            <strong>✅ 成功！</strong> @TempData["SuccessMessage"]
+            <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+        </div>
+    }
+    @if (TempData["ErrorMessage"] != null)
+    {
+        <div class="alert alert-danger alert-dismissible fade show shadow-sm" role="alert">
+            <strong>⚠️ 注意！</strong> @TempData["ErrorMessage"]
+            <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+        </div>
+    }
+
+    <div class="admin-main-card">
+        <div class="toolbar-bar">
+            <h5 class="toolbar-title">防弊門檻規則清單</h5>
+            <!-- 預留未來新增規則的按鈕 -->
+            <a asp-action="Create" class="btn-wz-primary text-decoration-none">➕ 新增參數規則</a>
+        </div>
+
+        <div class="admin-table-wrapper">
+            <table class="admin-table">
+                <thead>
+                    <tr>
+                        <th style="width: 5%;">編號</th>
+                        <th style="width: 15%;">材料名稱 (單位)</th>
+                        <th style="width: 25%;">適用情境 (專案/結構/樓層)</th>
+                        <th style="width: 15%;">Z-Score 門檻</th>
+                        <th style="width: 15%;">單位基準用量</th>
+                        <th style="width: 10%;">耗損率</th>
+                        <th style="width: 15%;">操作</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    @if (!Model.Any()) { /* ...不變... */ }
+                    else
+                    {
+                        @foreach (var item in Model)
+                        {
+                            <tr>
+                                <td class="text-muted fw-bold">#@item.Material_ID</td>
+                                <td>
+                                    <div class="material-badge">
+                                        @item.MaterialName <span class="unit-text">(@item.BaseUnit)</span>
+                                    </div>
+                                </td>
+                                <td>
+                                    <!-- 顯示多維度情境標籤 -->
+                                    <span class="badge bg-secondary">@(string.IsNullOrEmpty(item.Project_Type) ? "通用" : item.Project_Type)</span>
+                                    <span class="badge bg-secondary">@(string.IsNullOrEmpty(item.Structure_Type) ? "通用" : item.Structure_Type)</span>
+                                    <span class="badge bg-secondary">@(string.IsNullOrEmpty(item.Floor_Zone) ? "通用" : item.Floor_Zone)</span>
+                                </td>
+                                <td><span class="fw-bold text-danger">@item.Z_Score_Threshold</span></td>
+                                
+                                <!-- 顯示全新的名稱與數值 -->
+                                <td><span class="fw-bold text-primary">@item.Unit_Consumption</span></td>
+                                <td>@item.Waste_Rate_Percent %</td>
+                                
+                                <td>
+                                    <!-- 操作按鈕維持不變 -->
+                                    <div class="d-flex justify-content-center gap-2">
+                                        <a asp-action="Edit" asp-route-id="@item.RuleID" class="btn-wz-outline">✏️ 編輯</a>
+                                        <!-- 刪除表單維持你原本寫的 -->
+                                    </div>
+                                </td>
+                            </tr>
+                        }
+                    }
+                </tbody>
+            </table>
+        </div>
+    </div>
 </div>
