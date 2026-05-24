@@ -183,16 +183,14 @@ namespace 崴正.Controllers
             const decimal shortTermWeight = 0.7m;
             const decimal longTermWeight = 0.3m;
 
-            // 目前只針對這三個材料做偵測
-            var targetMaterialNames = new List<string> { "磁磚", "混凝土", "鋼筋" };
+        // 1. 把字典表全部抓出來放進記憶體 (UC-01 智慧對應)
+            var dictionaryList = _context.ItemDictionaries.ToList();
 
-            // 1. 材料主檔先一次查出來
-            var materials = _context.MaterialMasters
-                .Where(m => targetMaterialNames.Contains(m.MaterialName))
-                .ToList();
+                // 2. 抓出系統所有標準建材
+            var materials = _context.MaterialMasters.ToList();
 
             var materialDict = materials
-                .ToDictionary(m => m.MaterialName, m => m);
+                .ToDictionary(m => m.MaterialId, m => m);
 
             var materialIds = materials
                 .Select(m => m.MaterialId)
@@ -263,36 +261,34 @@ namespace 崴正.Controllers
                     }
                 }
 
-                // 只針對目前資料庫內的三個材料：磁磚、混凝土、鋼筋
-                var matchedMaterialName = MatchTargetMaterialName(result.ItemName);
-                result.MatchedMaterialName = matchedMaterialName;
+                // ==========================================
+                // 🚀 實現 UC-01：系統自動對應標準工項
+                // ==========================================
+                // 系統會去比對 Excel 的「項目名稱」或「規格」有沒有包含字典裡的關鍵字
+                var matchedDict = dictionaryList.FirstOrDefault(d => 
+                    (result.ItemName ?? "").Contains(d.Keyword, StringComparison.OrdinalIgnoreCase) || 
+                    (result.Spec ?? "").Contains(d.Keyword, StringComparison.OrdinalIgnoreCase));
 
-                if (string.IsNullOrWhiteSpace(matchedMaterialName))
+                if (matchedDict == null)
                 {
-                    if (reasons.Any())
-                    {
-                        result.IsAbnormal = true;
-                        result.StatusMessage = string.Join("、", reasons);
-                    }
-                    else
-                    {
-                        result.IsAbnormal = false;
-                        result.StatusMessage = "非目前檢測材料（僅檢測磁磚、混凝土、鋼筋）";
-                    }
-
+                    // 找不到對應，標記為「待對應」(符合 UC-01 替代流程 3a)
+                    result.IsAbnormal = false;
+                    result.StatusMessage = "待對應 (系統字典無法辨識此工項)";
                     results.Add(result);
                     continue;
                 }
 
-                // 從 Dictionary 找材料，不再查資料庫
-                if (!materialDict.TryGetValue(matchedMaterialName, out var material))
+                // 成功對應！找出真正的標準建材
+                if (!materialDict.TryGetValue(matchedDict.Material_Id, out var material))
                 {
-                    reasons.Add("資料庫找不到材料主檔");
                     result.IsAbnormal = true;
-                    result.StatusMessage = string.Join("、", reasons);
+                    result.StatusMessage = "系統錯誤：字典對應到不存在的材料ID";
                     results.Add(result);
                     continue;
                 }
+
+                result.MatchedMaterialName = material.MaterialName; // 成功綁定標準名稱
+
 
                 if (!IsSameUnit(result.Unit, material.BaseUnit))
                 {
@@ -414,24 +410,6 @@ namespace 崴正.Controllers
             return results;
         }
 
-        private string? MatchTargetMaterialName(string itemName)
-        {
-            if (string.IsNullOrWhiteSpace(itemName))
-                return null;
-
-            itemName = itemName.Trim();
-
-            if (itemName.Contains("磁磚"))
-                return "磁磚";
-
-            if (itemName.Contains("混凝土") || itemName.Contains("CLSM", StringComparison.OrdinalIgnoreCase))
-                return "混凝土";
-
-            if (itemName.Contains("鋼筋"))
-                return "鋼筋";
-
-            return null;
-        }
 
         private bool IsSameUnit(string excelUnit, string databaseUnit)
         {
@@ -508,5 +486,131 @@ namespace 崴正.Controllers
             var variance = values.Average(v => Math.Pow((double)(v - average), 2));
             return (decimal)Math.Sqrt(variance);
         }
+
+        // ==========================================
+        // UC-04：人工推翻異常判定並寫入 Audit Log
+        // ==========================================
+        [HttpPost("override")]
+        public IActionResult OverrideAnomaly([FromBody] OverrideRequestDto request)
+        {
+            if (string.IsNullOrWhiteSpace(request.OverrideReason))
+            {
+                return BadRequest(new { message = "⚠️ 系統阻擋：必須強制填寫推翻理由！" });
+            }
+
+            // 組裝稽核資料
+            var log = new AuditLog
+            {
+                SourceFileName = request.SourceFileName,
+                SheetName = request.SheetName,
+                RowNumber = request.RowNumber,
+                ItemName = request.ItemName,
+                OriginalStatusMessage = request.OriginalStatusMessage,
+                OverrideReason = request.OverrideReason,
+                ActionUser = "Estimator_Staff", // 實務上可串接登入者資訊
+                CreatedAt = DateTime.UtcNow
+            };
+
+            try
+            {
+                _context.AuditLogs.Add(log);
+                _context.SaveChanges();
+
+                return Ok(new { message = "✅ 成功寫入 Audit Log 稽核軌跡！", status = "人工認可" });
+            }
+            catch (Exception ex)
+            {
+                return BadRequest(new { message = "Audit Log 寫入失敗：" + ex.Message });
+            }
+        }
+
+        
+        // 🚀 UC-05 & UC-06：匯入最終決標標單 & 回寫歷史資料
+        // ==========================================
+        [HttpPost("upload-final-bid")]
+        public IActionResult UploadFinalBid(IFormFile excelFile, [FromForm] string projectName)
+        {
+            if (excelFile == null || excelFile.Length == 0)
+                return BadRequest(new { message = "請先選擇 Excel 檔案" });
+
+            if (string.IsNullOrWhiteSpace(projectName))
+                return BadRequest(new { message = "請輸入此決標案的工程專案名稱" });
+
+            try
+            {
+                // 1. 解析 Excel (UC-05)
+                var parser = new TenderExcelParser();
+                using var stream = excelFile.OpenReadStream();
+                var rows = parser.Parse(stream, excelFile.FileName);
+
+                // 2. 準備字典與材料主檔 (UC-06 準備)
+                var dictionaryList = _context.ItemDictionaries.ToList();
+                var materials = _context.MaterialMasters.ToList();
+                var materialDict = materials.ToDictionary(m => m.MaterialId, m => m);
+
+                int successInsertCount = 0;
+                int unmappedCount = 0;
+
+                // 3. 開始比對並回寫歷史資料
+                foreach (var row in rows)
+                {
+                    // 略過數量或單價有問題的爛資料
+                    if (row.Qty == null || row.Qty <= 0 || row.UnitPrice == null || row.UnitPrice < 0)
+                        continue;
+
+                    // 智慧對應標準工項
+                    var matchedDict = dictionaryList.FirstOrDefault(d => 
+                        (row.ItemName ?? "").Contains(d.Keyword, StringComparison.OrdinalIgnoreCase) || 
+                        (row.Spec ?? "").Contains(d.Keyword, StringComparison.OrdinalIgnoreCase));
+
+                    // 若找不到對應，標記為未對應並跳過 (UC-06 替代流程)
+                    if (matchedDict == null)
+                    {
+                        unmappedCount++;
+                        continue; 
+                    }
+
+                    if (!materialDict.TryGetValue(matchedDict.Material_Id, out var material))
+                        continue;
+
+                    // 檢查單位是否一致，不一致則不寫入，以免污染資料庫
+                    if (!IsSameUnit(row.Unit, material.BaseUnit))
+                        continue;
+
+                    // 建立新的歷史成交紀錄
+                    var newHistory = new HistoricalTransaction
+                    {
+                        Material_ID = material.MaterialId,
+                        Actual_Quantity = row.Qty.Value,
+                        Unit_Price = row.UnitPrice.Value,
+                        Transaction_Date = DateTime.UtcNow.Date, // 記錄成交日期
+                        IsDeleted = false,
+                        Is_Outlier = false,
+                        Project_Id = projectName // 記錄是哪個建案的價格
+                    };
+
+                    _context.HistoricalTransactions.Add(newHistory);
+                    successInsertCount++;
+                }
+
+                // 4. 正式寫入資料庫
+                _context.SaveChanges();
+
+                return Ok(new { 
+                    message = "回寫成功", 
+                    insertCount = successInsertCount, 
+                    unmappedCount = unmappedCount,
+                    totalCount = rows.Count
+                });
+            }
+            catch (Exception ex)
+            {
+                return BadRequest(new { message = "回寫失敗：" + ex.Message });
+            }
+        }
+
     }
+
+
+
 }

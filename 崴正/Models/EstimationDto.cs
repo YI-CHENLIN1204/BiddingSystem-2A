@@ -6,13 +6,13 @@ namespace 崴正.Models
     public class BidRequestDto
     {
         public int Project_Id { get; set; }
-        public List<BidItemDto> Items { get; set; }
+        public List<BidItemDto> Items { get; set; } = new();
     }
 
     public class BidItemDto
     {
         public int Material_Id { get; set; }
-        public string Floor_Zone { get; set; }      
+        public string Floor_Zone { get; set; } = string.Empty;     
         public decimal Input_Quantity { get; set; } 
     }
 
@@ -26,13 +26,13 @@ namespace 崴正.Models
     public class EstimationResultDto
     {
         public int Material_Id { get; set; }
-        public string Floor_Zone { get; set; }
+        public string Floor_Zone { get; set; } = string.Empty;
         public decimal Calculated_Z_Score { get; set; }
         public bool Is_Abnormal { get; set; }
         public decimal Predicted_Unit_Price { get; set; } 
         public decimal Reference_Total_Price { get; set; }
         public decimal Suggested_Quantity { get; set; }
         public decimal Floor_Area { get; set; }
-        public string Status_Message { get; set; }
+        public string Status_Message { get; set; } = string.Empty;
     }
 }
