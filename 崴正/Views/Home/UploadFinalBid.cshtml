@@ -52,16 +52,39 @@
                         <div class="stat-num text-dark" id="resTotal">0</div>
                     </div>
                 </div>
+
                 <div class="col-md-4">
                     <div class="stat-box" style="border-color: #321fdb; background: #f6faff;">
                         <div class="fw-bold" style="color: #321fdb;">成功寫入歷史庫</div>
                         <div class="stat-num" style="color: #321fdb;" id="resSuccess">0</div>
                     </div>
                 </div>
+
                 <div class="col-md-4">
                     <div class="stat-box" style="border-color: #ffc107; background: #fff3cd;">
                         <div class="text-warning fw-bold">字典未對應略過</div>
                         <div class="stat-num text-warning" id="resUnmapped">0</div>
+                    </div>
+                </div>
+
+                <div class="col-md-4">
+                    <div class="stat-box" style="border-color: #dc3545; background: #fff5f5;">
+                        <div class="fw-bold text-danger">資料不完整略過</div>
+                        <div class="stat-num text-danger" id="resInvalid">0</div>
+                    </div>
+                </div>
+
+                <div class="col-md-4">
+                    <div class="stat-box" style="border-color: #6f42c1; background: #f8f5ff;">
+                        <div class="fw-bold" style="color: #6f42c1;">材料主檔缺失</div>
+                        <div class="stat-num" style="color: #6f42c1;" id="resMissingMaterial">0</div>
+                    </div>
+                </div>
+
+                <div class="col-md-4">
+                    <div class="stat-box" style="border-color: #fd7e14; background: #fff7ed;">
+                        <div class="fw-bold" style="color: #fd7e14;">單位不符略過</div>
+                        <div class="stat-num" style="color: #fd7e14;" id="resUnitMismatch">0</div>
                     </div>
                 </div>
             </div>
@@ -103,9 +126,12 @@
                 if (!response.ok) { alert('回寫失敗：' + data.message); return; }
 
                 // 顯示結果
-                document.getElementById('resTotal').innerText = data.totalCount;
-                document.getElementById('resSuccess').innerText = data.insertCount;
-                document.getElementById('resUnmapped').innerText = data.unmappedCount;
+                document.getElementById('resTotal').innerText = data.totalCount ?? 0;
+                document.getElementById('resSuccess').innerText = data.insertCount ?? 0;
+                document.getElementById('resUnmapped').innerText = data.unmappedCount ?? 0;
+                document.getElementById('resInvalid').innerText = data.invalidDataCount ?? 0;
+                document.getElementById('resMissingMaterial').innerText = data.missingMaterialCount ?? 0;
+                document.getElementById('resUnitMismatch').innerText = data.unitMismatchCount ?? 0;
                 resultBox.style.display = 'block';
                 
                 excelFile.value = ''; // 清空檔案
@@ -118,3 +144,4 @@
         });
     </script>
 }
+

@@ -550,13 +550,18 @@ namespace 崴正.Controllers
 
                 int successInsertCount = 0;
                 int unmappedCount = 0;
+                int invalidDataCount = 0;
+                int missingMaterialCount = 0;
+                int unitMismatchCount = 0;
 
                 // 3. 開始比對並回寫歷史資料
                 foreach (var row in rows)
                 {
-                    // 略過數量或單價有問題的爛資料
                     if (row.Qty == null || row.Qty <= 0 || row.UnitPrice == null || row.UnitPrice < 0)
+                    {
+                        invalidDataCount++;
                         continue;
+                    }
 
                     // 智慧對應標準工項
                     var matchedDict = dictionaryList.FirstOrDefault(d => 
@@ -571,11 +576,17 @@ namespace 崴正.Controllers
                     }
 
                     if (!materialDict.TryGetValue(matchedDict.Material_Id, out var material))
+                    {
+                        missingMaterialCount++;
                         continue;
+                    }
 
                     // 檢查單位是否一致，不一致則不寫入，以免污染資料庫
                     if (!IsSameUnit(row.Unit, material.BaseUnit))
+                    {
+                        unitMismatchCount++;
                         continue;
+                    }
 
                     // 建立新的歷史成交紀錄
                     var newHistory = new HistoricalTransaction
@@ -596,10 +607,14 @@ namespace 崴正.Controllers
                 // 4. 正式寫入資料庫
                 _context.SaveChanges();
 
-                return Ok(new { 
-                    message = "回寫成功", 
-                    insertCount = successInsertCount, 
+                return Ok(new
+                {
+                    message = "回寫成功",
+                    insertCount = successInsertCount,
                     unmappedCount = unmappedCount,
+                    invalidDataCount = invalidDataCount,
+                    missingMaterialCount = missingMaterialCount,
+                    unitMismatchCount = unitMismatchCount,
                     totalCount = rows.Count
                 });
             }
