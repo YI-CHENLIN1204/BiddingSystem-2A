@@ -1,0 +1,17 @@
+using System;
+
+namespace 崴正.Models
+{
+    public class HistoricalTransaction
+    {
+        public int Transaction_ID { get; set; }
+
+        public int Material_ID { get; set; }
+        public decimal Actual_Quantity { get; set; }
+        public decimal Unit_Price { get; set; }
+        public DateTime Transaction_Date { get; set; }
+        public bool IsDeleted { get; set; }
+        public string? Project_Id { get; set; }
+        public bool Is_Outlier { get; set; }
+    }
+}

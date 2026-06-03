@@ -92,6 +92,14 @@
                 💡 提示：被略過的項目代表目前「標準工項字典」尚未收錄該建材關鍵字。
             </p>
         </div>
+        <div id="unmappedPanel" class="mt-4" style="display:none;">
+            <h4 class="mb-3">未對應工項處理</h4>
+            <p class="text-muted">
+                以下工項尚未被標準工項字典辨識。請選擇要對應的標準工項，加入字典後，下次匯入即可自動對應。
+            </p>
+
+            <div id="unmappedList"></div>
+        </div>
     </div>
 </div>
 
@@ -121,7 +129,20 @@
                     body: formData
                 });
 
-                const data = await response.json();
+                const text = await response.text();
+
+                let data;
+                try {
+                    data = text ? JSON.parse(text) : {};
+                } catch (e) {
+                    alert('系統回傳格式錯誤，可能是權限不足、路徑錯誤或後端錯誤：' + text.substring(0, 200));
+                    return;
+                }
+
+                if (!response.ok) {
+                    alert(data.message ?? '回寫失敗');
+                    return;
+                }
 
                 if (!response.ok) { alert('回寫失敗：' + data.message); return; }
 
@@ -132,6 +153,7 @@
                 document.getElementById('resInvalid').innerText = data.invalidDataCount ?? 0;
                 document.getElementById('resMissingMaterial').innerText = data.missingMaterialCount ?? 0;
                 document.getElementById('resUnitMismatch').innerText = data.unitMismatchCount ?? 0;
+                loadUnmappedItems();
                 resultBox.style.display = 'block';
                 
                 excelFile.value = ''; // 清空檔案
@@ -142,6 +164,101 @@
                 loadingText.style.display = 'none';
             }
         });
+        
+        async function loadUnmappedItems() {
+            const panel = document.getElementById('unmappedPanel');
+            const list = document.getElementById('unmappedList');
+
+            const response = await fetch('/api/Estimation/unmapped-items');
+            const text = await response.text();
+
+            let data;
+            try {
+                data = text ? JSON.parse(text) : {};
+            } catch (e) {
+                alert('未對應清單回傳格式錯誤：' + text.substring(0, 100));
+                return;
+            }
+
+            if (!response.ok) {
+                alert(data.message ?? '讀取未對應清單失敗');
+                return;
+            }
+
+            if (!data.items || data.items.length === 0) {
+                panel.style.display = 'none';
+                return;
+            }
+
+            panel.style.display = 'block';
+
+            let html = '';
+
+            data.items.forEach(item => {
+                let options = '<option value="">請選擇標準工項</option>';
+
+                data.materials.forEach(m => {
+                    options += `<option value="${m.materialId}">${m.materialName}</option>`;
+                });
+
+                html += `
+                    <div class="card mb-3">
+                        <div class="card-body">
+                            <h5>${item.itemName}</h5>
+                            <div class="text-muted small mb-2">
+                                規格：${item.spec ?? '無'}｜
+                                單位：${item.unit ?? '無'}｜
+                                數量：${item.qty ?? '無'}｜
+                                單價：${item.unitPrice ?? '無'}
+                            </div>
+
+                            <div class="row g-2">
+                                <div class="col-md-8">
+                                    <select class="form-select" id="material_${item.unmappedId}">
+                                        ${options}
+                                    </select>
+                                </div>
+                                <div class="col-md-4">
+                                    <button class="btn btn-outline-primary w-100"
+                                            onclick="addDictionary(${item.unmappedId})">
+                                        加入字典
+                                    </button>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                `;
+            });
+
+            list.innerHTML = html;
+        }
+
+        async function addDictionary(unmappedId) {
+            const select = document.getElementById(`material_${unmappedId}`);
+            const materialId = select.value;
+
+            if (!materialId) {
+                alert('請先選擇標準工項');
+                return;
+            }
+
+            const formData = new FormData();
+            formData.append('unmappedId', unmappedId);
+            formData.append('materialId', materialId);
+
+            const response = await fetch('/api/Estimation/add-dictionary', {
+                method: 'POST',
+                body: formData
+            });
+
+            const data = await response.json();
+
+            if (response.ok) {
+                alert(data.message);
+                loadUnmappedItems();
+            } else {
+                alert(data.message ?? '加入字典失敗');
+            }
+        }
     </script>
 }
-

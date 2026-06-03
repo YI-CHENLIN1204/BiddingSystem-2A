@@ -1,0 +1,454 @@
+@{
+    ViewData["Title"] = "工程估算";
+}
+
+<style>
+    :root {
+        --wz-primary: #321fdb;
+        --wz-primary-soft: #ebe8ff;
+        --wz-green: #2eb85c;
+        --wz-dark-table: #6f7a7d;
+        --wz-bg: #f6faff;
+        --wz-card: #ffffff;
+        --wz-border: #d8dbe0;
+        --wz-text: #141d23;
+        --wz-muted: #6c757d;
+    }
+
+    body {
+        background: var(--wz-bg);
+        font-family: "Segoe UI", Roboto, Arial, "Microsoft JhengHei", sans-serif;
+        color: var(--wz-text);
+    }
+
+    .estimate-page {
+        max-width: 96vw;
+        margin: 0 auto;
+        padding-bottom: 40px;
+    }
+
+    .page-title {
+        font-size: 1.55rem;
+        font-weight: 800;
+        margin-bottom: 6px;
+    }
+
+    .page-desc {
+        color: var(--wz-muted);
+        font-size: 14px;
+        margin-bottom: 18px;
+    }
+
+    .filter-card {
+        background: #fff;
+        border-radius: 8px;
+        padding: 16px 18px;
+        box-shadow: 0 6px 20px rgba(20, 29, 35, 0.06);
+        margin-bottom: 18px;
+    }
+
+    .filter-header {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        gap: 12px;
+        cursor: pointer;
+    }
+
+    .filter-title {
+        font-size: 1rem;
+        font-weight: 800;
+        margin: 0;
+    }
+
+    .filter-toggle-btn {
+        border: 1px solid #cfc7ff;
+        background: var(--wz-primary-soft);
+        color: var(--wz-primary);
+        border-radius: 6px;
+        padding: 6px 12px;
+        font-weight: 700;
+        font-size: 14px;
+    }
+
+    .filter-body {
+        margin-top: 16px;
+        display: none;
+    }
+
+        .filter-body.show {
+            display: block;
+        }
+
+    .form-label {
+        font-weight: 700;
+        font-size: 13px;
+        color: #333;
+    }
+
+    .form-control,
+    .form-select {
+        border-radius: 6px;
+        border: 1px solid var(--wz-border);
+        font-size: 14px;
+        height: 38px;
+    }
+
+        .form-control:focus,
+        .form-select:focus {
+            border-color: var(--wz-primary);
+            box-shadow: 0 0 0 .15rem rgba(50, 31, 219, .12);
+        }
+
+    .filter-actions {
+        display: flex;
+        justify-content: flex-end;
+        gap: 10px;
+        margin-top: 16px;
+    }
+
+    .btn-wz-primary {
+        border: none;
+        background: var(--wz-primary);
+        color: white;
+        border-radius: 6px;
+        padding: 7px 16px;
+        font-weight: 700;
+    }
+
+        .btn-wz-primary:hover {
+            color: white;
+            filter: brightness(.96);
+        }
+
+    .btn-wz-outline {
+        border: 1px solid #bcb3ff;
+        background: white;
+        color: var(--wz-primary);
+        border-radius: 6px;
+        padding: 7px 16px;
+        font-weight: 700;
+    }
+
+    .estimate-main-card {
+        background: #fff;
+        border-radius: 8px;
+        box-shadow: 0 6px 20px rgba(20, 29, 35, 0.06);
+        overflow: hidden;
+    }
+
+    .calc-bar {
+        margin: 0;
+        padding: 14px 18px;
+        border: 2px solid #c9c2ff;
+        background: #f4f1ff;
+        border-radius: 8px;
+        display: grid;
+        grid-template-columns: 150px 180px 260px 70px 1fr auto auto;
+        gap: 10px;
+        align-items: center;
+    }
+
+    .calc-title {
+        color: var(--wz-primary);
+        font-weight: 900;
+        font-size: 1.25rem;
+        white-space: nowrap;
+    }
+
+    .calc-label-box {
+        background: white;
+        border: 1px solid #d8dbe0;
+        border-radius: 6px;
+        padding: 8px 12px;
+        font-weight: 700;
+        text-align: center;
+        white-space: nowrap;
+    }
+
+    .calc-input-group {
+        display: flex;
+        align-items: center;
+    }
+
+        .calc-input-group input {
+            border-radius: 6px 0 0 6px;
+            border: 2px solid #9f92ff;
+            height: 40px;
+            font-size: 15px;
+        }
+
+    .unit-box {
+        height: 40px;
+        min-width: 58px;
+        border: 1px solid #d8dbe0;
+        border-left: none;
+        background: white;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        border-radius: 0 6px 6px 0;
+        font-weight: 700;
+    }
+
+    .calc-hint {
+        color: #a0a0a0;
+        font-size: 14px;
+        white-space: nowrap;
+    }
+
+    .btn-export {
+        border: 1px solid #8ed3ac;
+        color: var(--wz-green);
+        background: white;
+        border-radius: 6px;
+        padding: 7px 14px;
+        font-weight: 700;
+        white-space: nowrap;
+    }
+
+    .estimate-table-wrapper {
+        margin-top: 22px;
+        overflow-x: auto;
+    }
+
+    .estimate-table {
+        width: 100%;
+        min-width: 1180px;
+        border-collapse: collapse;
+        font-size: 14px;
+        background: white;
+    }
+
+        .estimate-table thead th {
+            background: var(--wz-dark-table);
+            color: white;
+            padding: 12px 8px;
+            text-align: center;
+            font-weight: 800;
+            border-right: 1px solid rgba(255,255,255,.25);
+        }
+
+        .estimate-table tbody td {
+            padding: 10px 8px;
+            border: 1px solid #e5e7eb;
+            vertical-align: middle;
+        }
+
+    .category-row td {
+        background: #fff;
+        font-weight: 800;
+        color: #555;
+    }
+
+    .sub-row td:first-child {
+        padding-left: 32px;
+        color: #666;
+    }
+
+    .number-cell {
+        text-align: right;
+        font-variant-numeric: tabular-nums;
+    }
+
+    .center-cell {
+        text-align: center;
+    }
+
+    .estimate-result {
+        color: #2eb85c;
+        font-weight: 800;
+    }
+
+    .chart-icon {
+        color: var(--wz-primary);
+        font-weight: 900;
+        font-size: 18px;
+    }
+
+    .empty-note {
+        color: var(--wz-muted);
+        font-size: 13px;
+        margin-top: 8px;
+    }
+
+    @@media (max-width: 1200px) {
+        .calc-bar {
+            grid-template-columns: 1fr;
+        }
+
+        .calc-title,
+        .calc-hint {
+            white-space: normal;
+        }
+
+        .filter-actions {
+            justify-content: flex-start;
+        }
+    }
+</style>
+
+<div class="estimate-page mt-4">
+    <h2 class="page-title">工程估算</h2>
+    <p class="page-desc">
+        依工程類型、結構、年度、縣市與樓地板面積進行篩選，並於下方顯示工程量試算表。
+    </p>
+
+    <!-- 篩選條件 -->
+    <div class="filter-card">
+        <div class="filter-header" onclick="toggleFilterPanel()">
+            <div>
+                <h5 class="filter-title">篩選條件</h5>
+                <div class="text-muted" style="font-size: 13px;">選擇估算資料來源條件，作為下方試算依據。</div>
+            </div>
+
+            <button type="button" class="filter-toggle-btn" id="filterToggleBtn">展開篩選</button>
+        </div>
+
+        <div class="filter-body" id="filterBody">
+            <div class="row g-3">
+                <div class="col-md-2">
+                    <label class="form-label">建案類型</label>
+                    <select class="form-select" id="buildingType">
+                        <option value="">全部</option>
+                        <option>廠房</option>
+                        <option>住宅</option>
+                    </select>
+                </div>
+
+                <div class="col-md-2">
+                    <label class="form-label">結構類型</label>
+                    <select class="form-select" id="structureType">
+                        <option value="">全部</option>
+                        <option>SC</option>
+                        <option>RC</option>
+                    </select>
+                </div>
+
+                <div class="col-md-2">
+                    <label class="form-label">估算年度起</label>
+                    <select class="form-select" id="yearStart">
+                        <option value="">不限</option>
+                        <option>2021</option>
+                        <option>2022</option>
+                        <option>2023</option>
+                        <option>2024</option>
+                        <option>2025</option>
+                    </select>
+                </div>
+
+                <div class="col-md-2">
+                    <label class="form-label">估算年度迄</label>
+                    <select class="form-select" id="yearEnd">
+                        <option value="">不限</option>
+                        <option>2021</option>
+                        <option>2022</option>
+                        <option>2023</option>
+                        <option>2024</option>
+                        <option>2025</option>
+                    </select>
+                </div>
+
+                <div class="col-md-2">
+                    <label class="form-label">縣市</label>
+                    <select class="form-select" id="city">
+                        <option value="">全部</option>
+                        <option>台北市</option>
+                        <option>新北市</option>
+                        <option>桃園市</option>
+                        <option>台中市</option>
+                        <option>台南市</option>
+                        <option>高雄市</option>
+                        <option>雲林縣</option>
+                    </select>
+                </div>
+
+                <div class="col-md-2">
+                    <label class="form-label">總樓地板面積</label>
+                    <input type="number" class="form-control" id="filterFloorArea" placeholder="例如 12000" />
+                </div>
+            </div>
+
+            <div class="filter-actions">
+                <button type="button" class="btn-wz-outline" onclick="clearFilters()">清除</button>
+                <button type="button" class="btn-wz-primary" onclick="queryEstimate()">查詢</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- 工程量試算主頁面 -->
+    <div class="estimate-main-card">
+        <div class="calc-bar">
+            <div class="calc-title">工程量試算</div>
+
+            <div class="calc-label-box">預估總樓地板面積</div>
+
+            <div class="calc-input-group">
+                <input type="number" class="form-control" id="mainFloorArea" placeholder="請輸入面積" />
+                <div class="unit-box">M²</div>
+            </div>
+
+            <div></div>
+
+            <div class="calc-hint">
+                輸入面積後，表格將自動試算預估數量
+            </div>
+
+            <button type="button" class="btn-wz-outline" onclick="clearMainArea()">清除面積</button>
+            <button type="button" class="btn-export">匯出報表</button>
+        </div>
+
+        <div class="estimate-table-wrapper">
+            <table class="estimate-table">
+                <thead>
+                    <tr>
+                        <th style="width: 24%;">項目名稱</th>
+                        <th style="width: 6%;"></th>
+                        <th style="width: 10%;">平均值</th>
+                        <th style="width: 10%;">中位數</th>
+                        <th style="width: 13%;">預估數量<br><small>中位數 × 面積</small></th>
+                        <th style="width: 13%;">建議範圍<br><small>高標公差</small></th>
+                        <th style="width: 8%;">單位</th>
+                        <th style="width: 8%;">最大值</th>
+                        <th style="width: 8%;">最小值</th>
+                        <th style="width: 6%;">樣本</th>
+                    </tr>
+                </thead>
+            </table>
+        </div>
+    </div>
+</div>
+
+@section Scripts {
+    <script>
+        function toggleFilterPanel() {
+            const body = document.getElementById('filterBody');
+            const btn = document.getElementById('filterToggleBtn');
+
+            body.classList.toggle('show');
+
+            if (body.classList.contains('show')) {
+                btn.innerText = '收合篩選';
+            } else {
+                btn.innerText = '展開篩選';
+            }
+        }
+
+        function clearFilters() {
+            document.getElementById('buildingType').value = '';
+            document.getElementById('structureType').value = '';
+            document.getElementById('yearStart').value = '';
+            document.getElementById('yearEnd').value = '';
+            document.getElementById('city').value = '';
+            document.getElementById('filterFloorArea').value = '';
+        }
+
+        function queryEstimate() {
+            alert('目前是空殼 UI，查詢功能尚未串接。');
+        }
+
+        function clearMainArea() {
+            document.getElementById('mainFloorArea').value = '';
+        }
+    </script>
+}

@@ -2,64 +2,213 @@
     ViewData["Title"] = "標單異常偵測系統";
 }
 
+
+
 <style>
+    body {
+        background-color: #eef3f7;
+    }
+
     .anomaly-page {
-        max-width: 98vw;
+        max-width: 1100px;
+        margin: 0 auto;
+        padding: 8px 16px 40px;
+    }
+
+    .page-header {
+        margin-bottom: 22px;
+    }
+
+    .page-title {
+        font-size: 34px;
+        font-weight: 800;
+        color: #1f2d3d;
+        margin-bottom: 8px;
+        display: flex;
+        align-items: center;
+        gap: 10px;
+    }
+
+    .page-title-icon {
+        color: #8e7dff;
+        font-size: 26px;
+    }
+
+    .page-subtitle {
+        color: #6c7a89;
+        font-size: 15px;
+        line-height: 1.8;
+        margin-bottom: 0;
     }
 
     .upload-card {
-        max-width: 100%;
+        background: #ffffff;
+        border: 1px solid #e5ebf0;
+        border-radius: 16px;
+        box-shadow: 0 8px 24px rgba(31, 45, 61, 0.08);
+        padding: 28px 30px;
+        margin-bottom: 24px;
+    }
+
+    .upload-card-header {
+        display: flex;
+        align-items: center;
+        gap: 14px;
+        margin-bottom: 18px;
+    }
+
+    .upload-icon {
+        width: 44px;
+        height: 44px;
+        border-radius: 12px;
+        background: #f1efff;
+        color: #4f46e5;
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        font-size: 22px;
+    }
+
+    .upload-title {
+        font-size: 22px;
+        font-weight: 800;
+        color: #1f2d3d;
+        margin-bottom: 4px;
+    }
+
+    .upload-desc {
+        color: #6c7a89;
+        font-size: 14px;
+        margin-bottom: 0;
+    }
+
+    .upload-row {
+        display: flex;
+        align-items: stretch;
+        gap: 12px;
+    }
+
+    .upload-row .form-control {
+        height: 48px;
+        border-radius: 10px;
+        border: 1px solid #d7dee7;
+    }
+
+    .btn-main-action {
+        min-width: 130px;
+        height: 48px;
+        border-radius: 10px;
+        border: 0;
+        font-weight: 700;
+        background: linear-gradient(135deg, #4f46e5, #3f2df3);
+        box-shadow: 0 6px 16px rgba(63, 45, 243, 0.25);
+    }
+
+    .btn-main-action:hover {
+        background: linear-gradient(135deg, #4338ca, #3523d8);
+    }
+
+    #loadingText {
+        border: 0;
+        border-radius: 12px;
+        background: #ffffff;
+        box-shadow: 0 8px 24px rgba(31, 45, 61, 0.08);
+        color: #495057;
+    }
+
+    .summary-box {
+        line-height: 1.8;
+        border: 0;
+        border-radius: 16px;
+        background: #dff6fb;
+        padding: 20px;
+        box-shadow: 0 8px 24px rgba(31, 45, 61, 0.08);
+        margin-bottom: 20px;
+    }
+
+    .summary-stat-card {
+        background: #ffffff;
+        border-radius: 14px;
+        padding: 14px 16px;
+        border: 1px solid #dce5ec;
+        box-shadow: 0 4px 12px rgba(31, 45, 61, 0.04);
+    }
+
+    .summary-stat-card .stat-label {
+        color: #6c757d;
+        font-size: 13px;
+        margin-bottom: 4px;
+    }
+
+    .summary-stat-card .stat-value {
+        font-size: 28px;
+        font-weight: 800;
+        color: #212529;
+    }
+
+    .summary-stat-card.normal .stat-value {
+        color: #198754;
+    }
+
+    .summary-stat-card.abnormal .stat-value {
+        color: #dc3545;
+    }
+
+    .summary-stat-card.pending .stat-value {
+        color: #b58100;
     }
 
     .result-table-wrapper {
         width: 100%;
         max-height: 650px;
+        overflow-x: auto;
         overflow-y: auto;
-        overflow-x: hidden;
-        border: 1px solid #dee2e6;
-        border-radius: 8px;
+        border: 1px solid #dce5ec;
+        border-radius: 14px;
         background: #fff;
+        box-shadow: 0 8px 24px rgba(31, 45, 61, 0.08);
     }
 
     #resultTable {
-        width: 100%;
-        table-layout: fixed;
+        min-width: 1900px;
+        table-layout: auto;
         margin-bottom: 0;
         font-size: 12px;
     }
 
-        #resultTable th,
-        #resultTable td {
-            vertical-align: middle;
-            padding: 6px 5px;
-        }
+    #resultTable th,
+    #resultTable td {
+        vertical-align: middle;
+        padding: 7px 6px;
+    }
 
-        #resultTable th {
-            text-align: center;
-            white-space: normal;
-            line-height: 1.3;
-        }
+    #resultTable th {
+        text-align: center;
+        white-space: nowrap;
+        line-height: 1.3;
+    }
 
-        #resultTable thead th {
-            position: sticky;
-            top: 0;
-            z-index: 10;
-            background-color: #212529;
-            color: #fff;
-        }
+    #resultTable thead th {
+        position: sticky;
+        top: 0;
+        z-index: 10;
+        background-color: #1f2d3d;
+        color: #fff;
+        border-color: #405060;
+    }
 
-.col-status { width: 4%; }
-    .col-sheet { width: 8%; }
-    .col-row { width: 4%; }
-    .col-code { width: 6%; }
-    .col-category { width: 8%; }
-    .col-name { width: 13%; }
-    .col-spec { width: 8%; }
-    .col-unit { width: 4%; }
-    .col-number { width: 6%; }
-    .col-z { width: 5%; }
-    .col-reason { width: 12%; }
-    .col-action { width: 5%; }
+    .col-status { min-width: 70px; }
+    .col-sheet { min-width: 120px; }
+    .col-row { min-width: 60px; }
+    .col-code { min-width: 80px; }
+    .col-category { min-width: 120px; }
+    .col-name { min-width: 180px; }
+    .col-spec { min-width: 180px; }
+    .col-unit { min-width: 70px; }
+    .col-number { min-width: 110px; }
+    .col-z { min-width: 80px; }
+    .col-reason { min-width: 280px; }
+    .col-action { min-width: 80px; }
 
     .text-wrap-cell {
         white-space: normal !important;
@@ -69,17 +218,11 @@
 
     .text-nowrap-cell {
         white-space: nowrap;
-        overflow: hidden;
-        text-overflow: ellipsis; /* 加上這兩行，文字太長會自動變成 ...，完美解決重疊問題 */
-    }
-
-    .summary-box {
-        line-height: 1.8;
     }
 
     .status-badge {
         display: inline-block;
-        padding: 3px 6px;
+        padding: 3px 7px;
         border-radius: 999px;
         font-size: 12px;
         font-weight: 700;
@@ -90,49 +233,172 @@
         color: #0f5132;
         background-color: #d1e7dd;
     }
+
     .status-abnormal {
         color: #842029;
         background-color: #f8d7da;
     }
 
-    @@media (max-width: 1200px) {
-        #resultTable { font-size: 11px; }
-        #resultTable th, #resultTable td { padding: 5px 4px; }
-        .status-badge { font-size: 11px; padding: 2px 5px; }
+    .status-pending {
+        color: #664d03;
+        background-color: #fff3cd;
     }
 
-    /* 自訂高質感推翻對話框遮罩預留 */
     .wz-modal-overlay {
-        position: fixed; top: 0; left: 0; width: 100%; height: 100%;
-        background: rgba(20, 29, 35, 0.6); z-index: 2000;
-        display: flex; align-items: center; justify-content: center;
+        position: fixed;
+        inset: 0;
+        background: rgba(20, 29, 35, 0.6);
+        z-index: 2000;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+    }
+
+    .wz-modal-card {
+        width: min(520px, 92vw);
+        background: #ffffff;
+        border-radius: 16px;
+        box-shadow: 0 20px 60px rgba(0, 0, 0, 0.25);
+        overflow: hidden;
+        animation: wzModalIn 0.18s ease-out;
+    }
+
+    .wz-modal-header {
+        padding: 18px 22px;
+        border-bottom: 1px solid #e9ecef;
+        display: flex;
+        align-items: center;
+        gap: 10px;
+    }
+
+    .wz-modal-icon {
+        width: 32px;
+        height: 32px;
+        border-radius: 50%;
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        font-weight: 700;
+    }
+
+    .wz-modal-icon.success {
+        background: #d1e7dd;
+        color: #0f5132;
+    }
+
+    .wz-modal-icon.warning {
+        background: #fff3cd;
+        color: #664d03;
+    }
+
+    .wz-modal-icon.error {
+        background: #f8d7da;
+        color: #842029;
+    }
+
+    .wz-modal-title {
+        font-size: 18px;
+        font-weight: 700;
+        margin: 0;
+        color: #1f2d3d;
+    }
+
+    .wz-modal-body {
+        padding: 20px 22px;
+        color: #495057;
+        line-height: 1.7;
+        white-space: pre-line;
+    }
+
+    .wz-modal-footer {
+        padding: 14px 22px 20px;
+        display: flex;
+        justify-content: flex-end;
+        gap: 10px;
+    }
+
+    .wz-modal-btn {
+        border: 0;
+        border-radius: 8px;
+        padding: 8px 18px;
+        font-weight: 600;
+        background: #3f2df3;
+        color: white;
+    }
+
+    .wz-modal-btn:hover {
+        background: #3523d8;
+    }
+
+    @@keyframes wzModalIn {
+        from {
+            opacity: 0;
+            transform: translateY(8px) scale(0.98);
+        }
+        to {
+            opacity: 1;
+            transform: translateY(0) scale(1);
+        }
+    }
+
+    @@media (max-width: 1200px) {
+        .anomaly-page {
+            max-width: 98vw;
+        }
+
+        #resultTable {
+            font-size: 11px;
+        }
+
+        #resultTable th,
+        #resultTable td {
+            padding: 5px 4px;
+        }
+
+        .status-badge {
+            font-size: 11px;
+            padding: 2px 5px;
+        }
     }
 </style>
 
-<div class="container-fluid mt-4 anomaly-page">
-    <h2>標單異常偵測</h2>
+<div class="anomaly-page">
+    <div class="page-header">
+        <h1 class="page-title">
+            <span class="page-title-icon">✿</span>
+            標單異常偵測
+        </h1>
+        <p class="page-subtitle">
+            上傳 Excel 標單後，系統會比對歷史成交單價，找出可能偏離行情的價格項目；本次檢測不會寫入歷史資料庫。
+        </p>
+    </div>
 
-    <p class="text-muted">
-        上傳 Excel 標單後，系統會直接檢測本次 Excel 內的資料，不會顯示歷史資料，也不會把本次標單存進資料庫。
-    </p>
-
-    <div class="card mb-4 upload-card">
-        <div class="card-body">
-            <label for="excelFile" class="form-label fw-bold">選擇要檢測的 Excel 檔案</label>
-
-            <div class="d-flex gap-2 align-items-center flex-wrap">
-                <input type="file" id="excelFile" class="form-control" accept=".xlsx" style="max-width: 520px;" />
-                <button id="btnAnalyze" class="btn btn-primary">異常偵測</button>
-                <span id="loadingText" class="text-muted" style="display:none;">正在讀取與分析 Excel...</span>
+    <div class="upload-card">
+        <div class="upload-card-header">
+            <div class="upload-icon">📄</div>
+            <div>
+                <div class="upload-title">選擇要檢測的 Excel 標單</div>
+                <p class="upload-desc">支援 .xlsx / .xls 格式，系統將自動解析工項、單位、數量與單價。</p>
             </div>
+        </div>
+
+        <div class="upload-row">
+            <input type="file" id="excelFile" class="form-control" accept=".xlsx,.xls" />
+            <button id="btnAnalyze" class="btn btn-primary btn-main-action" type="button">
+                異常偵測
+            </button>
         </div>
     </div>
 
-    <div id="summaryBox" class="alert alert-info summary-box" style="display:none;"></div>
+    <div id="loadingText" class="alert mt-3" style="display:none;">
+        ⏳ 系統正在分析標單，請稍候...
+    </div>
+
+    <div id="summaryBox" class="summary-box" style="display:none;"></div>
 
     <div id="tableWrapper" class="result-table-wrapper" style="display:none;">
         <table class="table table-bordered table-hover align-middle" id="resultTable">
-            <thead class="table-dark text-center">
+            <thead>
                 <tr>
                     <th class="col-status">狀態</th>
                     <th class="col-sheet">工作表</th>
@@ -143,18 +409,20 @@
                     <th class="col-spec">規格</th>
                     <th class="col-unit">單位</th>
                     <th class="col-number">數量</th>
-                    <th class="col-number">單價</th>
-                    <th class="col-number">複價</th>
-                    <th class="col-z">數量 Z</th>
+                    <th class="col-number">標單單價</th>
+                    <th class="col-number">標單複價</th>
+                    <th class="col-number">建議單價</th>
+                    <th class="col-number">建議複價</th>
                     <th class="col-z">單價 Z</th>
                     <th class="col-reason">異常原因</th>
-                    <th class="col-action">操作</th> 
+                    <th class="col-action">操作</th>
                 </tr>
             </thead>
             <tbody id="resultBody"></tbody>
         </table>
     </div>
 </div>
+
 
 @section Scripts {
     <script>
@@ -165,16 +433,38 @@
         const tableWrapper = document.getElementById('tableWrapper');
         const resultBody = document.getElementById('resultBody');
 
+        console.log({
+        btnAnalyze,
+        excelFile,
+        loadingText,
+        summaryBox,
+        tableWrapper,
+        resultBody
+    });
         // ==========================================
         // 1. 執行 Excel 分析
         // ==========================================
         btnAnalyze.addEventListener('click', async function () {
             if (!excelFile.files || excelFile.files.length === 0) {
-                alert('請先選擇 Excel 檔案');
+                showCardMessage(
+                    '請先選擇 Excel 檔案',
+                    '請先選擇要檢測的 Excel 標單檔案後，再執行異常偵測。',
+                    'warning'
+                );
                 return;
             }
 
             const file = excelFile.files[0];
+            const fileName = file.name.toLowerCase();
+
+            if (!fileName.endsWith('.xlsx') && !fileName.endsWith('.xls')) {
+                showCardMessage(
+                    '檔案格式錯誤',
+                    '請選擇 .xlsx 或 .xls 格式的 Excel 標單檔案。',
+                    'warning'
+                );
+                return;
+            }
             const formData = new FormData();
             formData.append('excelFile', file);
 
@@ -191,33 +481,123 @@
                 });
 
                 const data = await response.json();
-
+                console.log(data.results[0]);
                 if (!response.ok) {
-                    alert(data.message || 'Excel 分析失敗');
+                    showCardMessage(
+                        'Excel 分析失敗',
+                        data.message || '系統無法解析此 Excel 檔案，請確認格式是否正確。',
+                        'error'
+                    );
                     return;
                 }
 
                 summaryBox.style.display = 'block';
+                const pendingCount = data.results.filter(x =>
+                    x.statusMessage &&
+                    (
+                        x.statusMessage.includes('資料不足') ||
+                        x.statusMessage.includes('待對應') ||
+                        x.statusMessage.includes('字典無法辨識') ||
+                        x.statusMessage.includes('資料不完整') ||
+                        x.statusMessage.includes('單位不符')
+                    )
+                ).length;
+
+                const totalShownCount = data.results.length;
+                const abnormalCount = data.abnormalCount;
+                const normalCount = totalShownCount - abnormalCount - pendingCount;
+
                 summaryBox.innerHTML = `
-                    檔案：<strong>${escapeHtml(file.name)}</strong><br>
-                    共讀取 <strong>${data.totalCount}</strong> 筆資料，
-                    發現 <strong class="text-danger">${data.abnormalCount}</strong> 筆異常資料。<br>
-                    <span class="text-muted">排序方式：異常項目優先，並依最大 Z 分數由大到小排列。</span>
+                    <div class="summary-title mb-3">
+                        <div class="fw-bold fs-5">檢測結果摘要</div>
+                        <div class="text-muted small">檔案：${escapeHtml(file.name)}</div>
+                    </div>
+
+                    <div class="row g-3">
+                        <div class="col-md-3">
+                            <div class="summary-stat-card">
+                                <div class="stat-label">共顯示資料</div>
+                                <div class="stat-value">${totalShownCount}</div>
+                            </div>
+                        </div>
+                        <div class="col-md-3">
+                            <div class="summary-stat-card normal">
+                                <div class="stat-label">正常</div>
+                                <div class="stat-value">${normalCount}</div>
+                            </div>
+                        </div>
+                        <div class="col-md-3">
+                            <div class="summary-stat-card abnormal">
+                                <div class="stat-label">異常</div>
+                                <div class="stat-value">${abnormalCount}</div>
+                            </div>
+                        </div>
+                        <div class="col-md-3">
+                            <div class="summary-stat-card pending">
+                                <div class="stat-label">待審</div>
+                                <div class="stat-value">${pendingCount}</div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="text-muted small mt-3">
+                        排序方式：異常項目優先，其次待審項目，最後依最大 Z 分數由大到小排列。
+                    </div>
                 `;
 
                 const sortedResults = data.results.slice().sort((a, b) => {
-                    if (a.isAbnormal !== b.isAbnormal) {
-                        return a.isAbnormal ? -1 : 1;
+                    const aPending =
+                        a.statusMessage &&
+                        (
+                            a.statusMessage.includes('資料不足') ||
+                            a.statusMessage.includes('待對應') ||
+                            a.statusMessage.includes('字典無法辨識')
+                        );
+
+                    const bPending =
+                        b.statusMessage &&
+                        (
+                            b.statusMessage.includes('資料不足') ||
+                            b.statusMessage.includes('待對應') ||
+                            b.statusMessage.includes('字典無法辨識')
+                        );
+
+                    const aPriority = a.isAbnormal ? 1 : (aPending ? 2 : 3);
+                    const bPriority = b.isAbnormal ? 1 : (bPending ? 2 : 3);
+
+                    if (aPriority !== bPriority) {
+                        return aPriority - bPriority;
                     }
+
                     const aMaxZ = getMaxZScore(a);
                     const bMaxZ = getMaxZScore(b);
                     return bMaxZ - aMaxZ;
                 });
 
                 sortedResults.forEach(item => {
-                    const rowClass = item.isAbnormal ? 'table-danger' : '';
-                    const statusText = item.isAbnormal ? '異常' : '正常';
-                    const statusBadgeClass = item.isAbnormal ? 'status-abnormal' : 'status-normal';
+                const isPending =
+                    item.statusMessage &&
+                    (
+                        item.statusMessage.includes('資料不足') ||
+                        item.statusMessage.includes('待對應') ||
+                        item.statusMessage.includes('字典無法辨識') ||
+                        item.statusMessage.includes('資料不完整') ||
+                        item.statusMessage.includes('單位不符')
+                    );
+
+                let rowClass = '';
+                let statusText = '正常';
+                let statusBadgeClass = 'status-normal';
+
+                if (isPending) {
+                    rowClass = 'table-warning';
+                    statusText = '待審';
+                    statusBadgeClass = 'status-pending';
+                } else if (item.isAbnormal) {
+                    rowClass = 'table-danger';
+                    statusText = '異常';
+                    statusBadgeClass = 'status-abnormal';
+                }
 
                     const categoryText = [item.category1, item.category2, item.category3]
                         .filter(x => x && x.trim() !== '')
@@ -241,7 +621,8 @@
                         <td class="text-end text-nowrap-cell">${formatNumber(item.qty)}</td>
                         <td class="text-end text-nowrap-cell">${formatNumber(item.unitPrice)}</td>
                         <td class="text-end text-nowrap-cell">${formatNumber(item.amount)}</td>
-                        <td class="text-end text-nowrap-cell">${formatNumber(item.qtyZScore)}</td>
+                        <td class="text-end text-nowrap-cell">${formatNumber(item.suggestedUnitPrice)}</td>
+                        <td class="text-end text-nowrap-cell">${formatNumber(item.suggestedAmount)}</td>
                         <td class="text-end text-nowrap-cell">${formatNumber(item.unitPriceZScore)}</td>
                         <td class="text-wrap-cell">${escapeHtml(item.statusMessage)}</td>
                         <td class="text-center">
@@ -264,7 +645,11 @@
                 tableWrapper.style.display = 'block';
             }
             catch (error) {
-                alert('連線或分析失敗：' + error);
+                showCardMessage(
+                    '連線或分析失敗',
+                    String(error),
+                    'error'
+                );
             }
             finally {
                 loadingText.style.display = 'none';
@@ -272,65 +657,181 @@
             }
         });
 
-        // ==========================================
-        // 2. 監聽推翻按鈕點擊事件 (UC-04)
-        // ==========================================
-        resultBody.addEventListener('click', function (e) {
-            if (e.target.classList.contains('btn-override-action')) {
-                const btn = e.target;
-                const fileName = btn.getAttribute('data-file');
-                const sheetName = btn.getAttribute('data-sheet');
-                const rowNumber = parseInt(btn.getAttribute('data-row'));
-                const itemName = btn.getAttribute('data-name');
-                const originalMsg = btn.getAttribute('data-msg');
 
-                // 彈出防呆二次確認框並強制要求輸入理由
-                const reason = prompt(`🚨 【UC-04 二次確認防呆】\n您正準備推翻第 ${rowNumber} 列【${itemName}】的系統異常判定。\n\n請強制輸入推翻判定理由（不可空白）：`);
+        function showCardMessage(title, message, type = 'success') 
+        {
+            const oldModal = document.getElementById('wzModalOverlay');
+            if (oldModal) {
+                oldModal.remove();
+            }
 
-                // 點擊取消
-                if (reason === null) return; 
+            let iconText = '✓';
+            if (type === 'warning') iconText = '!';
+            if (type === 'error') iconText = '×';
 
-                // 檢查是否為空白
-                if (reason.trim() === '') {
-                    alert('❌ 系統阻擋：未填寫推翻理由，拒絕送出！');
+            const overlay = document.createElement('div');
+            overlay.id = 'wzModalOverlay';
+            overlay.className = 'wz-modal-overlay';
+
+            overlay.innerHTML = `
+                <div class="wz-modal-card">
+                    <div class="wz-modal-header">
+                        <span class="wz-modal-icon ${type}">${iconText}</span>
+                        <h5 class="wz-modal-title">${escapeHtml(title)}</h5>
+                    </div>
+                    <div class="wz-modal-body">${escapeHtml(message)}</div>
+                    <div class="wz-modal-footer">
+                        <button type="button" class="wz-modal-btn" id="wzModalOkBtn">確定</button>
+                    </div>
+                </div>
+            `;
+
+            document.body.appendChild(overlay);
+
+            document.getElementById('wzModalOkBtn').addEventListener('click', () => {
+                overlay.remove();
+            });
+
+            overlay.addEventListener('click', (e) => {
+                if (e.target === overlay) {
+                    overlay.remove();
+                }
+            });
+        }
+
+
+        function showReasonModal(title, message, onConfirm) {
+            const oldModal = document.getElementById('wzModalOverlay');
+            if (oldModal) {
+                oldModal.remove();
+            }
+
+            const overlay = document.createElement('div');
+            overlay.id = 'wzModalOverlay';
+            overlay.className = 'wz-modal-overlay';
+
+            overlay.innerHTML = `
+                <div class="wz-modal-card">
+                    <div class="wz-modal-header">
+                        <span class="wz-modal-icon warning">!</span>
+                        <h5 class="wz-modal-title">${escapeHtml(title)}</h5>
+                    </div>
+                    <div class="wz-modal-body">
+                        <div class="mb-3">${escapeHtml(message)}</div>
+                        <label class="form-label fw-bold">請輸入人工判定理由</label>
+                        <textarea id="wzReasonInput"
+                                class="form-control"
+                                rows="3"
+                                placeholder="例如：經人工比對後，此項目屬合理報價，因此推翻系統異常判定。"></textarea>
+                        <div id="wzReasonError" class="text-danger mt-2" style="display:none;">
+                            請輸入推翻理由。
+                        </div>
+                    </div>
+                    <div class="wz-modal-footer">
+                        <button type="button" class="btn btn-outline-secondary" id="wzModalCancelBtn">取消</button>
+                        <button type="button" class="wz-modal-btn" id="wzModalConfirmBtn">確定</button>
+                    </div>
+                </div>
+            `;
+
+            document.body.appendChild(overlay);
+
+            const input = document.getElementById('wzReasonInput');
+            const error = document.getElementById('wzReasonError');
+
+            setTimeout(() => input.focus(), 100);
+
+            document.getElementById('wzModalCancelBtn').addEventListener('click', () => {
+                overlay.remove();
+            });
+
+            document.getElementById('wzModalConfirmBtn').addEventListener('click', () => {
+                const reason = input.value.trim();
+
+                if (!reason) {
+                    error.style.display = 'block';
+                    input.focus();
                     return;
                 }
 
-                // 呼叫後端 API
-                fetch('/api/Estimation/override', {
-                    method: 'POST',
-                    headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify({
-                        SourceFileName: fileName,
-                        SheetName: sheetName,
-                        RowNumber: rowNumber,
-                        ItemName: itemName,
-                        OriginalStatusMessage: originalMsg,
-                        OverrideReason: reason
-                    })
-                })
-                .then(res => {
-                    if(!res.ok) throw new Error("伺服器回應錯誤");
-                    return res.json();
-                })
-                .then(data => {
-                    // 成功後即時更新前端 UI
-                    const rowTr = btn.closest('tr');
-                    rowTr.classList.remove('table-danger'); 
-                    rowTr.style.backgroundColor = '#d1e7dd'; 
-                    
-                    const badge = rowTr.querySelector('.status-badge');
-                    if (badge) {
-                        badge.innerText = '人工認可';
-                        badge.className = 'status-badge status-normal'; 
-                    }
-                    
-                    // 將按鈕替換為已核定文字
-                    btn.outerHTML = '<span class="text-success fw-bold">已核定</span>';
-                    alert('🟢 推翻成功！已將審查人員理由與系統數據同步寫入 Audit Log 稽核資料表。');
-                })
-                .catch(err => alert('連線或寫入失敗，請確認後端 API 是否已準備好：' + err));
+                overlay.remove();
+                onConfirm(reason);
+            });
+
+            overlay.addEventListener('click', (e) => {
+                if (e.target === overlay) {
+                    overlay.remove();
+                }
+            });
+        }
+
+        resultBody.addEventListener('click', function (e) {
+            if (!e.target.classList.contains('btn-override-action')) {
+                return;
             }
+
+            const btn = e.target;
+            const fileName = btn.getAttribute('data-file');
+            const sheetName = btn.getAttribute('data-sheet');
+            const rowNumber = parseInt(btn.getAttribute('data-row'));
+            const itemName = btn.getAttribute('data-name');
+            const originalMsg = btn.getAttribute('data-msg');
+
+            showReasonModal(
+                'UC-04 二次確認防呆',
+                `您正準備推翻第 ${rowNumber} 列「${itemName}」的系統異常判定。`,
+                function (reason) {
+                    fetch('/api/Estimation/override', {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify({
+                            SourceFileName: fileName,
+                            SheetName: sheetName,
+                            RowNumber: rowNumber,
+                            ItemName: itemName,
+                            OriginalStatusMessage: originalMsg,
+                            OverrideReason: reason
+                        })
+                    })
+                    .then(res => {
+                        if (!res.ok) {
+                            throw new Error('伺服器回應錯誤');
+                        }
+
+                        return res.json();
+                    })
+                    .then(data => {
+                        const rowTr = btn.closest('tr');
+
+                        if (rowTr) {
+                            rowTr.classList.remove('table-danger');
+                            rowTr.classList.remove('table-warning');
+                            rowTr.style.backgroundColor = '#d1e7dd';
+
+                            const badge = rowTr.querySelector('.status-badge');
+                            if (badge) {
+                                badge.innerText = '人工認可';
+                                badge.className = 'status-badge status-normal';
+                            }
+                        }
+
+                        btn.outerHTML = '<span class="text-success fw-bold">已核定</span>';
+
+                        showCardMessage(
+                            '推翻成功',
+                            `已完成第 ${rowNumber} 列「${itemName}」的人工推翻。\n\n推翻理由：${reason}\n\n系統已同步寫入 Audit Log 稽核資料表。`,
+                            'success'
+                        );
+                    })
+                    .catch(err => {
+                        showCardMessage(
+                            '推翻失敗',
+                            err.message || '連線或寫入失敗，請確認後端 API 是否已準備好。',
+                            'error'
+                        );
+                    });
+                }
+            );
         });
 
         // ==========================================
@@ -364,3 +865,4 @@
         }
     </script>
 }
+

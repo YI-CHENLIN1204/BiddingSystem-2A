@@ -1,0 +1,98 @@
+@model 崴正.Models.QuantityRuleBase
+
+@{
+    ViewData["Title"] = "新增參數規則";
+    var materials = ViewBag.Materials as IEnumerable<崴正.Models.MaterialMaster>;
+}
+
+<style>
+    :root { --wz-primary: #321fdb; --wz-bg: #f6faff; --wz-text: #141d23; --wz-muted: #6c757d; }
+    body { background: var(--wz-bg); color: var(--wz-text); }
+    .admin-main-card { background: #fff; border-radius: 8px; box-shadow: 0 6px 20px rgba(20, 29, 35, 0.06); }
+    .btn-wz-primary { background: var(--wz-primary); color: white; border-radius: 6px; padding: 7px 16px; font-weight: 700; border: none; }
+    .btn-wz-primary:hover { color: white; filter: brightness(.96); }
+    .btn-wz-outline { border: 1px solid #bcb3ff; color: var(--wz-primary); border-radius: 6px; padding: 7px 16px; font-weight: 700; text-decoration: none; background: white; }
+    .btn-wz-outline:hover { background: #ebe8ff; color: var(--wz-primary); }
+    .section-title { font-size: 1.1rem; color: var(--wz-primary); font-weight: 800; border-bottom: 2px solid #ebe8ff; padding-bottom: 8px; margin-bottom: 20px; margin-top: 10px; }
+</style>
+
+<div class="container mt-4" style="max-width: 900px;">
+    <h2 class="fw-bold mb-1">➕ 新增參數規則</h2>
+    <p class="text-muted mb-4">為建材設定特定情境（建案/結構/樓層）下的基準用量與防弊門檻。</p>
+
+    <div class="admin-main-card p-4 p-md-5">
+        <form asp-action="Create" method="post">
+            
+            <div class="section-title">1. 選擇目標建材</div>
+            <div class="mb-4">
+                <select asp-for="Material_ID" class="form-select form-select-lg border-primary" required>
+                    <option value="">-- 請選擇要設定的建材 --</option>
+                    @if (materials != null)
+                    {
+                        foreach (var m in materials)
+                        {
+                            <option value="@m.MaterialId">@m.MaterialName (@m.BaseUnit)</option>
+                        }
+                    }
+                </select>
+            </div>
+
+            <div class="section-title">2. 設定適用情境 (維度條件)</div>
+            <div class="row mb-4 g-3">
+                <div class="col-md-4">
+                    <label asp-for="Project_Type" class="form-label fw-bold">建案類型</label>
+                    <select asp-for="Project_Type" class="form-select">
+                        <option value="">-- 通用 (不分專案) --</option>
+                        <option value="住宅">住宅</option>
+                        <option value="廠房">廠房</option>
+                        <option value="辦公大樓">辦公大樓</option>
+                        <option value="公共工程">公共工程</option>
+                    </select>
+                </div>
+                <div class="col-md-4">
+                    <label asp-for="Structure_Type" class="form-label fw-bold">結構類型</label>
+                    <select asp-for="Structure_Type" class="form-select">
+                        <option value="">-- 通用 (不分結構) --</option>
+                        <option value="RC">RC (鋼筋混凝土)</option>
+                        <option value="SC">SC (鋼骨)</option>
+                        <option value="SRC">SRC (鋼骨鋼筋混凝土)</option>
+                    </select>
+                </div>
+                <div class="col-md-4">
+                    <label asp-for="Floor_Zone" class="form-label fw-bold">樓層區塊</label>
+                    <select asp-for="Floor_Zone" class="form-select">
+                        <option value="">-- 通用 (不分樓層) --</option>
+                        <option value="地下室">地下室 (B1以下)</option>
+                        <option value="低樓層">低樓層 (1F-5F)</option>
+                        <option value="中高樓層">中高樓層 (6F以上)</option>
+                        <option value="屋頂">屋頂突出物 (R1-R2)</option>
+                    </select>
+                </div>
+            </div>
+
+            <div class="section-title">3. 設定估算數值與防弊參數</div>
+            <div class="row mb-5 g-3">
+                <div class="col-md-4">
+                    <label asp-for="Unit_Consumption" class="form-label fw-bold text-primary">單位基準用量 <span class="text-danger">*</span></label>
+                    <input asp-for="Unit_Consumption" class="form-control" type="number" step="0.0001" value="1.0000" required />
+                    <div class="form-text">每平方公尺(或主要面積)之標準用量。</div>
+                </div>
+                <div class="col-md-4">
+                    <label asp-for="Waste_Rate_Percent" class="form-label fw-bold text-primary">預估耗損率 (%) <span class="text-danger">*</span></label>
+                    <input asp-for="Waste_Rate_Percent" class="form-control" type="number" step="0.1" value="5.0" required />
+                    <div class="form-text">施工時的預期損耗百分比。</div>
+                </div>
+                <div class="col-md-4">
+                    <label asp-for="Z_Score_Threshold" class="form-label fw-bold text-danger">Z-Score 異常門檻 <span class="text-danger">*</span></label>
+                    <input asp-for="Z_Score_Threshold" class="form-control" type="number" step="0.01" value="2.00" required />
+                    <div class="form-text">超出此門檻將觸發防弊紅燈警戒。</div>
+                </div>
+            </div>
+
+            <div class="d-flex justify-content-end gap-3 mt-2 border-top pt-4">
+                <a asp-action="Index" class="btn-wz-outline">取消</a>
+                <button type="submit" class="btn-wz-primary">➕ 確認新增規則</button>
+            </div>
+        </form>
+    </div>
+</div>

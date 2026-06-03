@@ -1,6 +1,7 @@
 using ClosedXML.Excel;
 using System.Text.RegularExpressions;
 using 崴正.Models;
+using System;
 
 namespace 崴正.Services
 {
@@ -14,9 +15,13 @@ namespace 崴正.Services
 
             foreach (var ws in workbook.Worksheets)
             {
+
+                
                 // 跳過總表，因為總表通常是分類彙總，不是實際明細
                 if (ws.Name.Contains("總表"))
+                {
                     continue;
+                }
 
                 string currentCategory1 = "";
                 string currentCategory2 = "";
@@ -45,14 +50,19 @@ namespace 崴正.Services
                     }
 
                     if (values.All(string.IsNullOrWhiteSpace))
+                    {
+                    
                         continue;
+                    }
 
                     string rowText = string.Join("", values);
                     string normalizedRowText = NormalizeText(rowText);
 
                     // 如果這列是表頭，就辨識欄位位置
-                    if (IsHeaderRow(normalizedRowText))
+                    if (IsHeaderRow(values))
                     {
+                   
+
                         DetectColumns(
                             values,
                             ref itemCodeCol,
@@ -78,12 +88,15 @@ namespace 崴正.Services
                         normalizedRowText.Contains("合計") ||
                         normalizedRowText.Contains("總計"))
                     {
+                      
                         continue;
                     }
 
                     // 大分類：壹、貳、參...
                     if (Regex.IsMatch(col1, @"^[壹貳參肆伍陸柒捌玖拾]+$") && !string.IsNullOrWhiteSpace(col2))
                     {
+                       
+
                         currentCategory1 = col2;
                         currentCategory2 = "";
                         currentCategory3 = "";
@@ -93,6 +106,8 @@ namespace 崴正.Services
                     // 中分類：一、二、三 或 一.
                     if (Regex.IsMatch(col1, @"^[一二三四五六七八九十]+\.?$") && !string.IsNullOrWhiteSpace(col2))
                     {
+                       
+
                         currentCategory2 = col2;
                         currentCategory3 = "";
                         continue;
@@ -101,20 +116,14 @@ namespace 崴正.Services
                     // 細分類：1.1、2.3...
                     if (Regex.IsMatch(col1, @"^[0-9]+\.[0-9]+$") && !string.IsNullOrWhiteSpace(col2))
                     {
+                       
+
                         currentCategory3 = col2;
                         continue;
                     }
 
-                    bool hasCommonUnit = values.Any(v =>
-                        v.Equals("M", StringComparison.OrdinalIgnoreCase) ||
-                        v.Equals("M2", StringComparison.OrdinalIgnoreCase) ||
-                        v.Equals("M3", StringComparison.OrdinalIgnoreCase) ||
-                        v == "式" || v == "座" || v == "個" || v == "只" || v == "組" ||
-                        v == "支" || v == "樘" || v == "處" || v == "套" ||
-                        v.Equals("KG", StringComparison.OrdinalIgnoreCase));
 
-                    if (!hasCommonUnit)
-                        continue;
+
 
                     decimal? qty = null;
                     decimal? price = null;
@@ -152,16 +161,25 @@ namespace 崴正.Services
                     string spec = GetCell(values, specCol);
                     string unit = GetCell(values, unitCol);
 
-                    if (string.IsNullOrWhiteSpace(itemName) || string.IsNullOrWhiteSpace(unit) || qty == null)
+                    if (string.IsNullOrWhiteSpace(itemName))
+                    {
+                    
                         continue;
+                    }
 
-                    // 過濾總表分類列，例如：假設工程、土方工程、基礎工程
-                    if (IsSummaryOrCategoryRow(itemName, spec, unit, values))
+                    // 只有「沒有數量、沒有單價、沒有複價」的列，才可能是分類列或說明列。
+                    // 如果有任何數量或金額資訊，就保留進結果表，交給 Controller 判斷。
+                    if (qty == null && price == null && amount == null &&
+                        IsSummaryOrCategoryRow(itemName, spec, unit, values))
+                    {
                         continue;
+                    }
 
                     // 避免把純分類編號列加入結果
                     if (Regex.IsMatch(col1, @"^[壹貳參肆伍陸柒捌玖拾一二三四五六七八九十]+$"))
+                    {
                         continue;
+                    }
 
                     result.Add(new TenderImportRowDto
                     {
@@ -186,22 +204,36 @@ namespace 崴正.Services
             return result;
         }
 
-        private static bool IsHeaderRow(string rowText)
+        private static bool IsHeaderRow(List<string> values)
         {
-            return rowText.Contains("項次") ||
-                   rowText.Contains("項目") ||
-                   rowText.Contains("工項") ||
-                   rowText.Contains("品名") ||
-                   rowText.Contains("名稱") ||
-                   rowText.Contains("名稱與說明") ||
-                   rowText.Contains("項目及說明") ||
-                   rowText.Contains("工料編號") ||
-                   rowText.Contains("規格") ||
-                   rowText.Contains("單位") ||
-                   rowText.Contains("數量") ||
-                   rowText.Contains("單價") ||
-                   rowText.Contains("複價") ||
-                   rowText.Contains("金額");
+            string rowText = string.Join("", values)
+                .Replace(" ", "")
+                .Replace("　", "")
+                .Replace("\r", "")
+                .Replace("\n", "")
+                .Trim();
+
+            bool hasItemCode = rowText.Contains("項次");
+            bool hasItemName =
+                rowText.Contains("項目名稱") ||
+                rowText.Contains("名稱與說明") ||
+                rowText.Contains("項目及說明");
+            bool hasSpec = rowText.Contains("規格");
+            bool hasUnit = rowText.Contains("單位");
+            bool hasQty = rowText.Contains("數量");
+            bool hasPrice = rowText.Contains("單價");
+
+            int hitCount = 0;
+
+            if (hasItemCode) hitCount++;
+            if (hasItemName) hitCount++;
+            if (hasSpec) hitCount++;
+            if (hasUnit) hitCount++;
+            if (hasQty) hitCount++;
+            if (hasPrice) hitCount++;
+
+            // 必須同時命中多個欄位名稱，才判定為真正表頭列
+            return hitCount >= 4;
         }
 
         private static void DetectColumns(
@@ -333,9 +365,7 @@ namespace 崴正.Services
                 "勞工安全衛生管理及設備費"
             };
 
-            if (categoryKeywords.Any(k =>
-                normalizedItemName.Contains(k) ||
-                normalizedSpec.Contains(k)))
+            if (categoryKeywords.Any(k => normalizedItemName == k || normalizedSpec == k))
             {
                 return true;
             }
@@ -385,3 +415,4 @@ namespace 崴正.Services
         }
     }
 }
+

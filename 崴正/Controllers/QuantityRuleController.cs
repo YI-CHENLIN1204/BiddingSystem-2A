@@ -3,6 +3,8 @@ using Microsoft.AspNetCore.Mvc.Rendering;
 using 崴正.Data;
 using 崴正.Models;
 using System.Linq;
+using Microsoft.AspNetCore.Authorization;
+
 
 namespace 崴正.Controllers
 {
@@ -20,7 +22,6 @@ namespace 崴正.Controllers
         public string? Floor_Zone { get; set; }
         public decimal Waste_Rate_Percent { get; set; }
     }
-
     public class QuantityRuleController : Controller
     {
         private readonly ApplicationDbContext _context;

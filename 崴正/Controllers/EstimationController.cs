@@ -6,6 +6,7 @@ using System.Linq;
 using 崴正.Data;
 using 崴正.Models;
 using 崴正.Services;
+using Microsoft.AspNetCore.Authorization;
 
 namespace 崴正.Controllers
 {
@@ -182,6 +183,7 @@ namespace 崴正.Controllers
 
             const decimal shortTermWeight = 0.7m;
             const decimal longTermWeight = 0.3m;
+            const int minimumSampleCount = 10;
 
         // 1. 把字典表全部抓出來放進記憶體 (UC-01 智慧對應)
             var dictionaryList = _context.ItemDictionaries.ToList();
@@ -247,6 +249,34 @@ namespace 崴正.Controllers
                 if (result.Amount != null && result.Amount < 0)
                     reasons.Add("複價小於 0");
 
+                bool hasCriticalDataProblem =
+                    string.IsNullOrWhiteSpace(result.Unit) ||
+                    result.Qty == null ||
+                    result.Qty <= 0 ||
+                    result.UnitPrice == null ||
+                    result.UnitPrice < 0;
+
+                if (hasCriticalDataProblem)
+                {
+                    result.IsAbnormal = false;
+
+                    result.QtyZScore = null;
+                    result.UnitPriceZScore = null;
+
+                    result.ShortTermQtyZScore = null;
+                    result.LongTermQtyZScore = null;
+                    result.WeightedQtyZScore = null;
+
+                    result.ShortTermUnitPriceZScore = null;
+                    result.LongTermUnitPriceZScore = null;
+                    result.WeightedUnitPriceZScore = null;
+
+                    result.StatusMessage = "資料不完整：" + string.Join("、", reasons);
+
+                    results.Add(result);
+                    continue;
+                }
+
                 if (result.Qty != null && result.UnitPrice != null)
                 {
                     result.ExpectedAmount = Math.Round(result.Qty.Value * result.UnitPrice.Value, 2);
@@ -287,8 +317,8 @@ namespace 崴正.Controllers
                     continue;
                 }
 
-                result.MatchedMaterialName = material.MaterialName; // 成功綁定標準名稱
-
+                result.MatchedMaterialName = material.MaterialName;
+                result.Category = material.Category;
 
                 if (!IsSameUnit(result.Unit, material.BaseUnit))
                 {
@@ -322,7 +352,7 @@ namespace 崴正.Controllers
                     continue;
                 }
 
-                // 從 Dictionary 找規則，不再查資料庫
+                // 從參數表取得 Z-score 異常門檻，若沒有設定則預設為 2.0
                 decimal ruleThreshold = 2.0m;
 
                 if (ruleDict.TryGetValue(material.MaterialId, out var threshold) && threshold > 0)
@@ -338,17 +368,37 @@ namespace 崴正.Controllers
                     .Where(h => h.Transaction_Date >= shortTermStartDate)
                     .ToList();
 
-                var shortQtyValues = shortHistories.Select(h => h.Actual_Quantity).ToList();
-                var longQtyValues = longHistories.Select(h => h.Actual_Quantity).ToList();
                 var shortPriceValues = shortHistories.Select(h => h.Unit_Price).ToList();
                 var longPriceValues = longHistories.Select(h => h.Unit_Price).ToList();
 
-                // 畫面上的歷史平均與標準差以長期 180 天為主要基準
-                if (longQtyValues.Count >= 2)
+                int sampleCount = longHistories
+                    .Where(h => !string.IsNullOrWhiteSpace(h.Project_Id))
+                    .Select(h => h.Project_Id)
+                    .Distinct()
+                    .Count();
+
+                if (sampleCount < minimumSampleCount)
                 {
-                    result.HistoricalAvgQty180Days = Math.Round(longQtyValues.Average(), 2);
-                    result.HistoricalStdQty180Days = Math.Round(CalculateStdDev(longQtyValues), 2);
-                }
+                    result.IsAbnormal = false;
+
+                    result.QtyZScore = null;
+                    result.UnitPriceZScore = null;
+
+                    result.ShortTermQtyZScore = null;
+                    result.LongTermQtyZScore = null;
+                    result.WeightedQtyZScore = null;
+
+                    result.ShortTermUnitPriceZScore = null;
+                    result.LongTermUnitPriceZScore = null;
+                    result.WeightedUnitPriceZScore = null;
+
+                    result.StatusMessage =
+                        $"資料不足：歷史工程案例數不足（{sampleCount}/{minimumSampleCount}），不執行 Z-score 統計判斷，列入待審。";
+
+                    results.Add(result);
+                    continue;
+                }       
+                // 畫面上的歷史平均與標準差以長期 180 天為主要基準
 
                 if (longPriceValues.Count >= 2)
                 {
@@ -356,14 +406,11 @@ namespace 崴正.Controllers
                     result.HistoricalStdUnitPrice180Days = Math.Round(CalculateStdDev(longPriceValues), 2);
                 }
 
-                result.ShortTermQtyZScore = CalculateZScore(result.Qty, shortQtyValues);
-                result.LongTermQtyZScore = CalculateZScore(result.Qty, longQtyValues);
-                result.WeightedQtyZScore = CalculateWeightedZScore(
-                    result.LongTermQtyZScore,
-                    result.ShortTermQtyZScore,
-                    longTermWeight,
-                    shortTermWeight
-                );
+                if (result.HistoricalAvgUnitPrice180Days.HasValue && result.Qty.HasValue)
+                {
+                    result.SuggestedUnitPrice = result.HistoricalAvgUnitPrice180Days.Value;
+                    result.SuggestedAmount = Math.Round(result.SuggestedUnitPrice.Value * result.Qty.Value, 0);
+                }
 
                 result.ShortTermUnitPriceZScore = CalculateZScore(result.UnitPrice, shortPriceValues);
                 result.LongTermUnitPriceZScore = CalculateZScore(result.UnitPrice, longPriceValues);
@@ -374,23 +421,15 @@ namespace 崴正.Controllers
                     shortTermWeight
                 );
 
-                // 保留舊欄位名稱，前端若還讀 qtyZScore / unitPriceZScore 也會看到加權結果
-                result.QtyZScore = result.WeightedQtyZScore;
+                // 課程版僅使用單價 Z-score 進行價格異常偵測
+                result.QtyZScore = null;
                 result.UnitPriceZScore = result.WeightedUnitPriceZScore;
 
-                if (shortHistories.Count < 2 && longHistories.Count < 2)
-                {
-                    reasons.Add("歷史資料不足，無法計算 Z 分數");
-                }
 
-                if (result.WeightedQtyZScore.HasValue && result.WeightedQtyZScore.Value >= ruleThreshold)
-                {
-                    reasons.Add($"數量加權Z異常（{result.WeightedQtyZScore.Value:0.00} ≥ {ruleThreshold:0.##}）");
-                }
 
                 if (result.WeightedUnitPriceZScore.HasValue && result.WeightedUnitPriceZScore.Value >= ruleThreshold)
                 {
-                    reasons.Add($"單價加權Z異常（{result.WeightedUnitPriceZScore.Value:0.00} ≥ {ruleThreshold:0.##}）");
+                    reasons.Add($"單價偏離歷史行情（Z = {result.WeightedUnitPriceZScore.Value:0.00}，門檻 = {ruleThreshold:0.##}）");
                 }
 
                 if (reasons.Any())
@@ -538,12 +577,10 @@ namespace 崴正.Controllers
 
             try
             {
-                // 1. 解析 Excel (UC-05)
                 var parser = new TenderExcelParser();
                 using var stream = excelFile.OpenReadStream();
                 var rows = parser.Parse(stream, excelFile.FileName);
 
-                // 2. 準備字典與材料主檔 (UC-06 準備)
                 var dictionaryList = _context.ItemDictionaries.ToList();
                 var materials = _context.MaterialMasters.ToList();
                 var materialDict = materials.ToDictionary(m => m.MaterialId, m => m);
@@ -554,7 +591,12 @@ namespace 崴正.Controllers
                 int missingMaterialCount = 0;
                 int unitMismatchCount = 0;
 
-                // 3. 開始比對並回寫歷史資料
+                // 避免同一次匯入大量重複寫入 unmapped_items
+                var existingUnmappedKeys = _context.UnmappedItems
+                    .Where(x => x.ProjectName == projectName && x.Status == "待處理")
+                    .Select(x => (x.ItemName ?? "") + "|" + (x.Spec ?? ""))
+                    .ToHashSet();
+
                 foreach (var row in rows)
                 {
                     if (row.Qty == null || row.Qty <= 0 || row.UnitPrice == null || row.UnitPrice < 0)
@@ -563,16 +605,36 @@ namespace 崴正.Controllers
                         continue;
                     }
 
-                    // 智慧對應標準工項
-                    var matchedDict = dictionaryList.FirstOrDefault(d => 
-                        (row.ItemName ?? "").Contains(d.Keyword, StringComparison.OrdinalIgnoreCase) || 
+                    var matchedDict = dictionaryList.FirstOrDefault(d =>
+                        (row.ItemName ?? "").Contains(d.Keyword, StringComparison.OrdinalIgnoreCase) ||
                         (row.Spec ?? "").Contains(d.Keyword, StringComparison.OrdinalIgnoreCase));
 
-                    // 若找不到對應，標記為未對應並跳過 (UC-06 替代流程)
                     if (matchedDict == null)
                     {
                         unmappedCount++;
-                        continue; 
+
+                        var itemName = row.ItemName ?? "";
+                        var spec = row.Spec ?? "";
+                        var key = itemName + "|" + spec;
+
+                        if (!existingUnmappedKeys.Contains(key))
+                        {
+                            _context.UnmappedItems.Add(new UnmappedItem
+                            {
+                                SourceFileName = excelFile.FileName,
+                                ProjectName = projectName,
+                                ItemName = itemName,
+                                Spec = row.Spec,
+                                Unit = row.Unit,
+                                Qty = row.Qty,
+                                UnitPrice = row.UnitPrice,
+                                Status = "待處理"
+                            });
+
+                            existingUnmappedKeys.Add(key);
+                        }
+
+                        continue;
                     }
 
                     if (!materialDict.TryGetValue(matchedDict.Material_Id, out var material))
@@ -581,30 +643,27 @@ namespace 崴正.Controllers
                         continue;
                     }
 
-                    // 檢查單位是否一致，不一致則不寫入，以免污染資料庫
                     if (!IsSameUnit(row.Unit, material.BaseUnit))
                     {
                         unitMismatchCount++;
                         continue;
                     }
 
-                    // 建立新的歷史成交紀錄
                     var newHistory = new HistoricalTransaction
                     {
                         Material_ID = material.MaterialId,
                         Actual_Quantity = row.Qty.Value,
                         Unit_Price = row.UnitPrice.Value,
-                        Transaction_Date = DateTime.UtcNow.Date, // 記錄成交日期
+                        Transaction_Date = DateTime.UtcNow.Date,
                         IsDeleted = false,
                         Is_Outlier = false,
-                        Project_Id = projectName // 記錄是哪個建案的價格
+                        Project_Id = projectName
                     };
 
                     _context.HistoricalTransactions.Add(newHistory);
                     successInsertCount++;
                 }
 
-                // 4. 正式寫入資料庫
                 _context.SaveChanges();
 
                 return Ok(new
@@ -624,8 +683,91 @@ namespace 崴正.Controllers
             }
         }
 
+        [HttpGet("unmapped-items")]
+        public IActionResult GetUnmappedItems()
+        {
+            var items = _context.UnmappedItems
+                .Where(x => x.Status == "待處理")
+                .OrderByDescending(x => x.UnmappedId)
+                .Take(20)
+                .Select(x => new
+                {
+                    unmappedId = x.UnmappedId,
+                    projectName = x.ProjectName,
+                    itemName = x.ItemName,
+                    spec = x.Spec,
+                    unit = x.Unit,
+                    qty = x.Qty,
+                    unitPrice = x.UnitPrice
+                })
+                .ToList();
+
+            var materials = _context.MaterialMasters
+                .OrderBy(x => x.MaterialName)
+                .Select(x => new
+                {
+                    materialId = x.MaterialId,
+                    materialName = x.MaterialName
+                })
+                .ToList();
+
+            return Ok(new
+            {
+                items,
+                materials
+            });
+        }
+
+        [HttpPost("add-dictionary")]
+        public IActionResult AddDictionary([FromForm] int unmappedId, [FromForm] int materialId)
+        {
+            var unmapped = _context.UnmappedItems.FirstOrDefault(x => x.UnmappedId == unmappedId);
+
+            if (unmapped == null)
+            {
+                return NotFound(new { message = "找不到未對應工項" });
+            }
+
+            var material = _context.MaterialMasters.FirstOrDefault(x => x.MaterialId == materialId);
+
+            if (material == null)
+            {
+                return BadRequest(new { message = "找不到標準工項" });
+            }
+
+            var keyword = unmapped.ItemName.Trim();
+
+            if (string.IsNullOrWhiteSpace(keyword))
+            {
+                return BadRequest(new { message = "工項名稱不可為空" });
+            }
+
+            bool exists = _context.ItemDictionaries.Any(x =>
+                x.Keyword == keyword &&
+                x.Material_Id == materialId);
+
+            if (!exists)
+            {
+                _context.ItemDictionaries.Add(new ItemDictionary
+                {
+                    Keyword = keyword,
+                    Material_Id = materialId
+                });
+            }
+
+            unmapped.Status = "已加入字典";
+            unmapped.SuggestedMaterialId = materialId;
+
+            _context.SaveChanges();
+
+            return Ok(new
+            {
+                message = $"已將「{keyword}」加入字典，對應至「{material.MaterialName}」"
+            });
+        }
+
     }
 
-
-
 }
+
+

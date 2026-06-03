@@ -414,6 +414,8 @@
                         <th style="width: 6%;">樣本</th>
                     </tr>
                 </thead>
+                <tbody id="estimateTableBody">
+                </tbody>
             </table>
         </div>
     </div>
@@ -443,12 +445,58 @@
             document.getElementById('filterFloorArea').value = '';
         }
 
-        function queryEstimate() {
-            alert('目前是空殼 UI，查詢功能尚未串接。');
+        async function queryEstimate() {
+            const projectType = document.getElementById('buildingType').value;
+            const structureType = document.getElementById('structureType').value;
+            const floorArea =
+                document.getElementById('mainFloorArea').value ||
+                document.getElementById('filterFloorArea').value ||
+                0;
+
+            const params = new URLSearchParams({
+                projectType: projectType,
+                structureType: structureType,
+                floorArea: floorArea
+            });
+
+            const response = await fetch(`/Home/GetEstimateRules?${params.toString()}`);
+            const data = await response.json();
+
+            const tbody = document.getElementById('estimateTableBody');
+            tbody.innerHTML = '';
+
+            if (data.length === 0) {
+                tbody.innerHTML = `
+                    <tr>
+                        <td colspan="10" style="text-align:center; padding:24px;">
+                            查無估算規則，請確認建案類型與結構類型
+                        </td>
+                    </tr>`;
+                return;
+            }
+
+            data.forEach(item => {
+                tbody.innerHTML += `
+                    <tr>
+                        <td>${item.materialName}</td>
+                        <td></td>
+                        <td>${item.average}</td>
+                        <td>${item.median}</td>
+                        <td class="estimate-result">${item.estimatedQty}</td>
+                        <td>${item.suggestedRange}</td>
+                        <td>${item.unit}</td>
+                        <td>${item.max}</td>
+                        <td>${item.min}</td>
+                        <td>${item.sampleCount}</td>
+                    </tr>`;
+            });
         }
+
+        document.getElementById('mainFloorArea').addEventListener('input', queryEstimate);
 
         function clearMainArea() {
             document.getElementById('mainFloorArea').value = '';
         }
     </script>
 }
+

@@ -1,0 +1,147 @@
+@{
+    ViewData["Title"] = "決標單歷史回寫系統";
+}
+
+<style>
+    :root { --wz-primary: #321fdb; --wz-bg: #f6faff; --wz-text: #141d23; --wz-muted: #6c757d; }
+    body { background: var(--wz-bg); color: var(--wz-text); }
+    .admin-main-card { background: #fff; border-radius: 8px; box-shadow: 0 6px 20px rgba(20, 29, 35, 0.06); }
+    .btn-wz-primary { background: var(--wz-primary); color: white; border-radius: 6px; padding: 10px 24px; font-weight: 700; border: none; font-size: 1.1rem; }
+    .btn-wz-primary:hover { color: white; filter: brightness(.95); }
+    .section-title { font-size: 1.1rem; color: var(--wz-primary); font-weight: 800; border-bottom: 2px solid #ebe8ff; padding-bottom: 8px; margin-bottom: 20px; margin-top: 10px; }
+    
+    .stat-box { background: #f8f9fa; border: 1px solid #dee2e6; border-radius: 8px; padding: 20px; text-align: center; }
+    .stat-num { font-size: 2.5rem; font-weight: 900; }
+</style>
+
+<div class="container mt-4" style="max-width: 900px;">
+    <h2 class="fw-bold mb-1">⚙️ 決標單歷史回寫</h2>
+    <p class="text-muted mb-4">
+        提供採發部上傳最終決標且已簽約之 Excel 標單。系統將自動辨識標準建材，並回寫至歷史資料庫作為 AI 估算養分。
+    </p>
+
+    <div class="admin-main-card p-4 p-md-5">
+        
+        <div class="section-title">1. 建立工程專案來源</div>
+        <div class="mb-4">
+            <input type="text" id="projectName" class="form-control form-control-lg border-primary" placeholder="例如：立彩_FANCY新建工程" />
+            <div class="form-text mt-2">此名稱將標記於歷史資料庫中，以便未來追溯這筆價格的來源建案。</div>
+        </div>
+
+        <div class="section-title">2. 選擇最終決標 Excel 檔案</div>
+        <div class="mb-4">
+            <input type="file" id="excelFile" class="form-control form-control-lg" accept=".xlsx" />
+        </div>
+
+        <div class="d-flex justify-content-end border-top pt-4 mt-2">
+            <button id="btnUpload" class="btn-wz-primary w-100">🚀 開始解析並寫入歷史資料庫</button>
+        </div>
+
+        <div id="loadingText" class="text-center text-muted mt-3 fw-bold" style="display:none;">
+            ⏳ 系統正在深度解析標單並同步至資料庫，請稍候...
+        </div>
+    </div>
+
+    <div id="resultBox" class="mt-4" style="display:none;">
+        <div class="alert alert-success shadow-sm" style="background-color: #fff; border-left: 5px solid #321fdb;">
+            <h4 class="alert-heading fw-bold mb-3" style="color: #321fdb;">✅ 歷史回寫任務完成！</h4>
+            <div class="row g-3">
+                <div class="col-md-4">
+                    <div class="stat-box">
+                        <div class="text-muted fw-bold">總讀取筆數</div>
+                        <div class="stat-num text-dark" id="resTotal">0</div>
+                    </div>
+                </div>
+
+                <div class="col-md-4">
+                    <div class="stat-box" style="border-color: #321fdb; background: #f6faff;">
+                        <div class="fw-bold" style="color: #321fdb;">成功寫入歷史庫</div>
+                        <div class="stat-num" style="color: #321fdb;" id="resSuccess">0</div>
+                    </div>
+                </div>
+
+                <div class="col-md-4">
+                    <div class="stat-box" style="border-color: #ffc107; background: #fff3cd;">
+                        <div class="text-warning fw-bold">字典未對應略過</div>
+                        <div class="stat-num text-warning" id="resUnmapped">0</div>
+                    </div>
+                </div>
+
+                <div class="col-md-4">
+                    <div class="stat-box" style="border-color: #dc3545; background: #fff5f5;">
+                        <div class="fw-bold text-danger">資料不完整略過</div>
+                        <div class="stat-num text-danger" id="resInvalid">0</div>
+                    </div>
+                </div>
+
+                <div class="col-md-4">
+                    <div class="stat-box" style="border-color: #6f42c1; background: #f8f5ff;">
+                        <div class="fw-bold" style="color: #6f42c1;">材料主檔缺失</div>
+                        <div class="stat-num" style="color: #6f42c1;" id="resMissingMaterial">0</div>
+                    </div>
+                </div>
+
+                <div class="col-md-4">
+                    <div class="stat-box" style="border-color: #fd7e14; background: #fff7ed;">
+                        <div class="fw-bold" style="color: #fd7e14;">單位不符略過</div>
+                        <div class="stat-num" style="color: #fd7e14;" id="resUnitMismatch">0</div>
+                    </div>
+                </div>
+            </div>
+            <p class="mt-3 mb-0 text-muted" style="font-size: 14px;">
+                💡 提示：被略過的項目代表目前「標準工項字典」尚未收錄該建材關鍵字。
+            </p>
+        </div>
+    </div>
+</div>
+
+@section Scripts {
+    <script>
+        const btnUpload = document.getElementById('btnUpload');
+        const excelFile = document.getElementById('excelFile');
+        const projectName = document.getElementById('projectName');
+        const loadingText = document.getElementById('loadingText');
+        const resultBox = document.getElementById('resultBox');
+
+        btnUpload.addEventListener('click', async function () {
+            if (!projectName.value.trim()) { alert('請輸入工程專案名稱！'); return; }
+            if (!excelFile.files || excelFile.files.length === 0) { alert('請選擇 Excel 檔案！'); return; }
+
+            const formData = new FormData();
+            formData.append('excelFile', excelFile.files[0]);
+            formData.append('projectName', projectName.value.trim());
+
+            btnUpload.disabled = true;
+            loadingText.style.display = 'block';
+            resultBox.style.display = 'none';
+
+            try {
+                const response = await fetch('/api/Estimation/upload-final-bid', {
+                    method: 'POST',
+                    body: formData
+                });
+
+                const data = await response.json();
+
+                if (!response.ok) { alert('回寫失敗：' + data.message); return; }
+
+                // 顯示結果
+                document.getElementById('resTotal').innerText = data.totalCount ?? 0;
+                document.getElementById('resSuccess').innerText = data.insertCount ?? 0;
+                document.getElementById('resUnmapped').innerText = data.unmappedCount ?? 0;
+                document.getElementById('resInvalid').innerText = data.invalidDataCount ?? 0;
+                document.getElementById('resMissingMaterial').innerText = data.missingMaterialCount ?? 0;
+                document.getElementById('resUnitMismatch').innerText = data.unitMismatchCount ?? 0;
+                resultBox.style.display = 'block';
+                
+                excelFile.value = ''; // 清空檔案
+            } catch (error) {
+                alert('系統連線錯誤：' + error);
+            } finally {
+                btnUpload.disabled = false;
+                loadingText.style.display = 'none';
+            }
+        });
+    </script>
+}
+

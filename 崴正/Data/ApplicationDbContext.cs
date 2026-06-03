@@ -16,6 +16,7 @@ namespace 崴正.Data
         public DbSet<HistoricalTransaction> HistoricalTransactions { get; set; }
         public DbSet<ItemDictionary> ItemDictionaries { get; set; }
         public DbSet<AuditLog> AuditLogs { get; set; }
+        public DbSet<UnmappedItem> UnmappedItems { get; set; }
         protected override void OnModelCreating(ModelBuilder modelBuilder)
         {
             base.OnModelCreating(modelBuilder);

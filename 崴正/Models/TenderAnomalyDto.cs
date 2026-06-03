@@ -29,7 +29,7 @@ namespace 崴正.Models
 
         // 對應到資料庫 material_master 的材料名稱，目前只檢測：磁磚、混凝土、鋼筋
         public string? MatchedMaterialName { get; set; }
-
+        public string? Category { get; set; }
         // 長期 180 天歷史基準，用來讓畫面知道系統是拿歷史資料當比較標準
         public decimal? HistoricalAvgQty180Days { get; set; }
         public decimal? HistoricalStdQty180Days { get; set; }
@@ -51,6 +51,10 @@ namespace 崴正.Models
 
         public decimal? ExpectedAmount { get; set; }
         public decimal? AmountDifference { get; set; }
+
+        
+        public decimal? SuggestedUnitPrice { get; set; }
+        public decimal? SuggestedAmount { get; set; }
     }
 
     public class TenderAnomalyResponseDto
@@ -60,3 +64,4 @@ namespace 崴正.Models
         public List<TenderAnomalyResultDto> Results { get; set; } = new();
     }
 }
+
