@@ -1,3 +1,4 @@
+
 # 量價估算與標單異常偵測功能整合說明
 
 本文件提供給主系統整合人員，用來快速理解本專案目前完成的功能、資料庫對應方式、程式碼位置、整合順序與注意事項。
@@ -594,4 +595,4 @@ Views/Shared/_Layout.cshtml.css
 若本專案有獨立 CSS，建議抽成單獨 css 檔。
 
 
-<img width="2255" height="1217" alt="supabase-schema-sbykuwypriudrgurmssb (1)" src="https://github.com/user-attachments/assets/394c7da5-ff6d-4c79-b5a3-81146fcbde50" />
+<img width="2255" height="1217" alt="supabase-schema-sbykuwypriudrgurmssb (1)" src="https://github.com/user-attachments/assets/c251b631-3daa-4785-a542-2235bf80cd0e" />
