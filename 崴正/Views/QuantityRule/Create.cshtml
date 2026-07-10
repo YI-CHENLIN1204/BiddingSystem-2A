@@ -6,9 +6,9 @@
 }
 
 <style>
-    :root { --wz-primary: #321fdb; --wz-bg: #f6faff; --wz-text: #141d23; --wz-muted: #6c757d; }
+    :root { --wz-primary: #321fdb; --wz-bg: #ebedef; --wz-text: #141d23; --wz-muted: #6c757d; }
     body { background: var(--wz-bg); color: var(--wz-text); }
-    .admin-main-card { background: #fff; border-radius: 8px; box-shadow: 0 6px 20px rgba(20, 29, 35, 0.06); }
+    .admin-main-card { background: #fff; border-radius: 6px; border: 1px solid #d8dbe0; box-shadow: 0 2px 8px rgba(20, 29, 35, 0.06); }
     .btn-wz-primary { background: var(--wz-primary); color: white; border-radius: 6px; padding: 7px 16px; font-weight: 700; border: none; }
     .btn-wz-primary:hover { color: white; filter: brightness(.96); }
     .btn-wz-outline { border: 1px solid #bcb3ff; color: var(--wz-primary); border-radius: 6px; padding: 7px 16px; font-weight: 700; text-decoration: none; background: white; }
@@ -18,7 +18,6 @@
 
 <div class="container mt-4" style="max-width: 900px;">
     <h2 class="fw-bold mb-1">➕ 新增參數規則</h2>
-    <p class="text-muted mb-4">為建材設定特定情境（建案/結構/樓層）下的基準用量與防弊門檻。</p>
 
     <div class="admin-main-card p-4 p-md-5">
         <form asp-action="Create" method="post">
@@ -75,17 +74,14 @@
                 <div class="col-md-4">
                     <label asp-for="Unit_Consumption" class="form-label fw-bold text-primary">單位基準用量 <span class="text-danger">*</span></label>
                     <input asp-for="Unit_Consumption" class="form-control" type="number" step="0.0001" value="1.0000" required />
-                    <div class="form-text">每平方公尺(或主要面積)之標準用量。</div>
                 </div>
                 <div class="col-md-4">
                     <label asp-for="Waste_Rate_Percent" class="form-label fw-bold text-primary">預估耗損率 (%) <span class="text-danger">*</span></label>
                     <input asp-for="Waste_Rate_Percent" class="form-control" type="number" step="0.1" value="5.0" required />
-                    <div class="form-text">施工時的預期損耗百分比。</div>
                 </div>
                 <div class="col-md-4">
                     <label asp-for="Z_Score_Threshold" class="form-label fw-bold text-danger">Z-Score 異常門檻 <span class="text-danger">*</span></label>
                     <input asp-for="Z_Score_Threshold" class="form-control" type="number" step="0.01" value="2.00" required />
-                    <div class="form-text">超出此門檻將觸發防弊紅燈警戒。</div>
                 </div>
             </div>
 

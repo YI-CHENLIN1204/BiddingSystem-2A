@@ -31,6 +31,9 @@ namespace 崴正.Data
                 entity.Property(e => e.TotalFloorArea).HasColumnName("total_floor_area");
                 entity.Property(e => e.StartDate).HasColumnName("start_date");
                 entity.Property(e => e.IsDeleted).HasColumnName("is_deleted");
+                entity.Property(e => e.ProjectType).HasColumnName("project_type");
+                entity.Property(e => e.StructureType).HasColumnName("structure_type");
+                entity.Property(e => e.City).HasColumnName("city");
             });
 
             modelBuilder.Entity<AuditLog>(entity =>
@@ -97,6 +100,7 @@ namespace 崴正.Data
                 entity.Property(e => e.Transaction_Date).HasColumnName("transaction_date");
                 entity.Property(e => e.IsDeleted).HasColumnName("is_deleted");
                 entity.Property(e => e.Project_Id).HasColumnName("project_id"); // 這裡可能有重複定義
+                entity.Property(e => e.Project_Master_Id).HasColumnName("project_master_id");
                 entity.Property(e => e.Is_Outlier).HasColumnName("is_outlier");
             });
                         

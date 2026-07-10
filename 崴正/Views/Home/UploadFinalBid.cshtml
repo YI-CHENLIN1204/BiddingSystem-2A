@@ -3,38 +3,245 @@
 }
 
 <style>
-    :root { --wz-primary: #321fdb; --wz-bg: #f6faff; --wz-text: #141d23; --wz-muted: #6c757d; }
+    :root { --wz-primary: #321fdb; --wz-bg: #ebedef; --wz-text: #141d23; --wz-muted: #6c757d; --wz-border: #d8dbe0; }
     body { background: var(--wz-bg); color: var(--wz-text); }
-    .admin-main-card { background: #fff; border-radius: 8px; box-shadow: 0 6px 20px rgba(20, 29, 35, 0.06); }
-    .btn-wz-primary { background: var(--wz-primary); color: white; border-radius: 6px; padding: 10px 24px; font-weight: 700; border: none; font-size: 1.1rem; }
+    .final-bid-page { max-width: 760px; margin: 0; }
+    .final-bid-page * { box-sizing: border-box; }
+    .final-bid-page h2 { font-size: 1.35rem; }
+    .admin-main-card { background: #fff; border-radius: 6px; box-shadow: 0 2px 8px rgba(20, 29, 35, 0.06); border: 1px solid var(--wz-border); padding: 16px 18px; }
+    .btn-wz-primary { background: var(--wz-primary); color: white; border-radius: 6px; padding: 8px 18px; font-weight: 700; border: none; font-size: .95rem; display: inline-flex; align-items: center; justify-content: center; }
     .btn-wz-primary:hover { color: white; filter: brightness(.95); }
-    .section-title { font-size: 1.1rem; color: var(--wz-primary); font-weight: 800; border-bottom: 2px solid #ebe8ff; padding-bottom: 8px; margin-bottom: 20px; margin-top: 10px; }
+    .section-title { font-size: 1rem; color: var(--wz-primary); font-weight: 800; border-bottom: 2px solid #ebe8ff; padding-bottom: 7px; margin-bottom: 14px; margin-top: 6px; }
+
+    .project-form-grid {
+        display: grid;
+        grid-template-columns: repeat(3, minmax(0, 1fr));
+        gap: 10px 12px;
+        margin-bottom: 18px;
+    }
+
+    .project-name-field {
+        grid-column: 1 / -1;
+    }
+
+    .wz-field {
+        min-width: 0;
+    }
+
+    .wz-label {
+        display: block;
+        color: #3c4b64;
+        font-size: 12px;
+        font-weight: 800;
+        margin-bottom: 6px;
+    }
+
+    .wz-input,
+    .wz-select {
+        width: 100%;
+        height: 36px;
+        border: 1px solid var(--wz-border);
+        border-radius: 6px;
+        background-color: #ffffff;
+        color: var(--wz-text);
+        font-size: 14px;
+        line-height: 1.5;
+        padding: 6px 12px;
+        transition: border-color .15s ease, box-shadow .15s ease;
+    }
+
+    .wz-input::placeholder {
+        color: #9aa5b1;
+    }
+
+    .wz-input:focus,
+    .wz-select:focus {
+        border-color: var(--wz-primary);
+        box-shadow: 0 0 0 0.2rem rgba(50, 31, 219, 0.12);
+        outline: 0;
+    }
+
+    .wz-select {
+        appearance: none;
+        padding-right: 34px;
+        background-image:
+            linear-gradient(45deg, transparent 50%, #6c757d 50%),
+            linear-gradient(135deg, #6c757d 50%, transparent 50%);
+        background-position:
+            calc(100% - 17px) 15px,
+            calc(100% - 11px) 15px;
+        background-size: 6px 6px, 6px 6px;
+        background-repeat: no-repeat;
+        cursor: pointer;
+    }
+
+    .file-input-native {
+        position: absolute;
+        width: 1px;
+        height: 1px;
+        padding: 0;
+        margin: -1px;
+        overflow: hidden;
+        clip: rect(0, 0, 0, 0);
+        white-space: nowrap;
+        border: 0;
+    }
+
+    .file-picker {
+        width: 100%;
+        min-height: 38px;
+        border-radius: 6px;
+        border: 1px solid var(--wz-border);
+        background: #ffffff;
+        display: flex;
+        align-items: center;
+        overflow: hidden;
+        cursor: pointer;
+        transition: border-color .15s ease, box-shadow .15s ease;
+    }
+
+    .file-picker:hover {
+        border-color: var(--wz-primary);
+        box-shadow: 0 2px 8px rgba(50, 31, 219, 0.08);
+    }
+
+    .file-input-native:focus + .file-picker {
+        border-color: var(--wz-primary);
+        box-shadow: 0 0 0 0.2rem rgba(50, 31, 219, 0.12);
+    }
+
+    .file-picker-button {
+        align-self: stretch;
+        padding: 0 16px;
+        background: #f0f7ff;
+        color: var(--wz-primary);
+        border-right: 1px solid var(--wz-border);
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        font-weight: 800;
+        font-size: 14px;
+        white-space: nowrap;
+    }
+
+    .file-picker-name {
+        color: var(--wz-muted);
+        padding: 0 14px;
+        overflow: hidden;
+        text-overflow: ellipsis;
+        white-space: nowrap;
+        font-size: 13px;
+    }
+
+    .file-picker-name.has-file {
+        color: var(--wz-text);
+        font-weight: 600;
+    }
+
+    .file-upload-row {
+        margin-bottom: 14px;
+    }
+
+    .upload-actions {
+        display: flex;
+        justify-content: flex-start;
+        align-items: center;
+        margin-top: 0;
+        padding-top: 0;
+        clear: both;
+    }
     
-    .stat-box { background: #f8f9fa; border: 1px solid #dee2e6; border-radius: 8px; padding: 20px; text-align: center; }
-    .stat-num { font-size: 2.5rem; font-weight: 900; }
+    .stat-box { background: #f8f9fa; border: 1px solid #dee2e6; border-radius: 6px; padding: 14px; text-align: center; }
+    .stat-num { font-size: 2rem; font-weight: 900; }
+
+    @@media (max-width: 768px) {
+        .project-form-grid {
+            grid-template-columns: 1fr;
+        }
+
+        .file-picker {
+            flex-direction: column;
+            align-items: stretch;
+        }
+
+        .file-picker-button {
+            min-height: 44px;
+            border-right: 0;
+            border-bottom: 1px solid var(--wz-border);
+        }
+
+        .file-picker-name {
+            padding: 12px 16px;
+        }
+    }
 </style>
 
-<div class="container mt-4" style="max-width: 900px;">
+<div class="container final-bid-page">
     <h2 class="fw-bold mb-1">⚙️ 決標單歷史回寫</h2>
-    <p class="text-muted mb-4">
-        提供採發部上傳最終決標且已簽約之 Excel 標單。系統將自動辨識標準建材，並回寫至歷史資料庫作為 AI 估算養分。
-    </p>
 
-    <div class="admin-main-card p-4 p-md-5">
+    <div class="admin-main-card">
         
         <div class="section-title">1. 建立工程專案來源</div>
-        <div class="mb-4">
-            <input type="text" id="projectName" class="form-control form-control-lg border-primary" placeholder="例如：立彩_FANCY新建工程" />
-            <div class="form-text mt-2">此名稱將標記於歷史資料庫中，以便未來追溯這筆價格的來源建案。</div>
+        <div class="project-form-grid">
+            <div class="wz-field project-name-field">
+                <label class="wz-label" for="projectName">工程專案名稱</label>
+                <input type="text" id="projectName" class="wz-input" placeholder="例如：立彩_FANCY新建工程" />
+            </div>
+
+            <div class="wz-field">
+                <label class="wz-label" for="projectType">建案類型</label>
+                <select id="projectType" class="wz-select" required>
+                    <option value="">請選擇</option>
+                    <option value="住宅">住宅</option>
+                    <option value="廠房">廠房</option>
+                </select>
+            </div>
+
+            <div class="wz-field">
+                <label class="wz-label" for="structureType">結構類型</label>
+                <select id="structureType" class="wz-select" required>
+                    <option value="">請選擇</option>
+                    <option value="SC">SC</option>
+                    <option value="RC">RC</option>
+                    <option value="SRC">SRC</option>
+                </select>
+            </div>
+
+            <div class="wz-field">
+                <label class="wz-label" for="city">區域/縣市</label>
+                <select id="city" class="wz-select" required>
+                    <option value="">請選擇</option>
+                    <option value="台北市">台北市</option>
+                    <option value="新北市">新北市</option>
+                    <option value="桃園市">桃園市</option>
+                    <option value="新竹縣">新竹縣</option>
+                    <option value="新竹市">新竹市</option>
+                    <option value="苗栗縣">苗栗縣</option>
+                    <option value="台中市">台中市</option>
+                    <option value="彰化縣">彰化縣</option>
+                    <option value="南投縣">南投縣</option>
+                    <option value="雲林縣">雲林縣</option>
+                    <option value="嘉義縣">嘉義縣</option>
+                    <option value="嘉義市">嘉義市</option>
+                    <option value="台南市">台南市</option>
+                    <option value="高雄市">高雄市</option>
+                    <option value="屏東縣">屏東縣</option>
+                    <option value="其他">其他</option>
+                </select>
+            </div>
         </div>
 
         <div class="section-title">2. 選擇最終決標 Excel 檔案</div>
-        <div class="mb-4">
-            <input type="file" id="excelFile" class="form-control form-control-lg" accept=".xlsx" />
+        <div class="file-upload-row">
+            <input type="file" id="excelFile" class="file-input-native" accept=".xlsx,.xls" />
+            <label for="excelFile" class="file-picker">
+                <span class="file-picker-button">選擇 Excel 檔案</span>
+                <span id="excelFileName" class="file-picker-name">尚未選擇檔案</span>
+            </label>
         </div>
 
-        <div class="d-flex justify-content-end border-top pt-4 mt-2">
-            <button id="btnUpload" class="btn-wz-primary w-100">🚀 開始解析並寫入歷史資料庫</button>
+        <div class="upload-actions">
+            <button id="btnUpload" class="btn-wz-primary">開始解析並寫入歷史資料庫</button>
         </div>
 
         <div id="loadingText" class="text-center text-muted mt-3 fw-bold" style="display:none;">
@@ -44,7 +251,7 @@
 
     <div id="resultBox" class="mt-4" style="display:none;">
         <div class="alert alert-success shadow-sm" style="background-color: #fff; border-left: 5px solid #321fdb;">
-            <h4 class="alert-heading fw-bold mb-3" style="color: #321fdb;">✅ 歷史回寫任務完成！</h4>
+            <h4 class="alert-heading fw-bold mb-3" style="color: #321fdb;">歷史回寫任務完成</h4>
             <div class="row g-3">
                 <div class="col-md-4">
                     <div class="stat-box">
@@ -54,7 +261,7 @@
                 </div>
 
                 <div class="col-md-4">
-                    <div class="stat-box" style="border-color: #321fdb; background: #f6faff;">
+                    <div class="stat-box" style="border-color: #321fdb; background: #f0f7ff;">
                         <div class="fw-bold" style="color: #321fdb;">成功寫入歷史庫</div>
                         <div class="stat-num" style="color: #321fdb;" id="resSuccess">0</div>
                     </div>
@@ -88,15 +295,9 @@
                     </div>
                 </div>
             </div>
-            <p class="mt-3 mb-0 text-muted" style="font-size: 14px;">
-                💡 提示：被略過的項目代表目前「標準工項字典」尚未收錄該建材關鍵字。
-            </p>
         </div>
         <div id="unmappedPanel" class="mt-4" style="display:none;">
             <h4 class="mb-3">未對應工項處理</h4>
-            <p class="text-muted">
-                以下工項尚未被標準工項字典辨識。請選擇要對應的標準工項，加入字典後，下次匯入即可自動對應。
-            </p>
 
             <div id="unmappedList"></div>
         </div>
@@ -108,16 +309,35 @@
         const btnUpload = document.getElementById('btnUpload');
         const excelFile = document.getElementById('excelFile');
         const projectName = document.getElementById('projectName');
+        const projectType = document.getElementById('projectType');
+        const structureType = document.getElementById('structureType');
+        const city = document.getElementById('city');
         const loadingText = document.getElementById('loadingText');
         const resultBox = document.getElementById('resultBox');
+        const excelFileName = document.getElementById('excelFileName');
+
+        excelFile.addEventListener('change', function () {
+            const selectedFile = excelFile.files && excelFile.files.length > 0
+                ? excelFile.files[0]
+                : null;
+
+            excelFileName.textContent = selectedFile ? selectedFile.name : '尚未選擇檔案';
+            excelFileName.classList.toggle('has-file', Boolean(selectedFile));
+        });
 
         btnUpload.addEventListener('click', async function () {
             if (!projectName.value.trim()) { alert('請輸入工程專案名稱！'); return; }
+            if (!projectType.value) { alert('請選擇建案類型！'); return; }
+            if (!structureType.value) { alert('請選擇結構類型！'); return; }
+            if (!city.value) { alert('請選擇區域/縣市！'); return; }
             if (!excelFile.files || excelFile.files.length === 0) { alert('請選擇 Excel 檔案！'); return; }
 
             const formData = new FormData();
             formData.append('excelFile', excelFile.files[0]);
             formData.append('projectName', projectName.value.trim());
+            formData.append('projectType', projectType.value);
+            formData.append('structureType', structureType.value);
+            formData.append('city', city.value);
 
             btnUpload.disabled = true;
             loadingText.style.display = 'block';
@@ -144,8 +364,6 @@
                     return;
                 }
 
-                if (!response.ok) { alert('回寫失敗：' + data.message); return; }
-
                 // 顯示結果
                 document.getElementById('resTotal').innerText = data.totalCount ?? 0;
                 document.getElementById('resSuccess').innerText = data.insertCount ?? 0;
@@ -157,6 +375,8 @@
                 resultBox.style.display = 'block';
                 
                 excelFile.value = ''; // 清空檔案
+                excelFileName.textContent = '尚未選擇檔案';
+                excelFileName.classList.remove('has-file');
             } catch (error) {
                 alert('系統連線錯誤：' + error);
             } finally {

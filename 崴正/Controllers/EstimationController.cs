@@ -7,6 +7,7 @@ using 崴正.Data;
 using 崴正.Models;
 using 崴正.Services;
 using Microsoft.AspNetCore.Authorization;
+using Microsoft.EntityFrameworkCore;
 
 namespace 崴正.Controllers
 {
@@ -567,7 +568,12 @@ namespace 崴正.Controllers
         // 🚀 UC-05 & UC-06：匯入最終決標標單 & 回寫歷史資料
         // ==========================================
         [HttpPost("upload-final-bid")]
-        public IActionResult UploadFinalBid(IFormFile excelFile, [FromForm] string projectName)
+        public IActionResult UploadFinalBid(
+            IFormFile excelFile,
+            [FromForm] string projectName,
+            [FromForm] string projectType,
+            [FromForm] string structureType,
+            [FromForm] string city)
         {
             if (excelFile == null || excelFile.Length == 0)
                 return BadRequest(new { message = "請先選擇 Excel 檔案" });
@@ -575,11 +581,45 @@ namespace 崴正.Controllers
             if (string.IsNullOrWhiteSpace(projectName))
                 return BadRequest(new { message = "請輸入此決標案的工程專案名稱" });
 
+            projectType = NormalizeImportText(projectType);
+            structureType = NormalizeImportText(structureType);
+            city = NormalizeImportText(city);
+
+            if (!IsAllowedValue(projectType, "住宅", "廠房"))
+                return BadRequest(new { message = "請選擇建案類型：住宅或廠房" });
+
+            if (!IsAllowedValue(structureType, "SC", "RC", "SRC"))
+                return BadRequest(new { message = "請選擇結構類型：SC、RC 或 SRC" });
+
+            if (string.IsNullOrWhiteSpace(city))
+                return BadRequest(new { message = "請選擇或輸入區域/縣市" });
+
             try
             {
                 var parser = new TenderExcelParser();
-                using var stream = excelFile.OpenReadStream();
-                var rows = parser.Parse(stream, excelFile.FileName);
+
+                using var uploadBuffer = new MemoryStream();
+                excelFile.CopyTo(uploadBuffer);
+                var excelBytes = uploadBuffer.ToArray();
+
+                var totalFloorArea = parser.ExtractTotalFloorArea(new MemoryStream(excelBytes));
+                var rows = parser.Parse(new MemoryStream(excelBytes), excelFile.FileName);
+
+                using var dbTransaction = _context.Database.BeginTransaction();
+
+                var project = new ProjectMaster
+                {
+                    ProjectName = projectName.Trim(),
+                    ProjectType = projectType,
+                    StructureType = structureType,
+                    City = city,
+                    TotalFloorArea = totalFloorArea,
+                    StartDate = DateTime.UtcNow.Date,
+                    IsDeleted = false
+                };
+
+                _context.ProjectMasters.Add(project);
+                _context.SaveChanges();
 
                 var dictionaryList = _context.ItemDictionaries.ToList();
                 var materials = _context.MaterialMasters.ToList();
@@ -657,7 +697,8 @@ namespace 崴正.Controllers
                         Transaction_Date = DateTime.UtcNow.Date,
                         IsDeleted = false,
                         Is_Outlier = false,
-                        Project_Id = projectName
+                        Project_Id = project.ProjectName,
+                        Project_Master_Id = project.ProjectId
                     };
 
                     _context.HistoricalTransactions.Add(newHistory);
@@ -665,10 +706,17 @@ namespace 崴正.Controllers
                 }
 
                 _context.SaveChanges();
+                dbTransaction.Commit();
 
                 return Ok(new
                 {
                     message = "回寫成功",
+                    projectId = project.ProjectId,
+                    projectName = project.ProjectName,
+                    projectType = project.ProjectType,
+                    structureType = project.StructureType,
+                    city = project.City,
+                    totalFloorArea = project.TotalFloorArea,
                     insertCount = successInsertCount,
                     unmappedCount = unmappedCount,
                     invalidDataCount = invalidDataCount,
@@ -681,6 +729,16 @@ namespace 崴正.Controllers
             {
                 return BadRequest(new { message = "回寫失敗：" + ex.Message });
             }
+        }
+
+        private static string NormalizeImportText(string? value)
+        {
+            return string.IsNullOrWhiteSpace(value) ? string.Empty : value.Trim();
+        }
+
+        private static bool IsAllowedValue(string value, params string[] allowedValues)
+        {
+            return allowedValues.Any(x => string.Equals(x, value, StringComparison.OrdinalIgnoreCase));
         }
 
         [HttpGet("unmapped-items")]
@@ -769,5 +827,3 @@ namespace 崴正.Controllers
     }
 
 }
-
-

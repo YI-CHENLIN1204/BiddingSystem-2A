@@ -12,6 +12,7 @@ namespace 崴正.Models
         public DateTime Transaction_Date { get; set; }
         public bool IsDeleted { get; set; }
         public string? Project_Id { get; set; }
+        public int? Project_Master_Id { get; set; }
         public bool Is_Outlier { get; set; }
     }
 }

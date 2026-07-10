@@ -5,9 +5,9 @@
 }
 
 <style>
-    :root { --wz-primary: #321fdb; --wz-bg: #f6faff; --wz-text: #141d23; --wz-muted: #6c757d; }
+    :root { --wz-primary: #321fdb; --wz-bg: #ebedef; --wz-text: #141d23; --wz-muted: #6c757d; }
     body { background: var(--wz-bg); color: var(--wz-text); }
-    .admin-main-card { background: #fff; border-radius: 8px; box-shadow: 0 6px 20px rgba(20, 29, 35, 0.06); }
+    .admin-main-card { background: #fff; border-radius: 6px; border: 1px solid #d8dbe0; box-shadow: 0 2px 8px rgba(20, 29, 35, 0.06); }
     .btn-wz-primary { background: var(--wz-primary); color: white; border-radius: 6px; padding: 7px 16px; font-weight: 700; border: none; }
     .btn-wz-primary:hover { color: white; filter: brightness(.96); }
     .btn-wz-outline { border: 1px solid #bcb3ff; color: var(--wz-primary); border-radius: 6px; padding: 7px 16px; font-weight: 700; text-decoration: none; background: white; }
@@ -17,9 +17,6 @@
 
 <div class="container mt-4" style="max-width: 900px;">
     <h2 class="fw-bold mb-1">✏️ 編輯建材參數</h2>
-    <p class="text-muted mb-4">
-        目前正在編輯：<span class="badge bg-primary fs-6 ms-2">@ViewBag.MaterialName (@ViewBag.BaseUnit)</span>
-    </p>
 
     <div class="admin-main-card p-4 p-md-5">
         <form asp-action="Edit" method="post">

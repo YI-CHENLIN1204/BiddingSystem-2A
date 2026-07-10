@@ -10,8 +10,8 @@
         --wz-primary: #321fdb;
         --wz-primary-soft: #ebe8ff;
         --wz-green: #2eb85c;
-        --wz-dark-table: #6f7a7d;
-        --wz-bg: #f6faff;
+        --wz-dark-table: #5b5f63;
+        --wz-bg: #ebedef;
         --wz-text: #141d23;
         --wz-muted: #6c757d;
     }
@@ -33,16 +33,11 @@
         margin-bottom: 6px;
     }
 
-    .page-desc {
-        color: var(--wz-muted);
-        font-size: 14px;
-        margin-bottom: 18px;
-    }
-
     .admin-main-card {
         background: #fff;
-        border-radius: 8px;
-        box-shadow: 0 6px 20px rgba(20, 29, 35, 0.06);
+        border-radius: 6px;
+        border: 1px solid #d8dbe0;
+        box-shadow: 0 2px 8px rgba(20, 29, 35, 0.06);
         overflow: hidden;
     }
 
@@ -148,9 +143,6 @@
 
 <div class="admin-page mt-4">
     <h2 class="page-title">⚙️ 估算參數管理後台</h2>
-    <p class="page-desc">
-        提供估算部主管調整各建材的防弊門檻 (Z-Score) 與基本單位換算率。
-    </p>
     <!-- 顯示成功或失敗的提示訊息 -->
     @if (TempData["SuccessMessage"] != null)
     {

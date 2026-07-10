@@ -204,6 +204,109 @@ namespace 崴正.Services
             return result;
         }
 
+        public decimal? ExtractTotalFloorArea(Stream excelStream)
+        {
+            using var workbook = new XLWorkbook(excelStream);
+
+            var layoutSheets = workbook.Worksheets
+                .Where(ws => NormalizeText(ws.Name).Contains("放樣"))
+                .ToList();
+
+            foreach (var ws in layoutSheets)
+            {
+                var area = ExtractTotalFloorAreaFromWorksheet(ws);
+
+                if (area.HasValue)
+                    return area.Value;
+            }
+
+            return null;
+        }
+
+        private static decimal? ExtractTotalFloorAreaFromWorksheet(IXLWorksheet ws)
+        {
+            int lastRow = ws.LastRowUsed()?.RowNumber() ?? 0;
+            int lastCol = ws.LastColumnUsed()?.ColumnNumber() ?? 0;
+
+            for (int row = 1; row <= lastRow; row++)
+            {
+                for (int col = 1; col <= lastCol; col++)
+                {
+                    var label = NormalizeText(ws.Cell(row, col).GetFormattedString());
+
+                    if (!IsFloorAreaLabel(label))
+                        continue;
+
+                    var inlineValue = TryExtractDecimalFromText(label);
+
+                    if (inlineValue.HasValue)
+                        return inlineValue.Value;
+
+                    var nearbyValue = FindNearbyDecimal(ws, row, col, lastRow, lastCol);
+
+                    if (nearbyValue.HasValue)
+                        return nearbyValue.Value;
+                }
+            }
+
+            return null;
+        }
+
+        private static bool IsFloorAreaLabel(string text)
+        {
+            if (string.IsNullOrWhiteSpace(text))
+                return false;
+
+            return text.Contains("總樓地板面積") ||
+                   text.Contains("總樓板面積") ||
+                   text.Contains("樓地板總面積") ||
+                   (text.Contains("樓地板") && text.Contains("面積")) ||
+                   text.Contains("放樣面積");
+        }
+
+        private static decimal? FindNearbyDecimal(IXLWorksheet ws, int row, int col, int lastRow, int lastCol)
+        {
+            var candidates = new List<string>();
+
+            for (int targetCol = col + 1; targetCol <= Math.Min(col + 5, lastCol); targetCol++)
+            {
+                candidates.Add(ws.Cell(row, targetCol).GetFormattedString());
+            }
+
+            for (int targetRow = row + 1; targetRow <= Math.Min(row + 2, lastRow); targetRow++)
+            {
+                for (int targetCol = col; targetCol <= Math.Min(col + 5, lastCol); targetCol++)
+                {
+                    candidates.Add(ws.Cell(targetRow, targetCol).GetFormattedString());
+                }
+            }
+
+            foreach (var candidate in candidates)
+            {
+                var value = TryExtractDecimalFromText(candidate);
+
+                if (value.HasValue && value.Value > 0)
+                    return value.Value;
+            }
+
+            return null;
+        }
+
+        private static decimal? TryExtractDecimalFromText(string text)
+        {
+            if (string.IsNullOrWhiteSpace(text))
+                return null;
+
+            var match = Regex.Match(
+                text.Replace(",", ""),
+                @"[-+]?\d+(?:\.\d+)?");
+
+            if (match.Success && decimal.TryParse(match.Value, out var value))
+                return value;
+
+            return null;
+        }
+
         private static bool IsHeaderRow(List<string> values)
         {
             string rowText = string.Join("", values)
@@ -415,4 +518,3 @@ namespace 崴正.Services
         }
     }
 }
-

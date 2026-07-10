@@ -7,8 +7,8 @@
         --wz-primary: #321fdb;
         --wz-primary-soft: #ebe8ff;
         --wz-green: #2eb85c;
-        --wz-dark-table: #6f7a7d;
-        --wz-bg: #f6faff;
+        --wz-dark-table: #5b5f63;
+        --wz-bg: #ebedef;
         --wz-card: #ffffff;
         --wz-border: #d8dbe0;
         --wz-text: #141d23;
@@ -33,17 +33,12 @@
         margin-bottom: 6px;
     }
 
-    .page-desc {
-        color: var(--wz-muted);
-        font-size: 14px;
-        margin-bottom: 18px;
-    }
-
     .filter-card {
         background: #fff;
-        border-radius: 8px;
+        border-radius: 6px;
         padding: 16px 18px;
-        box-shadow: 0 6px 20px rgba(20, 29, 35, 0.06);
+        border: 1px solid var(--wz-border);
+        box-shadow: 0 2px 8px rgba(20, 29, 35, 0.06);
         margin-bottom: 18px;
     }
 
@@ -80,31 +75,141 @@
             display: block;
         }
 
-    .form-label {
-        font-weight: 700;
-        font-size: 13px;
-        color: #333;
+    .filter-grid {
+        display: grid;
+        grid-template-columns: repeat(6, minmax(120px, 1fr));
+        gap: 10px 12px;
+        align-items: end;
     }
 
-    .form-control,
-    .form-select {
+    .wz-field {
+        min-width: 0;
+    }
+
+    .wz-label {
+        display: block;
+        color: #3c4b64;
+        font-size: 12px;
+        font-weight: 800;
+        margin-bottom: 6px;
+    }
+
+    .wz-input,
+    .wz-select {
+        width: 100%;
+        height: 36px;
+        border: 1px solid var(--wz-border);
+        border-radius: 6px;
+        background-color: #ffffff;
+        color: var(--wz-text);
+        font-size: 14px;
+        line-height: 1.5;
+        padding: 6px 12px;
+        transition: border-color .15s ease, box-shadow .15s ease;
+        box-sizing: border-box;
+    }
+
+    .wz-input::placeholder {
+        color: #9aa5b1;
+    }
+
+    .wz-input:focus,
+    .wz-select:focus,
+    .form-control:focus {
+        border-color: var(--wz-primary);
+        box-shadow: 0 0 0 0.2rem rgba(50, 31, 219, 0.12);
+        outline: 0;
+    }
+
+    .form-control {
         border-radius: 6px;
         border: 1px solid var(--wz-border);
         font-size: 14px;
         height: 38px;
     }
 
-        .form-control:focus,
-        .form-select:focus {
-            border-color: var(--wz-primary);
-            box-shadow: 0 0 0 .15rem rgba(50, 31, 219, .12);
-        }
+    .wz-select {
+        appearance: none;
+        padding-right: 34px;
+        background-image:
+            linear-gradient(45deg, transparent 50%, #6c757d 50%),
+            linear-gradient(135deg, #6c757d 50%, transparent 50%);
+        background-position:
+            calc(100% - 17px) 15px,
+            calc(100% - 11px) 15px;
+        background-size: 6px 6px, 6px 6px;
+        background-repeat: no-repeat;
+        cursor: pointer;
+    }
 
     .filter-actions {
         display: flex;
         justify-content: flex-end;
+        align-items: center;
         gap: 10px;
         margin-top: 16px;
+        flex-wrap: wrap;
+    }
+
+    .similar-switch {
+        margin-right: auto;
+        display: inline-flex;
+        align-items: center;
+        gap: 10px;
+        color: #3c4b64;
+        font-size: 13px;
+        font-weight: 800;
+        cursor: pointer;
+        user-select: none;
+    }
+
+    .similar-switch input,
+    #similarProjectSwitch {
+        position: absolute;
+        width: 1px;
+        height: 1px;
+        opacity: 0;
+        pointer-events: none;
+    }
+
+    .switch-ui {
+        position: relative;
+        width: 74px;
+        height: 40px;
+        border-radius: 999px;
+        background: #dbe4ec;
+        box-shadow: inset 0 2px 5px rgba(20, 29, 35, .12), 0 2px 6px rgba(20, 29, 35, .10);
+        transition: background .2s ease, box-shadow .2s ease;
+        flex-shrink: 0;
+    }
+
+    .switch-ui::after {
+        content: '';
+        position: absolute;
+        top: 3px;
+        left: 3px;
+        width: 34px;
+        height: 34px;
+        border-radius: 50%;
+        background: #f7f7f7;
+        box-shadow: 0 3px 8px rgba(20, 29, 35, .24), inset 0 1px 1px rgba(255,255,255,.9);
+        transition: transform .2s ease;
+    }
+
+    .similar-switch input:checked + .switch-ui,
+    #similarProjectSwitch:checked + .switch-ui {
+        background: #4bb3f5;
+        box-shadow: inset 0 2px 5px rgba(20, 29, 35, .10), 0 2px 7px rgba(75, 179, 245, .32);
+    }
+
+    .similar-switch input:checked + .switch-ui::after,
+    #similarProjectSwitch:checked + .switch-ui::after {
+        transform: translateX(34px);
+        background: #ffffff;
+    }
+
+    .similar-switch-text {
+        white-space: nowrap;
     }
 
     .btn-wz-primary {
@@ -132,21 +237,115 @@
 
     .estimate-main-card {
         background: #fff;
-        border-radius: 8px;
-        box-shadow: 0 6px 20px rgba(20, 29, 35, 0.06);
+        border-radius: 6px;
+        border: 1px solid var(--wz-border);
+        box-shadow: 0 2px 8px rgba(20, 29, 35, 0.06);
         overflow: hidden;
+    }
+
+    .estimate-workspace {
+        display: block;
+        position: relative;
+    }
+
+    .estimate-workspace.show-similar {
+        display: block;
+    }
+
+    .similar-project-card {
+        position: fixed;
+        right: 28px;
+        top: 148px;
+        width: 340px;
+        max-height: calc(100vh - 176px);
+        background: #fff;
+        border-radius: 6px;
+        border: 1px solid var(--wz-border);
+        box-shadow: 0 8px 24px rgba(20, 29, 35, 0.16);
+        overflow: hidden;
+        z-index: 1040;
+    }
+
+    .similar-project-header {
+        padding: 14px 16px;
+        border-bottom: 1px solid var(--wz-border);
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        gap: 12px;
+    }
+
+    .similar-project-title {
+        font-weight: 900;
+        color: var(--wz-primary);
+        margin: 0;
+    }
+
+    .similar-project-count {
+        color: var(--wz-muted);
+        font-size: 12px;
+        white-space: nowrap;
+    }
+
+    .similar-project-list {
+        padding: 12px;
+        max-height: calc(100vh - 245px);
+        overflow-y: auto;
+    }
+
+    .similar-project-empty {
+        color: var(--wz-muted);
+        font-size: 13px;
+        line-height: 1.7;
+        padding: 12px 4px;
+    }
+
+    .similar-project-item {
+        border-radius: 6px;
+        background: #f8f9fa;
+        padding: 12px;
+        margin-bottom: 10px;
+    }
+
+    .similar-project-name {
+        font-weight: 900;
+        color: var(--wz-text);
+        margin-bottom: 8px;
+        line-height: 1.4;
+    }
+
+    .similar-project-tags {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 6px;
+        margin-bottom: 8px;
+    }
+
+    .similar-project-tag {
+        border-radius: 999px;
+        background: #f0f7ff;
+        color: var(--wz-primary);
+        padding: 3px 8px;
+        font-size: 12px;
+        font-weight: 800;
+    }
+
+    .similar-project-meta {
+        color: var(--wz-muted);
+        font-size: 13px;
+        line-height: 1.7;
     }
 
     .calc-bar {
         margin: 0;
         padding: 14px 18px;
-        border: 2px solid #c9c2ff;
-        background: #f4f1ff;
-        border-radius: 8px;
-        display: grid;
-        grid-template-columns: 150px 180px 260px 70px 1fr auto auto;
+        border: 1px solid var(--wz-border);
+        background: #ffffff;
+        border-radius: 6px;
+        display: flex;
         gap: 10px;
         align-items: center;
+        flex-wrap: wrap;
     }
 
     .calc-title {
@@ -164,6 +363,25 @@
         font-weight: 700;
         text-align: center;
         white-space: nowrap;
+    }
+
+    .calc-area-control {
+        display: flex;
+        align-items: center;
+        gap: 10px;
+        min-width: 0;
+    }
+
+    .calc-spacer {
+        flex: 1 1 auto;
+        min-width: 20px;
+    }
+
+    .calc-actions {
+        display: flex;
+        align-items: center;
+        gap: 10px;
+        flex-wrap: wrap;
     }
 
     .calc-input-group {
@@ -192,9 +410,7 @@
     }
 
     .calc-hint {
-        color: #a0a0a0;
-        font-size: 14px;
-        white-space: nowrap;
+        display: none;
     }
 
     .btn-export {
@@ -241,9 +457,23 @@
         color: #555;
     }
 
+    .estimate-table .category-row td {
+        background: #f1f3f5;
+        color: #2f3a40;
+        font-weight: 900;
+        text-align: left;
+        padding-left: 12px;
+    }
+
     .sub-row td:first-child {
         padding-left: 32px;
         color: #666;
+    }
+
+    .sub-row-name {
+        padding-left: 34px !important;
+        color: #5d6770;
+        font-weight: 650;
     }
 
     .number-cell {
@@ -260,6 +490,40 @@
         font-weight: 800;
     }
 
+    .status-badge {
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        border-radius: 999px;
+        padding: 4px 10px;
+        font-size: 12px;
+        font-weight: 800;
+        background: #eaf7ef;
+        color: #1f8f49;
+        white-space: nowrap;
+    }
+
+        .status-badge.warn {
+            background: #fff4de;
+            color: #9a6400;
+        }
+
+    .table-message td {
+        text-align: center;
+        padding: 26px 12px !important;
+        color: var(--wz-muted);
+    }
+
+    .summary-note {
+        color: var(--wz-muted);
+        font-size: 13px;
+        padding: 10px 18px 0;
+    }
+
+    .summary-note:empty {
+        display: none;
+    }
+
     .chart-icon {
         color: var(--wz-primary);
         font-weight: 900;
@@ -272,62 +536,85 @@
         margin-top: 8px;
     }
 
+    @@media (max-width: 1400px) {
+        .filter-grid {
+            grid-template-columns: repeat(3, minmax(0, 1fr));
+        }
+    }
+
     @@media (max-width: 1200px) {
         .calc-bar {
-            grid-template-columns: 1fr;
+            align-items: flex-start;
         }
 
-        .calc-title,
-        .calc-hint {
-            white-space: normal;
+        .calc-title {
+            width: 100%;
+        }
+
+        .calc-area-control {
+            flex-wrap: wrap;
         }
 
         .filter-actions {
             justify-content: flex-start;
+        }
+
+        .similar-switch {
+            width: 100%;
+        }
+    }
+
+    @@media (max-width: 768px) {
+        .filter-grid {
+            grid-template-columns: 1fr;
+        }
+
+        .similar-project-card {
+            left: 16px;
+            right: 16px;
+            top: 120px;
+            width: auto;
         }
     }
 </style>
 
 <div class="estimate-page mt-4">
     <h2 class="page-title">工程估算</h2>
-    <p class="page-desc">
-        依工程類型、結構、年度、縣市與樓地板面積進行篩選，並於下方顯示工程量試算表。
-    </p>
 
     <!-- 篩選條件 -->
     <div class="filter-card">
         <div class="filter-header" onclick="toggleFilterPanel()">
             <div>
                 <h5 class="filter-title">篩選條件</h5>
-                <div class="text-muted" style="font-size: 13px;">選擇估算資料來源條件，作為下方試算依據。</div>
             </div>
 
             <button type="button" class="filter-toggle-btn" id="filterToggleBtn">展開篩選</button>
         </div>
 
         <div class="filter-body" id="filterBody">
-            <div class="row g-3">
-                <div class="col-md-2">
-                    <label class="form-label">建案類型</label>
-                    <select class="form-select" id="buildingType">
+            <div class="filter-grid">
+                <div class="wz-field">
+                    <label class="wz-label" for="buildingType">建案類型</label>
+                    <select class="wz-select" id="buildingType">
                         <option value="">全部</option>
                         <option>廠房</option>
                         <option>住宅</option>
                     </select>
                 </div>
 
-                <div class="col-md-2">
-                    <label class="form-label">結構類型</label>
-                    <select class="form-select" id="structureType">
+                <div class="wz-field">
+                    <label class="wz-label" for="structureType">結構類型</label>
+                    <select class="wz-select" id="structureType">
                         <option value="">全部</option>
                         <option>SC</option>
                         <option>RC</option>
+                        <option>SRC</option>
                     </select>
                 </div>
 
-                <div class="col-md-2">
-                    <label class="form-label">估算年度起</label>
-                    <select class="form-select" id="yearStart">
+                <div class="wz-field">
+                    <label class="wz-label" for="yearStart">估算年度起</label>
+                    <select class="wz-select" id="yearStart">
                         <option value="">不限</option>
                         <option>2021</option>
                         <option>2022</option>
@@ -337,9 +624,9 @@
                     </select>
                 </div>
 
-                <div class="col-md-2">
-                    <label class="form-label">估算年度迄</label>
-                    <select class="form-select" id="yearEnd">
+                <div class="wz-field">
+                    <label class="wz-label" for="yearEnd">估算年度迄</label>
+                    <select class="wz-select" id="yearEnd">
                         <option value="">不限</option>
                         <option>2021</option>
                         <option>2022</option>
@@ -349,80 +636,141 @@
                     </select>
                 </div>
 
-                <div class="col-md-2">
-                    <label class="form-label">縣市</label>
-                    <select class="form-select" id="city">
+                <div class="wz-field">
+                    <label class="wz-label" for="city">縣市</label>
+                    <select class="wz-select" id="city">
                         <option value="">全部</option>
                         <option>台北市</option>
                         <option>新北市</option>
                         <option>桃園市</option>
+                        <option>新竹縣</option>
+                        <option>新竹市</option>
+                        <option>苗栗縣</option>
                         <option>台中市</option>
+                        <option>彰化縣</option>
+                        <option>南投縣</option>
+                        <option>雲林縣</option>
+                        <option>嘉義縣</option>
+                        <option>嘉義市</option>
                         <option>台南市</option>
                         <option>高雄市</option>
-                        <option>雲林縣</option>
+                        <option>屏東縣</option>
+                        <option>其他</option>
                     </select>
                 </div>
 
-                <div class="col-md-2">
-                    <label class="form-label">總樓地板面積</label>
-                    <input type="number" class="form-control" id="filterFloorArea" placeholder="例如 12000" />
+                <div class="wz-field">
+                    <label class="wz-label" for="filterFloorArea">總樓地板面積</label>
+                    <input type="number" class="wz-input" id="filterFloorArea" placeholder="例如 12000" />
                 </div>
             </div>
 
             <div class="filter-actions">
+                <label class="similar-switch" title="依目前篩選條件列出歷史建案">
+                    <input type="checkbox" id="similarProjectSwitch" onchange="toggleSimilarProjects()" />
+                    <span class="switch-ui" aria-hidden="true"></span>
+                    <span class="similar-switch-text">相似建案</span>
+                </label>
                 <button type="button" class="btn-wz-outline" onclick="clearFilters()">清除</button>
-                <button type="button" class="btn-wz-primary" onclick="queryEstimate()">查詢</button>
+                <button type="button" class="btn-wz-primary" onclick="queryEstimate()">估算</button>
             </div>
         </div>
     </div>
 
     <!-- 工程量試算主頁面 -->
-    <div class="estimate-main-card">
-        <div class="calc-bar">
-            <div class="calc-title">工程量試算</div>
+    <div class="estimate-workspace" id="estimateWorkspace">
+        <div class="estimate-main-card">
+            <div class="calc-bar">
+                <div class="calc-title">工程量試算</div>
 
-            <div class="calc-label-box">預估總樓地板面積</div>
+                <div class="calc-area-control">
+                    <div class="calc-label-box">預估總樓地板面積</div>
+                    <div class="calc-input-group">
+                        <input type="number" class="form-control" id="mainFloorArea" placeholder="請輸入面積" />
+                        <div class="unit-box">M²</div>
+                    </div>
+                </div>
 
-            <div class="calc-input-group">
-                <input type="number" class="form-control" id="mainFloorArea" placeholder="請輸入面積" />
-                <div class="unit-box">M²</div>
+                <div class="calc-spacer"></div>
+
+                <div class="calc-actions">
+                    <button type="button" class="btn-wz-outline" onclick="clearMainArea()">清除面積</button>
+                    <button type="button" class="btn-wz-primary" onclick="queryEstimate()">估算</button>
+                    <button type="button" class="btn-export" onclick="exportEstimateCsv()">匯出報表</button>
+                </div>
             </div>
 
-            <div></div>
+            <div class="summary-note" id="estimateSummary"></div>
 
-            <div class="calc-hint">
-                輸入面積後，表格將自動試算預估數量
+            <div class="estimate-table-wrapper">
+                <table class="estimate-table">
+                    <thead>
+                        <tr>
+                            <th style="width: 20%;">項目名稱</th>
+                            <th style="width: 8%;">樓層區塊</th>
+                            <th style="width: 10%;">適用條件</th>
+                            <th style="width: 10%;">基準用量</th>
+                            <th style="width: 8%;">耗損率</th>
+                            <th style="width: 12%;">預估數量</th>
+                            <th style="width: 13%;">建議範圍</th>
+                            <th style="width: 7%;">單位</th>
+                            <th style="width: 10%;">歷史單價</th>
+                            <th style="width: 11%;">估算金額</th>
+                            <th style="width: 6%;">樣本</th>
+                            <th style="width: 10%;">狀態</th>
+                        </tr>
+                    </thead>
+                    <tbody id="estimateTableBody">
+                    </tbody>
+                </table>
             </div>
-
-            <button type="button" class="btn-wz-outline" onclick="clearMainArea()">清除面積</button>
-            <button type="button" class="btn-export">匯出報表</button>
         </div>
 
-        <div class="estimate-table-wrapper">
-            <table class="estimate-table">
-                <thead>
-                    <tr>
-                        <th style="width: 24%;">項目名稱</th>
-                        <th style="width: 6%;"></th>
-                        <th style="width: 10%;">平均值</th>
-                        <th style="width: 10%;">中位數</th>
-                        <th style="width: 13%;">預估數量<br><small>中位數 × 面積</small></th>
-                        <th style="width: 13%;">建議範圍<br><small>高標公差</small></th>
-                        <th style="width: 8%;">單位</th>
-                        <th style="width: 8%;">最大值</th>
-                        <th style="width: 8%;">最小值</th>
-                        <th style="width: 6%;">樣本</th>
-                    </tr>
-                </thead>
-                <tbody id="estimateTableBody">
-                </tbody>
-            </table>
-        </div>
+        <aside class="similar-project-card" id="similarProjectPanel" hidden>
+            <div class="similar-project-header">
+                <h5 class="similar-project-title">相似建案</h5>
+                <span class="similar-project-count" id="similarProjectCount">0 筆</span>
+            </div>
+            <div class="similar-project-list" id="similarProjectList">
+                <div class="similar-project-empty">開啟後會依目前篩選條件列出歷史建案。</div>
+            </div>
+        </aside>
     </div>
 </div>
 
 @section Scripts {
     <script>
+        let latestEstimateItems = [];
+        let hasEstimated = false;
+
+        const fixedEstimateRows = [
+            {
+                group: '鷹架工程',
+                items: [
+                    { name: '外牆鷹架', keywords: ['外牆鷹架', '鷹架'] }
+                ]
+            },
+            {
+                group: '結構體單位用量',
+                items: [
+                    { name: '混凝土', keywords: ['混凝土'] },
+                    { name: '鋼筋', keywords: ['鋼筋'] },
+                    { name: '模板', keywords: ['模板'] },
+                    { name: '鋼承鈑/屋頂彩鋼', keywords: ['鋼承鈑', '屋頂彩鋼', '彩鋼'] },
+                    { name: '鋼骨', keywords: ['鋼骨'] },
+                    { name: '版面點', keywords: ['版面點'] },
+                    { name: '鋼絲網', keywords: ['鋼絲網'] }
+                ]
+            },
+            {
+                group: '牆面鋼網牆',
+                items: [
+                    { name: '鋼筋', keywords: ['鋼筋'] },
+                    { name: '混凝土', keywords: ['混凝土'] }
+                ]
+            }
+        ];
+
         function toggleFilterPanel() {
             const body = document.getElementById('filterBody');
             const btn = document.getElementById('filterToggleBtn');
@@ -443,60 +791,383 @@
             document.getElementById('yearEnd').value = '';
             document.getElementById('city').value = '';
             document.getElementById('filterFloorArea').value = '';
+
+            if (isSimilarProjectsEnabled()) {
+                loadSimilarProjects();
+            }
+        }
+
+        function getEstimateFilters() {
+            return {
+                projectType: document.getElementById('buildingType').value,
+                structureType: document.getElementById('structureType').value,
+                yearStart: document.getElementById('yearStart').value,
+                yearEnd: document.getElementById('yearEnd').value,
+                city: document.getElementById('city').value,
+                floorArea:
+                    document.getElementById('mainFloorArea').value ||
+                    document.getElementById('filterFloorArea').value ||
+                    0
+            };
+        }
+
+        function isSimilarProjectsEnabled() {
+            return document.getElementById('similarProjectSwitch').checked;
+        }
+
+        function toggleSimilarProjects() {
+            const enabled = isSimilarProjectsEnabled();
+            const workspace = document.getElementById('estimateWorkspace');
+            const panel = document.getElementById('similarProjectPanel');
+
+            workspace.classList.toggle('show-similar', enabled);
+            panel.hidden = !enabled;
+
+            if (enabled) {
+                loadSimilarProjects();
+            }
         }
 
         async function queryEstimate() {
-            const projectType = document.getElementById('buildingType').value;
-            const structureType = document.getElementById('structureType').value;
-            const floorArea =
-                document.getElementById('mainFloorArea').value ||
-                document.getElementById('filterFloorArea').value ||
-                0;
-
-            const params = new URLSearchParams({
-                projectType: projectType,
-                structureType: structureType,
-                floorArea: floorArea
-            });
-
-            const response = await fetch(`/Home/GetEstimateRules?${params.toString()}`);
-            const data = await response.json();
-
             const tbody = document.getElementById('estimateTableBody');
-            tbody.innerHTML = '';
+            const summary = document.getElementById('estimateSummary');
+            const filters = getEstimateFilters();
+            const floorArea = filters.floorArea;
 
-            if (data.length === 0) {
-                tbody.innerHTML = `
-                    <tr>
-                        <td colspan="10" style="text-align:center; padding:24px;">
-                            查無估算規則，請確認建案類型與結構類型
-                        </td>
-                    </tr>`;
+            if (Number(floorArea) <= 0) {
+                latestEstimateItems = [];
+                hasEstimated = false;
+                summary.innerText = '請先輸入總樓地板面積。';
+                renderFixedEstimateTable([]);
+
+                if (isSimilarProjectsEnabled()) {
+                    loadSimilarProjects();
+                }
+
                 return;
             }
 
-            data.forEach(item => {
-                tbody.innerHTML += `
-                    <tr>
-                        <td>${item.materialName}</td>
-                        <td></td>
-                        <td>${item.average}</td>
-                        <td>${item.median}</td>
-                        <td class="estimate-result">${item.estimatedQty}</td>
-                        <td>${item.suggestedRange}</td>
-                        <td>${item.unit}</td>
-                        <td>${item.max}</td>
-                        <td>${item.min}</td>
-                        <td>${item.sampleCount}</td>
-                    </tr>`;
+            const params = new URLSearchParams({
+                projectType: filters.projectType,
+                structureType: filters.structureType,
+                yearStart: filters.yearStart,
+                yearEnd: filters.yearEnd,
+                city: filters.city,
+                floorArea: filters.floorArea
             });
-        }
 
-        document.getElementById('mainFloorArea').addEventListener('input', queryEstimate);
+            tbody.innerHTML = `
+                <tr class="table-message">
+                    <td colspan="12">估算中，請稍候...</td>
+                </tr>`;
+            summary.innerText = '正在讀取規則與歷史單價...';
+
+            try {
+                const response = await fetch(`/Home/GetEstimateRules?${params.toString()}`);
+                const data = await response.json();
+
+                if (!response.ok) {
+                    throw new Error(data.message || '估算失敗');
+                }
+
+                latestEstimateItems = data.items || [];
+                hasEstimated = true;
+
+                if (latestEstimateItems.length === 0) {
+                    summary.innerText = '查無符合條件的估算規則。';
+                    renderFixedEstimateTable([]);
+
+                    if (isSimilarProjectsEnabled()) {
+                        loadSimilarProjects();
+                    }
+
+                    return;
+                }
+
+                renderFixedEstimateTable(latestEstimateItems);
+
+                const totalPrice = latestEstimateItems
+                    .filter(x => x.estimatedPrice !== null && x.estimatedPrice !== undefined)
+                    .reduce((sum, x) => sum + Number(x.estimatedPrice), 0);
+
+                summary.innerText =
+                    `共 ${latestEstimateItems.length} 筆估算項目，預估總金額 ${formatCurrency(totalPrice)}。${data.message || ''}`;
+
+                if (isSimilarProjectsEnabled()) {
+                    loadSimilarProjects();
+                }
+            } catch (error) {
+                latestEstimateItems = [];
+                hasEstimated = false;
+                summary.innerText = error.message;
+                renderFixedEstimateTable([]);
+
+                if (isSimilarProjectsEnabled()) {
+                    loadSimilarProjects();
+                }
+            }
+        }
 
         function clearMainArea() {
             document.getElementById('mainFloorArea').value = '';
+            latestEstimateItems = [];
+            hasEstimated = false;
+            document.getElementById('estimateSummary').innerText = ''; 
+            renderFixedEstimateTable([]);
+
+            if (isSimilarProjectsEnabled()) {
+                loadSimilarProjects();
+            }
         }
+
+        async function loadSimilarProjects() {
+            const list = document.getElementById('similarProjectList');
+            const count = document.getElementById('similarProjectCount');
+            const filters = getEstimateFilters();
+            const hasAnyFilter =
+                filters.projectType ||
+                filters.structureType ||
+                filters.yearStart ||
+                filters.yearEnd ||
+                filters.city ||
+                Number(filters.floorArea) > 0;
+
+            if (!hasAnyFilter) {
+                count.innerText = '0 筆';
+                list.innerHTML = '<div class="similar-project-empty">請先設定至少一個篩選條件，系統才會列出相似建案。</div>';
+                return;
+            }
+
+            const params = new URLSearchParams({
+                projectType: filters.projectType,
+                structureType: filters.structureType,
+                yearStart: filters.yearStart,
+                yearEnd: filters.yearEnd,
+                city: filters.city,
+                floorArea: filters.floorArea
+            });
+
+            count.innerText = '讀取中';
+            list.innerHTML = '<div class="similar-project-empty">正在讀取相似建案...</div>';
+
+            try {
+                const response = await fetch(`/Home/GetSimilarProjects?${params.toString()}`);
+                const data = await response.json();
+
+                if (!response.ok) {
+                    throw new Error(data.message || '相似建案讀取失敗');
+                }
+
+                const items = data.items || [];
+                count.innerText = `${items.length} 筆`;
+
+                if (!items.length) {
+                    list.innerHTML = '<div class="similar-project-empty">目前沒有符合篩選條件的歷史建案。</div>';
+                    return;
+                }
+
+                list.innerHTML = items.map(renderSimilarProject).join('');
+            } catch (error) {
+                count.innerText = '讀取失敗';
+                list.innerHTML = `<div class="similar-project-empty">${escapeHtml(error.message)}</div>`;
+            }
+        }
+
+        function renderSimilarProject(project) {
+            const areaText = project.totalFloorArea
+                ? `${formatNumber(project.totalFloorArea, 2)} M²`
+                : '未記錄';
+            const diffText = project.areaDifferencePercent !== null && project.areaDifferencePercent !== undefined
+                ? `面積差 ${formatNumber(project.areaDifferencePercent, 1)}%`
+                : '未比對面積';
+
+            return `
+                <div class="similar-project-item">
+                    <div class="similar-project-name">${escapeHtml(project.projectName)}</div>
+                    <div class="similar-project-tags">
+                        <span class="similar-project-tag">${escapeHtml(project.projectType)}</span>
+                        <span class="similar-project-tag">${escapeHtml(project.structureType)}</span>
+                        <span class="similar-project-tag">${escapeHtml(project.city)}</span>
+                    </div>
+                    <div class="similar-project-meta">
+                        總樓地板面積：${escapeHtml(areaText)}<br>
+                        ${escapeHtml(diffText)}｜歷史筆數 ${project.transactionCount ?? 0}<br>
+                        建案日期：${escapeHtml(project.startDate || '未記錄')}
+                    </div>
+                </div>`;
+        }
+
+        function renderFixedEstimateTable(items) {
+            const tbody = document.getElementById('estimateTableBody');
+            tbody.innerHTML = '';
+
+            fixedEstimateRows.forEach(group => {
+                tbody.innerHTML += `
+                    <tr class="category-row">
+                        <td colspan="12">${escapeHtml(group.group)}</td>
+                    </tr>`;
+
+                group.items.forEach(template => {
+                    const item = findEstimateItem(items, group.group, template);
+                    tbody.innerHTML += renderEstimateRow(group.group, template.name, item);
+                });
+            });
+        }
+
+        function findEstimateItem(items, groupName, template) {
+            return items.find(item => {
+                const sameGroup = item.estimateGroup === groupName;
+                const name = item.materialName || '';
+                const keywordMatched = template.keywords.some(keyword => name.includes(keyword));
+                return sameGroup && keywordMatched;
+            });
+        }
+
+        function renderEstimateRow(groupName, itemName, item) {
+            if (!hasEstimated) {
+                return `
+                    <tr>
+                        <td class="sub-row-name">${escapeHtml(itemName)}</td>
+                        <td class="center-cell">-</td>
+                        <td class="center-cell">-</td>
+                        <td class="number-cell">-</td>
+                        <td class="number-cell">-</td>
+                        <td class="number-cell estimate-result">-</td>
+                        <td class="number-cell">-</td>
+                        <td class="center-cell">-</td>
+                        <td class="number-cell">-</td>
+                        <td class="number-cell estimate-result">-</td>
+                        <td class="center-cell">-</td>
+                        <td class="center-cell"><span class="status-badge warn">尚未估算</span></td>
+                    </tr>`;
+            }
+
+            if (!item) {
+                return `
+                    <tr>
+                        <td class="sub-row-name">${escapeHtml(itemName)}</td>
+                        <td class="center-cell">-</td>
+                        <td class="center-cell">-</td>
+                        <td class="number-cell">-</td>
+                        <td class="number-cell">-</td>
+                        <td class="number-cell estimate-result">-</td>
+                        <td class="number-cell">-</td>
+                        <td class="center-cell">-</td>
+                        <td class="number-cell">-</td>
+                        <td class="number-cell estimate-result">-</td>
+                        <td class="center-cell">0</td>
+                        <td class="center-cell"><span class="status-badge warn">無估算規則</span></td>
+                    </tr>`;
+            }
+
+            const statusClass = item.statusMessage === '已完成估算' ? '' : 'warn';
+
+            return `
+                <tr>
+                    <td class="sub-row-name">${escapeHtml(itemName)}</td>
+                    <td class="center-cell">${escapeHtml(item.floorZone)}</td>
+                    <td class="center-cell">${escapeHtml(item.projectType)} / ${escapeHtml(item.structureType)}</td>
+                    <td class="number-cell">${formatNumber(item.unitConsumption, 4)}</td>
+                    <td class="number-cell">${formatNumber(item.wasteRatePercent, 2)}%</td>
+                    <td class="number-cell estimate-result">${formatNumber(item.estimatedQty, 2)}</td>
+                    <td class="number-cell">${escapeHtml(item.suggestedRange)}</td>
+                    <td class="center-cell">${escapeHtml(item.unit)}</td>
+                    <td class="number-cell">${formatCurrency(item.historicalAvgUnitPrice)}</td>
+                    <td class="number-cell estimate-result">${formatCurrency(item.estimatedPrice)}</td>
+                    <td class="center-cell">${item.sampleCount}</td>
+                    <td class="center-cell"><span class="status-badge ${statusClass}">${escapeHtml(item.statusMessage)}</span></td>
+                </tr>`;
+        }
+
+        function formatNumber(value, digits = 2) {
+            if (value === null || value === undefined || value === '') {
+                return '-';
+            }
+
+            return Number(value).toLocaleString('zh-TW', {
+                minimumFractionDigits: digits,
+                maximumFractionDigits: digits
+            });
+        }
+
+        function formatCurrency(value) {
+            if (value === null || value === undefined || value === '') {
+                return '-';
+            }
+
+            return Number(value).toLocaleString('zh-TW', {
+                style: 'currency',
+                currency: 'TWD',
+                maximumFractionDigits: 0
+            });
+        }
+
+        function escapeHtml(value) {
+            return String(value ?? '')
+                .replaceAll('&', '&amp;')
+                .replaceAll('<', '&lt;')
+                .replaceAll('>', '&gt;')
+                .replaceAll('"', '&quot;')
+                .replaceAll("'", '&#039;');
+        }
+
+        function exportEstimateCsv() {
+            if (!latestEstimateItems.length) {
+                alert('目前沒有可匯出的估算結果。');
+                return;
+            }
+
+            const header = ['項目名稱', '樓層區塊', '建案類型', '結構類型', '基準用量', '耗損率', '預估數量', '建議範圍', '單位', '歷史單價', '估算金額', '樣本', '狀態'];
+            const rows = latestEstimateItems.map(item => [
+                item.materialName,
+                item.floorZone,
+                item.projectType,
+                item.structureType,
+                item.unitConsumption,
+                item.wasteRatePercent,
+                item.estimatedQty,
+                item.suggestedRange,
+                item.unit,
+                item.historicalAvgUnitPrice ?? '',
+                item.estimatedPrice ?? '',
+                item.sampleCount,
+                item.statusMessage
+            ]);
+
+            const csv = [header, ...rows]
+                .map(row => row.map(toCsvCell).join(','))
+                .join('\n');
+
+            const blob = new Blob(['\uFEFF' + csv], { type: 'text/csv;charset=utf-8;' });
+            const url = URL.createObjectURL(blob);
+            const link = document.createElement('a');
+            link.href = url;
+            link.download = '工程估算結果.csv';
+            link.click();
+            URL.revokeObjectURL(url);
+        }
+
+        function toCsvCell(value) {
+            const text = String(value ?? '');
+            return `"${text.replaceAll('"', '""')}"`;
+        }
+
+        [
+            'buildingType',
+            'structureType',
+            'yearStart',
+            'yearEnd',
+            'city',
+            'filterFloorArea',
+            'mainFloorArea'
+        ].forEach(id => {
+            document.getElementById(id).addEventListener('change', () => {
+                if (isSimilarProjectsEnabled()) {
+                    loadSimilarProjects();
+                }
+            });
+        });
+
+        renderFixedEstimateTable([]);
     </script>
 }
-

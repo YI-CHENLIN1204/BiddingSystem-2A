@@ -1,4 +1,4 @@
-﻿<!DOCTYPE html>
+<!DOCTYPE html>
 <html lang="zh-Hant">
 <head>
     <meta charset="utf-8" />
@@ -11,116 +11,265 @@
     <link rel="stylesheet" href="~/崴正.styles.css" asp-append-version="true" />
 
     <style>
+        :root {
+            --wz-sidebar: #3c4b64;
+            --wz-sidebar-dark: #303c50;
+            --wz-sidebar-active: #2f3d52;
+            --wz-primary: #321fdb;
+            --wz-primary-blue: #0d6efd;
+            --wz-success: #2eb85c;
+            --wz-danger: #dc3545;
+            --wz-warning: #f9b115;
+            --wz-bg: #ebedef;
+            --wz-border: #d8dbe0;
+            --wz-text: #141d23;
+            --wz-muted: #6c757d;
+            --wz-sidebar-width: 256px;
+            --wz-topbar-height: 64px;
+        }
+
         body {
-            background-color: #eef3f7;
-            font-family: "Noto Sans TC", "Microsoft JhengHei", sans-serif;
+            margin: 0;
+            background-color: var(--wz-bg);
+            color: var(--wz-text);
+            font-family: "Segoe UI", Roboto, Arial, "Microsoft JhengHei", sans-serif;
         }
 
-        .wz-navbar {
-            background-color: #ffffff !important;
-            border-bottom: 1px solid #d9e1e8;
-            box-shadow: 0 2px 10px rgba(31, 45, 61, 0.06);
+        .app-shell {
+            min-height: 100vh;
+            background: var(--wz-bg);
         }
 
-        .brand-logo {
-            font-weight: 800;
+        .sidebar {
+            position: fixed;
+            inset: 0 auto 0 0;
+            width: var(--wz-sidebar-width);
+            background: var(--wz-sidebar);
+            color: #d8dbe0;
+            overflow-y: auto;
+            z-index: 1030;
+        }
+
+        .sidebar-brand {
+            height: 88px;
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            padding: 0 28px;
+            background: #34445c;
+            color: #ffffff;
+        }
+
+        .brand-title {
             font-size: 22px;
-            color: #1f2d3d !important;
+            font-weight: 800;
             letter-spacing: 2px;
-            padding-right: 18px;
-            margin-right: 18px;
-            border-right: 2px solid #d9e1e8;
+            line-height: 1;
         }
 
-        .nav-feature-group .nav-link {
-            color: #1f2d3d !important;
-            font-weight: 500;
-            margin-right: 6px;
-            border-radius: 8px;
-            padding: 8px 14px !important;
-            transition: all 0.2s ease;
+        .brand-user {
+            color: #59a7ff;
+            font-size: 14px;
+            font-weight: 700;
+            padding: 0 28px 12px;
+            background: #34445c;
         }
 
-        .nav-feature-group .nav-link:hover {
-            background-color: #eef3ff;
-            color: #3f2df3 !important;
+        .sidebar-section {
+            padding: 8px 0;
+            border-top: 1px solid rgba(255, 255, 255, 0.04);
         }
 
-        .user-nav-group {
-            margin-left: auto;
+        .sidebar-heading {
+            padding: 12px 22px 8px;
+            color: #a9b7c7;
+            font-size: 13px;
+            letter-spacing: .02em;
         }
 
-        .user-greeting {
-            color: #1f2d3d !important;
-            font-weight: 500;
+        .sidebar-link {
+            position: relative;
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            min-height: 48px;
+            padding: 12px 24px;
+            color: #d8dbe0;
+            text-decoration: none;
+            font-size: 16px;
+            transition: background-color .15s ease, color .15s ease;
         }
 
-        .logout-link {
-            color: #dc3545 !important;
-            font-weight: 600;
+        .sidebar-link:hover,
+        .sidebar-link.active {
+            background: var(--wz-sidebar-active);
+            color: #ffffff;
         }
 
-        .logout-link:hover {
-            color: #b02a37 !important;
+        .sidebar-link.active::before {
+            content: "";
+            position: absolute;
+            left: 0;
+            top: 0;
+            bottom: 0;
+            width: 4px;
+            background: var(--wz-success);
+        }
+
+        .sidebar-icon {
+            width: 18px;
+            height: 18px;
+            border: 1px solid rgba(255, 255, 255, .55);
+            border-radius: 3px;
+            display: inline-block;
+            flex: 0 0 auto;
+        }
+
+        .topbar {
+            position: sticky;
+            top: 0;
+            height: var(--wz-topbar-height);
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            padding: 0 28px;
+            background: #ffffff;
+            border-bottom: 1px solid var(--wz-border);
+            z-index: 1020;
+        }
+
+        .topbar-menu {
+            color: #6c757d;
+            font-size: 24px;
+            line-height: 1;
+        }
+
+        .topbar-user {
+            width: 24px;
+            height: 24px;
+            border: 1px solid #8a949e;
+            border-radius: 50%;
+        }
+
+        .main-wrapper {
+            margin-left: var(--wz-sidebar-width);
+            min-height: 100vh;
+        }
+
+        .breadcrumb-strip {
+            min-height: 50px;
+            display: flex;
+            align-items: center;
+            padding: 0 28px;
+            background: #ffffff;
+            border-bottom: 1px solid var(--wz-border);
+            color: var(--wz-muted);
+            font-size: 15px;
         }
 
         .main-shell {
-            min-height: calc(100vh - 64px);
-            padding-top: 24px;
-            padding-bottom: 40px;
-        }
-        .top-nav {
-            height: 64px;
-            display: flex;
-            align-items: center;
-            gap: 8px;
-            padding: 0 28px;
-            background: #ffffff;
-            border-bottom: 1px solid #d8dbe0;
-            box-shadow: 0 2px 10px rgba(0,0,0,0.04);
+            padding: 26px 32px 48px;
         }
 
-        .top-nav .brand {
-            font-size: 22px;
-            font-weight: 800;
-            color: #14213d;
-            text-decoration: none;
-            padding-right: 22px;
-            margin-right: 12px;
-            border-right: 1px solid #d8dbe0;
+        .main-shell > main {
+            max-width: 1500px;
+            margin: 0 auto;
         }
 
-        .top-nav .nav-link {
-            color: #1f2d3d;
-            text-decoration: none;
-            font-weight: 600;
-            padding: 10px 14px;
-            border-radius: 8px;
+        .card,
+        .admin-main-card,
+        .filter-card,
+        .estimate-main-card,
+        .upload-card {
+            border-radius: 6px !important;
+            border: 1px solid var(--wz-border);
+            box-shadow: 0 2px 8px rgba(20, 29, 35, 0.06) !important;
         }
 
-        .top-nav .nav-link:hover {
-            background: #eef3ff;
-            color: #321fdb;
+        .btn-primary,
+        .btn-wz-primary {
+            background: var(--wz-primary) !important;
+            border-color: var(--wz-primary) !important;
+        }
+
+        .btn-outline-primary,
+        .btn-wz-outline {
+            color: var(--wz-primary) !important;
+            border-color: var(--wz-primary) !important;
+        }
+
+        .form-control,
+        .form-select {
+            border-color: var(--wz-border);
+            border-radius: 6px;
+        }
+
+        @@media (max-width: 992px) {
+            .sidebar {
+                width: 220px;
+            }
+
+            .main-wrapper {
+                margin-left: 220px;
+            }
+
+            .main-shell {
+                padding: 20px 18px 36px;
+            }
         }
     </style>
 </head>
 
 <body>
-    <header>
-        <nav class="top-nav">
-            <a class="brand" asp-controller="Home" asp-action="Index">崴正</a>
+    @{
+        var currentController = ViewContext.RouteData.Values["controller"]?.ToString();
+        var currentAction = ViewContext.RouteData.Values["action"]?.ToString();
+    }
 
-            <a class="nav-link" asp-controller="Home" asp-action="Index">異常偵測</a>
-            <a class="nav-link" asp-controller="QuantityRule" asp-action="Index">參數管理後台</a>
-            <a class="nav-link" asp-controller="Home" asp-action="UploadFinalBid">決標回寫</a>
-            <a class="nav-link" asp-controller="Home" asp-action="EstimationUI">工程估算</a>
-        </nav>
-    </header>
+    <div class="app-shell">
+        <aside class="sidebar">
+            <div class="sidebar-brand">
+                <span class="brand-title">崴正營造</span>
+            </div>
+            <div class="brand-user">估算系統</div>
 
-    <div class="container main-shell">
-        <main role="main">
-            @RenderBody()
-        </main>
+            <nav class="sidebar-section">
+                <div class="sidebar-heading">工程類</div>
+                <a class="sidebar-link @(currentController == "Home" && currentAction == "Index" ? "active" : "")" asp-controller="Home" asp-action="Index">
+                    <span class="sidebar-icon"></span>
+                    <span>異常偵測</span>
+                </a>
+                <a class="sidebar-link @(currentController == "QuantityRule" ? "active" : "")" asp-controller="QuantityRule" asp-action="Index">
+                    <span class="sidebar-icon"></span>
+                    <span>參數管理</span>
+                </a>
+                <a class="sidebar-link @(currentController == "Home" && currentAction == "EstimationUI" ? "active" : "")" asp-controller="Home" asp-action="EstimationUI">
+                    <span class="sidebar-icon"></span>
+                    <span>估算大數據</span>
+                </a>
+                <a class="sidebar-link @(currentController == "Home" && currentAction == "UploadFinalBid" ? "active" : "")" asp-controller="Home" asp-action="UploadFinalBid">
+                    <span class="sidebar-icon"></span>
+                    <span>決標回寫</span>
+                </a>
+            </nav>
+        </aside>
+
+        <div class="main-wrapper">
+            <header class="topbar">
+                <div class="topbar-menu">≡</div>
+                <div class="topbar-user"></div>
+            </header>
+
+            <div class="breadcrumb-strip">
+                工程類 / @ViewData["Title"]
+            </div>
+
+            <div class="main-shell">
+                <main role="main">
+                    @RenderBody()
+                </main>
+            </div>
+        </div>
     </div>
 
     <script src="~/lib/jquery/dist/jquery.min.js"></script>
@@ -129,4 +278,3 @@
     @await RenderSectionAsync("Scripts", required: false)
 </body>
 </html>
-
