@@ -99,9 +99,9 @@ public class HomeController : Controller
 
         var projectIds = projects.Select(p => p.ProjectId).ToList();
         var transactionCounts = await _context.HistoricalTransactions
-            .Where(h => h.Project_Master_Id.HasValue && projectIds.Contains(h.Project_Master_Id.Value))
+            .Where(h => h.ProjectMasterId.HasValue && projectIds.Contains(h.ProjectMasterId.Value))
             .Where(h => h.IsDeleted == false)
-            .GroupBy(h => h.Project_Master_Id.Value)
+            .GroupBy(h => h.ProjectMasterId ?? 0)
             .Select(g => new
             {
                 projectId = g.Key,
@@ -199,9 +199,9 @@ public class HomeController : Controller
         var materialIds = matchedRules.Select(x => x.materialId).Distinct().ToList();
 
         var historyQuery = _context.HistoricalTransactions
-            .Where(h => materialIds.Contains(h.Material_ID))
+            .Where(h => materialIds.Contains(h.MaterialId))
             .Where(h => h.IsDeleted == false)
-            .Where(h => h.Is_Outlier == false);
+            .Where(h => h.IsOutlier == false);
 
         if (!string.IsNullOrWhiteSpace(projectType) ||
             !string.IsNullOrWhiteSpace(structureType) ||
@@ -210,7 +210,7 @@ public class HomeController : Controller
             historyQuery =
                 from h in historyQuery
                 join p in _context.ProjectMasters
-                    on h.Project_Master_Id equals (int?)p.ProjectId
+                    on h.ProjectMasterId equals (int?)p.ProjectId
                 where p.IsDeleted == false
                 where string.IsNullOrWhiteSpace(projectType) || p.ProjectType == projectType
                 where string.IsNullOrWhiteSpace(structureType) || p.StructureType == structureType
@@ -219,13 +219,13 @@ public class HomeController : Controller
         }
 
         if (yearStart.HasValue)
-            historyQuery = historyQuery.Where(h => h.Transaction_Date.Year >= yearStart.Value);
+            historyQuery = historyQuery.Where(h => h.TransactionDate.Year >= yearStart.Value);
 
         if (yearEnd.HasValue)
-            historyQuery = historyQuery.Where(h => h.Transaction_Date.Year <= yearEnd.Value);
+            historyQuery = historyQuery.Where(h => h.TransactionDate.Year <= yearEnd.Value);
 
         var historyDict = (await historyQuery.ToListAsync())
-            .GroupBy(h => h.Material_ID)
+            .GroupBy(h => h.MaterialId)
             .ToDictionary(g => g.Key, g => g.ToList());
 
         var result = matchedRules.Select(x =>
@@ -240,7 +240,7 @@ public class HomeController : Controller
             histories ??= new List<HistoricalTransaction>();
 
             decimal? avgUnitPrice = histories.Count > 0
-                ? Math.Round(histories.Average(h => h.Unit_Price), 2)
+                ? Math.Round(histories.Average(h => h.UnitPrice), 2)
                 : null;
 
             decimal? estimatedPrice = avgUnitPrice.HasValue && estimatedQty > 0

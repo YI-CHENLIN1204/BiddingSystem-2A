@@ -230,7 +230,44 @@
                 </select>
             </div>
         </div>
+        <div class="wz-field">
+            <label class="wz-label" for="totalFloorArea">
+                總樓地板面積（㎡）
+            </label>
 
+            <input type="number"
+                id="totalFloorArea"
+                class="wz-input"
+                min="0.01"
+                step="0.01"
+                placeholder="例如：12580.5" />
+        </div>
+        <div class="wz-field">
+            <label class="wz-label" for="floorCount">地上樓層數</label>
+            <input type="number"
+                id="floorCount"
+                class="wz-input"
+                min="1"
+                placeholder="例如：15" />
+        </div>
+
+        <div class="wz-field">
+            <label class="wz-label" for="basementFloorCount">地下樓層數</label>
+            <input type="number"
+                id="basementFloorCount"
+                class="wz-input"
+                min="0"
+                value="0"
+                placeholder="例如：2" />
+        </div>
+
+        <div class="wz-field">
+            <label class="wz-label" for="projectMonth">建案年月</label>
+
+            <input type="month"
+                id="projectMonth"
+                class="wz-input" />
+        </div>
         <div class="section-title">2. 選擇最終決標 Excel 檔案</div>
         <div class="file-upload-row">
             <input type="file" id="excelFile" class="file-input-native" accept=".xlsx,.xls" />
@@ -296,10 +333,59 @@
                 </div>
             </div>
         </div>
-        <div id="unmappedPanel" class="mt-4" style="display:none;">
-            <h4 class="mb-3">未對應工項處理</h4>
+        <div id="mappingPanel" class="mt-4" style="display:none;">
+            <div class="d-flex justify-content-between align-items-center mb-3">
+                <div>
+                    <h4 class="mb-1">標單材料對應</h4>
+                    <div class="text-muted small">
+                        可查詢尚未對應、自動對應及人工對應的所有工項
+                    </div>
+                </div>
 
-            <div id="unmappedList"></div>
+                <div class="text-muted small">
+                    共 <span id="mappingTotalCount">0</span> 筆
+                </div>
+            </div>
+
+            <div class="card mb-3">
+                <div class="card-body">
+                    <div class="row g-2">
+                        <div class="col-md-8">
+                            <input type="text"
+                                id="mappingSearch"
+                                class="form-control"
+                                placeholder="搜尋工項名稱、規格、標準材料或建案名稱" />
+                        </div>
+
+                        <div class="col-md-4">
+                            <select id="mappingStatus" class="form-select">
+                                <option value="Pending" selected>尚未對應</option>
+                                <option value="Auto">自動對應</option>
+                                <option value="Manual">手動對應</option>
+                                <option value="All">全部</option>
+                            </select>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <div id="mappingList"></div>
+
+            <div class="d-flex justify-content-between align-items-center mt-3">
+                <button id="btnMappingPrev"
+                        class="btn btn-outline-secondary btn-sm">
+                    上一頁
+                </button>
+
+                <div class="text-muted small">
+                    第 <span id="mappingPage">1</span> 頁
+                </div>
+
+                <button id="btnMappingNext"
+                        class="btn btn-outline-secondary btn-sm">
+                    下一頁
+                </button>
+            </div>
         </div>
     </div>
 </div>
@@ -312,6 +398,21 @@
         const projectType = document.getElementById('projectType');
         const structureType = document.getElementById('structureType');
         const city = document.getElementById('city');
+        const floorCount = document.getElementById('floorCount');
+        const basementFloorCount = document.getElementById('basementFloorCount');
+        const projectMonth =document.getElementById('projectMonth');
+
+        const mappingPanel = document.getElementById('mappingPanel');
+        const mappingList = document.getElementById('mappingList');
+        const mappingSearch = document.getElementById('mappingSearch');
+        const mappingStatus = document.getElementById('mappingStatus');
+        const totalFloorArea =document.getElementById('totalFloorArea');
+        let currentProjectId = null;
+        let currentMappingPage = 1;
+        let currentMappingTotal = 0;
+        const mappingPageSize = 50;
+
+        let materialOptions = [];
         const loadingText = document.getElementById('loadingText');
         const resultBox = document.getElementById('resultBox');
         const excelFileName = document.getElementById('excelFileName');
@@ -330,15 +431,20 @@
             if (!projectType.value) { alert('請選擇建案類型！'); return; }
             if (!structureType.value) { alert('請選擇結構類型！'); return; }
             if (!city.value) { alert('請選擇區域/縣市！'); return; }
+            if (!floorCount.value || Number(floorCount.value) <= 0) {alert('請輸入正確的地上樓層數！');return;}
+            if (basementFloorCount.value === '' ||Number(basementFloorCount.value) < 0) {alert('請輸入正確的地下樓層數！');return;}
+            if (!projectMonth.value) {alert('請選擇建案年月！');return;}
             if (!excelFile.files || excelFile.files.length === 0) { alert('請選擇 Excel 檔案！'); return; }
-
+            if (!totalFloorArea.value ||Number(totalFloorArea.value) <= 0) {alert('請輸入正確的總樓地板面積！');return;}
             const formData = new FormData();
             formData.append('excelFile', excelFile.files[0]);
             formData.append('projectName', projectName.value.trim());
             formData.append('projectType', projectType.value);
             formData.append('structureType', structureType.value);
             formData.append('city', city.value);
-
+            formData.append('floorCount', floorCount.value);
+            formData.append('basementFloorCount', basementFloorCount.value);
+            formData.append('projectMonth',projectMonth.value);
             btnUpload.disabled = true;
             loadingText.style.display = 'block';
             resultBox.style.display = 'none';
@@ -366,12 +472,17 @@
 
                 // 顯示結果
                 document.getElementById('resTotal').innerText = data.totalCount ?? 0;
-                document.getElementById('resSuccess').innerText = data.insertCount ?? 0;
+                document.getElementById('resSuccess').innerText =data.historyInsertCount ?? 0;
                 document.getElementById('resUnmapped').innerText = data.unmappedCount ?? 0;
                 document.getElementById('resInvalid').innerText = data.invalidDataCount ?? 0;
                 document.getElementById('resMissingMaterial').innerText = data.missingMaterialCount ?? 0;
                 document.getElementById('resUnitMismatch').innerText = data.unitMismatchCount ?? 0;
-                loadUnmappedItems();
+                currentProjectId = data.projectId;
+
+                await loadMaterialOptions();
+                await loadMappingItems();
+
+                resultBox.style.display = 'block';
                 resultBox.style.display = 'block';
                 
                 excelFile.value = ''; // 清空檔案
@@ -384,101 +495,337 @@
                 loadingText.style.display = 'none';
             }
         });
-        
-        async function loadUnmappedItems() {
-            const panel = document.getElementById('unmappedPanel');
-            const list = document.getElementById('unmappedList');
+    async function loadMaterialOptions() {
+        const response =
+            await fetch('/api/Estimation/material-options');
 
-            const response = await fetch('/api/Estimation/unmapped-items');
-            const text = await response.text();
+        const data =
+            await response.json();
 
-            let data;
-            try {
-                data = text ? JSON.parse(text) : {};
-            } catch (e) {
-                alert('未對應清單回傳格式錯誤：' + text.substring(0, 100));
-                return;
-            }
+        if (!response.ok) {
+            alert(data.message ?? '讀取標準材料失敗');
+            return;
+        }
 
-            if (!response.ok) {
-                alert(data.message ?? '讀取未對應清單失敗');
-                return;
-            }
+        materialOptions = data;
+    }
+    async function loadMappingItems(page = 1) {
+        if (!currentProjectId) {
+            mappingPanel.style.display = 'none';
+            return;
+        }
 
-            if (!data.items || data.items.length === 0) {
-                panel.style.display = 'none';
-                return;
-            }
+        currentMappingPage = page;
 
-            panel.style.display = 'block';
+        const search =
+            mappingSearch.value.trim();
 
-            let html = '';
+        /*
+        * 使用者開始搜尋時：
+        * 自動切成全部狀態。
+        *
+        * 這樣搜尋列才能真的找到：
+        * Auto / Manual / Unmapped。
+        */
+        if (search && mappingStatus.value === 'Unmapped') {
+            mappingStatus.value = 'All';
+        }
 
-            data.items.forEach(item => {
-                let options = '<option value="">請選擇標準工項</option>';
+        const params =
+            new URLSearchParams({
+                projectId: currentProjectId,
+                status: mappingStatus.value,
+                page: currentMappingPage,
+                pageSize: mappingPageSize
+            });
 
-                data.materials.forEach(m => {
-                    options += `<option value="${m.materialId}">${m.materialName}</option>`;
-                });
+        if (search) {
+            params.append('search', search);
+        }
 
-                html += `
-                    <div class="card mb-3">
-                        <div class="card-body">
-                            <h5>${item.itemName}</h5>
-                            <div class="text-muted small mb-2">
-                                規格：${item.spec ?? '無'}｜
-                                單位：${item.unit ?? '無'}｜
-                                數量：${item.qty ?? '無'}｜
-                                單價：${item.unitPrice ?? '無'}
-                            </div>
+        const response =
+            await fetch(
+                '/api/Estimation/mapping-items?' +
+                params.toString()
+            );
 
-                            <div class="row g-2">
-                                <div class="col-md-8">
-                                    <select class="form-select" id="material_${item.unmappedId}">
-                                        ${options}
-                                    </select>
-                                </div>
-                                <div class="col-md-4">
-                                    <button class="btn btn-outline-primary w-100"
-                                            onclick="addDictionary(${item.unmappedId})">
-                                        加入字典
-                                    </button>
-                                </div>
-                            </div>
-                        </div>
-                    </div>
+        const data =
+            await response.json();
+
+        if (!response.ok) {
+            alert(data.message ?? '讀取材料對應資料失敗');
+            return;
+        }
+
+        currentMappingTotal =
+            data.totalCount ?? 0;
+
+        document.getElementById('mappingTotalCount')
+            .innerText = currentMappingTotal;
+
+        document.getElementById('mappingPage')
+            .innerText = currentMappingPage;
+
+        renderMappingItems(data.items ?? []);
+
+        mappingPanel.style.display = 'block';
+
+        document.getElementById('btnMappingPrev')
+            .disabled = currentMappingPage <= 1;
+
+        document.getElementById('btnMappingNext')
+            .disabled =
+                currentMappingPage * mappingPageSize
+                >= currentMappingTotal;
+    }
+
+    function getMappingBadge(status) {
+        if (status === 'Auto') {
+            return `
+                <span class="badge bg-success">
+                    自動對應
+                </span>`;
+        }
+
+        if (status === 'Manual') {
+            return `
+                <span class="badge bg-primary">
+                    手動對應
+                </span>`;
+        }
+
+        return `
+            <span class="badge bg-warning text-dark">
+                尚未對應
+            </span>`;
+    }
+
+    function escapeHtml(value) {
+        if (value === null ||
+            value === undefined) {
+            return '';
+        }
+
+        return String(value)
+            .replaceAll('&', '&amp;')
+            .replaceAll('<', '&lt;')
+            .replaceAll('>', '&gt;')
+            .replaceAll('"', '&quot;')
+            .replaceAll("'", '&#039;');
+    }
+
+    function renderMappingItems(items) {
+        if (!items.length) {
+            mappingList.innerHTML = `
+                <div class="alert alert-light border text-muted">
+                    目前沒有符合條件的工項
+                </div>
+            `;
+            return;
+        }
+
+        let html = '';
+
+        items.forEach(item => {
+            let options =
+                `<option value="">請選擇標準材料</option>`;
+
+            materialOptions.forEach(material => {
+                const selected =
+                    Number(item.materialId) ===
+                    Number(material.materialId)
+                        ? 'selected'
+                        : '';
+
+                options += `
+                    <option value="${material.materialId}"
+                            ${selected}>
+                        ${escapeHtml(material.materialName)}
+                        (${escapeHtml(material.baseUnit)})
+                    </option>
                 `;
             });
 
-            list.innerHTML = html;
+            html += `
+                <div class="card mb-3">
+                    <div class="card-body">
+
+                        <div class="d-flex
+                                    justify-content-between
+                                    align-items-start
+                                    mb-2">
+
+                            <div>
+                                <h5 class="mb-1">
+                                    ${escapeHtml(item.itemName)}
+                                </h5>
+
+                                <div class="text-muted small">
+                                    ${escapeHtml(item.projectName)}
+                                </div>
+                            </div>
+
+                            ${getMappingBadge(item.mappingStatus)}
+                        </div>
+
+                        <div class="text-muted small mb-3">
+                            規格：
+                            ${escapeHtml(item.spec || '無')}
+                            ｜
+                            單位：
+                            ${escapeHtml(item.unit || '無')}
+                            ｜
+                            數量：
+                            ${item.qty ?? '無'}
+                            ｜
+                            單價：
+                            ${item.unitPrice ?? '無'}
+                        </div>
+
+                        <div class="mb-2 small">
+                            <strong>目前標準材料：</strong>
+                            ${
+                                item.materialName
+                                    ? escapeHtml(item.materialName)
+                                    : '<span class="text-warning">尚未對應</span>'
+                            }
+                        </div>
+
+                        ${
+                            item.matchedKeyword
+                                ? `
+                                    <div class="small text-muted mb-2">
+                                        對應關鍵字：
+                                        ${escapeHtml(item.matchedKeyword)}
+                                    </div>
+                                `
+                                : ''
+                        }
+
+                        <div class="row g-2">
+                            <div class="col-md-8">
+                                <select class="form-select"
+                                        id="mappingMaterial_${item.finalBidItemId}">
+                                    ${options}
+                                </select>
+                            </div>
+
+                            <div class="col-md-4">
+                                <button class="btn btn-outline-primary w-100"
+                                        onclick="updateMaterialMapping(${item.finalBidItemId})">
+                                    ${
+                                        item.mappingStatus === 'Unmapped'
+                                            ? '人工對應'
+                                            : '修改對應'
+                                    }
+                                </button>
+                            </div>
+                        </div>
+
+                    </div>
+                </div>
+            `;
+        });
+
+        mappingList.innerHTML = html;
+    }
+
+    async function updateMaterialMapping(finalBidItemId) {
+        const select =
+            document.getElementById(
+                `mappingMaterial_${finalBidItemId}`
+            );
+
+        const materialId =
+            select.value;
+
+        if (!materialId) {
+            alert('請先選擇標準材料');
+            return;
         }
 
-        async function addDictionary(unmappedId) {
-            const select = document.getElementById(`material_${unmappedId}`);
-            const materialId = select.value;
-
-            if (!materialId) {
-                alert('請先選擇標準工項');
-                return;
-            }
-
-            const formData = new FormData();
-            formData.append('unmappedId', unmappedId);
-            formData.append('materialId', materialId);
-
-            const response = await fetch('/api/Estimation/add-dictionary', {
-                method: 'POST',
-                body: formData
-            });
-
-            const data = await response.json();
-
-            if (response.ok) {
-                alert(data.message);
-                loadUnmappedItems();
-            } else {
-                alert(data.message ?? '加入字典失敗');
-            }
+        if (!confirm('確定要更新此工項的材料對應嗎？')) {
+            return;
         }
+
+        const formData =
+            new FormData();
+
+        formData.append(
+            'finalBidItemId',
+            finalBidItemId
+        );
+
+        formData.append(
+            'materialId',
+            materialId
+        );
+
+        const response =
+            await fetch(
+                '/api/Estimation/update-material-mapping',
+                {
+                    method: 'POST',
+                    body: formData
+                }
+            );
+
+        const data =
+            await response.json();
+
+        if (!response.ok) {
+            alert(data.message ?? '材料對應更新失敗');
+            return;
+        }
+
+        alert(data.message);
+
+        await loadMappingItems(
+            currentMappingPage
+        );
+    }
+
+    let mappingSearchTimer = null;
+
+    mappingSearch.addEventListener(
+        'input',
+        function () {
+            clearTimeout(mappingSearchTimer);
+
+            mappingSearchTimer =
+                setTimeout(() => {
+                    loadMappingItems(1);
+                }, 300);
+        }
+    );
+
+    mappingStatus.addEventListener(
+        'change',
+        function () {
+            loadMappingItems(1);
+        }
+    );
+
+    document.getElementById('btnMappingPrev')
+        .addEventListener('click', function () {
+            if (currentMappingPage > 1) {
+                loadMappingItems(
+                    currentMappingPage - 1
+                );
+            }
+        });
+
+    document.getElementById('btnMappingNext')
+        .addEventListener('click', function () {
+            if (
+                currentMappingPage *
+                mappingPageSize
+                < currentMappingTotal
+            ) {
+                loadMappingItems(
+                    currentMappingPage + 1
+                );
+            }
+        });
     </script>
 }

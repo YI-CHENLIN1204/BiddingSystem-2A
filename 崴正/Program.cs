@@ -1,12 +1,30 @@
 using 崴正.Data;
+using 崴正.Services;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.AspNetCore.Authentication.Cookies;
 using Microsoft.AspNetCore.HttpOverrides;
+using Microsoft.AspNetCore.DataProtection;
 
 var builder = WebApplication.CreateBuilder(args);
 
+var dataProtectionKeysPath =
+    builder.Configuration["DataProtection:KeysPath"]
+    ?? Path.Combine(
+        builder.Environment.ContentRootPath,
+        ".data-protection-keys");
+
+Directory.CreateDirectory(dataProtectionKeysPath);
+
+builder.Services
+    .AddDataProtection()
+    .PersistKeysToFileSystem(
+        new DirectoryInfo(dataProtectionKeysPath))
+    .SetApplicationName("BiddingSystem2A");
+
 // Add services to the container.
 builder.Services.AddControllersWithViews();
+builder.Services.AddScoped<ProjectSimilarityService>();
+builder.Services.AddScoped<SimilarityEstimationService>();
 
 builder.Services.AddDbContext<ApplicationDbContext>(options =>
     options.UseNpgsql(builder.Configuration.GetConnectionString("DefaultConnection")));
@@ -26,7 +44,7 @@ builder.Services.Configure<ForwardedHeadersOptions>(options =>
         ForwardedHeaders.XForwardedProto |
         ForwardedHeaders.XForwardedHost;
 
-    options.KnownNetworks.Clear();
+    options.KnownIPNetworks.Clear();
     options.KnownProxies.Clear();
 });
 

@@ -4,15 +4,26 @@ namespace 崴正.Models
 {
     public class HistoricalTransaction
     {
-        public int Transaction_ID { get; set; }
+        public int TransactionId { get; set; }
 
-        public int Material_ID { get; set; }
-        public decimal Actual_Quantity { get; set; }
-        public decimal Unit_Price { get; set; }
-        public DateTime Transaction_Date { get; set; }
+        public int MaterialId { get; set; }
+
+        public decimal ActualQuantity { get; set; }
+
+        public decimal UnitPrice { get; set; }
+
+        public DateTime TransactionDate { get; set; }
+
         public bool IsDeleted { get; set; }
-        public string? Project_Id { get; set; }
-        public int? Project_Master_Id { get; set; }
-        public bool Is_Outlier { get; set; }
+
+        // 原本的文字工程代碼
+
+        // 連接 project_master.project_id
+        public int? ProjectMasterId { get; set; }
+        public long? FinalBidItemId { get; set; }
+        public bool IsOutlier { get; set; }
+
+        // 導覽屬性
+        public ProjectMaster? ProjectMaster { get; set; }
     }
 }

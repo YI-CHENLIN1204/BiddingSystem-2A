@@ -8,6 +8,7 @@ using 崴正.Models;
 using 崴正.Services;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.EntityFrameworkCore;
+using System.Security.Cryptography;
 
 namespace 崴正.Controllers
 {
@@ -43,8 +44,8 @@ namespace 崴正.Controllers
                 decimal ruleThreshold = rule != null ? rule.Z_Score_Threshold : 2.0m;
 
                 var historyData = _context.HistoricalTransactions
-                    .Where(h => h.Material_ID == item.Material_Id && h.Is_Outlier == false)
-                    .Select(h => new { h.Actual_Quantity, h.Unit_Price, h.Transaction_Date })
+                    .Where(h => h.MaterialId == item.Material_Id && h.IsOutlier == false)
+                    .Select(h => new { h.ActualQuantity, h.UnitPrice, h.TransactionDate })
                     .ToList();
 
                 decimal suggestedQty = 0;
@@ -68,17 +69,17 @@ namespace 崴正.Controllers
 
                     var weightedData = historyData.Select(h =>
                     {
-                        int daysOld = (today - h.Transaction_Date).Days;
+                        int daysOld = (today - h.TransactionDate).Days;
                         double weight = Math.Exp(-k * daysOld);
                         totalWeight += weight;
-                        weightedSum += (double)h.Actual_Quantity * weight;
-                        return new { h.Actual_Quantity, weight };
+                        weightedSum += (double)h.ActualQuantity * weight;
+                        return new { h.ActualQuantity, weight };
                     }).ToList();
 
                     double weightedMean = weightedSum / totalWeight;
                     suggestedQty = (decimal)weightedMean;
 
-                    double varianceSum = weightedData.Sum(d => d.weight * Math.Pow((double)d.Actual_Quantity - weightedMean, 2));
+                    double varianceSum = weightedData.Sum(d => d.weight * Math.Pow((double)d.ActualQuantity - weightedMean, 2));
                     decimal historySD = (decimal)Math.Sqrt(varianceSum / totalWeight);
 
                     if (historySD == 0)
@@ -94,7 +95,7 @@ namespace 崴正.Controllers
                         statusMsg = isAbnormal ? "異常高估" : "合理";
                     }
 
-                    predictedPrice = historyData.Average(h => h.Unit_Price) * 1.02m;
+                    predictedPrice = historyData.Average(h => h.UnitPrice) * 1.02m;
                 }
 
                 decimal refTotalPrice = item.Total_Quantity * predictedPrice;
@@ -206,15 +207,15 @@ namespace 崴正.Controllers
 
             // 3. 180 天內的歷史資料先一次查出來
             var allHistories = _context.HistoricalTransactions
-                .Where(h => materialIds.Contains(h.Material_ID))
+                .Where(h => materialIds.Contains(h.MaterialId))
                 .Where(h => h.IsDeleted == false)
-                .Where(h => h.Is_Outlier == false)
-                .Where(h => h.Transaction_Date >= longTermStartDate)
+                .Where(h => h.IsOutlier == false)
+                .Where(h => h.TransactionDate >= longTermStartDate)
                 .ToList();
 
             // 4. 依照材料 ID 分組，後面直接從記憶體拿
             var historyDict = allHistories
-                .GroupBy(h => h.Material_ID)
+                .GroupBy(h => h.MaterialId)
                 .ToDictionary(g => g.Key, g => g.ToList());
 
             foreach (var row in rows)
@@ -366,15 +367,15 @@ namespace 崴正.Controllers
 
                 // 短期資料直接從長期資料中篩選，不再查資料庫
                 var shortHistories = longHistories
-                    .Where(h => h.Transaction_Date >= shortTermStartDate)
+                    .Where(h => h.TransactionDate >= shortTermStartDate)
                     .ToList();
 
-                var shortPriceValues = shortHistories.Select(h => h.Unit_Price).ToList();
-                var longPriceValues = longHistories.Select(h => h.Unit_Price).ToList();
+                var shortPriceValues = shortHistories.Select(h => h.UnitPrice).ToList();
+                var longPriceValues = longHistories.Select(h => h.UnitPrice).ToList();
 
                 int sampleCount = longHistories
-                    .Where(h => !string.IsNullOrWhiteSpace(h.Project_Id))
-                    .Select(h => h.Project_Id)
+                    .Where(h => h.ProjectMasterId.HasValue)
+                    .Select(h => h.ProjectMasterId)
                     .Distinct()
                     .Count();
 
@@ -565,169 +566,679 @@ namespace 崴正.Controllers
         }
 
         
-        // 🚀 UC-05 & UC-06：匯入最終決標標單 & 回寫歷史資料
-        // ==========================================
         [HttpPost("upload-final-bid")]
         public IActionResult UploadFinalBid(
             IFormFile excelFile,
             [FromForm] string projectName,
             [FromForm] string projectType,
             [FromForm] string structureType,
-            [FromForm] string city)
+            [FromForm] string city,
+            [FromForm] decimal? totalFloorArea,
+            [FromForm] int? floorCount,
+            [FromForm] int? basementFloorCount,
+            [FromForm] string projectMonth)
         {
+            // ==============================
+            // 1. 基本資料檢查
+            // ==============================
+
             if (excelFile == null || excelFile.Length == 0)
                 return BadRequest(new { message = "請先選擇 Excel 檔案" });
 
+            string extension =
+                Path.GetExtension(excelFile.FileName)
+                    .ToLowerInvariant();
+
+            if (extension != ".xlsx")
+            {
+                return BadRequest(new
+                {
+                    message = "目前僅接受 .xlsx 檔案"
+                });
+            }
+
             if (string.IsNullOrWhiteSpace(projectName))
-                return BadRequest(new { message = "請輸入此決標案的工程專案名稱" });
+            {
+                return BadRequest(new
+                {
+                    message = "請輸入工程專案名稱"
+                });
+            }
+            if (string.IsNullOrWhiteSpace(projectMonth) ||
+            !DateTime.TryParseExact(
+                projectMonth,
+                "yyyy-MM",
+                System.Globalization.CultureInfo.InvariantCulture,
+                System.Globalization.DateTimeStyles.None,
+                out var parsedProjectMonth))
+        {
+            return BadRequest(new
+            {
+                message = "請選擇正確的建案年月"
+            });
+        }
+            projectName = projectName.Trim();
 
-            projectType = NormalizeImportText(projectType);
-            structureType = NormalizeImportText(structureType);
-            city = NormalizeImportText(city);
+            projectType =
+                NormalizeImportText(projectType);
 
-            if (!IsAllowedValue(projectType, "住宅", "廠房"))
-                return BadRequest(new { message = "請選擇建案類型：住宅或廠房" });
+            structureType =
+                NormalizeImportText(structureType);
 
-            if (!IsAllowedValue(structureType, "SC", "RC", "SRC"))
-                return BadRequest(new { message = "請選擇結構類型：SC、RC 或 SRC" });
+            city =
+                NormalizeImportText(city);
+
+            if (!IsAllowedValue(
+                    projectType,
+                    "住宅",
+                    "廠房"))
+            {
+                return BadRequest(new
+                {
+                    message = "請選擇建案類型：住宅或廠房"
+                });
+            }
+
+            if (!IsAllowedValue(
+                    structureType,
+                    "SC",
+                    "RC",
+                    "SRC"))
+            {
+                return BadRequest(new
+                {
+                    message = "請選擇結構類型：SC、RC 或 SRC"
+                });
+            }
 
             if (string.IsNullOrWhiteSpace(city))
-                return BadRequest(new { message = "請選擇或輸入區域/縣市" });
+            {
+                return BadRequest(new
+                {
+                    message = "請輸入縣市"
+                });
+            }
+            if (!totalFloorArea.HasValue ||
+                totalFloorArea.Value <= 0)
+            {
+                return BadRequest(new
+                {
+                    message = "請輸入正確的總樓地板面積"
+                });
+            }
+            if (!floorCount.HasValue ||
+                floorCount.Value <= 0)
+            {
+                return BadRequest(new
+                {
+                    message = "請輸入正確的地上樓層數"
+                });
+            }
+
+            if (!basementFloorCount.HasValue ||
+                basementFloorCount.Value < 0)
+            {
+                return BadRequest(new
+                {
+                    message = "請輸入正確的地下樓層數"
+                });
+            }
 
             try
             {
-                var parser = new TenderExcelParser();
+                // ==============================
+                // 2. 將 Excel 讀進記憶體
+                // ==============================
 
-                using var uploadBuffer = new MemoryStream();
+                using var uploadBuffer =
+                    new MemoryStream();
+
                 excelFile.CopyTo(uploadBuffer);
-                var excelBytes = uploadBuffer.ToArray();
 
-                var totalFloorArea = parser.ExtractTotalFloorArea(new MemoryStream(excelBytes));
-                var rows = parser.Parse(new MemoryStream(excelBytes), excelFile.FileName);
+                byte[] excelBytes =
+                    uploadBuffer.ToArray();
 
-                using var dbTransaction = _context.Database.BeginTransaction();
+                // ==============================
+                // 3. SHA-256 防止同檔重複上傳
+                // ==============================
 
-                var project = new ProjectMaster
+                string fileHash =
+                    Convert.ToHexString(
+                        SHA256.HashData(excelBytes))
+                    .ToLowerInvariant();
+
+                bool sameFileExists =
+                    _context.ProjectMasters.Any(p =>
+                        !p.IsDeleted &&
+                        p.SourceFileHash == fileHash);
+
+                if (sameFileExists)
                 {
-                    ProjectName = projectName.Trim(),
-                    ProjectType = projectType,
-                    StructureType = structureType,
-                    City = city,
-                    TotalFloorArea = totalFloorArea,
-                    StartDate = DateTime.UtcNow.Date,
-                    IsDeleted = false
-                };
+                    return Conflict(new
+                    {
+                        message =
+                            "此最終標單已經回寫過，不能重複上傳。"
+                    });
+                }
+
+                // ==============================
+                // 4. 防止同一建案重複建立
+                // ==============================
+
+                bool sameProjectExists =
+                    _context.ProjectMasters.Any(p =>
+                        !p.IsDeleted &&
+                        p.ProjectName == projectName);
+
+                if (sameProjectExists)
+                {
+                    return Conflict(new
+                    {
+                        message =
+                            "此建案已完成決標回寫。如需重新上傳，請先至建案管理刪除原建案。"
+                    });
+                }
+
+                // ==============================
+                // 5. Excel 解析
+                // ==============================
+
+                var parser =
+                    new TenderExcelParser();
+
+                var rows =
+                    parser.Parse(
+                        new MemoryStream(excelBytes),
+                        excelFile.FileName);
+
+                if (rows.Count == 0)
+                {
+                    return BadRequest(new
+                    {
+                        message =
+                            "標單中沒有解析到可用的工程明細"
+                    });
+                }
+
+                // ==============================
+                // 6. DB Transaction
+                // ==============================
+
+                using var dbTransaction =
+                    _context.Database.BeginTransaction();
+
+                DateTime now =
+                    DateTime.UtcNow;
+
+                // 樓層顯示原始格式
+                string floorRange =
+                    basementFloorCount.Value > 0
+                        ? $"B{basementFloorCount.Value}~{floorCount.Value}F"
+                        : $"1~{floorCount.Value}F";
+
+                // ==============================
+                // 7. 建立唯一 ProjectMaster
+                // ==============================
+
+                var project =
+                    new ProjectMaster
+                    {
+                        ProjectName = projectName,
+
+                        ProjectType = projectType,
+
+                        StructureType = structureType,
+
+                        City = city,
+
+                        TotalFloorArea =
+                            totalFloorArea,
+
+                        FloorCount =
+                            floorCount.Value,
+
+                        BasementFloorCount =
+                            basementFloorCount.Value,
+
+                        FloorRange =
+                            floorRange,
+
+                        StartDate = new DateTime(parsedProjectMonth.Year,parsedProjectMonth.Month,1),
+
+                        SourceFileName =
+                            excelFile.FileName,
+
+                        SourceFileHash =
+                            fileHash,
+
+                        ImportedAt =
+                            DateTime.UtcNow,
+
+                        IsDeleted =
+                            false
+                    };
 
                 _context.ProjectMasters.Add(project);
+
+                // 先存一次，
+                // 取得 project.ProjectId
                 _context.SaveChanges();
 
-                var dictionaryList = _context.ItemDictionaries.ToList();
-                var materials = _context.MaterialMasters.ToList();
-                var materialDict = materials.ToDictionary(m => m.MaterialId, m => m);
+                // ==============================
+                // 8. 載入字典與材料主檔
+                // ==============================
 
-                int successInsertCount = 0;
+                var dictionaryList =
+                    _context.ItemDictionaries
+                        .ToList();
+
+                var materials =
+                    _context.MaterialMasters
+                        .ToList();
+
+                var materialDict =
+                    materials.ToDictionary(
+                        m => m.MaterialId,
+                        m => m);
+
+                // 等 FinalBidItem 取得 ID 後
+                // 再建立 HistoricalTransaction
+                var historyCandidates =
+                    new List<FinalBidItem>();
+
+                int autoMappedCount = 0;
                 int unmappedCount = 0;
                 int invalidDataCount = 0;
                 int missingMaterialCount = 0;
                 int unitMismatchCount = 0;
 
-                // 避免同一次匯入大量重複寫入 unmapped_items
-                var existingUnmappedKeys = _context.UnmappedItems
-                    .Where(x => x.ProjectName == projectName && x.Status == "待處理")
-                    .Select(x => (x.ItemName ?? "") + "|" + (x.Spec ?? ""))
-                    .ToHashSet();
-
+                // ==============================
+                // 9. 每一列都保存成 FinalBidItem
+                // ==============================
                 foreach (var row in rows)
                 {
-                    if (row.Qty == null || row.Qty <= 0 || row.UnitPrice == null || row.UnitPrice < 0)
-                    {
-                        invalidDataCount++;
-                        continue;
-                    }
+                    // ==========================================
+                    // 1. 先嘗試自動材料匹配
+                    // ==========================================
 
-                    var matchedDict = dictionaryList.FirstOrDefault(d =>
-                        (row.ItemName ?? "").Contains(d.Keyword, StringComparison.OrdinalIgnoreCase) ||
-                        (row.Spec ?? "").Contains(d.Keyword, StringComparison.OrdinalIgnoreCase));
+                    var matchedDict =
+                        dictionaryList
+                            .Where(d =>
+                                !string.IsNullOrWhiteSpace(d.Keyword) &&
+                                (
+                                    (row.ItemName ?? "")
+                                        .Contains(
+                                            d.Keyword,
+                                            StringComparison.OrdinalIgnoreCase)
+                                    ||
+                                    (row.Spec ?? "")
+                                        .Contains(
+                                            d.Keyword,
+                                            StringComparison.OrdinalIgnoreCase)
+                                ))
+                            .OrderByDescending(d => d.Keyword.Length)
+                            .FirstOrDefault();
+
+                    MaterialMaster? material = null;
+
+                    int? materialId = null;
+
+                    string? matchedKeyword = null;
+
+                    // 預設就是待處理
+                    string mappingStatus = "Pending";
+
+                    string? issueCode = null;
+
+                    var issueMessages = new List<string>();
+
+
+                    // ==========================================
+                    // 2. 判斷材料對應問題
+                    // ==========================================
 
                     if (matchedDict == null)
                     {
-                        unmappedCount++;
+                        issueCode = "NO_DICTIONARY_MATCH";
 
-                        var itemName = row.ItemName ?? "";
-                        var spec = row.Spec ?? "";
-                        var key = itemName + "|" + spec;
+                        issueMessages.Add(
+                            "找不到可對應的字典關鍵字"
+                        );
+                    }
+                    else
+                    {
+                        matchedKeyword =
+                            matchedDict.Keyword;
 
-                        if (!existingUnmappedKeys.Contains(key))
+                        if (!materialDict.TryGetValue(
+                                matchedDict.Material_Id,
+                                out var matchedMaterial))
                         {
-                            _context.UnmappedItems.Add(new UnmappedItem
-                            {
-                                SourceFileName = excelFile.FileName,
-                                ProjectName = projectName,
-                                ItemName = itemName,
-                                Spec = row.Spec,
-                                Unit = row.Unit,
-                                Qty = row.Qty,
-                                UnitPrice = row.UnitPrice,
-                                Status = "待處理"
-                            });
+                            issueCode =
+                                "MATERIAL_NOT_FOUND";
 
-                            existingUnmappedKeys.Add(key);
+                            issueMessages.Add(
+                                $"字典指向不存在的材料 ID：{matchedDict.Material_Id}"
+                            );
+
+                            missingMaterialCount++;
+                        }
+                        else
+                        {
+                            material =
+                                matchedMaterial;
+
+                            materialId =
+                                matchedMaterial.MaterialId;
+                        }
+                    }
+
+
+                    // ==========================================
+                    // 3. 判斷數量問題
+                    // ==========================================
+
+                    if (!row.Qty.HasValue ||
+                        row.Qty.Value <= 0)
+                    {
+                        // 如果前面還沒有更主要的問題，
+                        // 就把數量問題當主要篩選原因
+                        if (issueCode == null)
+                        {
+                            issueCode =
+                                "INVALID_QUANTITY";
                         }
 
-                        continue;
+                        issueMessages.Add(
+                            "數量空白或小於等於 0"
+                        );
+
+                        invalidDataCount++;
                     }
 
-                    if (!materialDict.TryGetValue(matchedDict.Material_Id, out var material))
+
+                    // ==========================================
+                    // 4. 判斷單價問題
+                    // ==========================================
+
+                    if (!row.UnitPrice.HasValue ||
+                        row.UnitPrice.Value < 0)
                     {
-                        missingMaterialCount++;
-                        continue;
+                        if (issueCode == null)
+                        {
+                            issueCode =
+                                "INVALID_UNIT_PRICE";
+                        }
+
+                        issueMessages.Add(
+                            "單價空白或小於 0"
+                        );
+
+                        invalidDataCount++;
                     }
 
-                    if (!IsSameUnit(row.Unit, material.BaseUnit))
+
+                    // ==========================================
+                    // 5. 判斷單位問題
+                    // ==========================================
+
+                    if (material != null &&
+                        !IsSameUnit(
+                            row.Unit ?? "",
+                            material.BaseUnit))
                     {
+                        if (issueCode == null)
+                        {
+                            issueCode =
+                                "UNIT_MISMATCH";
+                        }
+
+                        issueMessages.Add(
+                            $"標單單位「{row.Unit ?? "空白"}」" +
+                            $"與標準材料單位「{material.BaseUnit}」不一致"
+                        );
+
                         unitMismatchCount++;
+                    }
+
+
+                    // ==========================================
+                    // 6. 完全沒有問題才算 Auto
+                    // ==========================================
+
+                    if (issueCode == null)
+                    {
+                        mappingStatus =
+                            "Auto";
+
+                        autoMappedCount++;
+                    }
+                    else
+                    {
+                        mappingStatus =
+                            "Pending";
+
+                        unmappedCount++;
+                    }
+
+
+                    // ==========================================
+                    // 7. 不管成功或失敗，
+                    //    每一列都寫進 FinalBidItem
+                    // ==========================================
+
+                    var bidItem =
+                        new FinalBidItem
+                        {
+                            ProjectMasterId =
+                                project.ProjectId,
+
+                            SourceFileName =
+                                excelFile.FileName,
+
+                            SheetName =
+                                row.SheetName,
+
+                            RowNumber =
+                                row.RowNumber,
+
+                            ItemCode =
+                                row.ItemCode,
+
+                            Category1 =
+                                row.Category1,
+
+                            Category2 =
+                                row.Category2,
+
+                            Category3 =
+                                row.Category3,
+
+                            ItemName =
+                                row.ItemName ?? string.Empty,
+
+                            Spec =
+                                row.Spec,
+
+                            Unit =
+                                row.Unit,
+
+                            Qty =
+                                row.Qty,
+
+                            UnitPrice =
+                                row.UnitPrice,
+
+                            Amount =
+                                row.Amount,
+
+                            Note =
+                                row.Note,
+
+                            MaterialId =
+                                materialId,
+
+                            MappingStatus =
+                                mappingStatus,
+
+                            MappingIssueCode =
+                                issueCode,
+
+                            MappingIssueMessage =
+                                issueMessages.Count > 0
+                                    ? string.Join("；", issueMessages)
+                                    : null,
+
+                            MatchedKeyword =
+                                matchedKeyword,
+
+                            CreatedAt =
+                                now,
+
+                            UpdatedAt =
+                                now
+                        };
+
+                    _context.FinalBidItems.Add(
+                        bidItem);
+
+
+                    // ==========================================
+                    // 8. 只有 Auto 才能進 HistoricalTransaction
+                    // ==========================================
+
+                    if (mappingStatus == "Auto")
+                    {
+                        historyCandidates.Add(
+                            bidItem);
+                    }
+                }
+
+
+                // ==============================
+                // 11. 儲存所有 FinalBidItem
+                //     取得 FinalBidItemId
+                // ==============================
+
+                _context.SaveChanges();
+
+                // ==============================
+                // 12. 建立 HistoricalTransaction
+                // ==============================
+
+                foreach (
+                    var bidItem in historyCandidates)
+                {
+                    if (!bidItem.MaterialId.HasValue ||
+                        !bidItem.Qty.HasValue ||
+                        !bidItem.UnitPrice.HasValue)
+                    {
                         continue;
                     }
 
-                    var newHistory = new HistoricalTransaction
-                    {
-                        Material_ID = material.MaterialId,
-                        Actual_Quantity = row.Qty.Value,
-                        Unit_Price = row.UnitPrice.Value,
-                        Transaction_Date = DateTime.UtcNow.Date,
-                        IsDeleted = false,
-                        Is_Outlier = false,
-                        Project_Id = project.ProjectName,
-                        Project_Master_Id = project.ProjectId
-                    };
+                    var history =
+                        new HistoricalTransaction
+                        {
+                            MaterialId =
+                                bidItem.MaterialId.Value,
 
-                    _context.HistoricalTransactions.Add(newHistory);
-                    successInsertCount++;
+                            ActualQuantity =
+                                bidItem.Qty.Value,
+
+                            UnitPrice =
+                                bidItem.UnitPrice.Value,
+
+                            // 用建案日期，
+                            // 不是上傳當天
+                            TransactionDate =
+                                project.StartDate!.Value,
+
+                            IsDeleted =
+                                false,
+
+                            IsOutlier =
+                                false,
+
+                            ProjectMasterId =
+                                project.ProjectId,
+
+                            FinalBidItemId =
+                                bidItem.FinalBidItemId
+                        };
+
+                    _context.HistoricalTransactions.Add(
+                        history);
                 }
 
                 _context.SaveChanges();
+
                 dbTransaction.Commit();
 
                 return Ok(new
                 {
-                    message = "回寫成功",
-                    projectId = project.ProjectId,
-                    projectName = project.ProjectName,
-                    projectType = project.ProjectType,
-                    structureType = project.StructureType,
-                    city = project.City,
-                    totalFloorArea = project.TotalFloorArea,
-                    insertCount = successInsertCount,
-                    unmappedCount = unmappedCount,
-                    invalidDataCount = invalidDataCount,
-                    missingMaterialCount = missingMaterialCount,
-                    unitMismatchCount = unitMismatchCount,
-                    totalCount = rows.Count
+                    message = "決標標單回寫成功",
+
+                    projectId =
+                        project.ProjectId,
+
+                    projectName =
+                        project.ProjectName,
+
+                    projectType =
+                        project.ProjectType,
+
+                    structureType =
+                        project.StructureType,
+
+                    city =
+                        project.City,
+
+                    totalFloorArea =
+                        project.TotalFloorArea,
+
+                    floorCount =
+                        project.FloorCount,
+
+                    basementFloorCount =
+                        project.BasementFloorCount,
+
+                    projectDate =
+                        project.StartDate,
+
+                    sourceFileName =
+                        project.SourceFileName,
+
+                    totalCount =
+                        rows.Count,
+
+                    autoMappedCount =
+                        autoMappedCount,
+
+                    unmappedCount =
+                        unmappedCount,
+
+                    historyInsertCount =
+                        historyCandidates.Count,
+
+                    invalidDataCount =
+                        invalidDataCount,
+
+                    missingMaterialCount =
+                        missingMaterialCount,
+
+                    unitMismatchCount =
+                        unitMismatchCount
                 });
             }
             catch (Exception ex)
             {
-                return BadRequest(new { message = "回寫失敗：" + ex.Message });
+                Console.WriteLine(ex.ToString());
+
+                return BadRequest(new
+                {
+                    message = "決標標單回寫失敗：" +
+                            (ex.InnerException?.Message ?? ex.Message)
+                });
             }
         }
 
@@ -741,89 +1252,759 @@ namespace 崴正.Controllers
             return allowedValues.Any(x => string.Equals(x, value, StringComparison.OrdinalIgnoreCase));
         }
 
-        [HttpGet("unmapped-items")]
-        public IActionResult GetUnmappedItems()
+        // ==========================================
+        // 決標標單工項查詢
+        // 預設顯示尚未對應，可搜尋全部狀態
+        // ==========================================
+        [HttpGet("mapping-items")]
+        public IActionResult GetMappingItems(
+            [FromQuery] int? projectId = null,
+            [FromQuery] string status = "Pending",
+            [FromQuery] string? search = null,
+            [FromQuery] string? issueCode = null,
+            [FromQuery] string? category = null,
+            [FromQuery] string? unit = null,
+            [FromQuery] int page = 1,
+            [FromQuery] int pageSize = 50)
         {
-            var items = _context.UnmappedItems
-                .Where(x => x.Status == "待處理")
-                .OrderByDescending(x => x.UnmappedId)
-                .Take(20)
-                .Select(x => new
-                {
-                    unmappedId = x.UnmappedId,
-                    projectName = x.ProjectName,
-                    itemName = x.ItemName,
-                    spec = x.Spec,
-                    unit = x.Unit,
-                    qty = x.Qty,
-                    unitPrice = x.UnitPrice
-                })
-                .ToList();
+            if (page < 1)
+                page = 1;
 
-            var materials = _context.MaterialMasters
-                .OrderBy(x => x.MaterialName)
-                .Select(x => new
+            if (pageSize < 1)
+                pageSize = 50;
+
+            if (pageSize > 200)
+                pageSize = 200;
+
+            var query =
+                _context.FinalBidItems
+                    .AsNoTracking()
+                    .AsQueryable();
+
+            // ==============================
+            // 建案
+            // ==============================
+
+            if (projectId.HasValue)
+            {
+                query = query.Where(x =>
+                    x.ProjectMasterId == projectId.Value);
+            }
+
+            // ==============================
+            // 對應狀態
+            //
+            // Pending
+            // Auto
+            // Manual
+            // All
+            // ==============================
+
+            status =
+                string.IsNullOrWhiteSpace(status)
+                    ? "Pending"
+                    : status.Trim();
+
+            if (!string.Equals(
+                    status,
+                    "All",
+                    StringComparison.OrdinalIgnoreCase))
+            {
+                if (!IsAllowedValue(
+                        status,
+                        "Pending",
+                        "Auto",
+                        "Manual"))
                 {
-                    materialId = x.MaterialId,
-                    materialName = x.MaterialName
-                })
-                .ToList();
+                    return BadRequest(new
+                    {
+                        message =
+                            "狀態只允許 Pending、Auto、Manual、All"
+                    });
+                }
+
+                query = query.Where(x =>
+                    x.MappingStatus == status);
+            }
+
+            // ==============================
+            // 待處理原因
+            // ==============================
+
+            if (!string.IsNullOrWhiteSpace(issueCode) &&
+                !string.Equals(
+                    issueCode,
+                    "All",
+                    StringComparison.OrdinalIgnoreCase))
+            {
+                string selectedIssue =
+                    issueCode.Trim();
+
+                query = query.Where(x =>
+                    x.MappingIssueCode == selectedIssue);
+            }
+
+            // ==============================
+            // 材料分類
+            // ==============================
+
+            if (!string.IsNullOrWhiteSpace(category) &&
+                !string.Equals(
+                    category,
+                    "All",
+                    StringComparison.OrdinalIgnoreCase))
+            {
+                string selectedCategory =
+                    category.Trim();
+
+                query = query.Where(x =>
+                    x.Material != null &&
+                    x.Material.Category != null &&
+                    x.Material.Category ==
+                        selectedCategory);
+            }
+
+            // ==============================
+            // 單位
+            // ==============================
+
+            if (!string.IsNullOrWhiteSpace(unit) &&
+                !string.Equals(
+                    unit,
+                    "All",
+                    StringComparison.OrdinalIgnoreCase))
+            {
+                string selectedUnit =
+                    unit.Trim();
+
+                query = query.Where(x =>
+                    x.Unit != null &&
+                    x.Unit == selectedUnit);
+            }
+
+            // ==============================
+            // 關鍵字搜尋
+            //
+            // 工項名稱
+            // 規格
+            // 標準材料
+            // 建案名稱
+            // ==============================
+
+            if (!string.IsNullOrWhiteSpace(search))
+            {
+                string pattern =
+                    $"%{search.Trim()}%";
+
+                query = query.Where(x =>
+                    EF.Functions.ILike(
+                        x.ItemName,
+                        pattern)
+
+                    ||
+
+                    (
+                        x.Spec != null &&
+                        EF.Functions.ILike(
+                            x.Spec,
+                            pattern)
+                    )
+
+                    ||
+
+                    (
+                        x.Material != null &&
+                        EF.Functions.ILike(
+                            x.Material.MaterialName,
+                            pattern)
+                    )
+
+                    ||
+
+                    EF.Functions.ILike(
+                        x.ProjectMaster.ProjectName,
+                        pattern)
+                );
+            }
+
+            int totalCount =
+                query.Count();
+
+            // ==============================
+            // 排序
+            //
+            // 待處理優先
+            // 手動其次
+            // 自動最後
+            // ==============================
+
+            var items =
+                query
+                    .OrderBy(x =>
+                        x.MappingStatus == "Pending"
+                            ? 0
+                            : x.MappingStatus == "Manual"
+                                ? 1
+                                : 2)
+
+                    .ThenByDescending(
+                        x => x.FinalBidItemId)
+
+                    .Skip(
+                        (page - 1) * pageSize)
+
+                    .Take(pageSize)
+
+                    .Select(x => new
+                    {
+                        finalBidItemId =
+                            x.FinalBidItemId,
+
+                        projectId =
+                            x.ProjectMasterId,
+
+                        projectName =
+                            x.ProjectMaster.ProjectName,
+
+                        sourceFileName =
+                            x.SourceFileName,
+
+                        sheetName =
+                            x.SheetName,
+
+                        rowNumber =
+                            x.RowNumber,
+
+                        itemCode =
+                            x.ItemCode,
+
+                        itemName =
+                            x.ItemName,
+
+                        spec =
+                            x.Spec,
+
+                        unit =
+                            x.Unit,
+
+                        qty =
+                            x.Qty,
+
+                        unitPrice =
+                            x.UnitPrice,
+
+                        materialId =
+                            x.MaterialId,
+
+                        materialName =
+                            x.Material != null
+                                ? x.Material.MaterialName
+                                : null,
+
+                        materialCategory =
+                            x.Material != null
+                                ? x.Material.Category
+                                : null,
+
+                        materialUnit =
+                            x.Material != null
+                                ? x.Material.BaseUnit
+                                : null,
+
+                        mappingStatus =
+                            x.MappingStatus,
+
+                        mappingIssueCode =
+                            x.MappingIssueCode,
+
+                        mappingIssueMessage =
+                            x.MappingIssueMessage,
+
+                        matchedKeyword =
+                            x.MatchedKeyword,
+
+                        updatedAt =
+                            x.UpdatedAt
+                    })
+
+                    .ToList();
 
             return Ok(new
             {
-                items,
-                materials
+                totalCount,
+                page,
+                pageSize,
+
+                filters = new
+                {
+                    status,
+                    search,
+                    issueCode,
+                    category,
+                    unit
+                },
+
+                items
             });
         }
 
-        [HttpPost("add-dictionary")]
-        public IActionResult AddDictionary([FromForm] int unmappedId, [FromForm] int materialId)
+
+        [HttpGet("mapping-filter-options")]
+        public IActionResult GetMappingFilterOptions(
+            [FromQuery] int? projectId = null)
         {
-            var unmapped = _context.UnmappedItems.FirstOrDefault(x => x.UnmappedId == unmappedId);
+            var itemQuery =
+                _context.FinalBidItems
+                    .AsNoTracking()
+                    .AsQueryable();
 
-            if (unmapped == null)
+            if (projectId.HasValue)
             {
-                return NotFound(new { message = "找不到未對應工項" });
+                itemQuery = itemQuery.Where(x =>
+                    x.ProjectMasterId ==
+                    projectId.Value);
             }
 
-            var material = _context.MaterialMasters.FirstOrDefault(x => x.MaterialId == materialId);
+            var units =
+                itemQuery
+                    .Where(x =>
+                        x.Unit != null &&
+                        x.Unit != "")
+                    .Select(x => x.Unit!)
+                    .Distinct()
+                    .OrderBy(x => x)
+                    .ToList();
 
-            if (material == null)
+            var categories =
+                _context.MaterialMasters
+                    .AsNoTracking()
+                    .Where(x =>
+                        x.Category != null &&
+                        x.Category != "")
+                    .Select(x => x.Category!)
+                    .Distinct()
+                    .OrderBy(x => x)
+                    .ToList();
+
+            var issueCodes =
+                itemQuery
+                    .Where(x =>
+                        x.MappingIssueCode != null)
+                    .Select(x =>
+                        x.MappingIssueCode!)
+                    .Distinct()
+                    .OrderBy(x => x)
+                    .ToList();
+
+            return Ok(new
             {
-                return BadRequest(new { message = "找不到標準工項" });
+                units,
+                categories,
+                issueCodes
+            });
+        }
+        
+        // ==========================================
+        // 取得標準材料清單
+        // 供人工對應下拉選單使用
+        // ==========================================
+        [HttpGet("material-options")]
+        public IActionResult GetMaterialOptions(
+            [FromQuery] string? search = null)
+        {
+            var query =
+                _context.MaterialMasters
+                    .AsNoTracking()
+                    .AsQueryable();
+
+            if (!string.IsNullOrWhiteSpace(search))
+            {
+                string pattern =
+                    $"%{search.Trim()}%";
+
+                query = query.Where(x =>
+                    EF.Functions.ILike(
+                        x.MaterialName,
+                        pattern)
+                    ||
+                    (
+                        x.Category != null &&
+                        EF.Functions.ILike(
+                            x.Category,
+                            pattern)
+                    )
+                );
             }
 
-            var keyword = unmapped.ItemName.Trim();
+            var materials =
+                query
+                    .OrderBy(x => x.MaterialName)
+                    .Select(x => new
+                    {
+                        materialId =
+                            x.MaterialId,
 
-            if (string.IsNullOrWhiteSpace(keyword))
+                        materialName =
+                            x.MaterialName,
+
+                        category =
+                            x.Category,
+
+                        baseUnit =
+                            x.BaseUnit
+                    })
+                    .Take(200)
+                    .ToList();
+
+            return Ok(materials);
+        }
+
+        // ==========================================
+        // 人工指定 / 修改材料對應
+        //
+        // 支援：
+        // Unmapped → Manual
+        // Auto     → Manual
+        // Manual   → Manual
+        // ==========================================
+        [HttpPost("update-material-mapping")]
+        public IActionResult UpdateMaterialMapping(
+            [FromForm] long finalBidItemId,
+            [FromForm] int materialId)
+        {
+            using var dbTransaction =
+                _context.Database.BeginTransaction();
+
+            try
             {
-                return BadRequest(new { message = "工項名稱不可為空" });
-            }
+                // ==============================
+                // 1. 找標單工項
+                // ==============================
 
-            bool exists = _context.ItemDictionaries.Any(x =>
-                x.Keyword == keyword &&
-                x.Material_Id == materialId);
+                var bidItem =
+                    _context.FinalBidItems
+                        .Include(x => x.ProjectMaster)
+                        .FirstOrDefault(x =>
+                            x.FinalBidItemId ==
+                            finalBidItemId);
 
-            if (!exists)
-            {
-                _context.ItemDictionaries.Add(new ItemDictionary
+                if (bidItem == null)
                 {
-                    Keyword = keyword,
-                    Material_Id = materialId
+                    return NotFound(new
+                    {
+                        message =
+                            "找不到此決標標單工項"
+                    });
+                }
+
+                // ==============================
+                // 2. 找標準材料
+                // ==============================
+
+                var material =
+                    _context.MaterialMasters
+                        .FirstOrDefault(x =>
+                            x.MaterialId ==
+                            materialId);
+
+                if (material == null)
+                {
+                    return BadRequest(new
+                    {
+                        message =
+                            "找不到指定的標準材料"
+                    });
+                }
+
+                // ==============================
+                // 3. 必須有有效數量與單價
+                // ==============================
+
+                if (!bidItem.Qty.HasValue ||
+                    bidItem.Qty.Value <= 0)
+                {
+                    return BadRequest(new
+                    {
+                        message =
+                            "此工項數量無效，不能建立歷史交易"
+                    });
+                }
+
+                if (!bidItem.UnitPrice.HasValue ||
+                    bidItem.UnitPrice.Value < 0)
+                {
+                    return BadRequest(new
+                    {
+                        message =
+                            "此工項單價無效，不能建立歷史交易"
+                    });
+                }
+
+                // ==============================
+                // 4. 單位必須一致
+                // ==============================
+
+                if (!IsSameUnit(
+                        bidItem.Unit ?? "",
+                        material.BaseUnit))
+                {
+                    return BadRequest(new
+                    {
+                        message =
+                            $"單位不符：標單單位為「{bidItem.Unit}」，" +
+                            $"標準材料單位為「{material.BaseUnit}」"
+                    });
+                }
+
+                int? oldMaterialId =
+                    bidItem.MaterialId;
+
+                string oldStatus =
+                    bidItem.MappingStatus;
+
+                // ==============================
+                // 5. 建立 / 修正字典
+                // ==============================
+
+                string keyword =
+                    !string.IsNullOrWhiteSpace(
+                        bidItem.ItemName)
+                        ? bidItem.ItemName.Trim()
+                        : bidItem.Spec?.Trim()
+                            ?? string.Empty;
+
+                if (string.IsNullOrWhiteSpace(keyword))
+                {
+                    return BadRequest(new
+                    {
+                        message =
+                            "工項名稱與規格皆為空，無法建立字典"
+                    });
+                }
+
+                /*
+                * 如果以前手動配錯：
+                *
+                * keyword → material 15
+                *
+                * 現在改成 material 18，
+                * 要同步修正既有字典。
+                */
+                var existingDictionaryRows =
+                    _context.ItemDictionaries
+                        .Where(x =>
+                            x.Keyword == keyword)
+                        .ToList();
+
+                if (existingDictionaryRows.Count == 0)
+                {
+                    _context.ItemDictionaries.Add(
+                        new ItemDictionary
+                        {
+                            Keyword =
+                                keyword,
+
+                            Material_Id =
+                                material.MaterialId
+                        });
+                }
+                else
+                {
+                    foreach (
+                        var dictionaryRow
+                        in existingDictionaryRows)
+                    {
+                        dictionaryRow.Material_Id =
+                            material.MaterialId;
+                    }
+                }
+
+                // ==============================
+                // 6. 更新 FinalBidItem
+                // ==============================
+
+                bidItem.MaterialId =
+                    material.MaterialId;
+
+                bidItem.MappingStatus =
+                    "Manual";
+
+                bidItem.MappingIssueCode =
+                    null;
+
+                bidItem.MappingIssueMessage =
+                    null;
+
+                bidItem.MatchedKeyword =
+                    keyword;
+
+                bidItem.UpdatedAt =
+                    DateTime.UtcNow;
+
+                bidItem.UpdatedAt =
+                    DateTime.UtcNow;
+
+                // ==============================
+                // 7. 同步 HistoricalTransaction
+                // ==============================
+
+                var history =
+                    _context.HistoricalTransactions
+                        .FirstOrDefault(x =>
+                            x.FinalBidItemId ==
+                            bidItem.FinalBidItemId);
+
+                string historyAction;
+
+                if (history == null)
+                {
+                    // 原本是 Unmapped，
+                    // 現在第一次人工對應成功
+                    history =
+                        new HistoricalTransaction
+                        {
+                            MaterialId =
+                                material.MaterialId,
+
+                            ActualQuantity =
+                                bidItem.Qty.Value,
+
+                            UnitPrice =
+                                bidItem.UnitPrice.Value,
+
+                            TransactionDate =
+                                bidItem.ProjectMaster
+                                    .StartDate
+                                    ?? DateTime.UtcNow.Date,
+
+                            IsDeleted =
+                                false,
+
+                            IsOutlier =
+                                false,
+
+                            ProjectMasterId =
+                                bidItem.ProjectMasterId,
+
+                            FinalBidItemId =
+                                bidItem.FinalBidItemId
+                        };
+
+                    _context.HistoricalTransactions
+                        .Add(history);
+
+                    historyAction =
+                        "新增歷史交易";
+                }
+                else
+                {
+                    // 原本 Auto 或 Manual，
+                    // 現在人工改成另一個材料
+                    history.MaterialId =
+                        material.MaterialId;
+
+                    history.ActualQuantity =
+                        bidItem.Qty.Value;
+
+                    history.UnitPrice =
+                        bidItem.UnitPrice.Value;
+
+                    history.ProjectMasterId =
+                        bidItem.ProjectMasterId;
+
+                    history.TransactionDate =
+                        bidItem.ProjectMaster
+                            .StartDate
+                            ?? history.TransactionDate;
+
+                    history.IsDeleted =
+                        false;
+
+                    historyAction =
+                        "更新既有歷史交易";
+                }
+
+                // ==============================
+                // 8. Audit Log
+                // ==============================
+
+                var log =
+                    new AuditLog
+                    {
+                        SourceFileName =
+                            bidItem.SourceFileName,
+
+                        SheetName =
+                            bidItem.SheetName ?? string.Empty,
+
+                        RowNumber =
+                            bidItem.RowNumber ?? 0,
+
+                        ItemName =
+                            bidItem.ItemName,
+
+                        OriginalStatusMessage =
+                            $"原狀態：{oldStatus}；" +
+                            $"原 MaterialId：" +
+                            $"{oldMaterialId?.ToString() ?? "NULL"}",
+
+                        OverrideReason =
+                            $"人工修改材料對應為：" +
+                            $"{material.MaterialName} " +
+                            $"(MaterialId={material.MaterialId})",
+
+                        ActionUser =
+                            User?.Identity?.Name
+                            ?? "Estimator_Staff",
+
+                        CreatedAt =
+                            DateTime.UtcNow
+                    };
+
+                _context.AuditLogs.Add(log);
+
+                // ==============================
+                // 9. 全部一起存
+                // ==============================
+
+                _context.SaveChanges();
+
+                dbTransaction.Commit();
+
+                return Ok(new
+                {
+                    message =
+                        $"「{bidItem.ItemName}」已人工對應至「{material.MaterialName}」",
+
+                    finalBidItemId =
+                        bidItem.FinalBidItemId,
+
+                    oldMaterialId,
+
+                    newMaterialId =
+                        material.MaterialId,
+
+                    materialName =
+                        material.MaterialName,
+
+                    mappingStatus =
+                        bidItem.MappingStatus,
+
+                    historyAction
                 });
             }
-
-            unmapped.Status = "已加入字典";
-            unmapped.SuggestedMaterialId = materialId;
-
-            _context.SaveChanges();
-
-            return Ok(new
+            catch (Exception ex)
             {
-                message = $"已將「{keyword}」加入字典，對應至「{material.MaterialName}」"
-            });
-        }
+                dbTransaction.Rollback();
 
+                return BadRequest(new
+                {
+                    message =
+                        "材料對應更新失敗：" +
+                        ex.Message
+                });
+            }
+        }
     }
 
 }
