@@ -1,0 +1,608 @@
+@{
+    ViewData["Title"] = "建案詳細資料";
+
+    var projectId =
+        (int)ViewBag.ProjectId;
+}
+
+<div class="mb-3">
+    <a asp-controller="ProjectManagement"
+       asp-action="Index"
+       class="text-decoration-none">
+        ← 返回建案管理
+    </a>
+</div>
+
+
+<div id="projectHeader"
+     class="card p-4 mb-3">
+
+    <div class="text-muted">
+        載入建案資料中...
+    </div>
+
+</div>
+
+
+<ul class="nav nav-tabs mb-3">
+
+    <li class="nav-item">
+        <button class="nav-link active"
+                data-bs-toggle="tab"
+                data-bs-target="#basicTab">
+            基本資料
+        </button>
+    </li>
+
+    <li class="nav-item">
+        <button class="nav-link"
+                data-bs-toggle="tab"
+                data-bs-target="#bidTab">
+            決標工項
+        </button>
+    </li>
+
+    <li class="nav-item">
+        <button class="nav-link"
+                data-bs-toggle="tab"
+                data-bs-target="#historyTab">
+            模型歷史資料
+        </button>
+    </li>
+
+</ul>
+
+
+<div class="tab-content">
+
+    <div class="tab-pane fade show active"
+         id="basicTab">
+
+        <div id="basicInfo"
+             class="card p-4">
+        </div>
+
+    </div>
+
+
+    <div class="tab-pane fade"
+         id="bidTab">
+
+        <div class="card p-3 mb-3">
+
+            <input id="bidSearch"
+                   class="form-control"
+                   placeholder="搜尋工項名稱或規格">
+
+        </div>
+
+        <div id="bidSummary"
+             class="text-muted mb-2">
+        </div>
+
+        <div id="bidItems"></div>
+
+        <div class="d-flex justify-content-between align-items-center mt-3">
+
+            <button id="previousPage"
+                    class="btn btn-outline-secondary btn-sm">
+                上一頁
+            </button>
+
+            <span id="pageText">
+                第 1 頁
+            </span>
+
+            <button id="nextPage"
+                    class="btn btn-outline-secondary btn-sm">
+                下一頁
+            </button>
+
+        </div>
+
+    </div>
+
+
+    <div class="tab-pane fade"
+         id="historyTab">
+
+        <div id="historyItems"></div>
+
+    </div>
+
+</div>
+
+
+@section Scripts
+{
+<script>
+    const projectId =
+        @projectId;
+
+    let currentPage = 1;
+
+    const pageSize = 50;
+
+    let totalBidCount = 0;
+
+
+    document.addEventListener(
+        'DOMContentLoaded',
+        async function () {
+
+            await loadProject();
+
+            await loadFinalBidItems();
+
+            await loadHistoricalData();
+
+            document
+                .getElementById(
+                    'bidSearch'
+                )
+                .addEventListener(
+                    'input',
+                    debounce(
+                        async function () {
+                            currentPage = 1;
+
+                            await loadFinalBidItems();
+                        },
+                        300
+                    )
+                );
+
+            document
+                .getElementById(
+                    'previousPage'
+                )
+                .addEventListener(
+                    'click',
+                    async function () {
+
+                        if (currentPage <= 1) {
+                            return;
+                        }
+
+                        currentPage--;
+
+                        await loadFinalBidItems();
+                    }
+                );
+
+            document
+                .getElementById(
+                    'nextPage'
+                )
+                .addEventListener(
+                    'click',
+                    async function () {
+
+                        if (
+                            currentPage *
+                            pageSize >=
+                            totalBidCount
+                        ) {
+                            return;
+                        }
+
+                        currentPage++;
+
+                        await loadFinalBidItems();
+                    }
+                );
+        }
+    );
+
+
+    async function loadProject() {
+
+        const response =
+            await fetch(
+                `/ProjectManagement/Project?projectId=${projectId}`
+            );
+
+        const project =
+            await response.json();
+
+        if (!response.ok) {
+
+            alert(
+                project.message ??
+                '找不到建案'
+            );
+
+            return;
+        }
+
+        const month =
+            project.startDate
+                ? project.startDate.substring(
+                    0,
+                    7
+                )
+                : '未設定';
+
+        document.getElementById(
+            'projectHeader'
+        ).innerHTML = `
+            <div class="d-flex justify-content-between align-items-start">
+
+                <div>
+                    <h3 class="mb-2">
+                        ${escapeHtml(project.projectName)}
+                    </h3>
+
+                    <div class="text-muted">
+                        ${escapeHtml(project.projectType ?? '未設定')}
+                        ｜
+                        ${escapeHtml(project.structureType ?? '未設定')}
+                        ｜
+                        ${escapeHtml(project.city ?? '未設定')}
+                        ｜
+                        ${month}
+                    </div>
+                </div>
+
+                <span class="badge bg-success">
+                    歷史建案
+                </span>
+
+            </div>
+        `;
+
+        document.getElementById(
+            'basicInfo'
+        ).innerHTML = `
+            <div class="row g-4">
+
+                <div class="col-md-3">
+                    <div class="text-muted">
+                        總樓地板面積
+                    </div>
+
+                    <strong>
+                        ${project.totalFloorArea ?? '-'} m²
+                    </strong>
+                </div>
+
+                <div class="col-md-3">
+                    <div class="text-muted">
+                        地上樓層
+                    </div>
+
+                    <strong>
+                        ${project.floorCount ?? '-'}
+                    </strong>
+                </div>
+
+                <div class="col-md-3">
+                    <div class="text-muted">
+                        地下樓層
+                    </div>
+
+                    <strong>
+                        ${project.basementFloorCount ?? '-'}
+                    </strong>
+                </div>
+
+                <div class="col-md-3">
+                    <div class="text-muted">
+                        建案年月
+                    </div>
+
+                    <strong>
+                        ${month}
+                    </strong>
+                </div>
+
+                <div class="col-md-3">
+                    <div class="text-muted">
+                        決標工項
+                    </div>
+
+                    <strong>
+                        ${project.finalBidItemCount}
+                    </strong>
+                </div>
+
+                <div class="col-md-3">
+                    <div class="text-muted">
+                        有效歷史交易
+                    </div>
+
+                    <strong>
+                        ${project.historicalTransactionCount}
+                    </strong>
+                </div>
+
+            </div>
+        `;
+    }
+
+
+    async function loadFinalBidItems() {
+
+        const search =
+            document
+                .getElementById(
+                    'bidSearch'
+                )
+                .value
+                .trim();
+
+        const response =
+            await fetch(
+                `/ProjectManagement/FinalBidItems` +
+                `?projectId=${projectId}` +
+                `&search=${encodeURIComponent(search)}` +
+                `&page=${currentPage}` +
+                `&pageSize=${pageSize}`
+            );
+
+        const data =
+            await response.json();
+
+        if (!response.ok) {
+            return;
+        }
+
+        totalBidCount =
+            data.totalCount ?? 0;
+
+        document.getElementById(
+            'bidSummary'
+        ).textContent =
+            `共 ${totalBidCount} 筆`;
+
+        document.getElementById(
+            'pageText'
+        ).textContent =
+            `第 ${currentPage} 頁`;
+
+        const container =
+            document.getElementById(
+                'bidItems'
+            );
+
+        if (!data.items?.length) {
+
+            container.innerHTML = `
+                <div class="card p-4 text-muted">
+                    沒有符合條件的工項
+                </div>
+            `;
+
+            return;
+        }
+
+        container.innerHTML =
+            data.items
+                .map(item => {
+
+                    let statusBadge = '';
+
+                    if (item.isIgnored) {
+
+                        statusBadge = `
+                            <span class="badge bg-secondary">
+                                已忽略
+                            </span>
+                        `;
+
+                    } else if (
+                        item.mappingStatus === 'Auto'
+                    ) {
+
+                        statusBadge = `
+                            <span class="badge bg-success">
+                                自動對應
+                            </span>
+                        `;
+
+                    } else if (
+                        item.mappingStatus === 'Manual'
+                    ) {
+
+                        statusBadge = `
+                            <span class="badge bg-primary">
+                                手動對應
+                            </span>
+                        `;
+
+                    } else {
+
+                        statusBadge = `
+                            <span class="badge bg-warning text-dark">
+                                未對應
+                            </span>
+                        `;
+                    }
+
+                    return `
+                        <div class="card p-3 mb-2">
+
+                            <div class="d-flex justify-content-between">
+
+                                <strong>
+                                    ${escapeHtml(item.itemName)}
+                                </strong>
+
+                                ${statusBadge}
+
+                            </div>
+
+                            <div class="text-muted small mt-2">
+
+                                單位：
+                                ${escapeHtml(item.unit ?? '無')}
+
+                                ｜
+                                數量：
+                                ${item.qty ?? '無'}
+
+                                ｜
+                                單價：
+                                ${item.unitPrice ?? '無'}
+
+                            </div>
+
+                            <div class="mt-2">
+
+                                標準材料：
+
+                                <strong>
+                                    ${
+                                        escapeHtml(
+                                            item.materialName ??
+                                            '尚未對應'
+                                        )
+                                    }
+                                </strong>
+
+                                ${
+                                    item.materialUnit
+                                        ? `（${escapeHtml(item.materialUnit)}）`
+                                        : ''
+                                }
+
+                            </div>
+
+                        </div>
+                    `;
+                })
+                .join('');
+    }
+
+
+    async function loadHistoricalData() {
+
+        const response =
+            await fetch(
+                `/ProjectManagement/HistoricalData?projectId=${projectId}`
+            );
+
+        const data =
+            await response.json();
+
+        if (!response.ok) {
+            return;
+        }
+
+        const container =
+            document.getElementById(
+                'historyItems'
+            );
+
+        if (!data.items?.length) {
+
+            container.innerHTML = `
+                <div class="card p-4 text-muted">
+                    此建案目前沒有可供估算模型使用的歷史資料
+                </div>
+            `;
+
+            return;
+        }
+
+        container.innerHTML = `
+            <div class="card">
+
+                <div class="table-responsive">
+
+                    <table class="table table-hover mb-0">
+
+                        <thead>
+                            <tr>
+                                <th>材料分類</th>
+                                <th>標準材料</th>
+                                <th>工項筆數</th>
+                                <th>標準化總用量</th>
+                                <th>平均單價</th>
+                            </tr>
+                        </thead>
+
+                        <tbody>
+
+                            ${
+                                data.items
+                                    .map(item => `
+                                        <tr>
+
+                                            <td>
+                                                ${escapeHtml(item.category ?? '-')}
+                                            </td>
+
+                                            <td>
+                                                ${escapeHtml(item.materialName)}
+                                            </td>
+
+                                            <td>
+                                                ${item.transactionCount}
+                                            </td>
+
+                                            <td>
+                                                ${Number(item.totalQuantity).toLocaleString()}
+                                                ${escapeHtml(item.baseUnit)}
+                                            </td>
+
+                                            <td>
+                                                ${
+                                                    Number(
+                                                        item.averageUnitPrice
+                                                    ).toLocaleString(
+                                                        undefined,
+                                                        {
+                                                            maximumFractionDigits: 2
+                                                        }
+                                                    )
+                                                }
+                                                元/${escapeHtml(item.baseUnit)}
+                                            </td>
+
+                                        </tr>
+                                    `)
+                                    .join('')
+                            }
+
+                        </tbody>
+
+                    </table>
+
+                </div>
+
+            </div>
+        `;
+    }
+
+
+    function escapeHtml(value) {
+
+        return String(value ?? '')
+            .replaceAll('&', '&amp;')
+            .replaceAll('<', '&lt;')
+            .replaceAll('>', '&gt;')
+            .replaceAll('"', '&quot;')
+            .replaceAll("'", '&#039;');
+    }
+
+
+    function debounce(
+        func,
+        delay) {
+
+        let timer;
+
+        return function () {
+
+            clearTimeout(timer);
+
+            timer =
+                setTimeout(
+                    func,
+                    delay
+                );
+        };
+    }
+</script>
+}

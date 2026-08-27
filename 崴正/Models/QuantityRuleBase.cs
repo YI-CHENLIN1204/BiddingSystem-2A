@@ -17,5 +17,6 @@ namespace 崴正.Models
         public string? Structure_Type { get; set; }
         public string? Floor_Zone { get; set; }
         public decimal Waste_Rate_Percent { get; set; }
+        public bool Is_Core_Estimation { get; set; }
     }
 }

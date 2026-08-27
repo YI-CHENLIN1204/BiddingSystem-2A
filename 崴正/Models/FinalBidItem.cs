@@ -36,13 +36,17 @@ namespace 崴正.Models
 
         public int? MaterialId { get; set; }
 
-        // Auto / Manual / Unmapped
-        // Pending / Auto / Manual
         public string MappingStatus { get; set; } = "Pending";
 
         public string? MappingIssueCode { get; set; }
 
         public string? MappingIssueMessage { get; set; }
+
+        public string? DataIssueCode { get; set; }
+
+        public string? DataIssueMessage { get; set; }
+
+        public bool IsIgnored { get; set; }        
 
         public string? MatchedKeyword { get; set; }
 

@@ -18,6 +18,8 @@ namespace 崴正.Data
         public DbSet<AuditLog> AuditLogs { get; set; }
         public DbSet<UnmappedItem> UnmappedItems { get; set; }
         public DbSet<FinalBidItem> FinalBidItems { get; set; }
+        public DbSet<EstimationSetting> EstimationSettings { get; set; }
+
         protected override void OnModelCreating(ModelBuilder modelBuilder)
         {
             base.OnModelCreating(modelBuilder);
@@ -166,19 +168,85 @@ namespace 崴正.Data
                 entity.Property(e => e.Note).HasColumnName("note");
                 entity.Property(e => e.MaterialId).HasColumnName("material_id");
                 entity.Property(e => e.MappingStatus).HasColumnName("mapping_status");
-                entity.Property(e => e.MappingIssueCode).HasColumnName("mapping_issue_code");entity.Property(e => e.MappingIssueMessage).HasColumnName("mapping_issue_message");
+                entity.Property(e => e.MappingIssueCode).HasColumnName("mapping_issue_code");
+                entity.Property(e => e.MappingIssueMessage).HasColumnName("mapping_issue_message");
+                entity.Property(e => e.DataIssueCode).HasColumnName("data_issue_code");
+                entity.Property(e => e.DataIssueMessage).HasColumnName("data_issue_message");
                 entity.Property(e => e.MatchedKeyword).HasColumnName("matched_keyword");
                 entity.Property(e => e.CreatedAt).HasColumnName("created_at").HasColumnType("timestamp with time zone");
                 entity.Property(e => e.UpdatedAt).HasColumnName("updated_at").HasColumnType("timestamp with time zone");
-                entity.HasOne(e => e.ProjectMaster)
-                    .WithMany()
-                    .HasForeignKey(e => e.ProjectMasterId)
-                    .OnDelete(DeleteBehavior.Cascade);
-                entity.HasOne(e => e.Material)
-                    .WithMany()
-                    .HasForeignKey(e => e.MaterialId)
-                    .OnDelete(DeleteBehavior.Restrict);
-            });            
+                entity.HasOne(e => e.ProjectMaster).WithMany().HasForeignKey(e => e.ProjectMasterId).OnDelete(DeleteBehavior.Cascade);
+                entity.HasOne(e => e.Material).WithMany().HasForeignKey(e => e.MaterialId).OnDelete(DeleteBehavior.Restrict);
+                entity.Property(e => e.IsIgnored).HasColumnName("is_ignored");
+            });    
+
+            modelBuilder.Entity<EstimationSetting>(entity =>
+            {
+                entity.ToTable("estimation_settings");
+
+                entity.HasKey(e => e.SettingsId);
+
+                entity.Property(e => e.SettingsId)
+                    .HasColumnName("settings_id");
+
+                entity.Property(e => e.TopK)
+                    .HasColumnName("top_k");
+
+                entity.Property(e => e.MinimumSampleCount)
+                    .HasColumnName("minimum_sample_count");
+
+                entity.Property(e => e.LowerQuantile)
+                    .HasColumnName("lower_quantile");
+
+                entity.Property(e => e.MedianQuantile)
+                    .HasColumnName("median_quantile");
+
+                entity.Property(e => e.UpperQuantile)
+                    .HasColumnName("upper_quantile");
+
+                entity.Property(e => e.SimilarityExponent)
+                    .HasColumnName("similarity_exponent");
+
+                entity.Property(e => e.TimeHalfLifeYears)
+                    .HasColumnName("time_half_life_years");
+
+                entity.Property(e => e.MinimumSimilarityScore)
+                    .HasColumnName("minimum_similarity_score");
+
+                entity.Property(e => e.StructureWeight)
+                    .HasColumnName("structure_weight");
+
+                entity.Property(e => e.AreaWeight)
+                    .HasColumnName("area_weight");
+
+                entity.Property(e => e.FloorWeight)
+                    .HasColumnName("floor_weight");
+
+                entity.Property(e => e.YearWeight)
+                    .HasColumnName("year_weight");
+
+                entity.Property(e => e.CityWeight)
+                    .HasColumnName("city_weight");
+
+                entity.Property(e => e.AreaDifferenceCutoffRatio)
+                    .HasColumnName("area_difference_cutoff_ratio");
+
+                entity.Property(e => e.GroundFloorPenaltyRatio)
+                    .HasColumnName("ground_floor_penalty_ratio");
+
+                entity.Property(e => e.BasementFloorPenaltyRatio)
+                    .HasColumnName("basement_floor_penalty_ratio");
+
+                entity.Property(e => e.YearDifferenceCutoffYears)
+                    .HasColumnName("year_difference_cutoff_years");
+
+                entity.Property(e => e.UpdatedAt)
+                    .HasColumnName("updated_at")
+                    .HasColumnType("timestamp with time zone");
+
+                entity.Property(e => e.UpdatedBy)
+                    .HasColumnName("updated_by");
+            });       
         }
     }
 }

@@ -177,7 +177,7 @@
 </style>
 
 <div class="container final-bid-page">
-    <h2 class="fw-bold mb-1">⚙️ 決標單歷史回寫</h2>
+    <h2 class="fw-bold mb-1">決標單歷史回寫</h2>
 
     <div class="admin-main-card">
         
@@ -209,25 +209,10 @@
 
             <div class="wz-field">
                 <label class="wz-label" for="city">區域/縣市</label>
-                <select id="city" class="wz-select" required>
-                    <option value="">請選擇</option>
-                    <option value="台北市">台北市</option>
-                    <option value="新北市">新北市</option>
-                    <option value="桃園市">桃園市</option>
-                    <option value="新竹縣">新竹縣</option>
-                    <option value="新竹市">新竹市</option>
-                    <option value="苗栗縣">苗栗縣</option>
-                    <option value="台中市">台中市</option>
-                    <option value="彰化縣">彰化縣</option>
-                    <option value="南投縣">南投縣</option>
-                    <option value="雲林縣">雲林縣</option>
-                    <option value="嘉義縣">嘉義縣</option>
-                    <option value="嘉義市">嘉義市</option>
-                    <option value="台南市">台南市</option>
-                    <option value="高雄市">高雄市</option>
-                    <option value="屏東縣">屏東縣</option>
-                    <option value="其他">其他</option>
-                </select>
+                    <select id="city"
+                            class="form-select">
+                        <partial name="_CityOptions" />
+                    </select>
             </div>
         </div>
         <div class="wz-field">
@@ -288,49 +273,139 @@
 
     <div id="resultBox" class="mt-4" style="display:none;">
         <div class="alert alert-success shadow-sm" style="background-color: #fff; border-left: 5px solid #321fdb;">
-            <h4 class="alert-heading fw-bold mb-3" style="color: #321fdb;">歷史回寫任務完成</h4>
-            <div class="row g-3">
-                <div class="col-md-4">
+            <h4 class="alert-heading fw-bold mb-2"
+                style="color: #321fdb;">
+                建案材料對應摘要
+            </h4>
+
+            <div class="text-muted small mb-3">
+                統計依目前資料庫狀態即時更新
+            </div>
+
+            <!-- 第一排：對應狀態 -->
+            <div class="row g-2 mb-3">
+
+                <div class="col-md-3">
                     <div class="stat-box">
-                        <div class="text-muted fw-bold">總讀取筆數</div>
-                        <div class="stat-num text-dark" id="resTotal">0</div>
+                        <div class="text-muted fw-bold">
+                            總工項
+                        </div>
+
+                        <div class="stat-num text-dark"
+                            id="resTotal">
+                            0
+                        </div>
                     </div>
                 </div>
 
-                <div class="col-md-4">
-                    <div class="stat-box" style="border-color: #321fdb; background: #f0f7ff;">
-                        <div class="fw-bold" style="color: #321fdb;">成功寫入歷史庫</div>
-                        <div class="stat-num" style="color: #321fdb;" id="resSuccess">0</div>
+                <div class="col-md-3">
+                    <div class="stat-box"
+                        style="border-color:#198754;
+                                background:#f1faf5;">
+
+                        <div class="fw-bold text-success">
+                            自動對應
+                        </div>
+
+                        <div class="stat-num text-success"
+                            id="resAuto">
+                            0
+                        </div>
                     </div>
                 </div>
 
-                <div class="col-md-4">
-                    <div class="stat-box" style="border-color: #ffc107; background: #fff3cd;">
-                        <div class="text-warning fw-bold">字典未對應略過</div>
-                        <div class="stat-num text-warning" id="resUnmapped">0</div>
+                <div class="col-md-3">
+                    <div class="stat-box"
+                        style="border-color:#321fdb;
+                                background:#f3f1ff;">
+
+                        <div class="fw-bold"
+                            style="color:#321fdb;">
+                            手動對應
+                        </div>
+
+                        <div class="stat-num"
+                            style="color:#321fdb;"
+                            id="resManual">
+                            0
+                        </div>
                     </div>
                 </div>
 
-                <div class="col-md-4">
-                    <div class="stat-box" style="border-color: #dc3545; background: #fff5f5;">
-                        <div class="fw-bold text-danger">資料不完整略過</div>
-                        <div class="stat-num text-danger" id="resInvalid">0</div>
+                <div class="col-md-3">
+                    <div class="stat-box"
+                        style="border-color:#ffc107;
+                                background:#fff9e6;">
+
+                        <div class="fw-bold text-warning">
+                            待處理
+                        </div>
+
+                        <div class="stat-num text-warning"
+                            id="resPending">
+                            0
+                        </div>
                     </div>
                 </div>
 
-                <div class="col-md-4">
-                    <div class="stat-box" style="border-color: #6f42c1; background: #f8f5ff;">
-                        <div class="fw-bold" style="color: #6f42c1;">材料主檔缺失</div>
-                        <div class="stat-num" style="color: #6f42c1;" id="resMissingMaterial">0</div>
+            </div>
+
+
+            <!-- 第二排：待處理原因 -->
+            <div class="row g-2">
+
+                <div class="col-md-3">
+                    <div class="stat-box">
+                        <div class="text-muted fw-bold">
+                            數量無效
+                        </div>
+
+                        <div class="stat-num"
+                            id="resInvalidQuantity">
+                            0
+                        </div>
                     </div>
                 </div>
 
-                <div class="col-md-4">
-                    <div class="stat-box" style="border-color: #fd7e14; background: #fff7ed;">
-                        <div class="fw-bold" style="color: #fd7e14;">單位不符略過</div>
-                        <div class="stat-num" style="color: #fd7e14;" id="resUnitMismatch">0</div>
+                <div class="col-md-3">
+                    <div class="stat-box">
+                        <div class="text-muted fw-bold">
+                            單價無效
+                        </div>
+
+                        <div class="stat-num"
+                            id="resInvalidUnitPrice">
+                            0
+                        </div>
                     </div>
                 </div>
+
+                <div class="col-md-3">
+                    <div class="stat-box">
+                        <div class="text-muted fw-bold">
+                            單位不符
+                        </div>
+
+                        <div class="stat-num"
+                            id="resUnitMismatch">
+                            0
+                        </div>
+                    </div>
+                </div>
+
+                <div class="col-md-3">
+                    <div class="stat-box">
+                        <div class="text-muted fw-bold">
+                            已忽略
+                        </div>
+
+                        <div class="stat-num"
+                            id="resIgnored">
+                            0
+                        </div>
+                    </div>
+                </div>
+
             </div>
         </div>
         <div id="mappingPanel" class="mt-4" style="display:none;">
@@ -349,20 +424,55 @@
 
             <div class="card mb-3">
                 <div class="card-body">
+                    <div class="mb-3">
+                        <input type="text"
+                            id="mappingSearch"
+                            class="form-control"
+                            placeholder="搜尋工項名稱、規格、標準材料或建案名稱" />
+                    </div>
                     <div class="row g-2">
-                        <div class="col-md-8">
-                            <input type="text"
-                                id="mappingSearch"
-                                class="form-control"
-                                placeholder="搜尋工項名稱、規格、標準材料或建案名稱" />
-                        </div>
-
-                        <div class="col-md-4">
-                            <select id="mappingStatus" class="form-select">
-                                <option value="Pending" selected>尚未對應</option>
+                        <div class="col-md-3">
+                            <label class="form-label small fw-bold">
+                                對應狀態
+                            </label>
+                            <select id="mappingStatus"
+                                    class="form-select">
+                                <option value="Pending" selected>未對應</option>
                                 <option value="Auto">自動對應</option>
                                 <option value="Manual">手動對應</option>
                                 <option value="All">全部</option>
+                            </select>
+                        </div>
+                        <div class="col-md-3">
+                            <label class="form-label small fw-bold">待處理原因</label>
+                            <select id="mappingIssue"
+                                    class="form-select">
+                                <option value="All">全部</option>
+                                <option value="INVALID_QUANTITY">數量無效</option>
+                                <option value="INVALID_UNIT_PRICE">單價無效</option>
+                                <option value="UNIT_MISMATCH">單位不符</option>
+                            </select>
+                        </div>
+                        <div class="col-md-3">
+                            <label class="form-label small fw-bold">
+                                材料分類
+                            </label>
+                            <select id="mappingCategory"
+                                    class="form-select">
+                                <option value="All">
+                                    全部
+                                </option>
+                            </select>
+                        </div>
+                        <div class="col-md-3">
+                            <label class="form-label small fw-bold">
+                                單位
+                            </label>
+                            <select id="mappingUnit"
+                                    class="form-select">
+                                <option value="All">
+                                    全部
+                                </option>
                             </select>
                         </div>
                     </div>
@@ -390,6 +500,176 @@
     </div>
 </div>
 
+<div class="modal fade"
+     id="createMaterialModal"
+     tabindex="-1"
+     aria-hidden="true">
+
+    <div class="modal-dialog modal-dialog-centered">
+
+        <div class="modal-content">
+
+            <div class="modal-header">
+
+                <h5 class="modal-title">
+                    新增標準材料
+                </h5>
+
+                <button type="button"
+                        class="btn-close"
+                        data-bs-dismiss="modal"
+                        aria-label="關閉">
+                </button>
+
+            </div>
+
+            <div class="modal-body">
+
+                <div class="mb-3">
+
+                    <label class="form-label fw-bold">
+                        材料名稱
+                    </label>
+
+                    <input type="text"
+                           id="newMaterialName"
+                           class="form-control"
+                           placeholder="請輸入標準材料名稱" />
+
+                </div>
+
+                <div class="mb-3">
+
+                    <label class="form-label fw-bold">
+                        材料分類
+                    </label>
+
+                    <select id="newMaterialCategory"
+                            class="form-select">
+                    </select>
+
+                </div>
+
+                <div class="mb-3">
+
+                    <label class="form-label fw-bold">
+                        標準單位
+                    </label>
+
+                    <select id="newMaterialBaseUnit"
+                            class="form-select">
+                    </select>
+
+                </div>
+
+            </div>
+
+            <div class="modal-footer">
+
+                <button type="button"
+                        class="btn btn-outline-secondary"
+                        data-bs-dismiss="modal">
+                    取消
+                </button>
+
+                <button type="button"
+                        id="btnCreateMaterial"
+                        class="btn btn-primary">
+                    新增
+                </button>
+
+            </div>
+
+        </div>
+
+    </div>
+
+</div>
+
+<div class="modal fade"
+     id="editBidItemModal"
+     tabindex="-1"
+     aria-hidden="true">
+
+    <div class="modal-dialog modal-dialog-centered">
+        <div class="modal-content">
+
+            <div class="modal-header">
+                <h5 class="modal-title">
+                    修正標單資料
+                </h5>
+
+                <button type="button"
+                        class="btn-close"
+                        data-bs-dismiss="modal"
+                        aria-label="關閉">
+                </button>
+            </div>
+
+            <div class="modal-body">
+
+                <div class="mb-3">
+                    <label class="form-label fw-bold">
+                        工項
+                    </label>
+
+                    <div id="editBidItemName"
+                         class="form-control-plaintext">
+                    </div>
+                </div>
+
+                <div class="mb-3">
+                    <label class="form-label fw-bold">
+                        數量
+                    </label>
+
+                    <input type="number"
+                           step="any"
+                           id="editBidItemQty"
+                           class="form-control" />
+                </div>
+
+                <div class="mb-3">
+                    <label class="form-label fw-bold">
+                        單價
+                    </label>
+
+                    <input type="number"
+                           step="any"
+                           id="editBidItemUnitPrice"
+                           class="form-control" />
+                </div>
+
+                <div class="mb-3">
+                    <label class="form-label fw-bold">
+                        單位
+                    </label>
+
+                    <select id="editBidItemUnit"
+                            class="form-select">
+                        <option value="">請選擇單位</option>
+                    </select>
+                </div>
+
+            </div>
+
+            <div class="modal-footer">
+                <button type="button"
+                        class="btn btn-outline-secondary"
+                        data-bs-dismiss="modal">
+                    取消
+                </button>
+
+                <button type="button"
+                        id="btnSaveBidItem"
+                        class="btn btn-primary">
+                    儲存修改
+                </button>
+            </div>
+
+        </div>
+    </div>
+</div>
 @section Scripts {
     <script>
         const btnUpload = document.getElementById('btnUpload');
@@ -406,6 +686,9 @@
         const mappingList = document.getElementById('mappingList');
         const mappingSearch = document.getElementById('mappingSearch');
         const mappingStatus = document.getElementById('mappingStatus');
+        const mappingIssue =document.getElementById('mappingIssue');
+        const mappingCategory =document.getElementById('mappingCategory');
+        const mappingUnit =document.getElementById('mappingUnit');
         const totalFloorArea =document.getElementById('totalFloorArea');
         let currentProjectId = null;
         let currentMappingPage = 1;
@@ -413,6 +696,9 @@
         const mappingPageSize = 50;
 
         let materialOptions = [];
+        let creatingMaterialForItemId = null;
+        let currentMappingItems = [];
+        let editingBidItemId = null;
         const loadingText = document.getElementById('loadingText');
         const resultBox = document.getElementById('resultBox');
         const excelFileName = document.getElementById('excelFileName');
@@ -445,6 +731,7 @@
             formData.append('floorCount', floorCount.value);
             formData.append('basementFloorCount', basementFloorCount.value);
             formData.append('projectMonth',projectMonth.value);
+            formData.append('totalFloorArea', totalFloorArea.value);
             btnUpload.disabled = true;
             loadingText.style.display = 'block';
             resultBox.style.display = 'none';
@@ -470,19 +757,14 @@
                     return;
                 }
 
-                // 顯示結果
-                document.getElementById('resTotal').innerText = data.totalCount ?? 0;
-                document.getElementById('resSuccess').innerText =data.historyInsertCount ?? 0;
-                document.getElementById('resUnmapped').innerText = data.unmappedCount ?? 0;
-                document.getElementById('resInvalid').innerText = data.invalidDataCount ?? 0;
-                document.getElementById('resMissingMaterial').innerText = data.missingMaterialCount ?? 0;
-                document.getElementById('resUnitMismatch').innerText = data.unitMismatchCount ?? 0;
                 currentProjectId = data.projectId;
 
                 await loadMaterialOptions();
+                await loadMappingFilterOptions();
+
+                await loadMappingSummary();
                 await loadMappingItems();
 
-                resultBox.style.display = 'block';
                 resultBox.style.display = 'block';
                 
                 excelFile.value = ''; // 清空檔案
@@ -520,21 +802,14 @@
         const search =
             mappingSearch.value.trim();
 
-        /*
-        * 使用者開始搜尋時：
-        * 自動切成全部狀態。
-        *
-        * 這樣搜尋列才能真的找到：
-        * Auto / Manual / Unmapped。
-        */
-        if (search && mappingStatus.value === 'Unmapped') {
-            mappingStatus.value = 'All';
-        }
 
         const params =
             new URLSearchParams({
                 projectId: currentProjectId,
                 status: mappingStatus.value,
+                issueCode: mappingIssue.value,
+                category: mappingCategory.value,
+                unit: mappingUnit.value,
                 page: currentMappingPage,
                 pageSize: mappingPageSize
             });
@@ -596,8 +871,39 @@
 
         return `
             <span class="badge bg-warning text-dark">
-                尚未對應
+                未對應
             </span>`;
+    }
+
+
+    function getDataIssueBadges(item) {
+        let html = '';
+
+        if (item.invalidQuantity) {
+            html += `
+                <span class="badge bg-danger ms-1">
+                    數量無效
+                </span>
+            `;
+        }
+
+        if (item.invalidUnitPrice) {
+            html += `
+                <span class="badge bg-danger ms-1">
+                    單價無效
+                </span>
+            `;
+        }
+
+        if (item.unitMismatch) {
+            html += `
+                <span class="badge bg-danger ms-1">
+                    單位不符
+                </span>
+            `;
+        }
+
+        return html;
     }
 
     function escapeHtml(value) {
@@ -614,7 +920,326 @@
             .replaceAll("'", '&#039;');
     }
 
+    function getIssueLabel(code) {
+        switch (code) {
+            case 'NO_DICTIONARY_MATCH':
+                return '找不到字典';
+
+            case 'MATERIAL_NOT_FOUND':
+                return '材料主檔不存在';
+
+            case 'UNIT_MISMATCH':
+                return '單位不符';
+
+            case 'INVALID_QUANTITY':
+                return '數量無效';
+
+            case 'INVALID_UNIT_PRICE':
+                return '單價無效';
+
+            default:
+                return code || '未知原因';
+        }
+    }
+
+    function getIssueBadge(issueCode) {
+        if (!issueCode) {
+            return '';
+        }
+
+        return `
+            <span class="badge bg-danger ms-1">
+                ${escapeHtml(getIssueLabel(issueCode))}
+            </span>
+        `;
+    }
+
+    function getMaterialCategories() {
+        const categories =
+            materialOptions
+                .map(material =>
+                    material.category
+                        ? material.category.trim()
+                        : ''
+                )
+                .filter(category =>
+                    category !== ''
+                );
+
+        return [
+            ...new Set(categories)
+        ].sort((a, b) =>
+            a.localeCompare(
+                b,
+                'zh-Hant'
+            )
+        );
+    }
+
+    function getMaterialUnits() {
+        const units =
+            materialOptions
+                .map(material =>
+                    material.baseUnit
+                        ? material.baseUnit.trim()
+                        : ''
+                )
+                .filter(unit =>
+                    unit !== ''
+                );
+
+        return [
+            ...new Set(units)
+        ].sort((a, b) =>
+            a.localeCompare(
+                b,
+                'zh-Hant'
+            )
+        );
+    }
+
+    function getEditableUnits() {
+        const units = [];
+
+        const mappingUnitSelect =
+            document.getElementById('mappingUnit');
+
+        if (mappingUnitSelect) {
+            Array.from(mappingUnitSelect.options)
+                .forEach(option => {
+                    const value = option.value?.trim();
+
+                    if (value &&
+                        value !== 'All') {
+                        units.push(value);
+                    }
+                });
+        }
+
+        materialOptions.forEach(material => {
+            const unit =
+                material.baseUnit?.trim();
+
+            if (unit) {
+                units.push(unit);
+            }
+        });
+
+        return [
+            ...new Set(units)
+        ].sort((a, b) =>
+            a.localeCompare(
+                b,
+                'zh-Hant'
+            )
+        );
+    }
+
+    function openCreateMaterialModal(
+        finalBidItemId
+    ) {
+        creatingMaterialForItemId =
+            finalBidItemId;
+
+        const categorySelect =
+            document.getElementById(
+                `mappingCategory_${finalBidItemId}`
+            );
+
+        const selectedCategory =
+            categorySelect?.value ?? '';
+
+        const modalCategory =
+            document.getElementById(
+                'newMaterialCategory'
+            );
+
+        const modalUnit =
+            document.getElementById(
+                'newMaterialBaseUnit'
+            );
+
+        const materialName =
+            document.getElementById(
+                'newMaterialName'
+            );
+
+        modalCategory.innerHTML = '';
+
+        getMaterialCategories()
+            .forEach(category => {
+                modalCategory.innerHTML += `
+                    <option value="${escapeHtml(category)}">
+                        ${escapeHtml(category)}
+                    </option>
+                `;
+            });
+
+        modalCategory.value =
+            selectedCategory;
+
+        modalUnit.innerHTML =
+            '<option value="">請選擇標準單位</option>';
+
+        getMaterialUnits()
+            .forEach(unit => {
+                modalUnit.innerHTML += `
+                    <option value="${escapeHtml(unit)}">
+                        ${escapeHtml(unit)}
+                    </option>
+                `;
+            });
+
+        materialName.value = '';
+
+        const modal =
+            bootstrap.Modal.getOrCreateInstance(
+                document.getElementById(
+                    'createMaterialModal'
+                )
+            );
+
+        modal.show();
+    }
+
+    function buildMaterialOptions(
+        selectedCategory,
+        selectedMaterialId
+    ) {
+        let options =
+            '<option value="">請選擇標準材料</option>';
+
+        if (!selectedCategory) {
+            return options;
+        }
+
+        const filteredMaterials =
+            materialOptions
+                .filter(material =>
+                    (material.category ?? '').trim() ===
+                    selectedCategory
+                )
+                .sort((a, b) =>
+                    a.materialName.localeCompare(
+                        b.materialName,
+                        'zh-Hant'
+                    )
+                );
+
+        filteredMaterials.forEach(material => {
+            const selected =
+                Number(selectedMaterialId) ===
+                Number(material.materialId)
+                    ? 'selected'
+                    : '';
+
+            options += `
+                <option value="${material.materialId}"
+                        ${selected}>
+                    ${escapeHtml(material.materialName)}
+                    (${escapeHtml(material.baseUnit)})
+                </option>
+            `;
+        });
+
+        options += `
+            <option value="__NEW__">
+                ＋ 新增標準材料
+            </option>
+        `;
+
+        return options;
+    }
+
+
+    function changeMaterialCategory(
+        finalBidItemId
+    ) {
+        const categorySelect =
+            document.getElementById(
+                `mappingCategory_${finalBidItemId}`
+            );
+
+        const materialSelect =
+            document.getElementById(
+                `mappingMaterial_${finalBidItemId}`
+            );
+
+        const selectedCategory =
+            categorySelect.value;
+
+        materialSelect.innerHTML =
+            buildMaterialOptions(
+                selectedCategory,
+                null
+            );
+
+        materialSelect.disabled =
+            !selectedCategory;
+
+        changeMaterialSelection(
+            finalBidItemId
+        );
+    }
+
+    function changeMaterialSelection(
+        finalBidItemId
+    ) {
+        const materialSelect =
+            document.getElementById(
+                `mappingMaterial_${finalBidItemId}`
+            );
+
+        const actionButton =
+            document.getElementById(
+                `mappingAction_${finalBidItemId}`
+            );
+
+        if (!materialSelect ||
+            !actionButton) {
+            return;
+        }
+
+        if (materialSelect.value === '__NEW__') {
+            actionButton.textContent =
+                '新增標準材料';
+        }
+        else {
+            actionButton.textContent =
+                actionButton.dataset.normalLabel;
+        }
+    }
+
+
+    function handleMappingAction(
+        finalBidItemId
+    ) {
+        const materialSelect =
+            document.getElementById(
+                `mappingMaterial_${finalBidItemId}`
+            );
+
+        if (!materialSelect) {
+            return;
+        }
+
+        if (materialSelect.value === '__NEW__') {
+            openCreateMaterialModal(
+                finalBidItemId
+            );
+
+            return;
+        }
+
+        updateMaterialMapping(
+            finalBidItemId
+        );
+    }
+
     function renderMappingItems(items) {
+
+        currentMappingItems = items;
+
         if (!items.length) {
             mappingList.innerHTML = `
                 <div class="alert alert-light border text-muted">
@@ -627,51 +1252,81 @@
         let html = '';
 
         items.forEach(item => {
-            let options =
-                `<option value="">請選擇標準材料</option>`;
+            const categories =
+                getMaterialCategories();
 
-            materialOptions.forEach(material => {
+            let selectedCategory =
+                item.materialCategory ?? '';
+
+            let categoryOptions =
+                '<option value="">請選擇材料分類</option>';
+
+            categories.forEach(category => {
                 const selected =
-                    Number(item.materialId) ===
-                    Number(material.materialId)
+                    category === selectedCategory
                         ? 'selected'
                         : '';
 
-                options += `
-                    <option value="${material.materialId}"
+                categoryOptions += `
+                    <option value="${escapeHtml(category)}"
                             ${selected}>
-                        ${escapeHtml(material.materialName)}
-                        (${escapeHtml(material.baseUnit)})
+                        ${escapeHtml(category)}
                     </option>
                 `;
             });
 
+            let materialSelectOptions =
+                buildMaterialOptions(
+                    selectedCategory,
+                    item.materialId
+                );
+
             html += `
                 <div class="card mb-3">
                     <div class="card-body">
-
-                        <div class="d-flex
-                                    justify-content-between
-                                    align-items-start
-                                    mb-2">
-
+                        <div class="d-flex justify-content-between align-items-start mb-2">
                             <div>
                                 <h5 class="mb-1">
                                     ${escapeHtml(item.itemName)}
                                 </h5>
-
-                                <div class="text-muted small">
-                                    ${escapeHtml(item.projectName)}
-                                </div>
                             </div>
 
-                            ${getMappingBadge(item.mappingStatus)}
+                            <div class="d-flex align-items-center gap-2">
+                                <div>
+                                    ${getMappingBadge(item.mappingStatus)}
+                                    ${getDataIssueBadges(item)}
+                                </div>
+
+                                <div class="dropdown">
+                                    <button class="btn btn-sm btn-light border"
+                                            type="button"
+                                            data-bs-toggle="dropdown"
+                                            aria-expanded="false">
+                                        ⋯
+                                    </button>
+
+                                    <ul class="dropdown-menu dropdown-menu-end">
+                                        <li>
+                                            <button class="dropdown-item"
+                                                    type="button"
+                                                    onclick="openEditBidItemModal(${item.finalBidItemId})">
+                                                修正資料
+                                            </button>
+                                        </li>
+
+                                        <li>
+                                            <button class="dropdown-item text-danger"
+                                                    type="button"
+                                                    onclick="ignoreBidItem(${item.finalBidItemId})">
+                                                忽略此工項
+                                            </button>
+                                        </li>
+                                    </ul>
+                                </div>
+                            </div>
                         </div>
 
                         <div class="text-muted small mb-3">
-                            規格：
-                            ${escapeHtml(item.spec || '無')}
-                            ｜
                             單位：
                             ${escapeHtml(item.unit || '無')}
                             ｜
@@ -691,43 +1346,261 @@
                             }
                         </div>
 
-                        ${
-                            item.matchedKeyword
-                                ? `
-                                    <div class="small text-muted mb-2">
-                                        對應關鍵字：
-                                        ${escapeHtml(item.matchedKeyword)}
-                                    </div>
-                                `
-                                : ''
-                        }
-
                         <div class="row g-2">
-                            <div class="col-md-8">
+
+                            <div class="col-md-4">
+                                <label class="form-label small fw-bold">
+                                    材料分類
+                                </label>
+
                                 <select class="form-select"
-                                        id="mappingMaterial_${item.finalBidItemId}">
-                                    ${options}
+                                        id="mappingCategory_${item.finalBidItemId}"
+                                        onchange="changeMaterialCategory(${item.finalBidItemId})">
+                                    ${categoryOptions}
                                 </select>
                             </div>
 
-                            <div class="col-md-4">
+                            <div class="col-md-5">
+                                <label class="form-label small fw-bold">
+                                    標準材料
+                                </label>
+
+                                <select class="form-select"
+                                        id="mappingMaterial_${item.finalBidItemId}"
+                                        onchange="changeMaterialSelection(${item.finalBidItemId})"
+                                        ${selectedCategory ? '' : 'disabled'}>
+                                    ${materialSelectOptions}
+                                </select>
+                            </div>
+
+                            <div class="col-md-3">
+                                <label class="form-label small fw-bold">
+                                    &nbsp;
+                                </label>
+
                                 <button class="btn btn-outline-primary w-100"
-                                        onclick="updateMaterialMapping(${item.finalBidItemId})">
+                                        id="mappingAction_${item.finalBidItemId}"
+                                        data-normal-label="${
+                                            item.mappingStatus === 'Pending'
+                                                ? '人工對應'
+                                                : '修改對應'
+                                        }"
+                                        onclick="handleMappingAction(${item.finalBidItemId})">
                                     ${
-                                        item.mappingStatus === 'Unmapped'
+                                        item.mappingStatus === 'Pending'
                                             ? '人工對應'
                                             : '修改對應'
                                     }
                                 </button>
                             </div>
-                        </div>
 
+                        </div>
                     </div>
                 </div>
             `;
         });
 
         mappingList.innerHTML = html;
+    }
+
+
+
+    function openEditBidItemModal(finalBidItemId) {
+        const item = currentMappingItems.find(x =>
+            Number(x.finalBidItemId) === Number(finalBidItemId)
+        );
+
+        if (!item) {
+            alert('找不到此工項資料');
+            return;
+        }
+
+        editingBidItemId = finalBidItemId;
+
+        document.getElementById('editBidItemName').textContent =
+            item.itemName ?? '';
+
+        document.getElementById('editBidItemQty').value =
+            item.qty ?? '';
+
+        document.getElementById('editBidItemUnitPrice').value =
+            item.unitPrice ?? '';
+
+        const unitSelect =
+            document.getElementById('editBidItemUnit');
+
+        unitSelect.innerHTML =
+            '<option value="">請選擇單位</option>';
+
+        const editableUnits =
+            getEditableUnits();
+
+        const currentUnit =
+            item.unit?.trim() ?? '';
+
+        if (currentUnit &&
+            !editableUnits.includes(currentUnit)) {
+            editableUnits.push(currentUnit);
+
+            editableUnits.sort((a, b) =>
+                a.localeCompare(
+                    b,
+                    'zh-Hant'
+                )
+            );
+        }
+
+        editableUnits.forEach(unit => {
+            const option =
+                document.createElement('option');
+
+            option.value = unit;
+            option.textContent = unit;
+
+            unitSelect.appendChild(option);
+        });
+
+        unitSelect.value =
+            currentUnit;
+
+        const modal = bootstrap.Modal.getOrCreateInstance(
+            document.getElementById('editBidItemModal')
+        );
+
+        modal.show();
+    }
+    
+    async function loadMappingSummary() {
+        if (!currentProjectId) {
+            return;
+        }
+
+        const params =
+            new URLSearchParams({
+                projectId: currentProjectId
+            });
+
+        const response =
+            await fetch(
+                '/api/Estimation/mapping-summary?' +
+                params.toString()
+            );
+
+        const data =
+            await response.json();
+
+        if (!response.ok) {
+            alert(
+                data.message ??
+                '讀取建案統計失敗'
+            );
+
+            return;
+        }
+
+        document.getElementById(
+            'resTotal'
+        ).innerText =
+            data.totalCount ?? 0;
+
+        document.getElementById(
+            'resAuto'
+        ).innerText =
+            data.autoCount ?? 0;
+
+        document.getElementById(
+            'resManual'
+        ).innerText =
+            data.manualCount ?? 0;
+
+        document.getElementById(
+            'resPending'
+        ).innerText =
+            data.pendingCount ?? 0;
+
+        document.getElementById(
+            'resInvalidQuantity'
+        ).innerText =
+            data.invalidQuantityCount ?? 0;
+
+        document.getElementById(
+            'resInvalidUnitPrice'
+        ).innerText =
+            data.invalidUnitPriceCount ?? 0;
+
+        document.getElementById(
+            'resUnitMismatch'
+        ).innerText =
+            data.unitMismatchCount ?? 0;
+
+        document.getElementById(
+            'resIgnored'
+        ).innerText =
+            data.ignoredCount ?? 0;
+    }
+
+    async function loadMappingFilterOptions() {
+        if (!currentProjectId) {
+            return;
+        }
+
+        const params =
+            new URLSearchParams({
+                projectId: currentProjectId
+            });
+
+        const response =
+            await fetch(
+                '/api/Estimation/mapping-filter-options?' +
+                params.toString()
+            );
+
+        const data =
+            await response.json();
+
+        if (!response.ok) {
+            alert(
+                data.message ??
+                '讀取篩選條件失敗'
+            );
+            return;
+        }
+
+
+        // =========================
+        // 材料分類
+        // =========================
+
+        mappingCategory.innerHTML =
+            '<option value="All">全部</option>';
+
+        (data.categories ?? [])
+            .forEach(category => {
+
+                mappingCategory.innerHTML += `
+                    <option value="${escapeHtml(category)}">
+                        ${escapeHtml(category)}
+                    </option>
+                `;
+            });
+
+
+        // =========================
+        // 單位
+        // =========================
+
+        mappingUnit.innerHTML =
+            '<option value="All">全部</option>';
+
+        (data.units ?? [])
+            .forEach(unit => {
+
+                mappingUnit.innerHTML += `
+                    <option value="${escapeHtml(unit)}">
+                        ${escapeHtml(unit)}
+                    </option>
+                `;
+            });
     }
 
     async function updateMaterialMapping(finalBidItemId) {
@@ -783,6 +1656,8 @@
         await loadMappingItems(
             currentMappingPage
         );
+
+        await loadMappingSummary();
     }
 
     let mappingSearchTimer = null;
@@ -800,6 +1675,34 @@
     );
 
     mappingStatus.addEventListener(
+        'change',
+        function () {
+            loadMappingItems(1);
+        }
+    );
+    
+    mappingIssue.addEventListener(
+        'change',
+        function () {
+            if (
+                mappingIssue.value === 'UNIT_MISMATCH' &&
+                mappingStatus.value === 'Pending'
+            ) {
+                mappingStatus.value = 'All';
+            }
+
+            loadMappingItems(1);
+        }
+    );
+
+    mappingCategory.addEventListener(
+        'change',
+        function () {
+            loadMappingItems(1);
+        }
+    );
+
+    mappingUnit.addEventListener(
         'change',
         function () {
             loadMappingItems(1);
@@ -827,5 +1730,225 @@
                 );
             }
         });
-    </script>
+
+
+    document.getElementById(
+        'btnCreateMaterial'
+    ).addEventListener(
+        'click',
+        async function () {
+
+            if (!creatingMaterialForItemId) {
+                return;
+            }
+
+            const materialName =
+                document.getElementById(
+                    'newMaterialName'
+                ).value.trim();
+
+            const category =
+                document.getElementById(
+                    'newMaterialCategory'
+                ).value;
+
+            const baseUnit =
+                document.getElementById(
+                    'newMaterialBaseUnit'
+                ).value;
+
+            if (!materialName) {
+                alert('請輸入標準材料名稱');
+                return;
+            }
+
+            if (!category) {
+                alert('請選擇材料分類');
+                return;
+            }
+
+            if (!baseUnit) {
+                alert('請選擇標準單位');
+                return;
+            }
+
+            const formData =
+                new FormData();
+
+            formData.append(
+                'materialName',
+                materialName
+            );
+
+            formData.append(
+                'category',
+                category
+            );
+
+            formData.append(
+                'baseUnit',
+                baseUnit
+            );
+
+            const response =
+                await fetch(
+                    '/api/Estimation/create-material',
+                    {
+                        method: 'POST',
+                        body: formData
+                    }
+                );
+
+            const data =
+                await response.json();
+
+            if (!response.ok) {
+                alert(
+                    data.message ??
+                    '新增標準材料失敗'
+                );
+
+                return;
+            }
+
+            await loadMaterialOptions();
+
+            const categorySelect =
+                document.getElementById(
+                    `mappingCategory_${creatingMaterialForItemId}`
+                );
+
+            const materialSelect =
+                document.getElementById(
+                    `mappingMaterial_${creatingMaterialForItemId}`
+                );
+
+            categorySelect.value =
+                data.category;
+
+            materialSelect.innerHTML =
+                buildMaterialOptions(
+                    data.category,
+                    data.materialId
+                );
+
+            materialSelect.disabled =
+                false;
+
+            materialSelect.value =
+                data.materialId;
+
+            changeMaterialSelection(
+                creatingMaterialForItemId
+            );
+
+            const modalElement =
+                document.getElementById(
+                    'createMaterialModal'
+                );
+
+            bootstrap.Modal
+                .getInstance(modalElement)
+                ?.hide();
+
+            creatingMaterialForItemId =
+                null;
+        }
+    );
+
+    document.getElementById('btnSaveBidItem').addEventListener(
+        'click',
+        async function () {
+            if (!editingBidItemId) {
+                return;
+            }
+
+            const qty = document.getElementById('editBidItemQty').value;
+            const unitPrice = document.getElementById('editBidItemUnitPrice').value;
+            const unit = document.getElementById('editBidItemUnit').value.trim();
+
+            const formData = new FormData();
+
+            formData.append('finalBidItemId', editingBidItemId);
+            formData.append('qty', qty);
+            formData.append('unitPrice', unitPrice);
+            formData.append('unit', unit);
+
+            const response = await fetch(
+                '/api/Estimation/update-bid-item-data',
+                {
+                    method: 'POST',
+                    body: formData
+                }
+            );
+
+            const data = await response.json();
+
+            if (!response.ok) {
+                alert(data.message ?? '修正資料失敗');
+                return;
+            }
+
+            bootstrap.Modal
+                .getInstance(
+                    document.getElementById('editBidItemModal')
+                )
+                ?.hide();
+
+            editingBidItemId = null;
+
+            await loadMappingItems();
+            await loadMappingSummary();
+
+            alert(
+                `${data.message}\n${data.historyAction}`
+            );
+        }
+    );
+
+    async function ignoreBidItem(finalBidItemId) {
+        const item = currentMappingItems.find(x =>
+            Number(x.finalBidItemId) === Number(finalBidItemId)
+        );
+
+        if (!item) {
+            return;
+        }
+
+        const confirmed = confirm(
+            `確定要忽略「${item.itemName}」嗎？\n\n` +
+            `忽略後，此工項不會進入歷史資料庫，也不會出現在預設待處理清單。`
+        );
+
+        if (!confirmed) {
+            return;
+        }
+
+        const formData = new FormData();
+
+        formData.append(
+            'finalBidItemId',
+            finalBidItemId
+        );
+
+        const response = await fetch(
+            '/api/Estimation/ignore-bid-item',
+            {
+                method: 'POST',
+                body: formData
+            }
+        );
+
+        const data = await response.json();
+
+        if (!response.ok) {
+            alert(data.message ?? '忽略工項失敗');
+            return;
+        }
+
+        await loadMappingItems();
+        await loadMappingSummary();
+    }
+    
+</script>
 }

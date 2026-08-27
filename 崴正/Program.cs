@@ -25,6 +25,18 @@ builder.Services
 builder.Services.AddControllersWithViews();
 builder.Services.AddScoped<ProjectSimilarityService>();
 builder.Services.AddScoped<SimilarityEstimationService>();
+builder.Services.AddScoped<FinalBidService>();
+builder.Services.AddScoped<MaterialMappingService>();
+builder.Services.AddScoped<FinalBidImportService>();
+builder.Services.AddScoped<FinalBidQueryService>();
+builder.Services.AddScoped<AnomalyDetectionService>();
+builder.Services.AddSingleton<UnitConversionService>();
+builder.Services.AddScoped<EstimationSettingsService>();
+builder.Services.AddScoped<RangeEstimationService>();
+builder.Services.AddScoped<ProjectManagementService>();
+builder.Services.AddScoped<EstimationTargetService>();
+builder.Services.AddScoped<BatchEstimationService>();
+
 
 builder.Services.AddDbContext<ApplicationDbContext>(options =>
     options.UseNpgsql(builder.Configuration.GetConnectionString("DefaultConnection")));

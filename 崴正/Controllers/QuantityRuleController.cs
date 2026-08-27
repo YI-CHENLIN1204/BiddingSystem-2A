@@ -84,7 +84,6 @@ namespace 崴正.Controllers
         // ==========================================
         // 3. 新增功能 (Create)
         // ==========================================
-        // (GET) 打開新增畫面 👈👈👈 剛剛就是遺失了這段，導致 404！
         public IActionResult Create()
         {
             var materials = _context.MaterialMasters.ToList();
