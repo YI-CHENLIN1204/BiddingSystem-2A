@@ -1,4 +1,5 @@
 using 崴正.Data;
+using System.Data;
 using 崴正.Services;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.AspNetCore.Authentication.Cookies;
@@ -24,18 +25,18 @@ builder.Services
 // Add services to the container.
 builder.Services.AddControllersWithViews();
 builder.Services.AddScoped<ProjectSimilarityService>();
-builder.Services.AddScoped<SimilarityEstimationService>();
 builder.Services.AddScoped<FinalBidService>();
 builder.Services.AddScoped<MaterialMappingService>();
 builder.Services.AddScoped<FinalBidImportService>();
 builder.Services.AddScoped<FinalBidQueryService>();
-builder.Services.AddScoped<AnomalyDetectionService>();
 builder.Services.AddSingleton<UnitConversionService>();
 builder.Services.AddScoped<EstimationSettingsService>();
 builder.Services.AddScoped<RangeEstimationService>();
 builder.Services.AddScoped<ProjectManagementService>();
 builder.Services.AddScoped<EstimationTargetService>();
 builder.Services.AddScoped<BatchEstimationService>();
+builder.Services.AddScoped<CoreMaterialService>();
+builder.Services.AddScoped<BidRangeAnomalyAnalysisService>();
 
 
 builder.Services.AddDbContext<ApplicationDbContext>(options =>
@@ -70,7 +71,74 @@ if (!app.Environment.IsDevelopment())
 }
 
 //app.UseHttpsRedirection();
+
 app.UseRouting();
+
+
+// ==========================================
+// 資料密集型 Request 共用同一條 DB Connection
+// ==========================================
+
+app.Use(async (context, next) =>
+{
+    var path =
+        context.Request.Path;
+
+    bool useSharedDbConnection =
+        path.StartsWithSegments("/QuantityRule") ||
+        path.StartsWithSegments("/ProjectManagement") ||
+        path.StartsWithSegments("/Home/EstimationUI") ||
+        path.StartsWithSegments("/Home/UploadFinalBid") ||
+        path.StartsWithSegments("/api/range-estimation") ||
+        path.StartsWithSegments("/api/bid-anomaly") ||
+        path.StartsWithSegments("/api/Estimation");
+
+    if (!useSharedDbConnection)
+    {
+        await next();
+        return;
+    }
+
+
+    var db =
+        context.RequestServices
+            .GetRequiredService<ApplicationDbContext>();
+
+
+    var connection =
+        db.Database
+            .GetDbConnection();
+
+
+    bool connectionWasOpen =
+        connection.State ==
+        ConnectionState.Open;
+
+
+    if (!connectionWasOpen)
+    {
+
+        await db.Database
+            .OpenConnectionAsync();
+    }
+
+
+    try
+    {
+        await next();
+    }
+    finally
+    {
+        if (!connectionWasOpen)
+        {
+
+            await db.Database
+                .CloseConnectionAsync();
+
+        }
+    }
+});
+
 
 // 一定要在 UseAuthorization 前面
 app.UseAuthorization();

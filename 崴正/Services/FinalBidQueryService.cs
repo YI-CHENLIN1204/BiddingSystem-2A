@@ -43,7 +43,6 @@ namespace 崴正.Services
 
             var query = _context.FinalBidItems
                 .AsNoTracking()
-                .Where(x => !x.IsIgnored)
                 .AsQueryable();
 
             if (projectId.HasValue)
@@ -56,23 +55,35 @@ namespace 崴正.Services
                 ? "Pending"
                 : status.Trim();
 
-            if (!string.Equals(
+            if (!IsAllowedValue(
                     status,
-                    "All",
+                    "Pending",
+                    "Auto",
+                    "Manual",
+                    "Ignored",
+                    "All"))
+            {
+                return ServiceResult.Validation(
+                    "狀態只允許 Pending、Auto、Manual、Ignored、All"
+                );
+            }
+
+
+            if (string.Equals(
+                    status,
+                    "Ignored",
                     StringComparison.OrdinalIgnoreCase))
             {
-                if (!IsAllowedValue(
-                        status,
-                        "Pending",
-                        "Auto",
-                        "Manual"))
-                {
-                    return ServiceResult.Validation(
-                        "狀態只允許 Pending、Auto、Manual、All"
-                    );
-                }
-
                 query = query.Where(x =>
+                    x.IsIgnored);
+            }
+            else if (!string.Equals(
+                        status,
+                        "All",
+                        StringComparison.OrdinalIgnoreCase))
+            {
+                query = query.Where(x =>
+                    !x.IsIgnored &&
                     x.MappingStatus == status);
             }
 
@@ -93,7 +104,7 @@ namespace 崴正.Services
                     case "INVALID_UNIT_PRICE":
                         query = query.Where(x =>
                             !x.UnitPrice.HasValue ||
-                            x.UnitPrice.Value < 0);
+                            x.UnitPrice.Value <= 0);
                         break;
 
                     case "UNIT_MISMATCH":
@@ -284,6 +295,9 @@ namespace 崴正.Services
                     mappingStatus =
                         x.MappingStatus,
 
+                    isIgnored =
+                        x.IsIgnored,
+
                     mappingIssueCode =
                         x.MappingIssueCode,
 
@@ -322,6 +336,7 @@ namespace 崴正.Services
                     x.materialId,
                     x.materialName,
                     x.materialCategory,
+                    x.isIgnored,
                     x.materialUnit,
                     x.mappingStatus,
                     x.mappingIssueCode,
@@ -337,7 +352,7 @@ namespace 崴正.Services
 
                     invalidUnitPrice =
                         !x.unitPrice.HasValue ||
-                        x.unitPrice.Value < 0,
+                        x.unitPrice.Value <= 0,
 
                     unitMismatch =
                         x.materialId.HasValue &&
@@ -416,7 +431,7 @@ namespace 崴正.Services
             int invalidUnitPriceCount =
                 activeQuery.Count(x =>
                     !x.UnitPrice.HasValue ||
-                    x.UnitPrice.Value < 0);
+                    x.UnitPrice.Value <= 0);
 
             var unitCandidates =
                 activeQuery
@@ -463,7 +478,6 @@ namespace 崴正.Services
             var itemQuery =
                 _context.FinalBidItems
                     .AsNoTracking()
-                    .Where(x => !x.IsIgnored)
                     .AsQueryable();
 
             if (projectId.HasValue)

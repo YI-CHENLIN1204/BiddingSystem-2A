@@ -35,6 +35,104 @@ namespace 崴正.Services
             return settings;
         }
 
+        public async Task<ServiceResult>
+            UpdateAsync(
+                EstimationSettingsUpdateRequest request,
+                string? updatedBy)
+        {
+            var settings =
+                await _context.EstimationSettings
+                    .FirstOrDefaultAsync(x =>
+                        x.SettingsId == 1
+                    );
+
+            if (settings == null)
+            {
+                return ServiceResult.NotFound(
+                    "找不到估算系統參數設定"
+                );
+            }
+
+
+            settings.TopK =
+                request.TopK;
+
+            settings.MinimumSampleCount =
+                request.MinimumSampleCount;
+
+            settings.LowerQuantile =
+                request.LowerQuantile;
+
+            settings.MedianQuantile =
+                request.MedianQuantile;
+
+            settings.UpperQuantile =
+                request.UpperQuantile;
+
+            settings.SimilarityExponent =
+                request.SimilarityExponent;
+
+            settings.TimeHalfLifeYears =
+                request.TimeHalfLifeYears;
+
+            settings.MinimumSimilarityScore =
+                request.MinimumSimilarityScore;
+
+            settings.StructureWeight =
+                request.StructureWeight;
+
+            settings.AreaWeight =
+                request.AreaWeight;
+
+            settings.FloorWeight =
+                request.FloorWeight;
+
+            settings.YearWeight =
+                request.YearWeight;
+
+            settings.CityWeight =
+                request.CityWeight;
+
+            settings.AreaDifferenceCutoffRatio =
+                request.AreaDifferenceCutoffRatio;
+
+            settings.GroundFloorPenaltyRatio =
+                request.GroundFloorPenaltyRatio;
+
+            settings.BasementFloorPenaltyRatio =
+                request.BasementFloorPenaltyRatio;
+
+            settings.YearDifferenceCutoffYears =
+                request.YearDifferenceCutoffYears;
+
+            settings.UpdatedAt =
+                DateTime.UtcNow;
+
+            settings.UpdatedBy =
+                string.IsNullOrWhiteSpace(updatedBy)
+                    ? "SYSTEM"
+                    : updatedBy.Trim();
+
+
+            try
+            {
+                Validate(settings);
+            }
+            catch (InvalidOperationException ex)
+            {
+                return ServiceResult.Validation(
+                    ex.Message
+                );
+            }
+
+
+            await _context.SaveChangesAsync();
+
+            return ServiceResult.Ok(
+                settings
+            );
+        }
+
         private static void Validate(
             EstimationSetting settings)
         {
@@ -79,6 +177,85 @@ namespace 崴正.Services
             {
                 throw new InvalidOperationException(
                     "時間半衰期必須大於 0。"
+                );
+            }
+            if (
+                settings.MinimumSimilarityScore < 0 ||
+                settings.MinimumSimilarityScore > 100
+            )
+            {
+                throw new InvalidOperationException(
+                    "最低相似度必須介於 0 到 100 之間。"
+                );
+            }
+
+
+            if (
+                settings.StructureWeight < 0 ||
+                settings.AreaWeight < 0 ||
+                settings.FloorWeight < 0 ||
+                settings.YearWeight < 0 ||
+                settings.CityWeight < 0
+            )
+            {
+                throw new InvalidOperationException(
+                    "相似度權重不可小於 0。"
+                );
+            }
+
+
+            decimal totalWeight =
+                settings.StructureWeight +
+                settings.AreaWeight +
+                settings.FloorWeight +
+                settings.YearWeight +
+                settings.CityWeight;
+
+            if (totalWeight <= 0)
+            {
+                throw new InvalidOperationException(
+                    "相似度權重總和必須大於 0。"
+                );
+            }
+
+
+            if (
+                settings.AreaDifferenceCutoffRatio <= 0 ||
+                settings.AreaDifferenceCutoffRatio > 1
+            )
+            {
+                throw new InvalidOperationException(
+                    "面積差距截止比例必須介於 0 到 1 之間。"
+                );
+            }
+
+
+            if (
+                settings.GroundFloorPenaltyRatio < 0 ||
+                settings.GroundFloorPenaltyRatio > 1
+            )
+            {
+                throw new InvalidOperationException(
+                    "地上樓層懲罰比例必須介於 0 到 1 之間。"
+                );
+            }
+
+
+            if (
+                settings.BasementFloorPenaltyRatio < 0 ||
+                settings.BasementFloorPenaltyRatio > 1
+            )
+            {
+                throw new InvalidOperationException(
+                    "地下樓層懲罰比例必須介於 0 到 1 之間。"
+                );
+            }
+
+
+            if (settings.YearDifferenceCutoffYears <= 0)
+            {
+                throw new InvalidOperationException(
+                    "年份差距截止值必須大於 0。"
                 );
             }
         }

@@ -1,19 +1,18 @@
-@model IEnumerable<崴正.Controllers.QuantityRuleViewModel>
+@model 崴正.Models.QuantityRuleManagementViewModel
 
 @{
-    ViewData["Title"] = "估算參數管理後台";
+    ViewData["Title"] = "模型參數管理";
 }
 
 <style>
-    /* 完美繼承工程估算頁面的企業色系與卡片風格 */
     :root {
         --wz-primary: #321fdb;
         --wz-primary-soft: #ebe8ff;
-        --wz-green: #2eb85c;
-        --wz-dark-table: #5b5f63;
         --wz-bg: #ebedef;
         --wz-text: #141d23;
         --wz-muted: #6c757d;
+        --wz-border: #d8dbe0;
+        --wz-dark-table: #5b5f63;
     }
 
     body {
@@ -21,7 +20,7 @@
         color: var(--wz-text);
     }
 
-    .admin-page {
+    .settings-page {
         max-width: 96vw;
         margin: 0 auto;
         padding-bottom: 40px;
@@ -30,60 +29,134 @@
     .page-title {
         font-size: 1.55rem;
         font-weight: 800;
-        margin-bottom: 6px;
+        margin-bottom: 4px;
     }
 
-    .admin-main-card {
-        background: #fff;
-        border-radius: 6px;
-        border: 1px solid #d8dbe0;
-        box-shadow: 0 2px 8px rgba(20, 29, 35, 0.06);
-        overflow: hidden;
-    }
-
-    .toolbar-bar {
-        margin: 0;
-        padding: 14px 18px;
-        border-bottom: 2px solid var(--wz-primary-soft);
-        background: #fff;
-        display: flex;
-        justify-content: space-between;
-        align-items: center;
-    }
-
-    .toolbar-title {
-        color: var(--wz-primary);
-        font-weight: 900;
-        font-size: 1.15rem;
-        margin: 0;
-    }
-
-    .btn-wz-primary {
-        border: none;
-        background: var(--wz-primary);
-        color: white;
-        border-radius: 6px;
-        padding: 7px 16px;
-        font-weight: 700;
-        text-decoration: none;
+    .page-description {
+        color: var(--wz-muted);
+        margin-bottom: 18px;
         font-size: 14px;
     }
 
-    .btn-wz-primary:hover {
-        color: white;
+    .settings-card {
+        background: #fff;
+        border: 1px solid var(--wz-border);
+        border-radius: 8px;
+        box-shadow: 0 2px 8px rgba(20,29,35,.06);
+        overflow: hidden;
+    }
+
+    .nav-tabs {
+        background: #fff;
+        padding: 0 18px;
+        border-bottom: 1px solid var(--wz-border);
+    }
+
+    .nav-tabs .nav-link {
+        color: #555;
+        font-weight: 700;
+        border: none;
+        padding: 15px 18px;
+    }
+
+    .nav-tabs .nav-link.active {
+        color: var(--wz-primary);
+        border-bottom: 3px solid var(--wz-primary);
+        background: transparent;
+    }
+
+    .tab-content-area {
+        padding: 22px;
+    }
+
+    .section-card {
+        border: 1px solid #e3e5e8;
+        border-radius: 8px;
+        margin-bottom: 18px;
+        background: #fff;
+    }
+
+    .section-header {
+        padding: 12px 16px;
+        border-bottom: 1px solid #e3e5e8;
+        background: #f8f9fa;
+    }
+
+    .section-title {
+        margin: 0;
+        font-size: 15px;
+        font-weight: 800;
+        color: var(--wz-primary);
+    }
+
+    .section-description {
+        font-size: 12px;
+        color: var(--wz-muted);
+        margin-top: 3px;
+    }
+
+    .section-body {
+        padding: 16px;
+    }
+
+    .parameter-grid {
+        display: grid;
+        grid-template-columns: repeat(3, minmax(220px, 1fr));
+        gap: 16px;
+    }
+
+    @@media (max-width: 1000px) {
+        .parameter-grid {
+            grid-template-columns: repeat(2, minmax(220px, 1fr));
+        }
+    }
+
+    @@media (max-width: 650px) {
+        .parameter-grid {
+            grid-template-columns: 1fr;
+        }
+    }
+
+    .parameter-item label {
+        font-size: 13px;
+        font-weight: 700;
+        margin-bottom: 5px;
+    }
+
+    .parameter-help {
+        color: var(--wz-muted);
+        font-size: 11px;
+        margin-top: 4px;
+        line-height: 1.4;
+    }
+
+    .form-control:focus {
+        border-color: #9589ef;
+        box-shadow: 0 0 0 .15rem rgba(50,31,219,.12);
+    }
+
+    .input-group-text {
+        font-size: 13px;
+        font-weight: 700;
+    }
+
+    .btn-save {
+        background: var(--wz-primary);
+        color: #fff;
+        border: none;
+        border-radius: 6px;
+        padding: 9px 22px;
+        font-weight: 800;
+    }
+
+    .btn-save:hover {
+        color: #fff;
         filter: brightness(.96);
     }
 
-    .btn-wz-outline {
-        border: 1px solid #bcb3ff;
-        background: white;
-        color: var(--wz-primary);
-        border-radius: 6px;
-        padding: 5px 12px;
-        font-weight: 700;
-        text-decoration: none;
-        font-size: 13px;
-        transition: all 0.2s;
+    .updated-info {
+        font-size: 12px;
+        color: var(--wz-muted);
     }
 
     .btn-wz-outline:hover {
@@ -99,123 +172,1669 @@
         width: 100%;
         border-collapse: collapse;
         font-size: 14px;
-        background: white;
     }
 
     .admin-table thead th {
         background: var(--wz-dark-table);
         color: white;
-        padding: 12px 16px;
+        padding: 11px 14px;
         text-align: center;
-        font-weight: 800;
-        border-right: 1px solid rgba(255,255,255,.25);
         white-space: nowrap;
     }
 
     .admin-table tbody td {
-        padding: 12px 16px;
+        padding: 11px 14px;
         border-bottom: 1px solid #e5e7eb;
-        vertical-align: middle;
         text-align: center;
+        vertical-align: middle;
     }
 
     .admin-table tbody tr:hover {
-        background-color: #f8f9fa;
+        background: #f8f9fa;
     }
 
-    .material-badge {
-        background: #eef2f5;
-        border: 1px solid #d8dbe0;
-        padding: 4px 10px;
-        border-radius: 6px;
-        font-weight: 700;
-        color: #333;
+    .coming-card {
+        border: 1px dashed #bcb3ff;
+        background: #faf9ff;
+        border-radius: 8px;
+        padding: 28px;
+        text-align: center;
+    }
+
+    .coming-title {
+        color: var(--wz-primary);
+        font-weight: 800;
+        margin-bottom: 8px;
+    }
+
+    .sortable-th {
+        cursor: pointer;
+        user-select: none;
+        transition: background-color .15s ease;
+    }
+
+    .sortable-th:hover {
+        background: #4d5155 !important;
+    }
+
+    .sort-indicator {
         display: inline-block;
+        margin-left: 5px;
+        font-size: 12px;
+        opacity: .8;
     }
 
-    .unit-text {
-        color: var(--wz-muted);
-        font-size: 12px;
-        font-weight: 600;
-        margin-left: 4px;
+    /* 模型參數頁：緊湊且可快速掃描 */
+    .model-section {
+        border: 1px solid #e3e5e8;
+        border-radius: 8px;
+        margin-bottom: 14px;
+        background: #fff;
+        overflow: hidden;
     }
+
+    .model-section-head {
+        padding: 11px 16px;
+        background: #f8f9fa;
+        border-bottom: 1px solid #e3e5e8;
+        display: flex;
+        align-items: center;
+        gap: 12px;
+    }
+
+    .model-section-head-between {
+        justify-content: space-between;
+    }
+
+    .model-section-title {
+        color: var(--wz-primary);
+        font-size: 14px;
+        font-weight: 800;
+    }
+
+    .model-section-desc {
+        margin-top: 2px;
+        color: var(--wz-muted);
+        font-size: 11px;
+    }
+
+    .compact-body {
+        padding: 14px 16px;
+    }
+
+    .parameter-grid-2 {
+        grid-template-columns: repeat(2, minmax(220px, 1fr));
+    }
+
+    .parameter-grid-3 {
+        grid-template-columns: repeat(3, minmax(180px, 1fr));
+    }
+
+    .parameter-grid-4 {
+        grid-template-columns: repeat(4, minmax(160px, 1fr));
+    }
+
+    .weight-grid {
+        display: grid;
+        grid-template-columns: repeat(5, minmax(140px, 1fr));
+        gap: 14px;
+    }
+
+    .weight-total-box {
+        background: var(--wz-primary-soft);
+        color: var(--wz-primary);
+        border: 1px solid #d9d4ff;
+        border-radius: 6px;
+        padding: 6px 10px;
+        font-size: 12px;
+        white-space: nowrap;
+    }
+
+    .weight-total-box strong {
+        margin-left: 4px;
+        font-size: 14px;
+    }
+
+    .settings-save-bar {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        gap: 16px;
+        padding: 12px 2px 0;
+    }
+
+    #model-settings .form-control,
+    #model-settings .input-group-text {
+        min-height: 38px;
+    }
+
+    @@media (max-width: 1200px) {
+        .weight-grid {
+            grid-template-columns: repeat(3, minmax(160px, 1fr));
+        }
+
+        .parameter-grid-4 {
+            grid-template-columns: repeat(2, minmax(200px, 1fr));
+        }
+    }
+
+    @@media (max-width: 760px) {
+        .parameter-grid-2,
+        .parameter-grid-3,
+        .parameter-grid-4,
+        .weight-grid {
+            grid-template-columns: 1fr;
+        }
+
+        .model-section-head-between,
+        .settings-save-bar {
+            align-items: stretch;
+            flex-direction: column;
+        }
+    }
+
 </style>
 
-<div class="admin-page mt-4">
-    <h2 class="page-title">⚙️ 估算參數管理後台</h2>
-    <!-- 顯示成功或失敗的提示訊息 -->
+
+<div class="settings-page mt-4">
+
+    <h2 class="page-title">
+        模型參數管理
+    </h2>
+
+    <div class="page-description">
+        管理相似建案分析、合理用量區間與後續異常判定所使用的模型參數。
+    </div>
+
+
     @if (TempData["SuccessMessage"] != null)
     {
-        <div class="alert alert-success alert-dismissible fade show shadow-sm" role="alert">
-            <strong>✅ 成功！</strong> @TempData["SuccessMessage"]
-            <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+        <div class="alert alert-success alert-dismissible fade show shadow-sm">
+            <strong>成功</strong>
+            @TempData["SuccessMessage"]
+
+            <button type="button"
+                    class="btn-close"
+                    data-bs-dismiss="alert">
+            </button>
         </div>
     }
+
     @if (TempData["ErrorMessage"] != null)
     {
-        <div class="alert alert-danger alert-dismissible fade show shadow-sm" role="alert">
-            <strong>⚠️ 注意！</strong> @TempData["ErrorMessage"]
-            <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+        <div class="alert alert-danger alert-dismissible fade show shadow-sm">
+            <strong>注意</strong>
+            @TempData["ErrorMessage"]
+
+            <button type="button"
+                    class="btn-close"
+                    data-bs-dismiss="alert">
+            </button>
         </div>
     }
 
-    <div class="admin-main-card">
-        <div class="toolbar-bar">
-            <h5 class="toolbar-title">防弊門檻規則清單</h5>
-            <!-- 預留未來新增規則的按鈕 -->
-            <a asp-action="Create" class="btn-wz-primary text-decoration-none">➕ 新增參數規則</a>
+
+    <div class="settings-card">
+
+        <ul class="nav nav-tabs"
+            id="parameterTabs"
+            role="tablist">
+
+            <li class="nav-item">
+                <button class="nav-link active"
+                        data-bs-toggle="tab"
+                        data-bs-target="#model-settings"
+                        type="button">
+
+                    估算與異常模型
+                </button>
+            </li>
+
+            <li class="nav-item">
+                <button class="nav-link"
+                        data-bs-toggle="tab"
+                        data-bs-target="#core-materials"
+                        type="button">
+
+                    核心材料設定
+                </button>
+            </li>
+
+        </ul>
+
+
+        <div class="tab-content tab-content-area">
+
+            <!-- ===================================================== -->
+            <!-- 新版模型參數 -->
+            <!-- ===================================================== -->
+
+            <div class="tab-pane fade show active"
+                 id="model-settings">
+
+                <form asp-action="UpdateEstimationSettings"
+                      method="post">
+
+                    @Html.AntiForgeryToken()
+
+                    <div class="model-section">
+                        <div class="model-section-head">
+                            <div>
+                                <div class="model-section-title">樣本與合理區間</div>
+                                <div class="model-section-desc">設定每項材料採用的歷史案件數，以及 P15 / P50 / P85 合理用量區間。</div>
+                            </div>
+                        </div>
+
+                        <div class="section-body compact-body">
+                            <div class="parameter-grid parameter-grid-2 mb-3">
+                                <div class="parameter-item">
+                                    <label asp-for="EstimationSettings.TopK">每項材料參考上限（Top K）</label>
+                                    <input asp-for="EstimationSettings.TopK"
+                                           class="form-control"
+                                           type="number"
+                                           min="1" />
+                                    <div class="parameter-help">每項材料最多採用多少個相似歷史建案。</div>
+                                </div>
+
+                                <div class="parameter-item">
+                                    <label asp-for="EstimationSettings.MinimumSampleCount">最低有效樣本數</label>
+                                    <input asp-for="EstimationSettings.MinimumSampleCount"
+                                           class="form-control"
+                                           type="number"
+                                           min="1" />
+                                    <div class="parameter-help">低於此數量時，不進行合理區間與異常判定。</div>
+                                </div>
+                            </div>
+
+                            <div class="parameter-grid parameter-grid-3">
+                                <div class="parameter-item">
+                                    <label>合理區間下界（P15）</label>
+                                    <div class="input-group">
+                                        <input asp-for="EstimationSettings.LowerQuantilePercent"
+                                               asp-format="{0:0.##}"
+                                               class="form-control"
+                                               type="number"
+                                               step="0.1"
+                                               min="0"
+                                               max="100" />
+                                        <span class="input-group-text">%</span>
+                                    </div>
+                                </div>
+
+                                <div class="parameter-item">
+                                    <label>參考中位數（P50）</label>
+                                    <div class="input-group">
+                                        <input asp-for="EstimationSettings.MedianQuantilePercent"
+                                               asp-format="{0:0.##}"
+                                               class="form-control"
+                                               type="number"
+                                               step="0.1"
+                                               min="0"
+                                               max="100" />
+                                        <span class="input-group-text">%</span>
+                                    </div>
+                                </div>
+
+                                <div class="parameter-item">
+                                    <label>合理區間上界（P85）</label>
+                                    <div class="input-group">
+                                        <input asp-for="EstimationSettings.UpperQuantilePercent"
+                                               asp-format="{0:0.##}"
+                                               class="form-control"
+                                               type="number"
+                                               step="0.1"
+                                               min="0"
+                                               max="100" />
+                                        <span class="input-group-text">%</span>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="model-section">
+                        <div class="model-section-head model-section-head-between">
+                            <div>
+                                <div class="model-section-title">相似建案權重</div>
+                                <div class="model-section-desc">控制結構、面積、樓層、縣市與年份對建案相似度的影響。</div>
+                            </div>
+                            <div class="weight-total-box">
+                                權重合計 <strong id="similarityWeightTotal">0</strong>
+                            </div>
+                        </div>
+
+                        <div class="section-body compact-body">
+                            <div class="weight-grid">
+                                <div class="parameter-item">
+                                    <label>結構權重</label>
+                                    <input asp-for="EstimationSettings.StructureWeight"
+                                           asp-format="{0:0.##}"
+                                           class="form-control similarity-weight-input"
+                                           type="number"
+                                           step="0.1"
+                                           min="0" />
+                                </div>
+
+                                <div class="parameter-item">
+                                    <label>面積權重</label>
+                                    <input asp-for="EstimationSettings.AreaWeight"
+                                           asp-format="{0:0.##}"
+                                           class="form-control similarity-weight-input"
+                                           type="number"
+                                           step="0.1"
+                                           min="0" />
+                                </div>
+
+                                <div class="parameter-item">
+                                    <label>樓層權重</label>
+                                    <input asp-for="EstimationSettings.FloorWeight"
+                                           asp-format="{0:0.##}"
+                                           class="form-control similarity-weight-input"
+                                           type="number"
+                                           step="0.1"
+                                           min="0" />
+                                </div>
+
+                                <div class="parameter-item">
+                                    <label>縣市權重</label>
+                                    <input asp-for="EstimationSettings.CityWeight"
+                                           asp-format="{0:0.##}"
+                                           class="form-control similarity-weight-input"
+                                           type="number"
+                                           step="0.1"
+                                           min="0" />
+                                </div>
+
+                                <div class="parameter-item">
+                                    <label>年份權重</label>
+                                    <input asp-for="EstimationSettings.YearWeight"
+                                           asp-format="{0:0.##}"
+                                           class="form-control similarity-weight-input"
+                                           type="number"
+                                           step="0.1"
+                                           min="0" />
+                                    <div class="parameter-help">目前主要由時間半衰期處理，可維持 0。</div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="model-section">
+                        <div class="model-section-head">
+                            <div>
+                                <div class="model-section-title">相似度與時間控制</div>
+                                <div class="model-section-desc">設定相似案件的最低門檻、高相似案件的加權程度，以及歷史資料的時間衰減。</div>
+                            </div>
+                        </div>
+
+                        <div class="section-body compact-body">
+                            <div class="parameter-grid parameter-grid-4">
+                                <div class="parameter-item">
+                                    <label>相似度強化指數</label>
+                                    <input asp-for="EstimationSettings.SimilarityExponent"
+                                           asp-format="{0:0.##}"
+                                           class="form-control"
+                                           type="number"
+                                           step="0.1"
+                                           min="0.1" />
+                                    <div class="parameter-help">數值越高，越偏重高相似度案件。</div>
+                                </div>
+
+                                <div class="parameter-item">
+                                    <label>最低相似度</label>
+                                    <div class="input-group">
+                                        <input asp-for="EstimationSettings.MinimumSimilarityScore"
+                                               asp-format="{0:0.##}"
+                                               class="form-control"
+                                               type="number"
+                                               step="0.1"
+                                               min="0"
+                                               max="100" />
+                                        <span class="input-group-text">分</span>
+                                    </div>
+                                </div>
+
+                                <div class="parameter-item">
+                                    <label>時間半衰期</label>
+                                    <div class="input-group">
+                                        <input asp-for="EstimationSettings.TimeHalfLifeYears"
+                                               asp-format="{0:0.##}"
+                                               class="form-control"
+                                               type="number"
+                                               step="0.1"
+                                               min="0.1" />
+                                        <span class="input-group-text">年</span>
+                                    </div>
+                                    <div class="parameter-help">經過此年數後，時間權重約減半。</div>
+                                </div>
+
+                                <div class="parameter-item">
+                                    <label>年份差距截止</label>
+                                    <div class="input-group">
+                                        <input asp-for="EstimationSettings.YearDifferenceCutoffYears"
+                                               class="form-control"
+                                               type="number"
+                                               min="1" />
+                                        <span class="input-group-text">年</span>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="model-section">
+                        <div class="model-section-head">
+                            <div>
+                                <div class="model-section-title">差距懲罰</div>
+                                <div class="model-section-desc">控制面積與樓層差異造成的相似度扣分程度。</div>
+                            </div>
+                        </div>
+
+                        <div class="section-body compact-body">
+                            <div class="parameter-grid parameter-grid-3">
+                                <div class="parameter-item">
+                                    <label>面積差距截止比例</label>
+                                    <div class="input-group">
+                                        <input asp-for="EstimationSettings.AreaDifferenceCutoffPercent"
+                                               asp-format="{0:0.##}"
+                                               class="form-control"
+                                               type="number"
+                                               step="0.1"
+                                               min="0.1"
+                                               max="100" />
+                                        <span class="input-group-text">%</span>
+                                    </div>
+                                </div>
+
+                                <div class="parameter-item">
+                                    <label>地上樓層懲罰比例</label>
+                                    <div class="input-group">
+                                        <input asp-for="EstimationSettings.GroundFloorPenaltyPercent"
+                                               asp-format="{0:0.##}"
+                                               class="form-control"
+                                               type="number"
+                                               step="0.1"
+                                               min="0"
+                                               max="100" />
+                                        <span class="input-group-text">%</span>
+                                    </div>
+                                </div>
+
+                                <div class="parameter-item">
+                                    <label>地下樓層懲罰比例</label>
+                                    <div class="input-group">
+                                        <input asp-for="EstimationSettings.BasementFloorPenaltyPercent"
+                                               asp-format="{0:0.##}"
+                                               class="form-control"
+                                               type="number"
+                                               step="0.1"
+                                               min="0"
+                                               max="100" />
+                                        <span class="input-group-text">%</span>
+                                    </div>
+                                    <div class="parameter-help">地下樓層對工程量影響通常較大，可設定較高懲罰。</div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="settings-save-bar">
+                        <div class="updated-info">
+                            最後更新：@Model.EstimationSettings.UpdatedAt.ToLocalTime().ToString("yyyy-MM-dd HH:mm")
+                            @if (!string.IsNullOrWhiteSpace(Model.EstimationSettings.UpdatedBy))
+                            {
+                                <span>／ @Model.EstimationSettings.UpdatedBy</span>
+                            }
+                        </div>
+
+                        <button type="submit" class="btn-save">
+                            儲存模型參數
+                        </button>
+                    </div>
+
+                </form>
+            </div>
+
+
+            <!-- ===================================================== -->
+            <!-- 核心材料設定 -->
+            <!-- ===================================================== -->
+
+            <div class="tab-pane fade"
+                id="core-materials">
+
+                <div class="mb-3">
+                    
+                    <div class="fw-bold mb-1">
+                        核心材料快速估算設定
+                    </div>
+
+                    <div class="text-muted small">
+                        先依建案類型與結構篩選材料。
+                        「有效建案數」才是模型真正可使用的樣本數；
+                        「歷史筆數」僅供資料量參考。
+                    </div>
+
+                </div>
+
+
+                <!-- 篩選區 -->
+                <div class="section-card">
+
+                    <div class="section-header">
+
+                        <h5 class="section-title">
+                            材料篩選
+                        </h5>
+
+                        <div class="section-description">
+                            建議先選擇建案類型與結構，再依有效歷史建案數挑選核心材料。
+                        </div>
+
+                    </div>
+
+
+                    <div class="section-body">
+
+                        <div class="row g-3">
+
+                            <div class="col-lg-3 col-md-6">
+
+                                <label class="form-label fw-bold">
+                                    建案類型
+                                </label>
+
+                                <select id="coreProjectTypeFilter"
+                                        class="form-select">
+
+                                    <option value="">
+                                        全部
+                                    </option>
+
+                                    @foreach (
+                                        var value in
+                                        Model.CoreMaterials
+                                            .Select(x => x.ProjectType)
+                                            .Where(x =>
+                                                !string.IsNullOrWhiteSpace(x))
+                                            .Distinct()
+                                            .OrderBy(x => x)
+                                    )
+                                    {
+                                        <option value="@value">
+                                            @value
+                                        </option>
+                                    }
+
+                                </select>
+
+                            </div>
+
+
+                            <div class="col-lg-3 col-md-6">
+
+                                <label class="form-label fw-bold">
+                                    結構類型
+                                </label>
+
+                                <select id="coreStructureTypeFilter"
+                                        class="form-select">
+
+                                    <option value="">
+                                        全部
+                                    </option>
+
+                                    @foreach (
+                                        var value in
+                                        Model.CoreMaterials
+                                            .Select(x => x.StructureType)
+                                            .Where(x =>
+                                                !string.IsNullOrWhiteSpace(x))
+                                            .Distinct()
+                                            .OrderBy(x => x)
+                                    )
+                                    {
+                                        <option value="@value">
+                                            @value
+                                        </option>
+                                    }
+
+                                </select>
+
+                            </div>
+
+
+                            <div class="col-lg-3 col-md-6">
+
+                                <label class="form-label fw-bold">
+                                    材料類別
+                                </label>
+
+                                <select id="coreCategoryFilter"
+                                        class="form-select">
+
+                                    <option value="">
+                                        全部
+                                    </option>
+
+                                    @foreach (
+                                        var value in
+                                        Model.CoreMaterials
+                                            .Select(x => x.Category)
+                                            .Where(x =>
+                                                !string.IsNullOrWhiteSpace(x))
+                                            .Distinct()
+                                            .OrderBy(x => x)
+                                    )
+                                    {
+                                        <option value="@value">
+                                            @value
+                                        </option>
+                                    }
+
+                                </select>
+
+                            </div>
+
+
+                            <div class="col-lg-3 col-md-6">
+
+                                <label class="form-label fw-bold">
+                                    資料狀態
+                                </label>
+
+                                <select id="coreDataStatusFilter"
+                                        class="form-select">
+
+                                    <option value="available" selected>
+                                        有歷史資料
+                                    </option>
+
+                                    <option value="">
+                                        全部
+                                    </option>
+
+                                    <option value="empty">
+                                        尚無歷史資料
+                                    </option>
+
+                                </select>
+
+                            </div>
+
+
+
+
+
+                            <div class="col-12">
+
+                                <label class="form-label fw-bold">
+                                    搜尋材料
+                                </label>
+
+                                <input id="coreMaterialSearch"
+                                    type="text"
+                                    class="form-control"
+                                    placeholder="輸入材料名稱，例如：SD420、混凝土、模板..." />
+
+                            </div>
+
+                        </div>
+
+                    </div>
+
+                </div>
+
+
+    <!-- 結果摘要 -->
+    <div class="d-flex justify-content-between
+                align-items-center mb-2">
+
+        <div class="small text-muted">
+
+            目前顯示
+            <strong id="coreVisibleCount">
+                @Model.CoreMaterials.Count
+            </strong>
+            筆材料情境
+
         </div>
 
-        <div class="admin-table-wrapper">
-            <table class="admin-table">
-                <thead>
-                    <tr>
-                        <th style="width: 5%;">編號</th>
-                        <th style="width: 15%;">材料名稱 (單位)</th>
-                        <th style="width: 25%;">適用情境 (專案/結構/樓層)</th>
-                        <th style="width: 15%;">Z-Score 門檻</th>
-                        <th style="width: 15%;">單位基準用量</th>
-                        <th style="width: 10%;">耗損率</th>
-                        <th style="width: 15%;">操作</th>
-                    </tr>
-                </thead>
-                <tbody>
-                    @if (!Model.Any()) { /* ...不變... */ }
-                    else
-                    {
-                        @foreach (var item in Model)
-                        {
-                            <tr>
-                                <td class="text-muted fw-bold">#@item.Material_ID</td>
-                                <td>
-                                    <div class="material-badge">
-                                        @item.MaterialName <span class="unit-text">(@item.BaseUnit)</span>
-                                    </div>
-                                </td>
-                                <td>
-                                    <!-- 顯示多維度情境標籤 -->
-                                    <span class="badge bg-secondary">@(string.IsNullOrEmpty(item.Project_Type) ? "通用" : item.Project_Type)</span>
-                                    <span class="badge bg-secondary">@(string.IsNullOrEmpty(item.Structure_Type) ? "通用" : item.Structure_Type)</span>
-                                    <span class="badge bg-secondary">@(string.IsNullOrEmpty(item.Floor_Zone) ? "通用" : item.Floor_Zone)</span>
-                                </td>
-                                <td><span class="fw-bold text-danger">@item.Z_Score_Threshold</span></td>
-                                
-                                <!-- 顯示全新的名稱與數值 -->
-                                <td><span class="fw-bold text-primary">@item.Unit_Consumption</span></td>
-                                <td>@item.Waste_Rate_Percent %</td>
-                                
-                                <td>
-                                    <!-- 操作按鈕維持不變 -->
-                                    <div class="d-flex justify-content-center gap-2">
-                                        <a asp-action="Edit" asp-route-id="@item.RuleID" class="btn-wz-outline">✏️ 編輯</a>
-                                        <!-- 刪除表單維持你原本寫的 -->
-                                    </div>
-                                </td>
-                            </tr>
-                        }
-                    }
-                </tbody>
-            </table>
+        <div class="small text-muted">
+            ※ 同一材料在不同「建案類型 × 結構」會分開統計
         </div>
+
     </div>
+
+
+    <!-- 材料表格 -->
+    
+    
+    
+    <div class="admin-table-wrapper">
+
+        <table class="admin-table"
+               id="coreMaterialTable">
+
+        <thead>
+            <tr>
+
+                <th class="sortable-th"
+                    data-sort-key="materialName">
+                    材料
+                    <span class="sort-indicator">↕</span>
+                </th>
+
+                <th class="sortable-th"
+                    data-sort-key="category">
+                    類別
+                    <span class="sort-indicator">↕</span>
+                </th>
+
+                <th class="sortable-th"
+                    data-sort-key="projectType">
+                    建案類型
+                    <span class="sort-indicator">↕</span>
+                </th>
+
+                <th class="sortable-th"
+                    data-sort-key="structureType">
+                    結構
+                    <span class="sort-indicator">↕</span>
+                </th>
+
+                <th class="sortable-th"
+                    data-sort-key="validProjectCount">
+                    有效建案數
+                    <span class="sort-indicator">↓</span>
+                </th>
+
+                <th class="sortable-th"
+                    data-sort-key="historyRowCount">
+                    歷史筆數
+                    <span class="sort-indicator">↕</span>
+                </th>
+
+                <th class="sortable-th"
+                    data-sort-key="coreEnabled">
+                    核心估算
+                    <span class="sort-indicator">↕</span>
+                </th>
+
+            </tr>
+        </thead>
+
+
+            <tbody id="coreMaterialTableBody">
+
+                @if (!Model.CoreMaterials.Any())
+                {
+                    <tr>
+
+                        <td colspan="7"
+                            class="text-muted py-4">
+
+                            目前沒有可設定的材料資料
+
+                        </td>
+
+                    </tr>
+                }
+                else
+                {
+                    @foreach (var item in Model.CoreMaterials)
+                    {
+                        <tr class="core-material-row"
+                            data-material-id="@item.MaterialId"
+                            data-project-type="@(item.ProjectType ?? "")"
+                            data-structure-type="@(item.StructureType ?? "")"
+                            data-category="@(item.Category ?? "")"
+                            data-material-name="@item.MaterialName"
+                            data-valid-project-count="@item.ValidProjectCount"
+                            data-history-row-count="@item.HistoryRowCount"
+                            data-core-enabled="@(item.IsCoreEstimation ? "1" : "0")">
+
+                            <td>
+
+                                <div class="material-badge">
+
+                                    @item.MaterialName
+
+                                    <span class="unit-text">
+                                        (@item.BaseUnit)
+                                    </span>
+
+                                </div>
+
+                            </td>
+
+
+                            <td>
+
+                                @(string.IsNullOrWhiteSpace(item.Category)
+                                    ? "未分類"
+                                    : item.Category)
+
+                            </td>
+
+
+                            <td>
+
+                                <span class="badge bg-secondary">
+
+                                    @(string.IsNullOrWhiteSpace(item.ProjectType)
+                                        ? "通用"
+                                        : item.ProjectType)
+
+                                </span>
+
+                            </td>
+
+
+                            <td>
+
+                                <span class="badge bg-secondary">
+
+                                    @(string.IsNullOrWhiteSpace(item.StructureType)
+                                        ? "通用"
+                                        : item.StructureType)
+
+                                </span>
+
+                            </td>
+
+
+                            <td>
+
+                                <strong>
+                                    @item.ValidProjectCount
+                                </strong>
+
+                                <span class="text-muted small">
+                                    案
+                                </span>
+
+                            </td>
+
+
+                            <td>
+
+                                @item.HistoryRowCount
+
+                                <span class="text-muted small">
+                                    筆
+                                </span>
+
+                            </td>
+
+
+                            <td>
+
+                                <div class="d-flex justify-content-center align-items-center gap-2">
+
+                                    <div class="form-check form-switch m-0">
+
+                                        @if (item.IsCoreEstimation)
+                                        {
+                                            <input class="form-check-input core-material-toggle"
+                                                type="checkbox"
+                                                checked />
+                                        }
+                                        else
+                                        {
+                                            <input class="form-check-input core-material-toggle"
+                                                type="checkbox" />
+                                        }
+
+                                    </div>
+
+
+                                    <span class="core-status-text
+                                                @(item.IsCoreEstimation
+                                                    ? "text-success"
+                                                    : "text-muted")">
+
+                                        @(item.IsCoreEstimation
+                                            ? "已啟用"
+                                            : "未啟用")
+
+                                    </span>
+
+                                </div>
+
+                            </td>
+
+                        </tr>
+                    }
+                }
+
+            </tbody>
+
+            
+
+        </table>
+
+    </div>
+
 </div>
+
+
+
+
+        </div>
+
+    </div>
+
+</div>
+
+<script>
+(() => {
+
+    const projectTypeFilter =
+        document.getElementById("coreProjectTypeFilter");
+
+    const structureTypeFilter =
+        document.getElementById("coreStructureTypeFilter");
+
+    const categoryFilter =
+        document.getElementById("coreCategoryFilter");
+
+    const dataStatusFilter =
+        document.getElementById("coreDataStatusFilter");
+
+    const searchInput =
+        document.getElementById("coreMaterialSearch");
+
+    const tableBody =
+        document.getElementById("coreMaterialTableBody");
+
+    const visibleCount =
+        document.getElementById("coreVisibleCount");
+
+    const sortableHeaders =
+        document.querySelectorAll(".sortable-th");
+
+    const antiForgeryToken =
+        document.querySelector(
+            'input[name="__RequestVerificationToken"]'
+        )?.value;
+
+
+    if (!tableBody) {
+        console.error("找不到 coreMaterialTableBody");
+        return;
+    }
+
+
+    let currentSortKey =
+        "validProjectCount";
+
+    let currentSortDirection =
+        "desc";
+
+
+    // =====================================================
+    // 篩選
+    // =====================================================
+
+    function applyCoreMaterialFilters() {
+
+        const projectType =
+            projectTypeFilter?.value ?? "";
+
+        const structureType =
+            structureTypeFilter?.value ?? "";
+
+        const category =
+            categoryFilter?.value ?? "";
+
+        const dataStatus =
+            dataStatusFilter?.value ?? "";
+
+        const search =
+            (searchInput?.value ?? "")
+                .trim()
+                .toLowerCase();
+
+
+        const rows =
+            Array.from(
+                tableBody.querySelectorAll(
+                    ".core-material-row"
+                )
+            );
+
+
+        let count = 0;
+
+
+        rows.forEach(row => {
+
+            const rowProjectType =
+                row.dataset.projectType ?? "";
+
+            const rowStructureType =
+                row.dataset.structureType ?? "";
+
+            const rowCategory =
+                row.dataset.category ?? "";
+
+            const rowMaterialName =
+                (row.dataset.materialName ?? "")
+                    .toLowerCase();
+
+            const validProjectCount =
+                Number(
+                    row.dataset.validProjectCount ?? 0
+                );
+
+
+            const matchProjectType =
+                projectType === "" ||
+                rowProjectType === projectType;
+
+
+            const matchStructureType =
+                structureType === "" ||
+                rowStructureType === structureType;
+
+
+            const matchCategory =
+                category === "" ||
+                rowCategory === category;
+
+
+            const matchDataStatus =
+                dataStatus === "" ||
+
+                (
+                    dataStatus === "available" &&
+                    validProjectCount > 0
+                ) ||
+
+                (
+                    dataStatus === "empty" &&
+                    validProjectCount === 0
+                );
+
+
+            const matchSearch =
+                search === "" ||
+                rowMaterialName.includes(search);
+
+
+            const visible =
+                matchProjectType &&
+                matchStructureType &&
+                matchCategory &&
+                matchDataStatus &&
+                matchSearch;
+
+
+            if (visible) {
+
+                row.style.display = "";
+
+                count++;
+
+            }
+            else {
+
+                row.style.display = "none";
+
+            }
+
+        });
+
+
+        if (visibleCount) {
+            visibleCount.textContent =
+                count;
+        }
+
+
+        sortCoreMaterialRows();
+    }
+
+
+    // =====================================================
+    // 排序
+    // =====================================================
+
+    function sortCoreMaterialRows() {
+
+        const rows =
+            Array.from(
+                tableBody.querySelectorAll(
+                    ".core-material-row"
+                )
+            );
+
+
+        rows.sort((a, b) => {
+
+            let aValue;
+            let bValue;
+
+
+            switch (currentSortKey) {
+
+                case "materialName":
+
+                    aValue =
+                        a.dataset.materialName ?? "";
+
+                    bValue =
+                        b.dataset.materialName ?? "";
+
+                    break;
+
+
+                case "category":
+
+                    aValue =
+                        a.dataset.category ?? "";
+
+                    bValue =
+                        b.dataset.category ?? "";
+
+                    break;
+
+
+                case "projectType":
+
+                    aValue =
+                        a.dataset.projectType ?? "";
+
+                    bValue =
+                        b.dataset.projectType ?? "";
+
+                    break;
+
+
+                case "structureType":
+
+                    aValue =
+                        a.dataset.structureType ?? "";
+
+                    bValue =
+                        b.dataset.structureType ?? "";
+
+                    break;
+
+
+                case "historyRowCount":
+
+                    aValue =
+                        Number(
+                            a.dataset.historyRowCount ?? 0
+                        );
+
+                    bValue =
+                        Number(
+                            b.dataset.historyRowCount ?? 0
+                        );
+
+                    break;
+
+
+                case "coreEnabled":
+
+                    aValue =
+                        Number(
+                            a.dataset.coreEnabled ?? 0
+                        );
+
+                    bValue =
+                        Number(
+                            b.dataset.coreEnabled ?? 0
+                        );
+
+                    break;
+
+
+                default:
+
+                    aValue =
+                        Number(
+                            a.dataset.validProjectCount ?? 0
+                        );
+
+                    bValue =
+                        Number(
+                            b.dataset.validProjectCount ?? 0
+                        );
+
+                    break;
+            }
+
+
+            let comparison;
+
+
+            if (
+                typeof aValue === "number" &&
+                typeof bValue === "number"
+            ) {
+
+                comparison =
+                    aValue - bValue;
+
+            }
+            else {
+
+                comparison =
+                    String(aValue)
+                        .localeCompare(
+                            String(bValue),
+                            "zh-Hant"
+                        );
+
+            }
+
+
+            return currentSortDirection === "asc"
+                ? comparison
+                : -comparison;
+        });
+
+
+        rows.forEach(row => {
+            tableBody.appendChild(row);
+        });
+    }
+
+
+    // =====================================================
+    // 排序箭頭
+    // =====================================================
+
+    function updateSortIndicators() {
+
+        sortableHeaders.forEach(header => {
+
+            const indicator =
+                header.querySelector(
+                    ".sort-indicator"
+                );
+
+
+            if (!indicator) {
+                return;
+            }
+
+
+            const key =
+                header.dataset.sortKey;
+
+
+            if (key !== currentSortKey) {
+
+                indicator.textContent =
+                    "↕";
+
+                return;
+            }
+
+
+            indicator.textContent =
+                currentSortDirection === "asc"
+                    ? "↑"
+                    : "↓";
+
+        });
+
+    }
+
+
+    // =====================================================
+    // 篩選事件
+    // =====================================================
+
+    projectTypeFilter?.addEventListener(
+        "change",
+        applyCoreMaterialFilters
+    );
+
+
+    structureTypeFilter?.addEventListener(
+        "change",
+        applyCoreMaterialFilters
+    );
+
+
+    categoryFilter?.addEventListener(
+        "change",
+        applyCoreMaterialFilters
+    );
+
+
+    dataStatusFilter?.addEventListener(
+        "change",
+        applyCoreMaterialFilters
+    );
+
+
+    searchInput?.addEventListener(
+        "input",
+        applyCoreMaterialFilters
+    );
+
+
+    // =====================================================
+    // 表頭排序事件
+    // =====================================================
+
+    sortableHeaders.forEach(header => {
+
+        header.addEventListener(
+            "click",
+            function () {
+
+                const sortKey =
+                    this.dataset.sortKey;
+
+
+                if (!sortKey) {
+                    return;
+                }
+
+
+                if (currentSortKey === sortKey) {
+
+                    currentSortDirection =
+                        currentSortDirection === "asc"
+                            ? "desc"
+                            : "asc";
+
+                }
+                else {
+
+                    currentSortKey =
+                        sortKey;
+
+
+                    if (
+                        sortKey === "validProjectCount" ||
+                        sortKey === "historyRowCount" ||
+                        sortKey === "coreEnabled"
+                    ) {
+
+                        currentSortDirection =
+                            "desc";
+
+                    }
+                    else {
+
+                        currentSortDirection =
+                            "asc";
+
+                    }
+
+                }
+
+
+                sortCoreMaterialRows();
+
+                updateSortIndicators();
+
+            }
+        );
+
+    });
+
+    // =====================================================
+    // 核心材料開關
+    // =====================================================
+
+    const coreMaterialToggles =
+        document.querySelectorAll(
+            ".core-material-toggle"
+        );
+
+
+    coreMaterialToggles.forEach(toggle => {
+
+        toggle.addEventListener(
+            "change",
+            async function () {
+
+                const row =
+                    this.closest(
+                        ".core-material-row"
+                    );
+
+
+                if (!row) {
+                    return;
+                }
+
+
+                const materialId =
+                    Number(
+                        row.dataset.materialId
+                    );
+
+
+                const projectType =
+                    row.dataset.projectType || null;
+
+
+                const structureType =
+                    row.dataset.structureType || null;
+
+
+                const newValue =
+                    this.checked;
+
+
+                const statusText =
+                    row.querySelector(
+                        ".core-status-text"
+                    );
+
+
+                // 儲存期間暫時鎖住
+                this.disabled =
+                    true;
+
+
+                if (statusText) {
+
+                    statusText.textContent =
+                        "儲存中...";
+
+                    statusText.classList.remove(
+                        "text-success",
+                        "text-muted",
+                        "text-danger"
+                    );
+
+                    statusText.classList.add(
+                        "text-primary"
+                    );
+                }
+
+
+                try {
+
+                    const response =
+                        await fetch(
+                            "/QuantityRule/UpdateCoreMaterial",
+                            {
+                                method: "POST",
+
+                                headers: {
+                                    "Content-Type":
+                                        "application/json",
+
+                                    "RequestVerificationToken":
+                                        antiForgeryToken
+                                },
+
+                                body:
+                                    JSON.stringify({
+                                        materialId:
+                                            materialId,
+
+                                        projectType:
+                                            projectType,
+
+                                        structureType:
+                                            structureType,
+
+                                        isCoreEstimation:
+                                            newValue
+                                    })
+                            }
+                        );
+
+
+                    if (!response.ok) {
+
+                        let message =
+                            "核心材料設定儲存失敗";
+
+
+                        try {
+
+                            const error =
+                                await response.json();
+
+                            if (error.message) {
+                                message =
+                                    error.message;
+                            }
+
+                        }
+                        catch {
+                        }
+
+
+                        throw new Error(
+                            message
+                        );
+                    }
+
+
+                    // 更新目前列的排序資料
+                    row.dataset.coreEnabled =
+                        newValue
+                            ? "1"
+                            : "0";
+
+
+                    if (statusText) {
+
+                        statusText.textContent =
+                            newValue
+                                ? "已啟用"
+                                : "未啟用";
+
+
+                        statusText.classList.remove(
+                            "text-primary",
+                            "text-danger"
+                        );
+
+
+                        statusText.classList.add(
+                            newValue
+                                ? "text-success"
+                                : "text-muted"
+                        );
+                    }
+
+
+                    // 如果目前正在依核心狀態排序，
+                    // 修改後立即重新排序
+                    if (
+                        currentSortKey ===
+                        "coreEnabled"
+                    ) {
+
+                        sortCoreMaterialRows();
+                    }
+
+                }
+                catch (error) {
+
+                    // 儲存失敗就把開關切回原狀
+                    this.checked =
+                        !newValue;
+
+
+                    if (statusText) {
+
+                        statusText.textContent =
+                            "儲存失敗";
+
+                        statusText.classList.remove(
+                            "text-primary",
+                            "text-success",
+                            "text-muted"
+                        );
+
+                        statusText.classList.add(
+                            "text-danger"
+                        );
+                    }
+
+
+                    alert(
+                        error.message ??
+                        "核心材料設定儲存失敗"
+                    );
+
+                }
+                finally {
+
+                    this.disabled =
+                        false;
+                }
+
+            }
+        );
+
+    });
+
+
+    // =====================================================
+    // 頁面第一次載入
+    // =====================================================
+
+    applyCoreMaterialFilters();
+
+    updateSortIndicators();
+
+})();
+</script>
+
+<script>
+    (function () {
+        const weightInputs = document.querySelectorAll(".similarity-weight-input");
+        const totalElement = document.getElementById("similarityWeightTotal");
+
+        function updateSimilarityWeightTotal() {
+            let total = 0;
+            weightInputs.forEach(input => {
+                const value = Number.parseFloat(input.value);
+                if (!Number.isNaN(value)) {
+                    total += value;
+                }
+            });
+
+            if (totalElement) {
+                totalElement.textContent = Number.isInteger(total)
+                    ? total.toString()
+                    : total.toFixed(1);
+            }
+        }
+
+        weightInputs.forEach(input => {
+            input.addEventListener("input", updateSimilarityWeightTotal);
+        });
+
+        updateSimilarityWeightTotal();
+    })();
+</script>

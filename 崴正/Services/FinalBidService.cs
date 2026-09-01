@@ -19,20 +19,39 @@ namespace 崴正.Services
 
         public ServiceResult UpdateBidItemData(
             long finalBidItemId,
+            string? itemName,
             decimal? qty,
             decimal? unitPrice,
             string? unit)
         {
+            itemName =
+                NormalizeText(
+                    itemName
+                );
+
+            if (string.IsNullOrWhiteSpace(
+                    itemName))
+            {
+                return ServiceResult.Validation(
+                    "工項名稱不可空白"
+                );
+            }
+
+
             using var transaction =
                 _context.Database.BeginTransaction();
 
             try
             {
-                var bidItem = _context.FinalBidItems
-                    .Include(x => x.Material)
-                    .Include(x => x.ProjectMaster)
-                    .FirstOrDefault(x =>
-                        x.FinalBidItemId == finalBidItemId);
+                var bidItem =
+                    _context.FinalBidItems
+                        .Include(x =>
+                            x.Material)
+                        .Include(x =>
+                            x.ProjectMaster)
+                        .FirstOrDefault(x =>
+                            x.FinalBidItemId ==
+                            finalBidItemId);
 
                 if (bidItem == null)
                 {
@@ -41,17 +60,40 @@ namespace 崴正.Services
                     );
                 }
 
-                bidItem.Qty = qty;
-                bidItem.UnitPrice = unitPrice;
-                bidItem.Unit = NormalizeText(unit);
-                bidItem.UpdatedAt = DateTime.UtcNow;
 
-                var dataIssue = EvaluateDataIssues(
-                    bidItem.Qty,
-                    bidItem.UnitPrice,
-                    bidItem.Unit,
-                    bidItem.Material
-                );
+                // ==============================
+                // 更新工項資料
+                // ==============================
+
+                bidItem.ItemName =
+                    itemName;
+
+                bidItem.Qty =
+                    qty;
+
+                bidItem.UnitPrice =
+                    unitPrice;
+
+                bidItem.Unit =
+                    NormalizeText(
+                        unit
+                    );
+
+                bidItem.UpdatedAt =
+                    DateTime.UtcNow;
+
+
+                // ==============================
+                // 重新檢查資料品質
+                // ==============================
+
+                var dataIssue =
+                    EvaluateDataIssues(
+                        bidItem.Qty,
+                        bidItem.UnitPrice,
+                        bidItem.Unit,
+                        bidItem.Material
+                    );
 
                 bidItem.DataIssueCode =
                     dataIssue.Code;
@@ -59,14 +101,22 @@ namespace 崴正.Services
                 bidItem.DataIssueMessage =
                     dataIssue.Message;
 
+
+                // ==============================
+                // 同步模型歷史交易
+                // ==============================
+
                 string historyAction =
                     SyncHistoricalTransaction(
                         bidItem,
                         dataIssue.Code
                     );
 
+
                 _context.SaveChanges();
+
                 transaction.Commit();
+
 
                 bool historyEligible =
                     IsHistoryEligible(
@@ -74,12 +124,17 @@ namespace 崴正.Services
                         dataIssue.Code
                     );
 
+
                 return ServiceResult.Ok(new
                 {
-                    message = "標單資料已修正",
+                    message =
+                        "工項資料已更新",
 
                     finalBidItemId =
                         bidItem.FinalBidItemId,
+
+                    itemName =
+                        bidItem.ItemName,
 
                     qty =
                         bidItem.Qty,
@@ -104,6 +159,7 @@ namespace 崴正.Services
             catch
             {
                 transaction.Rollback();
+
                 throw;
             }
         }
@@ -158,6 +214,69 @@ namespace 崴正.Services
             }
         }
 
+        public ServiceResult UnignoreBidItem(
+            long finalBidItemId)
+        {
+            using var transaction =
+                _context.Database.BeginTransaction();
+
+            try
+            {
+                var bidItem =
+                    _context.FinalBidItems
+                        .Include(x => x.Material)
+                        .Include(x => x.ProjectMaster)
+                        .FirstOrDefault(x =>
+                            x.FinalBidItemId ==
+                            finalBidItemId);
+
+                if (bidItem == null)
+                {
+                    return ServiceResult.NotFound(
+                        "找不到此工項"
+                    );
+                }
+
+                bidItem.IsIgnored = false;
+                bidItem.UpdatedAt = DateTime.UtcNow;
+
+                var dataIssue =
+                    EvaluateDataIssues(
+                        bidItem.Qty,
+                        bidItem.UnitPrice,
+                        bidItem.Unit,
+                        bidItem.Material
+                    );
+
+                bidItem.DataIssueCode =
+                    dataIssue.Code;
+
+                bidItem.DataIssueMessage =
+                    dataIssue.Message;
+
+                string historyAction =
+                    SyncHistoricalTransaction(
+                        bidItem,
+                        dataIssue.Code
+                    );
+
+                _context.SaveChanges();
+
+                transaction.Commit();
+
+                return ServiceResult.Ok(new
+                {
+                    message = "已取消忽略",
+                    historyAction
+                });
+            }
+            catch
+            {
+                transaction.Rollback();
+                throw;
+            }
+        }
+
         public (
             string? Code,
             string? Message
@@ -184,13 +303,13 @@ namespace 崴正.Services
             }
 
             if (!unitPrice.HasValue ||
-                unitPrice.Value < 0)
+                unitPrice.Value <= 0)
             {
                 code ??=
                     "INVALID_UNIT_PRICE";
 
                 messages.Add(
-                    "單價空白或小於 0"
+                    "單價空白或小於等於 0"
                 );
             }
 
@@ -376,7 +495,8 @@ namespace 崴正.Services
                 bidItem.Qty.HasValue &&
                 bidItem.Qty.Value > 0 &&
                 bidItem.UnitPrice.HasValue &&
-                bidItem.UnitPrice.Value >= 0;
+                bidItem.UnitPrice.Value > 0
+                ;
         }
 
         private static string NormalizeText(

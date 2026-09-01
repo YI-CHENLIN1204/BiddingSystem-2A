@@ -43,8 +43,6 @@ namespace 崴正.Data
 
                 entity.Property(e => e.BasementFloorCount).HasColumnName("basement_floor_count");
 
-                entity.Property(e => e.FloorCount).HasColumnName("floor_count");
-
                 entity.Property(e => e.StartDate).HasColumnName("start_date").HasColumnType("date");
 
                 entity.Property(e => e.IsDeleted).HasColumnName("is_deleted");
@@ -87,20 +85,17 @@ namespace 崴正.Data
                 entity.Property(e => e.Category).HasColumnName("category");
                 entity.Property(e => e.BaseUnit).HasColumnName("base_unit");
             });
+
+
             modelBuilder.Entity<QuantityRuleBase>(entity =>
             {
                 entity.ToTable("quantity_rule_base");
                 entity.HasKey(e => e.RuleID);
-                
-               
                 entity.Property(e => e.RuleID).HasColumnName("rule_id");
                 entity.Property(e => e.Material_ID).HasColumnName("material_id");
-                entity.Property(e => e.Unit_Consumption).HasColumnName("unit_consumption");
                 entity.Property(e => e.Project_Type).HasColumnName("project_type");
                 entity.Property(e => e.Structure_Type).HasColumnName("structure_type");
-                entity.Property(e => e.Floor_Zone).HasColumnName("floor_zone");
-                entity.Property(e => e.Waste_Rate_Percent).HasColumnName("waste_rate_percent");
-                entity.Property(e => e.Z_Score_Threshold).HasColumnName("z_score_threshold");
+                entity.Property(e => e.Is_Core_Estimation).HasColumnName("is_core_estimation");
             });
 
             modelBuilder.Entity<ItemDictionary>(entity =>

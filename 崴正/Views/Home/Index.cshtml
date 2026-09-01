@@ -1,75 +1,90 @@
 @{
-    ViewData["Title"] = "標單異常偵測系統";
+    ViewData["Title"] = "標單異常偵測";
 }
 
-
-
 <style>
+    :root {
+        --wz-primary: #321fdb;
+        --wz-bg: #f3f5f7;
+        --wz-card: #ffffff;
+        --wz-border: #d8dbe0;
+        --wz-text: #1f2d3d;
+        --wz-muted: #6c757d;
+        --wz-green: #198754;
+        --wz-red: #dc3545;
+        --wz-orange: #b58100;
+        --wz-table-head: #5b6065;
+    }
+
     body {
-        background-color: #ebedef;
+        background: var(--wz-bg);
     }
 
     .anomaly-page {
-        max-width: 1100px;
+        max-width: 96vw;
         margin: 0 auto;
-        padding: 8px 16px 40px;
-    }
-
-    .page-header {
-        margin-bottom: 22px;
+        padding: 20px 0 40px;
     }
 
     .page-title {
-        font-size: 34px;
+        font-size: 1.55rem;
         font-weight: 800;
-        color: #1f2d3d;
-        margin-bottom: 8px;
-        display: flex;
-        align-items: center;
-        gap: 10px;
+        color: var(--wz-text);
+        margin-bottom: 5px;
     }
 
-    .page-title-icon {
-        color: #8e7dff;
-        font-size: 26px;
-    }
-
-    .upload-card {
-        background: #ffffff;
-        border: 1px solid #e5ebf0;
-        border-radius: 6px;
-        box-shadow: 0 2px 8px rgba(20, 29, 35, 0.06);
-        padding: 28px 30px;
-        margin-bottom: 24px;
-    }
-
-    .upload-card-header {
-        display: flex;
-        align-items: center;
-        gap: 14px;
+    .page-desc {
+        font-size: 14px;
+        color: var(--wz-muted);
         margin-bottom: 18px;
     }
 
-    .upload-icon {
-        width: 44px;
-        height: 44px;
-        border-radius: 12px;
-        background: #f1efff;
-        color: #4f46e5;
-        display: inline-flex;
-        align-items: center;
-        justify-content: center;
-        font-size: 22px;
+    .anomaly-card {
+        background: var(--wz-card);
+        border: 1px solid var(--wz-border);
+        border-radius: 8px;
+        box-shadow: 0 3px 12px rgba(20, 29, 35, .06);
+        margin-bottom: 18px;
+        overflow: hidden;
     }
 
-    .upload-title {
-        font-size: 22px;
+    .card-header-wz {
+        padding: 13px 17px;
+        background: #f8f9fa;
+        border-bottom: 1px solid var(--wz-border);
+    }
+
+    .card-title-wz {
+        font-size: 15px;
         font-weight: 800;
-        color: #1f2d3d;
-        margin-bottom: 4px;
+        color: var(--wz-primary);
+        margin: 0;
     }
 
-    .upload-row {
+    .card-desc-wz {
+        margin-top: 3px;
+        color: var(--wz-muted);
+        font-size: 12px;
+    }
+
+    .card-body-wz {
+        padding: 18px;
+    }
+
+    .form-label {
+        font-size: 13px;
+        font-weight: 700;
+        color: #333;
+    }
+
+    .form-control,
+    .form-select {
+        border-radius: 6px;
+        border: 1px solid var(--wz-border);
+        font-size: 14px;
+    }
+
+    .file-area {
         display: flex;
         align-items: stretch;
         gap: 12px;
@@ -79,846 +94,1523 @@
         position: absolute;
         width: 1px;
         height: 1px;
-        padding: 0;
-        margin: -1px;
         overflow: hidden;
         clip: rect(0, 0, 0, 0);
         white-space: nowrap;
-        border: 0;
     }
 
     .file-picker {
         flex: 1;
-        min-width: 0;
-        height: 48px;
+        height: 44px;
+        border: 1px solid var(--wz-border);
         border-radius: 6px;
-        border: 1px solid #d8dbe0;
-        background: #ffffff;
         display: flex;
         align-items: center;
+        background: white;
         overflow: hidden;
         cursor: pointer;
-        transition: border-color .15s ease, box-shadow .15s ease;
     }
 
     .file-picker:hover {
-        border-color: #321fdb;
-        box-shadow: 0 2px 8px rgba(50, 31, 219, 0.08);
-    }
-
-    .file-input-native:focus + .file-picker {
-        border-color: #321fdb;
-        box-shadow: 0 0 0 0.2rem rgba(50, 31, 219, 0.14);
+        border-color: var(--wz-primary);
     }
 
     .file-picker-button {
         height: 100%;
         padding: 0 18px;
-        background: #f0f7ff;
-        color: #321fdb;
-        border-right: 1px solid #d8dbe0;
-        display: inline-flex;
+        display: flex;
         align-items: center;
-        justify-content: center;
-        font-weight: 800;
+        background: #f0f2ff;
+        color: var(--wz-primary);
+        border-right: 1px solid var(--wz-border);
+        font-weight: 700;
         white-space: nowrap;
     }
 
     .file-picker-name {
-        color: #6c757d;
-        padding: 0 16px;
+        padding: 0 14px;
+        color: var(--wz-muted);
+        font-size: 14px;
         overflow: hidden;
         text-overflow: ellipsis;
         white-space: nowrap;
-        font-size: 14px;
     }
 
     .file-picker-name.has-file {
-        color: #141d23;
+        color: var(--wz-text);
         font-weight: 600;
     }
 
-    .btn-main-action {
-        min-width: 130px;
-        height: 48px;
-        border-radius: 10px;
-        border: 0;
-        font-weight: 700;
-        background: linear-gradient(135deg, #4f46e5, #3f2df3);
-        box-shadow: 0 2px 8px rgba(20, 29, 35, 0.08);
+    .action-row {
+        display: flex;
+        justify-content: flex-end;
+        gap: 10px;
+        align-items: center;
     }
 
-    .btn-main-action:hover {
-        background: linear-gradient(135deg, #4338ca, #3523d8);
-    }
-
-    #loadingText {
-        border: 0;
-        border-radius: 12px;
-        background: #ffffff;
-        box-shadow: 0 8px 24px rgba(31, 45, 61, 0.08);
-        color: #495057;
-    }
-
-    .summary-box {
-        line-height: 1.8;
-        border: 0;
+    .btn-analyze {
+        border: none;
+        background: var(--wz-primary);
+        color: white;
         border-radius: 6px;
-        background: #dff6fb;
-        padding: 20px;
-        box-shadow: 0 8px 24px rgba(31, 45, 61, 0.08);
-        margin-bottom: 20px;
+        padding: 9px 22px;
+        font-weight: 700;
     }
 
-    .summary-stat-card {
-        background: #ffffff;
-        border-radius: 14px;
-        padding: 14px 16px;
-        border: 1px solid #dce5ec;
-        box-shadow: 0 4px 12px rgba(31, 45, 61, 0.04);
+    .btn-analyze:hover {
+        color: white;
+        filter: brightness(.96);
     }
 
-    .summary-stat-card .stat-label {
-        color: #6c757d;
+    .btn-analyze:disabled {
+        opacity: .65;
+        cursor: not-allowed;
+    }
+
+    .message-box {
+        display: none;
+        padding: 11px 14px;
+        margin-bottom: 14px;
+        border-radius: 6px;
         font-size: 13px;
-        margin-bottom: 4px;
     }
 
-    .summary-stat-card .stat-value {
-        font-size: 28px;
-        font-weight: 800;
-        color: #212529;
+    .message-box.error {
+        display: block;
+        color: #842029;
+        background: #f8d7da;
+        border: 1px solid #f5c2c7;
     }
 
-    .summary-stat-card.normal .stat-value {
-        color: #198754;
+    .message-box.info {
+        display: block;
+        color: #055160;
+        background: #cff4fc;
+        border: 1px solid #b6effb;
     }
 
-    .summary-stat-card.abnormal .stat-value {
-        color: #dc3545;
-    }
-
-    .summary-stat-card.pending .stat-value {
-        color: #b58100;
-    }
-
-    .result-table-wrapper {
-        width: 100%;
-        max-height: 650px;
+    .result-wrapper {
         overflow-x: auto;
-        overflow-y: auto;
-        border: 1px solid #dce5ec;
-        border-radius: 14px;
-        background: #fff;
-        box-shadow: 0 8px 24px rgba(31, 45, 61, 0.08);
+        border: 1px solid var(--wz-border);
+        border-radius: 7px;
     }
 
-    #resultTable {
-        min-width: 1900px;
-        table-layout: auto;
-        margin-bottom: 0;
-        font-size: 12px;
+    .result-table {
+        width: 100%;
+        min-width: 1050px;
+        border-collapse: collapse;
+        margin: 0;
+        background: white;
+        font-size: 13px;
     }
 
-    #resultTable th,
-    #resultTable td {
-        vertical-align: middle;
-        padding: 7px 6px;
-    }
-
-    #resultTable th {
+    .result-table th {
+        padding: 10px 8px;
         text-align: center;
+        color: white;
+        background: var(--wz-table-head);
         white-space: nowrap;
-        line-height: 1.3;
+        font-weight: 700;
     }
 
-    #resultTable thead th {
-        position: sticky;
-        top: 0;
-        z-index: 10;
-        background-color: #1f2d3d;
-        color: #fff;
-        border-color: #405060;
+    .result-table td {
+        padding: 10px 8px;
+        border-bottom: 1px solid #e5e7eb;
+        text-align: center;
+        vertical-align: middle;
     }
 
-    .col-status { min-width: 70px; }
-    .col-sheet { min-width: 120px; }
-    .col-row { min-width: 60px; }
-    .col-code { min-width: 80px; }
-    .col-category { min-width: 120px; }
-    .col-name { min-width: 180px; }
-    .col-spec { min-width: 180px; }
-    .col-unit { min-width: 70px; }
-    .col-number { min-width: 110px; }
-    .col-z { min-width: 80px; }
-    .col-reason { min-width: 280px; }
-    .col-action { min-width: 80px; }
-
-    .text-wrap-cell {
-        white-space: normal !important;
-        word-break: break-word;
-        line-height: 1.4;
+    .result-table tbody tr:hover {
+        background: #fafafa;
     }
 
-    .text-nowrap-cell {
-        white-space: nowrap;
+    .material-cell {
+        text-align: left !important;
+        font-weight: 700;
+    }
+
+    .number-cell {
+        text-align: right !important;
+        font-variant-numeric: tabular-nums;
     }
 
     .status-badge {
         display: inline-block;
-        padding: 3px 7px;
-        border-radius: 999px;
+        padding: 4px 9px;
+        border-radius: 5px;
         font-size: 12px;
         font-weight: 700;
-        text-align: center;
+        white-space: nowrap;
+    }
+
+    .status-high {
+        color: #842029;
+        background: #f8d7da;
+    }
+
+    .status-low {
+        color: #664d03;
+        background: #fff3cd;
     }
 
     .status-normal {
         color: #0f5132;
-        background-color: #d1e7dd;
-    }
-
-    .status-abnormal {
-        color: #842029;
-        background-color: #f8d7da;
-    }
-
-    .status-pending {
-        color: #664d03;
-        background-color: #fff3cd;
-    }
-
-    .wz-modal-overlay {
-        position: fixed;
-        inset: 0;
-        background: rgba(20, 29, 35, 0.6);
-        z-index: 2000;
-        display: flex;
-        align-items: center;
-        justify-content: center;
-    }
-
-    .wz-modal-card {
-        width: min(520px, 92vw);
-        background: #ffffff;
-        border-radius: 6px;
-        box-shadow: 0 20px 60px rgba(0, 0, 0, 0.25);
-        overflow: hidden;
-        animation: wzModalIn 0.18s ease-out;
-    }
-
-    .wz-modal-header {
-        padding: 18px 22px;
-        border-bottom: 1px solid #e9ecef;
-        display: flex;
-        align-items: center;
-        gap: 10px;
-    }
-
-    .wz-modal-icon {
-        width: 32px;
-        height: 32px;
-        border-radius: 50%;
-        display: inline-flex;
-        align-items: center;
-        justify-content: center;
-        font-weight: 700;
-    }
-
-    .wz-modal-icon.success {
         background: #d1e7dd;
-        color: #0f5132;
     }
 
-    .wz-modal-icon.warning {
-        background: #fff3cd;
-        color: #664d03;
-    }
-
-    .wz-modal-icon.error {
-        background: #f8d7da;
-        color: #842029;
-    }
-
-    .wz-modal-title {
-        font-size: 18px;
-        font-weight: 700;
-        margin: 0;
-        color: #1f2d3d;
-    }
-
-    .wz-modal-body {
-        padding: 20px 22px;
+    .status-insufficient {
         color: #495057;
-        line-height: 1.7;
-        white-space: pre-line;
+        background: #e9ecef;
     }
 
-    .wz-modal-footer {
-        padding: 14px 22px 20px;
-        display: flex;
-        justify-content: flex-end;
-        gap: 10px;
+    .section-title {
+        font-weight: 800;
+        font-size: 15px;
+        margin-bottom: 10px;
     }
 
-    .wz-modal-btn {
-        border: 0;
-        border-radius: 8px;
-        padding: 8px 18px;
-        font-weight: 600;
-        background: #3f2df3;
-        color: white;
+    .result-note {
+        color: var(--wz-muted);
+        font-size: 12px;
+        margin-bottom: 12px;
     }
 
-    .wz-modal-btn:hover {
-        background: #3523d8;
+    .loading-box {
+        display: none;
+        text-align: center;
+        padding: 18px;
+        color: var(--wz-muted);
+        font-size: 14px;
     }
 
-    @@keyframes wzModalIn {
-        from {
-            opacity: 0;
-            transform: translateY(8px) scale(0.98);
-        }
-        to {
-            opacity: 1;
-            transform: translateY(0) scale(1);
-        }
+    .loading-box.show {
+        display: block;
+    }
+
+    .empty-row {
+        text-align: center !important;
+        color: var(--wz-muted);
+        padding: 24px !important;
+    }
+
+    #resultSection,
+    #problemSection {
+        display: none;
     }
 
     @@media (max-width: 1200px) {
-        .anomaly-page {
-            max-width: 98vw;
-        }
-
-        #resultTable {
-            font-size: 11px;
-        }
-
-        #resultTable th,
-        #resultTable td {
-            padding: 5px 4px;
-        }
-
-        .status-badge {
-            font-size: 11px;
-            padding: 2px 5px;
+        .summary-grid {
+            grid-template-columns: repeat(3, 1fr);
         }
     }
 
     @@media (max-width: 768px) {
-        .upload-row {
+        .summary-grid {
+            grid-template-columns: repeat(2, 1fr);
+        }
+
+        .file-area {
             flex-direction: column;
         }
 
-        .file-picker {
-            width: 100%;
+        .action-row {
+            justify-content: stretch;
         }
 
-        .btn-main-action {
+        .btn-analyze {
             width: 100%;
         }
     }
+
+    .result-toolbar {
+    display: flex;
+    align-items: flex-end;
+    justify-content: space-between;
+    gap: 16px;
+    margin-bottom: 12px;
+}
+
+    .result-toolbar-text {
+        flex: 1;
+    }
+
+    @@media (max-width: 768px) 
+    {
+        .result-toolbar 
+        {
+            flex-direction: column;
+            align-items: stretch;
+        }
+
+        .result-toolbar-search {
+            width: 100%;
+        }
+    }
+    .result-toolbar-search {
+        width: 430px;
+        max-width: 100%;
+        min-width: 0;
+    }
+
+    .anomaly-filter-row {
+        display: grid;
+        grid-template-columns: minmax(0, 1fr) 140px;
+        gap: 10px;
+        width: 100%;
+        min-width: 0;
+    }
+
+    .anomaly-filter-row .form-control,
+    .anomaly-filter-row .form-select {
+        width: 100%;
+        min-width: 0;
+    }
+
+    @@media (max-width: 768px) {
+        .anomaly-filter-row {
+            width: 100%;
+            grid-template-columns: 1fr;
+        }
+    }
+    .problem-header {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        gap: 15px;
+    }
 </style>
 
+
 <div class="anomaly-page">
-    <div class="page-header">
-        <h1 class="page-title">
-            <span class="page-title-icon">✿</span>
-            標單異常偵測
-        </h1>
+
+    <h2 class="page-title">
+        標單異常偵測
+    </h2>
+
+    <div class="page-desc">
+        輸入目標建案條件並上傳待檢標單，系統將依相似歷史建案建立材料合理用量區間，
+        再與標單實際用量進行比較。
     </div>
 
-    <div class="upload-card">
-        <div class="upload-card-header">
-            <div class="upload-icon">📄</div>
-            <div>
-                <div class="upload-title">選擇要檢測的 Excel 標單</div>
+
+    <div class="anomaly-card">
+
+        <div class="card-header-wz">
+            <div class="card-title-wz">
+                1. 目標建案條件
+            </div>
+
+            <div class="card-desc-wz">
+                建案條件只供本次分析使用，不會建立新的歷史建案資料。
             </div>
         </div>
 
-        <div class="upload-row">
-            <input type="file" id="excelFile" class="file-input-native" accept=".xlsx,.xls" />
-            <label for="excelFile" class="file-picker">
-                <span class="file-picker-button">選擇 Excel 檔案</span>
-                <span id="excelFileName" class="file-picker-name">尚未選擇檔案</span>
-            </label>
-            <button id="btnAnalyze" class="btn btn-primary btn-main-action" type="button">
-                異常偵測
-            </button>
+
+        <div class="card-body-wz">
+
+            <div class="row g-3">
+
+                <div class="col-lg-2 col-md-4">
+                    <label class="form-label">
+                        建案類型
+                    </label>
+
+                    <select id="projectType"
+                            class="form-select">
+                        <option value="">請選擇</option>
+                        <option value="住宅">住宅</option>
+                        <option value="廠房">廠房</option>
+                    </select>
+                </div>
+
+
+                <div class="col-lg-2 col-md-4">
+                    <label class="form-label">
+                        結構類型
+                    </label>
+
+                    <select id="structureType"
+                            class="form-select">
+                        <option value="">請選擇</option>
+                        <option value="RC">RC</option>
+                        <option value="SC">SC</option>
+                        <option value="SRC">SRC</option>
+                    </select>
+                </div>
+
+
+                <div class="col-lg-2 col-md-4">
+                    <label class="form-label">
+                        縣市
+                    </label>
+
+                    <select id="city"
+                            class="form-select">
+                        @await Html.PartialAsync("_CityOptions")
+                    </select>
+                </div>
+
+
+                <div class="col-lg-2 col-md-4">
+                    <label class="form-label">
+                        總樓地板面積
+                    </label>
+
+                    <div class="input-group">
+                        <input id="totalFloorArea"
+                               type="number"
+                               min="0"
+                               step="0.01"
+                               class="form-control"
+                               placeholder="例如 18000" />
+
+                        <span class="input-group-text">
+                            m²
+                        </span>
+                    </div>
+                </div>
+
+
+                <div class="col-lg-1 col-md-4">
+                    <label class="form-label">
+                        地上樓層
+                    </label>
+
+                    <input id="floorCount"
+                           type="number"
+                           min="1"
+                           class="form-control"
+                           placeholder="20" />
+                </div>
+
+
+                <div class="col-lg-1 col-md-4">
+                    <label class="form-label">
+                        地下樓層
+                    </label>
+
+                    <input id="basementFloorCount"
+                           type="number"
+                           min="0"
+                           class="form-control"
+                           placeholder="3" />
+                </div>
+
+
+                <div class="col-lg-2 col-md-4">
+                    <label class="form-label">
+                        建案年月
+                    </label>
+
+                    <input id="projectMonth"
+                           type="month"
+                           class="form-control" />
+                </div>
+
+            </div>
+
         </div>
     </div>
 
-    <div id="loadingText" class="alert mt-3" style="display:none;">
-        ⏳ 系統正在分析標單，請稍候...
+
+    <div class="anomaly-card">
+
+        <div class="card-header-wz">
+            <div class="card-title-wz">
+                2. 上傳待檢標單
+            </div>
+
+            <div class="card-desc-wz">
+                目前接受 Excel .xlsx 格式。上傳檔案只供本次分析，不會寫入歷史資料。
+            </div>
+        </div>
+
+
+        <div class="card-body-wz">
+
+            <div class="file-area">
+
+                <input type="file"
+                       id="excelFile"
+                       class="file-input-native"
+                       accept=".xlsx" />
+
+                <label for="excelFile"
+                       class="file-picker">
+
+                    <span class="file-picker-button">
+                        選擇 Excel 檔案
+                    </span>
+
+                    <span id="excelFileName"
+                          class="file-picker-name">
+                        尚未選擇檔案
+                    </span>
+
+                </label>
+
+            </div>
+
+        </div>
     </div>
 
-    <div id="summaryBox" class="summary-box" style="display:none;"></div>
 
-    <div id="tableWrapper" class="result-table-wrapper" style="display:none;">
-        <table class="table table-bordered table-hover align-middle" id="resultTable">
-            <thead>
-                <tr>
-                    <th class="col-status">狀態</th>
-                    <th class="col-sheet">工作表</th>
-                    <th class="col-row">列號</th>
-                    <th class="col-code">項次</th>
-                    <th class="col-category">分類</th>
-                    <th class="col-name">項目名稱</th>
-                    <th class="col-spec">規格</th>
-                    <th class="col-unit">單位</th>
-                    <th class="col-number">數量</th>
-                    <th class="col-number">標單單價</th>
-                    <th class="col-number">標單複價</th>
-                    <th class="col-number">建議單價</th>
-                    <th class="col-number">建議複價</th>
-                    <th class="col-z">單價 Z</th>
-                    <th class="col-reason">異常原因</th>
-                    <th class="col-action">操作</th>
-                </tr>
-            </thead>
-            <tbody id="resultBody"></tbody>
-        </table>
+    <div class="anomaly-card">
+
+        <div class="card-body-wz">
+
+            <div id="messageBox"
+                 class="message-box">
+            </div>
+
+
+            <div class="action-row">
+
+                <button type="button"
+                        class="btn btn-outline-secondary"
+                        id="clearButton">
+                    清除
+                </button>
+
+
+                <button type="button"
+                        class="btn-analyze"
+                        id="analyzeButton">
+                    開始異常分析
+                </button>
+
+            </div>
+
+        </div>
+
     </div>
+
+
+    <div class="anomaly-card"
+         id="resultSection">
+
+        <div class="card-header-wz">
+            <div class="card-title-wz">
+                3. 分析結果
+            </div>
+
+            <div class="card-desc-wz"
+                 id="resultFileName">
+            </div>
+        </div>
+
+
+        <div class="card-body-wz">
+
+            <div id="loadingBox"
+                 class="loading-box">
+                系統正在解析標單並計算合理用量區間，請稍候。
+            </div>
+
+
+            <div id="resultContent">
+
+
+                <div class="result-toolbar">
+
+                    <div class="result-toolbar-text">
+
+                        <div class="section-title">
+                            材料異常分析
+                        </div>
+
+                        <div class="result-note">
+                            實際數量低於 P15 判定為偏低，高於 P85 判定為偏高；
+                            歷史樣本不足時不進行異常判定。
+                        </div>
+
+                    </div>
+
+
+                    <div class="result-toolbar-search">
+
+                        <div class="anomaly-filter-row">
+
+                            <input type="search"
+                                id="anomalySearch"
+                                class="form-control"
+                                placeholder="搜尋材料名稱" />
+
+
+                            <select id="anomalyStatusFilter"
+                                    class="form-select">
+
+                                <option value="">
+                                    全部判定
+                                </option>
+
+                                <option value="High">
+                                    偏高
+                                </option>
+
+                                <option value="Low">
+                                    偏低
+                                </option>
+
+                                <option value="Normal">
+                                    正常
+                                </option>
+
+                                <option value="InsufficientSamples">
+                                    樣本不足
+                                </option>
+
+                            </select>
+
+                        </div>
+
+                    </div>
+
+                </div>
+
+
+                <div class="result-wrapper">
+
+                    <table class="result-table">
+
+                        <thead>
+                            <tr>
+                                <th>材料</th>
+                                <th>實際數量</th>
+                                <th>P15 下界</th>
+                                <th>P50 中位</th>
+                                <th>P85 上界</th>
+                                <th>單位</th>
+                                <th>來源工項</th>
+                                <th>參考樣本</th>
+                                <th>判定</th>
+                                <th>說明</th>
+                            </tr>
+                        </thead>
+
+                        <tbody id="resultBody">
+                        </tbody>
+
+                    </table>
+
+                </div>
+
+            </div>
+
+        </div>
+    </div>
+
+
+    <div class="anomaly-card"
+         id="problemSection">
+
+        <div class="card-header-wz problem-header">
+
+            <div>
+
+                <div class="card-title-wz">
+                    4. 未對應與無效工項
+                    <span id="problemCountText"></span>
+                </div>
+
+                <div class="card-desc-wz">
+                    這些工項未進入材料合理區間比較，需要時再查看明細。
+                </div>
+
+            </div>
+
+
+            <button type="button"
+                    class="btn btn-outline-secondary btn-sm"
+                    id="toggleProblemButton"
+                    onclick="toggleProblemDetail()">
+                查看明細
+            </button>
+
+        </div>
+
+
+        <div class="card-body-wz"id="problemDetail"style="display:none;">
+
+            <div class="result-wrapper">
+
+                <table class="result-table">
+
+                    <thead>
+                        <tr>
+                            <th>工作表</th>
+                            <th>列號</th>
+                            <th>項目名稱</th>
+                            <th>規格</th>
+                            <th>原單位</th>
+                            <th>原數量</th>
+                            <th>原因</th>
+                        </tr>
+                    </thead>
+
+                    <tbody id="problemBody">
+                    </tbody>
+
+                </table>
+
+            </div>
+
+        </div>
+
+    </div>
+
 </div>
 
 
 @section Scripts {
-    <script>
-        const btnAnalyze = document.getElementById('btnAnalyze');
-        const excelFile = document.getElementById('excelFile');
-        const loadingText = document.getElementById('loadingText');
-        const summaryBox = document.getElementById('summaryBox');
-        const tableWrapper = document.getElementById('tableWrapper');
-        const resultBody = document.getElementById('resultBody');
-        const excelFileName = document.getElementById('excelFileName');
 
-        excelFile.addEventListener('change', function () {
-            const selectedFile = excelFile.files && excelFile.files.length > 0
-                ? excelFile.files[0]
-                : null;
+<script>
 
-            excelFileName.textContent = selectedFile ? selectedFile.name : '尚未選擇檔案';
-            excelFileName.classList.toggle('has-file', Boolean(selectedFile));
-        });
+    const excelFile =
+        document.getElementById("excelFile");
 
-        // ==========================================
-        // 1. 執行 Excel 分析
-        // ==========================================
-        btnAnalyze.addEventListener('click', async function () {
-            if (!excelFile.files || excelFile.files.length === 0) {
-                showCardMessage(
-                    '請先選擇 Excel 檔案',
-                    '請先選擇要檢測的 Excel 標單檔案後，再執行異常偵測。',
-                    'warning'
-                );
-                return;
-            }
+    const excelFileName =
+        document.getElementById("excelFileName");
 
-            const file = excelFile.files[0];
-            const fileName = file.name.toLowerCase();
+    const analyzeButton =
+        document.getElementById("analyzeButton");
 
-            if (!fileName.endsWith('.xlsx') && !fileName.endsWith('.xls')) {
-                showCardMessage(
-                    '檔案格式錯誤',
-                    '請選擇 .xlsx 或 .xls 格式的 Excel 標單檔案。',
-                    'warning'
-                );
-                return;
-            }
-            const formData = new FormData();
-            formData.append('excelFile', file);
+    const clearButton =
+        document.getElementById("clearButton");
 
-            loadingText.style.display = 'inline';
-            btnAnalyze.disabled = true;
-            summaryBox.style.display = 'none';
-            tableWrapper.style.display = 'none';
-            resultBody.innerHTML = '';
+    const messageBox =
+        document.getElementById("messageBox");
+
+    const resultSection =
+        document.getElementById("resultSection");
+
+    const problemSection =
+        document.getElementById("problemSection");
+
+    const resultBody =
+        document.getElementById("resultBody");
+
+    const problemBody =
+        document.getElementById("problemBody");
+
+    const loadingBox =
+        document.getElementById("loadingBox");
+
+    const resultContent =
+        document.getElementById("resultContent");
+
+    const problemDetail =
+        document.getElementById("problemDetail");
+
+    const toggleProblemButton =
+        document.getElementById("toggleProblemButton");
+
+
+    excelFile.addEventListener(
+        "change",
+        function () {
+
+            const file =
+                excelFile.files &&
+                excelFile.files.length > 0
+                    ? excelFile.files[0]
+                    : null;
+
+
+            excelFileName.textContent =
+                file
+                    ? file.name
+                    : "尚未選擇檔案";
+
+
+            excelFileName.classList.toggle(
+                "has-file",
+                Boolean(file)
+            );
+
+        }
+    );
+
+
+    analyzeButton.addEventListener(
+        "click",
+        async function () {
+
+            hideMessage();
+
 
             try {
-                const response = await fetch('/api/Estimation/analyze-excel', {
-                    method: 'POST',
-                    body: formData
-                });
 
-                const data = await response.json();
-                console.log(data.results[0]);
-                if (!response.ok) {
-                    showCardMessage(
-                        'Excel 分析失敗',
-                        data.message || '系統無法解析此 Excel 檔案，請確認格式是否正確。',
-                        'error'
+                const projectType =
+                    document
+                        .getElementById("projectType")
+                        .value;
+
+                const structureType =
+                    document
+                        .getElementById("structureType")
+                        .value;
+
+                const city =
+                    document
+                        .getElementById("city")
+                        .value;
+
+                const totalFloorArea =
+                    Number(
+                        document
+                            .getElementById("totalFloorArea")
+                            .value
                     );
-                    return;
+
+                const floorCount =
+                    Number(
+                        document
+                            .getElementById("floorCount")
+                            .value
+                    );
+
+                const basementFloorCountValue =
+                    document
+                        .getElementById("basementFloorCount")
+                        .value;
+
+                const basementFloorCount =
+                    basementFloorCountValue === ""
+                        ? null
+                        : Number(
+                            basementFloorCountValue
+                        );
+
+                const projectMonth =
+                    document
+                        .getElementById("projectMonth")
+                        .value;
+
+
+                if (!projectType) {
+                    throw new Error(
+                        "請選擇建案類型"
+                    );
                 }
 
-                summaryBox.style.display = 'block';
-                const pendingCount = data.results.filter(x =>
-                    x.statusMessage &&
-                    (
-                        x.statusMessage.includes('資料不足') ||
-                        x.statusMessage.includes('待對應') ||
-                        x.statusMessage.includes('字典無法辨識') ||
-                        x.statusMessage.includes('資料不完整') ||
-                        x.statusMessage.includes('單位不符')
-                    )
-                ).length;
+                if (!structureType) {
+                    throw new Error(
+                        "請選擇結構類型"
+                    );
+                }
 
-                const totalShownCount = data.results.length;
-                const abnormalCount = data.abnormalCount;
-                const normalCount = totalShownCount - abnormalCount - pendingCount;
+                if (!city) {
+                    throw new Error(
+                        "請選擇縣市"
+                    );
+                }
 
-                summaryBox.innerHTML = `
-                    <div class="summary-title mb-3">
-                        <div class="fw-bold fs-5">檢測結果摘要</div>
-                        <div class="text-muted small">檔案：${escapeHtml(file.name)}</div>
-                    </div>
+                if (
+                    !totalFloorArea ||
+                    totalFloorArea <= 0
+                ) {
+                    throw new Error(
+                        "請輸入有效的總樓地板面積"
+                    );
+                }
 
-                    <div class="row g-3">
-                        <div class="col-md-3">
-                            <div class="summary-stat-card">
-                                <div class="stat-label">共顯示資料</div>
-                                <div class="stat-value">${totalShownCount}</div>
-                            </div>
-                        </div>
-                        <div class="col-md-3">
-                            <div class="summary-stat-card normal">
-                                <div class="stat-label">正常</div>
-                                <div class="stat-value">${normalCount}</div>
-                            </div>
-                        </div>
-                        <div class="col-md-3">
-                            <div class="summary-stat-card abnormal">
-                                <div class="stat-label">異常</div>
-                                <div class="stat-value">${abnormalCount}</div>
-                            </div>
-                        </div>
-                        <div class="col-md-3">
-                            <div class="summary-stat-card pending">
-                                <div class="stat-label">待審</div>
-                                <div class="stat-value">${pendingCount}</div>
-                            </div>
-                        </div>
-                    </div>
+                if (
+                    !floorCount ||
+                    floorCount <= 0
+                ) {
+                    throw new Error(
+                        "請輸入有效的地上樓層數"
+                    );
+                }
 
-                `;
+                if (
+                    basementFloorCount === null ||
+                    basementFloorCount < 0
+                ) {
+                    throw new Error(
+                        "請輸入有效的地下樓層數"
+                    );
+                }
 
-                const sortedResults = data.results.slice().sort((a, b) => {
-                    const aPending =
-                        a.statusMessage &&
-                        (
-                            a.statusMessage.includes('資料不足') ||
-                            a.statusMessage.includes('待對應') ||
-                            a.statusMessage.includes('字典無法辨識')
-                        );
+                if (!projectMonth) {
+                    throw new Error(
+                        "請選擇建案年月"
+                    );
+                }
 
-                    const bPending =
-                        b.statusMessage &&
-                        (
-                            b.statusMessage.includes('資料不足') ||
-                            b.statusMessage.includes('待對應') ||
-                            b.statusMessage.includes('字典無法辨識')
-                        );
 
-                    const aPriority = a.isAbnormal ? 1 : (aPending ? 2 : 3);
-                    const bPriority = b.isAbnormal ? 1 : (bPending ? 2 : 3);
+                if (
+                    !excelFile.files ||
+                    excelFile.files.length === 0
+                ) {
+                    throw new Error(
+                        "請選擇待檢 Excel 標單"
+                    );
+                }
 
-                    if (aPriority !== bPriority) {
-                        return aPriority - bPriority;
+
+                const file =
+                    excelFile.files[0];
+
+                const fileName =
+                    file.name.toLowerCase();
+
+
+                if (!fileName.endsWith(".xlsx")) {
+                    throw new Error(
+                        "目前僅接受 .xlsx 格式的 Excel 標單"
+                    );
+                }
+
+
+                const formData =
+                    new FormData();
+
+
+                formData.append(
+                    "excelFile",
+                    file
+                );
+
+                formData.append(
+                    "projectType",
+                    projectType
+                );
+
+                formData.append(
+                    "structureType",
+                    structureType
+                );
+
+                formData.append(
+                    "city",
+                    city
+                );
+
+                formData.append(
+                    "totalFloorArea",
+                    totalFloorArea.toString()
+                );
+
+                formData.append(
+                    "floorCount",
+                    floorCount.toString()
+                );
+
+                formData.append(
+                    "basementFloorCount",
+                    basementFloorCount.toString()
+                );
+
+                formData.append(
+                    "projectMonth",
+                    projectMonth
+                );
+
+
+                analyzeButton.disabled =
+                    true;
+
+                analyzeButton.textContent =
+                    "分析中";
+
+
+                resultSection.style.display =
+                    "block";
+
+                problemSection.style.display =
+                    "none";
+
+                loadingBox.classList.add(
+                    "show"
+                );
+
+                resultContent.style.display =
+                    "none";
+
+
+                const response =
+                    await fetch(
+                        "/api/bid-anomaly/analyze",
+                        {
+                            method: "POST",
+                            body: formData
+                        }
+                    );
+
+
+                const raw =
+                    await response.text();
+
+
+                let data = {};
+
+
+                if (raw) {
+                    try {
+                        data =
+                            JSON.parse(raw);
                     }
-
-                    const aMaxZ = getMaxZScore(a);
-                    const bMaxZ = getMaxZScore(b);
-                    return bMaxZ - aMaxZ;
-                });
-
-                sortedResults.forEach(item => {
-                const isPending =
-                    item.statusMessage &&
-                    (
-                        item.statusMessage.includes('資料不足') ||
-                        item.statusMessage.includes('待對應') ||
-                        item.statusMessage.includes('字典無法辨識') ||
-                        item.statusMessage.includes('資料不完整') ||
-                        item.statusMessage.includes('單位不符')
-                    );
-
-                let rowClass = '';
-                let statusText = '正常';
-                let statusBadgeClass = 'status-normal';
-
-                if (isPending) {
-                    rowClass = 'table-warning';
-                    statusText = '待審';
-                    statusBadgeClass = 'status-pending';
-                } else if (item.isAbnormal) {
-                    rowClass = 'table-danger';
-                    statusText = '異常';
-                    statusBadgeClass = 'status-abnormal';
+                    catch {
+                        data = {};
+                    }
                 }
 
-                    const categoryText = [item.category1, item.category2, item.category3]
-                        .filter(x => x && x.trim() !== '')
-                        .join(' / ');
 
-                    const tr = document.createElement('tr');
-                    tr.className = rowClass;
+                if (!response.ok) {
+                    throw new Error(
+                        data.message ??
+                        `異常分析失敗，HTTP ${response.status}`
+                    );
+                }
 
-                    // 在最後一格動態產生推翻按鈕
-                    tr.innerHTML = `
-                        <td class="text-center">
-                            <span class="status-badge ${statusBadgeClass}">${statusText}</span>
-                        </td>
-                        <td class="text-center text-nowrap-cell">${escapeHtml(item.sheetName)}</td>
-                        <td class="text-end text-nowrap-cell">${item.rowNumber ?? ''}</td>
-                        <td class="text-nowrap-cell">${escapeHtml(item.itemCode)}</td>
-                        <td class="text-wrap-cell">${escapeHtml(categoryText)}</td>
-                        <td class="text-wrap-cell">${escapeHtml(item.itemName)}</td>
-                        <td class="text-wrap-cell">${escapeHtml(item.spec)}</td>
-                        <td class="text-center text-nowrap-cell">${escapeHtml(item.unit)}</td>
-                        <td class="text-end text-nowrap-cell">${formatNumber(item.qty)}</td>
-                        <td class="text-end text-nowrap-cell">${formatNumber(item.unitPrice)}</td>
-                        <td class="text-end text-nowrap-cell">${formatNumber(item.amount)}</td>
-                        <td class="text-end text-nowrap-cell">${formatNumber(item.suggestedUnitPrice)}</td>
-                        <td class="text-end text-nowrap-cell">${formatNumber(item.suggestedAmount)}</td>
-                        <td class="text-end text-nowrap-cell">${formatNumber(item.unitPriceZScore)}</td>
-                        <td class="text-wrap-cell">${escapeHtml(item.statusMessage)}</td>
-                        <td class="text-center">
-                            ${item.isAbnormal ? 
-                                `<button class="btn btn-sm btn-warning fw-bold py-1 px-2 btn-override-action" 
-                                    style="font-size:11px;"
-                                    data-file="${escapeHtml(file.name)}"
-                                    data-sheet="${escapeHtml(item.sheetName)}"
-                                    data-row="${item.rowNumber}"
-                                    data-name="${escapeHtml(item.itemName)}"
-                                    data-msg="${escapeHtml(item.statusMessage)}">
-                                    推翻
-                                 </button>` : '-'
-                            }
-                        </td>
-                    `;
-                    resultBody.appendChild(tr);
-                });
 
-                tableWrapper.style.display = 'block';
+                renderResult(
+                    data
+                );
+
             }
             catch (error) {
-                showCardMessage(
-                    '連線或分析失敗',
-                    String(error),
-                    'error'
+
+                showMessage(
+                    error.message ??
+                    "異常分析失敗"
                 );
+
+
+                resultSection.style.display =
+                    "none";
+
+                problemSection.style.display =
+                    "none";
+
             }
             finally {
-                loadingText.style.display = 'none';
-                btnAnalyze.disabled = false;
+
+                analyzeButton.disabled =
+                    false;
+
+                analyzeButton.textContent =
+                    "開始異常分析";
+
+                loadingBox.classList.remove(
+                    "show"
+                );
+
             }
+
+        }
+    );
+
+
+    function renderResult(data) {
+
+        anomalySearch.value =
+            "";
+
+        anomalyStatusFilter.value =
+            "";
+
+        problemDetail.style.display =
+            "none";
+
+        toggleProblemButton.textContent =
+            "查看明細";
+
+
+        const results =
+            data.results ?? [];
+
+        const problems =
+            data.unmappedItems ?? [];
+
+        document
+            .getElementById(
+                "problemCountText"
+            )
+            .textContent =
+                problems.length > 0
+                    ? `（${problems.length} 筆）`
+                    : "";
+
+
+        document
+            .getElementById("resultFileName")
+            .textContent =
+                data.fileName
+                    ? `檔案：${data.fileName}`
+                    : "";
+
+        resultBody.innerHTML =
+            "";
+
+
+        if (results.length === 0) {
+
+            resultBody.innerHTML = `
+                <tr>
+                    <td colspan="10"
+                        class="empty-row">
+                        本次沒有可進行合理區間比較的材料
+                    </td>
+                </tr>
+            `;
+
+        }
+        else {
+
+            results.forEach(item => {
+
+                const tr =
+                    document.createElement(
+                        "tr"
+                    );
+
+                tr.dataset.status =
+                    item.anomalyStatus ?? "";
+
+
+                tr.innerHTML = `
+
+                    <td class="material-cell">
+                        ${escapeHtml(
+                            item.materialName ?? ""
+                        )}
+                    </td>
+
+                    <td class="number-cell">
+                        ${formatNumber(
+                            item.actualQuantity
+                        )}
+                    </td>
+
+                    <td class="number-cell">
+                        ${formatNullableNumber(
+                            item.lowerQuantity
+                        )}
+                    </td>
+
+                    <td class="number-cell">
+                        ${formatNullableNumber(
+                            item.medianQuantity
+                        )}
+                    </td>
+
+                    <td class="number-cell">
+                        ${formatNullableNumber(
+                            item.upperQuantity
+                        )}
+                    </td>
+
+                    <td>
+                        ${escapeHtml(
+                            item.baseUnit ?? ""
+                        )}
+                    </td>
+
+                    <td>
+                        ${item.sourceRowCount ?? 0}
+                    </td>
+
+                    <td>
+                        ${item.referenceProjectCount ?? 0}
+                        /
+                        ${item.minimumSampleCount ?? 0}
+                    </td>
+
+                    <td>
+                        ${renderStatus(
+                            item.anomalyStatus
+                        )}
+                    </td>
+
+                    <td class="material-cell">
+                        ${escapeHtml(
+                            item.statusMessage ?? ""
+                        )}
+                    </td>
+                `;
+
+
+                resultBody.appendChild(
+                    tr
+                );
+
+            });
+
+        }
+
+
+        problemBody.innerHTML =
+            "";
+
+
+        if (problems.length > 0) {
+
+            problems.forEach(item => {
+
+                const tr =
+                    document.createElement(
+                        "tr"
+                    );
+
+
+                tr.innerHTML = `
+
+                    <td>
+                        ${escapeHtml(
+                            item.sheetName ?? ""
+                        )}
+                    </td>
+
+                    <td>
+                        ${item.rowNumber ?? ""}
+                    </td>
+
+                    <td class="material-cell">
+                        ${escapeHtml(
+                            item.itemName ?? ""
+                        )}
+                    </td>
+
+                    <td class="material-cell">
+                        ${escapeHtml(
+                            item.spec ?? ""
+                        )}
+                    </td>
+
+                    <td>
+                        ${escapeHtml(
+                            item.unit ?? ""
+                        )}
+                    </td>
+
+                    <td class="number-cell">
+                        ${formatNullableNumber(
+                            item.quantity
+                        )}
+                    </td>
+
+                    <td class="material-cell">
+                        ${escapeHtml(
+                            item.reason ?? ""
+                        )}
+                    </td>
+                `;
+
+
+                problemBody.appendChild(
+                    tr
+                );
+
+            });
+
+
+            problemSection.style.display =
+                "block";
+
+        }
+        else {
+
+            problemSection.style.display =
+                "none";
+
+        }
+
+
+        resultContent.style.display =
+            "block";
+
+
+        resultSection.scrollIntoView({
+            behavior: "smooth",
+            block: "start"
         });
 
+    }
 
-        function showCardMessage(title, message, type = 'success') 
-        {
-            const oldModal = document.getElementById('wzModalOverlay');
-            if (oldModal) {
-                oldModal.remove();
-            }
 
-            let iconText = '✓';
-            if (type === 'warning') iconText = '!';
-            if (type === 'error') iconText = '×';
+    function renderStatus(status) {
 
-            const overlay = document.createElement('div');
-            overlay.id = 'wzModalOverlay';
-            overlay.className = 'wz-modal-overlay';
+        switch (status) {
 
-            overlay.innerHTML = `
-                <div class="wz-modal-card">
-                    <div class="wz-modal-header">
-                        <span class="wz-modal-icon ${type}">${iconText}</span>
-                        <h5 class="wz-modal-title">${escapeHtml(title)}</h5>
-                    </div>
-                    <div class="wz-modal-body">${escapeHtml(message)}</div>
-                    <div class="wz-modal-footer">
-                        <button type="button" class="wz-modal-btn" id="wzModalOkBtn">確定</button>
-                    </div>
-                </div>
-            `;
+            case "High":
+                return `
+                    <span class="status-badge status-high">
+                        偏高
+                    </span>
+                `;
 
-            document.body.appendChild(overlay);
+            case "Low":
+                return `
+                    <span class="status-badge status-low">
+                        偏低
+                    </span>
+                `;
 
-            document.getElementById('wzModalOkBtn').addEventListener('click', () => {
-                overlay.remove();
-            });
+            case "Normal":
+                return `
+                    <span class="status-badge status-normal">
+                        正常
+                    </span>
+                `;
 
-            overlay.addEventListener('click', (e) => {
-                if (e.target === overlay) {
-                    overlay.remove();
-                }
-            });
+            case "InsufficientSamples":
+                return `
+                    <span class="status-badge status-insufficient">
+                        樣本不足
+                    </span>
+                `;
+
+            default:
+                return `
+                    <span class="status-badge status-insufficient">
+                        無法判定
+                    </span>
+                `;
         }
 
+    }
 
-        function showReasonModal(title, message, onConfirm) {
-            const oldModal = document.getElementById('wzModalOverlay');
-            if (oldModal) {
-                oldModal.remove();
-            }
 
-            const overlay = document.createElement('div');
-            overlay.id = 'wzModalOverlay';
-            overlay.className = 'wz-modal-overlay';
+    clearButton.addEventListener(
+        "click",
+        function () {
 
-            overlay.innerHTML = `
-                <div class="wz-modal-card">
-                    <div class="wz-modal-header">
-                        <span class="wz-modal-icon warning">!</span>
-                        <h5 class="wz-modal-title">${escapeHtml(title)}</h5>
-                    </div>
-                    <div class="wz-modal-body">
-                        <div class="mb-3">${escapeHtml(message)}</div>
-                        <label class="form-label fw-bold">請輸入人工判定理由</label>
-                        <textarea id="wzReasonInput"
-                                class="form-control"
-                                rows="3"
-                                placeholder="例如：經人工比對後，此項目屬合理報價，因此推翻系統異常判定。"></textarea>
-                        <div id="wzReasonError" class="text-danger mt-2" style="display:none;">
-                            請輸入推翻理由。
-                        </div>
-                    </div>
-                    <div class="wz-modal-footer">
-                        <button type="button" class="btn btn-outline-secondary" id="wzModalCancelBtn">取消</button>
-                        <button type="button" class="wz-modal-btn" id="wzModalConfirmBtn">確定</button>
-                    </div>
-                </div>
-            `;
+            document
+                .getElementById("projectType")
+                .value = "";
 
-            document.body.appendChild(overlay);
+            document
+                .getElementById("structureType")
+                .value = "";
 
-            const input = document.getElementById('wzReasonInput');
-            const error = document.getElementById('wzReasonError');
+            document
+                .getElementById("city")
+                .value = "";
 
-            setTimeout(() => input.focus(), 100);
+            document
+                .getElementById("totalFloorArea")
+                .value = "";
 
-            document.getElementById('wzModalCancelBtn').addEventListener('click', () => {
-                overlay.remove();
-            });
+            document
+                .getElementById("floorCount")
+                .value = "";
 
-            document.getElementById('wzModalConfirmBtn').addEventListener('click', () => {
-                const reason = input.value.trim();
+            document
+                .getElementById("basementFloorCount")
+                .value = "";
 
-                if (!reason) {
-                    error.style.display = 'block';
-                    input.focus();
-                    return;
-                }
+            document
+                .getElementById("projectMonth")
+                .value = "";
 
-                overlay.remove();
-                onConfirm(reason);
-            });
 
-            overlay.addEventListener('click', (e) => {
-                if (e.target === overlay) {
-                    overlay.remove();
-                }
-            });
-        }
+            excelFile.value =
+                "";
 
-        resultBody.addEventListener('click', function (e) {
-            if (!e.target.classList.contains('btn-override-action')) {
-                return;
-            }
+            excelFileName.textContent =
+                "尚未選擇檔案";
 
-            const btn = e.target;
-            const fileName = btn.getAttribute('data-file');
-            const sheetName = btn.getAttribute('data-sheet');
-            const rowNumber = parseInt(btn.getAttribute('data-row'));
-            const itemName = btn.getAttribute('data-name');
-            const originalMsg = btn.getAttribute('data-msg');
-
-            showReasonModal(
-                'UC-04 二次確認防呆',
-                `您正準備推翻第 ${rowNumber} 列「${itemName}」的系統異常判定。`,
-                function (reason) {
-                    fetch('/api/Estimation/override', {
-                        method: 'POST',
-                        headers: { 'Content-Type': 'application/json' },
-                        body: JSON.stringify({
-                            SourceFileName: fileName,
-                            SheetName: sheetName,
-                            RowNumber: rowNumber,
-                            ItemName: itemName,
-                            OriginalStatusMessage: originalMsg,
-                            OverrideReason: reason
-                        })
-                    })
-                    .then(res => {
-                        if (!res.ok) {
-                            throw new Error('伺服器回應錯誤');
-                        }
-
-                        return res.json();
-                    })
-                    .then(data => {
-                        const rowTr = btn.closest('tr');
-
-                        if (rowTr) {
-                            rowTr.classList.remove('table-danger');
-                            rowTr.classList.remove('table-warning');
-                            rowTr.style.backgroundColor = '#d1e7dd';
-
-                            const badge = rowTr.querySelector('.status-badge');
-                            if (badge) {
-                                badge.innerText = '人工認可';
-                                badge.className = 'status-badge status-normal';
-                            }
-                        }
-
-                        btn.outerHTML = '<span class="text-success fw-bold">已核定</span>';
-
-                        showCardMessage(
-                            '推翻成功',
-                            `已完成第 ${rowNumber} 列「${itemName}」的人工推翻。\n\n推翻理由：${reason}\n\n系統已同步寫入 Audit Log 稽核資料表。`,
-                            'success'
-                        );
-                    })
-                    .catch(err => {
-                        showCardMessage(
-                            '推翻失敗',
-                            err.message || '連線或寫入失敗，請確認後端 API 是否已準備好。',
-                            'error'
-                        );
-                    });
-                }
+            excelFileName.classList.remove(
+                "has-file"
             );
-        });
 
-        // ==========================================
-        // 工具函數
-        // ==========================================
-        function getMaxZScore(item) {
-            const qtyZ = Number(item.qtyZScore);
-            const priceZ = Number(item.unitPriceZScore);
+            anomalySearch.value =
+            "";
 
-            const safeQtyZ = Number.isNaN(qtyZ) ? 0 : qtyZ;
-            const safePriceZ = Number.isNaN(priceZ) ? 0 : priceZ;
+            anomalyStatusFilter.value =
+                "";
 
-            return Math.max(safeQtyZ, safePriceZ);
+            problemDetail.style.display =
+                "none";
+
+            toggleProblemButton.textContent =
+                "查看明細";
+
+
+            resultSection.style.display =
+                "none";
+
+            problemSection.style.display =
+                "none";
+
+            hideMessage();
+
+        }
+    );
+
+
+    function showMessage(message) {
+
+        messageBox.className =
+            "message-box error";
+
+        messageBox.textContent =
+            message;
+
+    }
+
+
+    function hideMessage() {
+
+        messageBox.className =
+            "message-box";
+
+        messageBox.textContent =
+            "";
+
+    }
+
+
+    function formatNumber(value) {
+
+        const number =
+            Number(value);
+
+
+        if (!Number.isFinite(number)) {
+            return "未提供";
         }
 
-        function formatNumber(value) {
-            if (value === null || value === undefined || value === '') return '';
-            const num = Number(value);
-            if (Number.isNaN(num)) return value;
-            return num.toLocaleString();
+
+        return number.toLocaleString(
+            "zh-TW",
+            {
+                maximumFractionDigits: 2
+            }
+        );
+
+    }
+
+
+    function formatNullableNumber(value) {
+
+        if (
+            value === null ||
+            value === undefined
+        ) {
+            return "樣本不足";
         }
 
-        function escapeHtml(value) {
-            if (value === null || value === undefined) return '';
-            return String(value)
-                .replaceAll('&', '&amp;')
-                .replaceAll('<', '&lt;')
-                .replaceAll('>', '&gt;')
-                .replaceAll('"', '&quot;')
-                .replaceAll("'", '&#039;');
-        }
-    </script>
+
+        return formatNumber(
+            value
+        );
+
+    }
+
+
+    function escapeHtml(value) {
+
+        return String(value)
+            .replaceAll("&", "&amp;")
+            .replaceAll("<", "&lt;")
+            .replaceAll(">", "&gt;")
+            .replaceAll('"', "&quot;")
+            .replaceAll("'", "&#039;");
+
+    }
+
+    const anomalySearch =
+        document.getElementById(
+            "anomalySearch"
+        );
+
+    const anomalyStatusFilter =
+        document.getElementById(
+            "anomalyStatusFilter"
+        );
+
+
+    anomalySearch.addEventListener(
+        "input",
+        filterAnomalyResults
+    );
+
+    anomalyStatusFilter.addEventListener(
+        "change",
+        filterAnomalyResults
+    );
+
+
+    function filterAnomalyResults() {
+
+        const keyword =
+            anomalySearch
+                .value
+                .trim()
+                .toLowerCase();
+
+        const selectedStatus =
+            anomalyStatusFilter
+                .value;
+
+
+        document
+            .querySelectorAll(
+                "#resultBody tr"
+            )
+            .forEach(row => {
+
+                const text =
+                    row.textContent
+                        .toLowerCase();
+
+                const rowStatus =
+                    row.dataset.status ??
+                    "";
+
+
+                const keywordMatch =
+                    !keyword ||
+                    text.includes(keyword);
+
+                const statusMatch =
+                    !selectedStatus ||
+                    rowStatus === selectedStatus;
+
+
+                row.style.display =
+                    keywordMatch &&
+                    statusMatch
+                        ? ""
+                        : "none";
+            });
+    }
+
+    function toggleProblemDetail() 
+    {
+
+        const detail =
+            document.getElementById(
+                "problemDetail"
+            );
+
+        const button =
+            document.getElementById(
+                "toggleProblemButton"
+            );
+
+
+        const isOpened =
+            detail.style.display ===
+            "block";
+
+
+        detail.style.display =
+            isOpened
+                ? "none"
+                : "block";
+
+
+        button.textContent =
+            isOpened
+                ? "查看明細"
+                : "收合明細";
+    }
+
+</script>
+
 }

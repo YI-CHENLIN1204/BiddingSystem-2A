@@ -103,170 +103,104 @@ namespace 崴正.Services
             );
         }
 
-
-        private async Task<ServiceResult>
-            EstimateResolvedMaterialRangeAsync(
+        public async Task<ServiceResult>
+            EstimateMaterialRangesAsync(
                 ResolvedEstimationTarget resolvedTarget,
-                int materialId,
-                List<ProjectSimilarityDto>? precomputedSimilarityCandidates = null)
+                IEnumerable<int> materialIds,
+                List<ProjectSimilarityDto> similarityCandidates)
         {
-            var settings =
-                await _settingsService.GetCurrentAsync();
-
-
-
-            // ==========================================
-            // 2. 標準材料
-            // ==========================================
-
-            var material =
-                await _context.MaterialMasters
-                    .AsNoTracking()
-                    .FirstOrDefaultAsync(x =>
-                        x.MaterialId == materialId
-                    );
-
-            if (material == null)
+            if (resolvedTarget == null)
             {
-                return ServiceResult.NotFound(
-                    "找不到指定的標準材料"
+                return ServiceResult.Validation(
+                    "估算目標不可為空"
                 );
             }
 
+            if (similarityCandidates == null)
+            {
+                return ServiceResult.Validation(
+                    "相似建案資料不可為空"
+                );
+            }
 
-            var result =
-                new RangeEstimationDto
-                {
-                    TargetMode =
-                        resolvedTarget.SourceMode,
+            var requestedMaterialIds =
+                materialIds
+                    .Where(x => x > 0)
+                    .Distinct()
+                    .ToList();
 
-                    TargetProjectId =
-                        resolvedTarget.HistoricalProjectId,
+            if (!requestedMaterialIds.Any())
+            {
+                return ServiceResult.Validation(
+                    "請至少選擇一個標準材料"
+                );
+            }
 
-                    TargetProjectName =
-                        resolvedTarget.DisplayName,
+            var settings =
+                await _settingsService
+                    .GetCurrentAsync();
 
-                    TargetProjectType =
-                        resolvedTarget
-                            .SimilarityTarget
-                            .ProjectType,
+            var materials =
+                await _context.MaterialMasters
+                    .AsNoTracking()
+                    .Where(x =>
+                        requestedMaterialIds.Contains(
+                            x.MaterialId
+                        )
+                    )
+                    .ToListAsync();
 
-                    TargetStructureType =
-                        resolvedTarget
-                            .SimilarityTarget
-                            .StructureType,
+            var materialDictionary =
+                materials.ToDictionary(
+                    x => x.MaterialId,
+                    x => x
+                );
 
-                    TargetCity =
-                        resolvedTarget
-                            .SimilarityTarget
-                            .City,
-
-                    TargetFloorArea =
-                        resolvedTarget
-                            .SimilarityTarget
-                            .TotalFloorArea,
-
-                    TargetFloorCount =
-                        resolvedTarget
-                            .SimilarityTarget
-                            .FloorCount,
-
-                    TargetBasementFloorCount =
-                        resolvedTarget
-                            .SimilarityTarget
-                            .BasementFloorCount,
-
-                    TargetProjectDate =
-                        resolvedTarget
-                            .SimilarityTarget
-                            .ProjectDate,
-
-                    MaterialId =
-                        material.MaterialId,
-
-                    MaterialName =
-                        material.MaterialName,
-
-                    BaseUnit =
-                        material.BaseUnit,
-
-                    UsagePerAreaUnit =
-                        $"{material.BaseUnit}/m²",
-
-                    TopK =
-                        settings.TopK,
-
-                    MinimumSampleCount =
-                        settings.MinimumSampleCount,
-
-                    LowerQuantile =
-                        settings.LowerQuantile,
-
-                    MedianQuantile =
-                        settings.MedianQuantile,
-
-                    UpperQuantile =
-                        settings.UpperQuantile,
-
-                    SimilarityExponent =
-                        settings.SimilarityExponent,
-
-                    TimeHalfLifeYears =
-                        settings.TimeHalfLifeYears
-                };
-
-
-            // ==========================================
-            // 3. 取得所有相似候選建案
-            //
-            // 注意：
-            // 這裡還不能 Take Top K。
-            //
-            // 要先找「有這個材料」的建案，
-            // 再做材料自己的 Top K。
-            // ==========================================
-
-            var similarityCandidates =
-                precomputedSimilarityCandidates
-                ??
-                await _similarityService
-                    .GetScoredCandidateProjectsAsync(
-                        resolvedTarget
+            var missingMaterialId =
+                requestedMaterialIds
+                    .FirstOrDefault(x =>
+                        !materialDictionary.ContainsKey(x)
                     );
 
-            result.CandidateProjectCount =
-                similarityCandidates.Count;
+            if (missingMaterialId > 0)
+            {
+                return ServiceResult.NotFound(
+                    $"找不到指定的標準材料：{missingMaterialId}"
+                );
+            }
 
             if (!similarityCandidates.Any())
             {
-                result.HasEnoughSamples = false;
+                var noCandidateResults =
+                    requestedMaterialIds
+                        .Select(materialId =>
+                        {
+                            var result =
+                                CreateBaseResult(
+                                    resolvedTarget,
+                                    materialDictionary[materialId],
+                                    settings
+                                );
 
-                result.StatusMessage =
-                    "沒有可用的相似建案";
+                            result.CandidateProjectCount = 0;
+                            result.HasEnoughSamples = false;
+                            result.StatusMessage =
+                                "沒有可用的相似建案";
 
-                return ServiceResult.Ok(result);
+                            return result;
+                        })
+                        .ToList();
+
+                return ServiceResult.Ok(
+                    noCandidateResults
+                );
             }
 
             var candidateIds =
                 similarityCandidates
                     .Select(x => x.ProjectId)
+                    .Distinct()
                     .ToList();
-
-
-            // ==========================================
-            // 4. 同一建案 + 同一材料
-            //
-            // HistoricalTransaction 已經是
-            // UnitConversionService 標準化後的數量。
-            //
-            // 同一案可能有：
-            //
-            // 柱 SD420
-            // 梁 SD420
-            // 樓板 SD420
-            //
-            // 目前第一版先 SUM 成整案 SD420 總量。
-            // ==========================================
 
             var usageData =
                 await _context.HistoricalTransactions
@@ -276,17 +210,22 @@ namespace 崴正.Services
                         candidateIds.Contains(
                             x.ProjectMasterId.Value
                         ) &&
-                        x.MaterialId == materialId &&
+                        requestedMaterialIds.Contains(
+                            x.MaterialId
+                        ) &&
                         !x.IsDeleted &&
                         !x.IsOutlier
                     )
-                    .GroupBy(x =>
-                        x.ProjectMasterId!.Value
-                    )
+                    .GroupBy(x => new
+                    {
+                        x.MaterialId,
+                        ProjectId =
+                            x.ProjectMasterId!.Value
+                    })
                     .Select(g => new
                     {
-                        ProjectId =
-                            g.Key,
+                        g.Key.MaterialId,
+                        g.Key.ProjectId,
 
                         ActualQuantity =
                             g.Sum(x =>
@@ -294,21 +233,6 @@ namespace 崴正.Services
                             )
                     })
                     .ToListAsync();
-
-            if (!usageData.Any())
-            {
-                result.HasEnoughSamples = false;
-
-                result.StatusMessage =
-                    "相似建案中沒有此材料的有效歷史資料";
-
-                return ServiceResult.Ok(result);
-            }
-
-
-            // ==========================================
-            // 5. 取得這些建案的面積與年月
-            // ==========================================
 
             var usageProjectIds =
                 usageData
@@ -348,314 +272,443 @@ namespace 崴正.Services
                         x => x
                     );
 
-
-            // ==========================================
-            // 6. 建立每個歷史建案的一筆 Reference
-            // ==========================================
-
-            var allReferences =
-                new List<RangeEstimationReferenceDto>();
-
-            foreach (var usage in usageData)
-            {
-                if (!projectMetadataDictionary.TryGetValue(
-                        usage.ProjectId,
-                        out var project))
-                {
-                    continue;
-                }
-
-                if (!similarityDictionary.TryGetValue(
-                        usage.ProjectId,
-                        out var similarity))
-                {
-                    continue;
-                }
-
-                if (!project.TotalFloorArea.HasValue ||
-                    project.TotalFloorArea.Value <= 0)
-                {
-                    continue;
-                }
-
-                if (!project.StartDate.HasValue)
-                {
-                    continue;
-                }
-
-                if (usage.ActualQuantity <= 0)
-                {
-                    continue;
-                }
-
-                if (similarity.SimilarityScore <= 0)
-                {
-                    continue;
-                }
-
-
-                // ======================================
-                // 單位面積用量
-                // ======================================
-
-                decimal usagePerArea =
-                    usage.ActualQuantity /
-                    project.TotalFloorArea.Value;
-
-
-                // ======================================
-                // Similarity Weight
-                //
-                // (Similarity / 100) ^ exponent
-                // ======================================
-
-                decimal similarityWeight =
-                    (decimal)Math.Pow(
-                        similarity.SimilarityScore /
-                        100.0,
-                        (double)
-                        settings.SimilarityExponent
-                    );
-
-
-                // ======================================
-                // Time Weight
-                //
-                // 使用「目標建案年月」
-                // 與「歷史建案年月」的時間距離。
-                //
-                // 每經過一個 Half-Life：
-                // 權重減半。
-                // ======================================
-
-                double ageYears =
-                    Math.Abs(
-                        (
-                            resolvedTarget
-                                .SimilarityTarget
-                                .ProjectDate -
-                            project
-                                .StartDate
-                                .Value
-                        )
-                        .TotalDays
-                    )
-                    /
-                    365.2425;
-
-                decimal timeWeight =
-                    (decimal)Math.Pow(
-                        0.5,
-                        ageYears /
-                        (double)
-                        settings.TimeHalfLifeYears
-                    );
-
-
-                // ======================================
-                // 最終權重
-                // ======================================
-
-                decimal finalWeight =
-                    similarityWeight *
-                    timeWeight;
-
-                if (finalWeight <= 0)
-                {
-                    continue;
-                }
-
-
-                allReferences.Add(
-                    new RangeEstimationReferenceDto
-                    {
-                        ProjectId =
-                            project.ProjectId,
-
-                        ProjectName =
-                            project.ProjectName,
-
-                        ProjectDate =
-                            project.StartDate.Value,
-
-                        SimilarityScore =
-                            similarity.SimilarityScore,
-
-                        FloorArea =
-                            project.TotalFloorArea.Value,
-
-                        ActualQuantity =
-                            usage.ActualQuantity,
-
-                        UsagePerArea =
-                            usagePerArea,
-
-                        AgeYears =
-                            ageYears,
-
-                        SimilarityWeight =
-                            similarityWeight,
-
-                        TimeWeight =
-                            timeWeight,
-
-                        FinalWeight =
-                            finalWeight
-                    }
+            var usageLookup =
+                usageData.ToLookup(
+                    x => x.MaterialId
                 );
-            }
 
+            var results =
+                new List<RangeEstimationDto>();
 
-            result.MaterialAvailableProjectCount =
-                allReferences.Count;
-
-
-            // ==========================================
-            // 7. 這時候才取材料自己的 Top K
-            // ==========================================
-
-            var references =
-                allReferences
-                    .OrderByDescending(x =>
-                        x.SimilarityScore
-                    )
-                    .ThenByDescending(x =>
-                        x.FinalWeight
-                    )
-                    .Take(
-                        settings.TopK
-                    )
-                    .ToList();
-
-            result.ReferenceProjectCount =
-                references.Count;
-
-            result.References =
-                references;
-
-
-            // ==========================================
-            // 8. 最低樣本數判定
-            // ==========================================
-
-            if (references.Count <
-                settings.MinimumSampleCount)
+            foreach (
+                var materialId
+                in requestedMaterialIds)
             {
+                var material =
+                    materialDictionary[materialId];
+
+                var result =
+                    CreateBaseResult(
+                        resolvedTarget,
+                        material,
+                        settings
+                    );
+
+                result.CandidateProjectCount =
+                    similarityCandidates.Count;
+
+                var materialUsage =
+                    usageLookup[materialId]
+                        .ToList();
+
+                if (!materialUsage.Any())
+                {
+                    result.HasEnoughSamples =
+                        false;
+
+                    result.StatusMessage =
+                        "相似建案中沒有此材料的有效歷史資料";
+
+                    results.Add(
+                        result
+                    );
+
+                    continue;
+                }
+
+                var allReferences =
+                    new List<RangeEstimationReferenceDto>();
+
+                foreach (
+                    var usage
+                    in materialUsage)
+                {
+                    if (
+                        !projectMetadataDictionary
+                            .TryGetValue(
+                                usage.ProjectId,
+                                out var project
+                            )
+                    )
+                    {
+                        continue;
+                    }
+
+                    if (
+                        !similarityDictionary
+                            .TryGetValue(
+                                usage.ProjectId,
+                                out var similarity
+                            )
+                    )
+                    {
+                        continue;
+                    }
+
+                    if (
+                        !project.TotalFloorArea.HasValue ||
+                        project.TotalFloorArea.Value <= 0
+                    )
+                    {
+                        continue;
+                    }
+
+                    if (!project.StartDate.HasValue)
+                    {
+                        continue;
+                    }
+
+                    if (usage.ActualQuantity <= 0)
+                    {
+                        continue;
+                    }
+
+                    if (similarity.SimilarityScore <= 0)
+                    {
+                        continue;
+                    }
+
+                    decimal usagePerArea =
+                        usage.ActualQuantity /
+                        project.TotalFloorArea.Value;
+
+                    decimal similarityWeight =
+                        (decimal)Math.Pow(
+                            similarity.SimilarityScore /
+                            100.0,
+                            (double)
+                            settings.SimilarityExponent
+                        );
+
+                    double ageYears =
+                        Math.Abs(
+                            (
+                                resolvedTarget
+                                    .SimilarityTarget
+                                    .ProjectDate -
+                                project
+                                    .StartDate
+                                    .Value
+                            )
+                            .TotalDays
+                        )
+                        /
+                        365.2425;
+
+                    decimal timeWeight =
+                        (decimal)Math.Pow(
+                            0.5,
+                            ageYears /
+                            (double)
+                            settings.TimeHalfLifeYears
+                        );
+
+                    decimal finalWeight =
+                        similarityWeight *
+                        timeWeight;
+
+                    if (finalWeight <= 0)
+                    {
+                        continue;
+                    }
+
+                    allReferences.Add(
+                        new RangeEstimationReferenceDto
+                        {
+                            ProjectId =
+                                project.ProjectId,
+
+                            ProjectName =
+                                project.ProjectName,
+
+                            ProjectDate =
+                                project.StartDate.Value,
+
+                            SimilarityScore =
+                                similarity.SimilarityScore,
+
+                            FloorArea =
+                                project.TotalFloorArea.Value,
+
+                            ActualQuantity =
+                                usage.ActualQuantity,
+
+                            UsagePerArea =
+                                usagePerArea,
+
+                            AgeYears =
+                                ageYears,
+
+                            SimilarityWeight =
+                                similarityWeight,
+
+                            TimeWeight =
+                                timeWeight,
+
+                            FinalWeight =
+                                finalWeight
+                        }
+                    );
+                }
+
+                result.MaterialAvailableProjectCount =
+                    allReferences.Count;
+
+                var references =
+                    allReferences
+                        .OrderByDescending(x =>
+                            x.SimilarityScore
+                        )
+                        .ThenByDescending(x =>
+                            x.FinalWeight
+                        )
+                        .Take(
+                            settings.TopK
+                        )
+                        .ToList();
+
+                result.ReferenceProjectCount =
+                    references.Count;
+
+                result.References =
+                    references;
+
+                if (
+                    references.Count <
+                    settings.MinimumSampleCount
+                )
+                {
+                    result.HasEnoughSamples =
+                        false;
+
+                    result.StatusMessage =
+                        $"樣本不足：目前只有 {references.Count} 個有效參考建案，最低需要 {settings.MinimumSampleCount} 個。";
+
+                    RoundReferences(
+                        result.References
+                    );
+
+                    results.Add(
+                        result
+                    );
+
+                    continue;
+                }
+
+                decimal lowerUsagePerArea =
+                    CalculateWeightedQuantile(
+                        references,
+                        settings.LowerQuantile
+                    );
+
+                decimal medianUsagePerArea =
+                    CalculateWeightedQuantile(
+                        references,
+                        settings.MedianQuantile
+                    );
+
+                decimal upperUsagePerArea =
+                    CalculateWeightedQuantile(
+                        references,
+                        settings.UpperQuantile
+                    );
+
+                decimal targetArea =
+                    resolvedTarget
+                        .SimilarityTarget
+                        .TotalFloorArea;
+
+                result.LowerUsagePerArea =
+                    Math.Round(
+                        lowerUsagePerArea,
+                        6
+                    );
+
+                result.MedianUsagePerArea =
+                    Math.Round(
+                        medianUsagePerArea,
+                        6
+                    );
+
+                result.UpperUsagePerArea =
+                    Math.Round(
+                        upperUsagePerArea,
+                        6
+                    );
+
+                result.LowerQuantity =
+                    Math.Round(
+                        lowerUsagePerArea *
+                        targetArea,
+                        2
+                    );
+
+                result.MedianQuantity =
+                    Math.Round(
+                        medianUsagePerArea *
+                        targetArea,
+                        2
+                    );
+
+                result.UpperQuantity =
+                    Math.Round(
+                        upperUsagePerArea *
+                        targetArea,
+                        2
+                    );
+
                 result.HasEnoughSamples =
-                    false;
+                    true;
 
                 result.StatusMessage =
-                    $"樣本不足：目前只有 {references.Count} 個有效參考建案，最低需要 {settings.MinimumSampleCount} 個。";
+                    "合理用量區間估算完成";
 
                 RoundReferences(
                     result.References
                 );
 
-                return ServiceResult.Ok(
+                results.Add(
                     result
                 );
             }
 
-
-            // ==========================================
-            // 9. Weighted Quantile
-            // ==========================================
-
-            decimal lowerUsagePerArea =
-                CalculateWeightedQuantile(
-                    references,
-                    settings.LowerQuantile
-                );
-
-            decimal medianUsagePerArea =
-                CalculateWeightedQuantile(
-                    references,
-                    settings.MedianQuantile
-                );
-
-            decimal upperUsagePerArea =
-                CalculateWeightedQuantile(
-                    references,
-                    settings.UpperQuantile
-                );
-
-
-            // ==========================================
-            // 10. 乘回目標建案總樓地板面積
-            // ==========================================
-
-            decimal targetArea =
-                resolvedTarget
-                    .SimilarityTarget
-                    .TotalFloorArea;
-
-            result.LowerUsagePerArea =
-                Math.Round(
-                    lowerUsagePerArea,
-                    6
-                );
-
-            result.MedianUsagePerArea =
-                Math.Round(
-                    medianUsagePerArea,
-                    6
-                );
-
-            result.UpperUsagePerArea =
-                Math.Round(
-                    upperUsagePerArea,
-                    6
-                );
-
-
-            result.LowerQuantity =
-                Math.Round(
-                    lowerUsagePerArea *
-                    targetArea,
-                    2
-                );
-
-            result.MedianQuantity =
-                Math.Round(
-                    medianUsagePerArea *
-                    targetArea,
-                    2
-                );
-
-            result.UpperQuantity =
-                Math.Round(
-                    upperUsagePerArea *
-                    targetArea,
-                    2
-                );
-
-
-            result.HasEnoughSamples =
-                true;
-
-            result.StatusMessage =
-                "合理用量區間估算完成";
-
-
-            RoundReferences(
-                result.References
-            );
-
             return ServiceResult.Ok(
-                result
+                results
             );
         }
 
+        private async Task<ServiceResult>
+            EstimateResolvedMaterialRangeAsync(
+                ResolvedEstimationTarget resolvedTarget,
+                int materialId,
+                List<ProjectSimilarityDto>? precomputedSimilarityCandidates = null)
+        {
+            var similarityCandidates =
+                precomputedSimilarityCandidates
+                ??
+                await _similarityService
+                    .GetScoredCandidateProjectsAsync(
+                        resolvedTarget
+                    );
 
+            var batchResult =
+                await EstimateMaterialRangesAsync(
+                    resolvedTarget,
+                    new[]
+                    {
+                        materialId
+                    },
+                    similarityCandidates
+                );
 
-        // ==========================================
-        // Weighted Quantile
-        //
-        // 不是平均 ± 標準差。
-        //
-        // 將建案依 UnitConsumption 排序，
-        // 再利用 FinalWeight 找累積權重位置。
-        // ==========================================
+            if (!batchResult.Success)
+            {
+                return batchResult;
+            }
+
+            if (
+                batchResult.Data
+                is not List<RangeEstimationDto> results ||
+                results.Count != 1
+            )
+            {
+                return ServiceResult.Validation(
+                    "單一材料估算結果格式錯誤"
+                );
+            }
+
+            return ServiceResult.Ok(
+                results[0]
+            );
+        }
+
+        private static RangeEstimationDto
+            CreateBaseResult(
+                ResolvedEstimationTarget resolvedTarget,
+                MaterialMaster material,
+                EstimationSetting settings)
+        {
+            return new RangeEstimationDto
+            {
+                TargetMode =
+                    resolvedTarget.SourceMode,
+
+                TargetProjectId =
+                    resolvedTarget.HistoricalProjectId,
+
+                TargetProjectName =
+                    resolvedTarget.DisplayName,
+
+                TargetProjectType =
+                    resolvedTarget
+                        .SimilarityTarget
+                        .ProjectType,
+
+                TargetStructureType =
+                    resolvedTarget
+                        .SimilarityTarget
+                        .StructureType,
+
+                TargetCity =
+                    resolvedTarget
+                        .SimilarityTarget
+                        .City,
+
+                TargetFloorArea =
+                    resolvedTarget
+                        .SimilarityTarget
+                        .TotalFloorArea,
+
+                TargetFloorCount =
+                    resolvedTarget
+                        .SimilarityTarget
+                        .FloorCount,
+
+                TargetBasementFloorCount =
+                    resolvedTarget
+                        .SimilarityTarget
+                        .BasementFloorCount,
+
+                TargetProjectDate =
+                    resolvedTarget
+                        .SimilarityTarget
+                        .ProjectDate,
+
+                MaterialId =
+                    material.MaterialId,
+
+                MaterialName =
+                    material.MaterialName,
+
+                BaseUnit =
+                    material.BaseUnit,
+
+                UsagePerAreaUnit =
+                    $"{material.BaseUnit}/m²",
+
+                TopK =
+                    settings.TopK,
+
+                MinimumSampleCount =
+                    settings.MinimumSampleCount,
+
+                LowerQuantile =
+                    settings.LowerQuantile,
+
+                MedianQuantile =
+                    settings.MedianQuantile,
+
+                UpperQuantile =
+                    settings.UpperQuantile,
+
+                SimilarityExponent =
+                    settings.SimilarityExponent,
+
+                TimeHalfLifeYears =
+                    settings.TimeHalfLifeYears
+            };
+        }
+
         private static decimal CalculateWeightedQuantile(
             List<RangeEstimationReferenceDto> references,
             decimal quantile)
@@ -705,7 +758,6 @@ namespace 崴正.Services
                 .Last()
                 .UsagePerArea;
         }
-
 
         private static void RoundReferences(
             List<RangeEstimationReferenceDto> references)

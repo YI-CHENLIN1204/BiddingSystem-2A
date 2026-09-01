@@ -69,77 +69,6 @@ namespace 崴正.Controllers
             };
         }
 
-        [HttpPost("manual-material")]
-        public async Task<IActionResult>
-            EstimateManualMaterial(
-                [FromBody]
-                ManualRangeEstimationRequest request)
-        {
-            var targetRequest =
-                new EstimationTargetRequest
-                {
-                    TargetMode =
-                        EstimationTargetMode.ManualInput,
-
-                    ProjectType =
-                        request.ProjectType,
-
-                    StructureType =
-                        request.StructureType,
-
-                    City =
-                        request.City,
-
-                    TotalFloorArea =
-                        request.TotalFloorArea,
-
-                    FloorCount =
-                        request.FloorCount,
-
-                    BasementFloorCount =
-                        request.BasementFloorCount,
-
-                    ProjectMonth =
-                        request.ProjectMonth
-                };
-
-            var result =
-                await _rangeEstimationService
-                    .EstimateMaterialRangeAsync(
-                        targetRequest,
-                        request.MaterialId
-                    );
-
-            if (result.Success)
-            {
-                return Ok(result.Data);
-            }
-
-            return result.ErrorType switch
-            {
-                ServiceErrorType.NotFound =>
-                    NotFound(new
-                    {
-                        message =
-                            result.ErrorMessage
-                    }),
-
-                ServiceErrorType.Conflict =>
-                    Conflict(new
-                    {
-                        message =
-                            result.ErrorMessage
-                    }),
-
-                _ =>
-                    BadRequest(new
-                    {
-                        message =
-                            result.ErrorMessage
-                    })
-            };
-        }
-
         [HttpPost("batch")]
         public async Task<IActionResult>
             EstimateBatch(
@@ -179,6 +108,41 @@ namespace 崴正.Controllers
                     {
                         message =
                             result.ErrorMessage
+                    })
+            };
+        }
+
+        [HttpPost("core")]
+        public async Task<IActionResult> EstimateCore(
+            [FromBody] EstimationTargetRequest target)
+        {
+            var result =
+                await _batchEstimationService
+                    .EstimateCoreMaterialsAsync(target);
+
+            if (result.Success)
+            {
+                return Ok(result.Data);
+            }
+
+            return result.ErrorType switch
+            {
+                ServiceErrorType.NotFound =>
+                    NotFound(new
+                    {
+                        message = result.ErrorMessage
+                    }),
+
+                ServiceErrorType.Conflict =>
+                    Conflict(new
+                    {
+                        message = result.ErrorMessage
+                    }),
+
+                _ =>
+                    BadRequest(new
+                    {
+                        message = result.ErrorMessage
                     })
             };
         }

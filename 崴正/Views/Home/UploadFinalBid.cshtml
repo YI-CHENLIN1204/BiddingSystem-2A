@@ -3,21 +3,80 @@
 }
 
 <style>
-    :root { --wz-primary: #321fdb; --wz-bg: #ebedef; --wz-text: #141d23; --wz-muted: #6c757d; --wz-border: #d8dbe0; }
-    body { background: var(--wz-bg); color: var(--wz-text); }
-    .final-bid-page { max-width: 760px; margin: 0; }
-    .final-bid-page * { box-sizing: border-box; }
-    .final-bid-page h2 { font-size: 1.35rem; }
-    .admin-main-card { background: #fff; border-radius: 6px; box-shadow: 0 2px 8px rgba(20, 29, 35, 0.06); border: 1px solid var(--wz-border); padding: 16px 18px; }
-    .btn-wz-primary { background: var(--wz-primary); color: white; border-radius: 6px; padding: 8px 18px; font-weight: 700; border: none; font-size: .95rem; display: inline-flex; align-items: center; justify-content: center; }
-    .btn-wz-primary:hover { color: white; filter: brightness(.95); }
-    .section-title { font-size: 1rem; color: var(--wz-primary); font-weight: 800; border-bottom: 2px solid #ebe8ff; padding-bottom: 7px; margin-bottom: 14px; margin-top: 6px; }
+    :root {
+        --wz-primary: #321fdb;
+        --wz-primary-soft: #ebe8ff;
+        --wz-bg: #ebedef;
+        --wz-text: #141d23;
+        --wz-muted: #6c757d;
+        --wz-border: #d8dbe0;
+    }
+
+    body {
+        background: var(--wz-bg);
+        color: var(--wz-text);
+    }
+
+    .final-bid-page {
+        max-width: 1280px;
+        margin: 0 auto;
+        padding-bottom: 40px;
+    }
+
+    .final-bid-page * {
+        box-sizing: border-box;
+    }
+
+    .page-title {
+        font-size: 1.55rem;
+        font-weight: 800;
+        margin-bottom: 4px;
+    }
+
+    .page-description {
+        color: var(--wz-muted);
+        font-size: 14px;
+        margin-bottom: 18px;
+    }
+
+    .admin-main-card {
+        background: #fff;
+        border: 1px solid var(--wz-border);
+        border-radius: 8px;
+        box-shadow: 0 2px 8px rgba(20, 29, 35, .06);
+        overflow: hidden;
+    }
+
+    .form-section + .form-section {
+        border-top: 1px solid var(--wz-border);
+    }
+
+    .form-section-header {
+        padding: 12px 16px;
+        background: #f8f9fa;
+        border-bottom: 1px solid #e3e5e8;
+    }
+
+    .form-section-title {
+        color: var(--wz-primary);
+        font-size: 14px;
+        font-weight: 800;
+    }
+
+    .form-section-description {
+        margin-top: 2px;
+        color: var(--wz-muted);
+        font-size: 11px;
+    }
+
+    .form-section-body {
+        padding: 16px;
+    }
 
     .project-form-grid {
         display: grid;
-        grid-template-columns: repeat(3, minmax(0, 1fr));
-        gap: 10px 12px;
-        margin-bottom: 18px;
+        grid-template-columns: repeat(4, minmax(0, 1fr));
+        gap: 14px;
     }
 
     .project-name-field {
@@ -39,10 +98,10 @@
     .wz-input,
     .wz-select {
         width: 100%;
-        height: 36px;
+        height: 38px;
         border: 1px solid var(--wz-border);
         border-radius: 6px;
-        background-color: #ffffff;
+        background-color: #fff;
         color: var(--wz-text);
         font-size: 14px;
         line-height: 1.5;
@@ -57,22 +116,8 @@
     .wz-input:focus,
     .wz-select:focus {
         border-color: var(--wz-primary);
-        box-shadow: 0 0 0 0.2rem rgba(50, 31, 219, 0.12);
+        box-shadow: 0 0 0 .15rem rgba(50, 31, 219, .12);
         outline: 0;
-    }
-
-    .wz-select {
-        appearance: none;
-        padding-right: 34px;
-        background-image:
-            linear-gradient(45deg, transparent 50%, #6c757d 50%),
-            linear-gradient(135deg, #6c757d 50%, transparent 50%);
-        background-position:
-            calc(100% - 17px) 15px,
-            calc(100% - 11px) 15px;
-        background-size: 6px 6px, 6px 6px;
-        background-repeat: no-repeat;
-        cursor: pointer;
     }
 
     .file-input-native {
@@ -89,10 +134,10 @@
 
     .file-picker {
         width: 100%;
-        min-height: 38px;
+        min-height: 42px;
         border-radius: 6px;
         border: 1px solid var(--wz-border);
-        background: #ffffff;
+        background: #fff;
         display: flex;
         align-items: center;
         overflow: hidden;
@@ -102,25 +147,25 @@
 
     .file-picker:hover {
         border-color: var(--wz-primary);
-        box-shadow: 0 2px 8px rgba(50, 31, 219, 0.08);
+        box-shadow: 0 2px 8px rgba(50, 31, 219, .08);
     }
 
     .file-input-native:focus + .file-picker {
         border-color: var(--wz-primary);
-        box-shadow: 0 0 0 0.2rem rgba(50, 31, 219, 0.12);
+        box-shadow: 0 0 0 .15rem rgba(50, 31, 219, .12);
     }
 
     .file-picker-button {
         align-self: stretch;
-        padding: 0 16px;
-        background: #f0f7ff;
+        padding: 0 18px;
+        background: var(--wz-primary-soft);
         color: var(--wz-primary);
         border-right: 1px solid var(--wz-border);
         display: inline-flex;
         align-items: center;
         justify-content: center;
         font-weight: 800;
-        font-size: 14px;
+        font-size: 13px;
         white-space: nowrap;
     }
 
@@ -138,25 +183,74 @@
         font-weight: 600;
     }
 
-    .file-upload-row {
-        margin-bottom: 14px;
-    }
-
-    .upload-actions {
+    .upload-footer {
         display: flex;
-        justify-content: flex-start;
+        justify-content: space-between;
         align-items: center;
-        margin-top: 0;
-        padding-top: 0;
-        clear: both;
+        gap: 16px;
+        margin-top: 14px;
     }
-    
-    .stat-box { background: #f8f9fa; border: 1px solid #dee2e6; border-radius: 6px; padding: 14px; text-align: center; }
-    .stat-num { font-size: 2rem; font-weight: 900; }
 
-    @@media (max-width: 768px) {
+    .upload-hint {
+        color: var(--wz-muted);
+        font-size: 12px;
+    }
+
+    .btn-wz-primary {
+        background: var(--wz-primary);
+        color: #fff;
+        border-radius: 6px;
+        padding: 9px 20px;
+        font-weight: 800;
+        border: none;
+        font-size: .95rem;
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+    }
+
+    .btn-wz-primary:hover {
+        color: #fff;
+        filter: brightness(.96);
+    }
+
+    .loading-text {
+        margin-top: 12px;
+        padding: 10px 12px;
+        border-radius: 6px;
+        background: #f8f9fa;
+        color: var(--wz-muted);
+        font-size: 12px;
+        font-weight: 700;
+        text-align: center;
+    }
+
+    .stat-box {
+        background: #f8f9fa;
+        border: 1px solid #dee2e6;
+        border-radius: 6px;
+        padding: 14px;
+        text-align: center;
+    }
+
+    .stat-num {
+        font-size: 2rem;
+        font-weight: 900;
+    }
+
+    @@media (max-width: 1000px) {
+        .project-form-grid {
+            grid-template-columns: repeat(2, minmax(0, 1fr));
+        }
+    }
+
+    @@media (max-width: 650px) {
         .project-form-grid {
             grid-template-columns: 1fr;
+        }
+
+        .project-name-field {
+            grid-column: auto;
         }
 
         .file-picker {
@@ -165,7 +259,7 @@
         }
 
         .file-picker-button {
-            min-height: 44px;
+            min-height: 42px;
             border-right: 0;
             border-bottom: 1px solid var(--wz-border);
         }
@@ -173,102 +267,135 @@
         .file-picker-name {
             padding: 12px 16px;
         }
+
+        .upload-footer {
+            flex-direction: column;
+            align-items: stretch;
+        }
     }
 </style>
 
-<div class="container final-bid-page">
-    <h2 class="fw-bold mb-1">決標單歷史回寫</h2>
+<div class="container final-bid-page mt-4">
+    <h2 class="page-title">決標單歷史回寫</h2>
+    <div class="page-description">
+        將已完成決標的標單匯入歷史資料庫，供後續工程用量估算與標單異常分析使用。
+    </div>
 
     <div class="admin-main-card">
-        
-        <div class="section-title">1. 建立工程專案來源</div>
-        <div class="project-form-grid">
-            <div class="wz-field project-name-field">
-                <label class="wz-label" for="projectName">工程專案名稱</label>
-                <input type="text" id="projectName" class="wz-input" placeholder="例如：立彩_FANCY新建工程" />
+
+        <div class="form-section">
+            <div class="form-section-header">
+                <div class="form-section-title">1. 建案基本資料</div>
+                <div class="form-section-description">建立本次決標資料所屬的歷史建案條件。</div>
             </div>
 
-            <div class="wz-field">
-                <label class="wz-label" for="projectType">建案類型</label>
-                <select id="projectType" class="wz-select" required>
-                    <option value="">請選擇</option>
-                    <option value="住宅">住宅</option>
-                    <option value="廠房">廠房</option>
-                </select>
+            <div class="form-section-body">
+                <div class="project-form-grid">
+                    <div class="wz-field project-name-field">
+                        <label class="wz-label" for="projectName">工程專案名稱</label>
+                        <input type="text"
+                               id="projectName"
+                               class="wz-input"
+                               placeholder="例如：住宅新建工程" />
+                    </div>
+
+                    <div class="wz-field">
+                        <label class="wz-label" for="projectType">建案類型</label>
+                        <select id="projectType" class="wz-select" required>
+                            <option value="">請選擇</option>
+                            <option value="住宅">住宅</option>
+                            <option value="廠房">廠房</option>
+                        </select>
+                    </div>
+
+                    <div class="wz-field">
+                        <label class="wz-label" for="structureType">結構類型</label>
+                        <select id="structureType" class="wz-select" required>
+                            <option value="">請選擇</option>
+                            <option value="RC">RC</option>
+                            <option value="SC">SC</option>
+                            <option value="SRC">SRC</option>
+                        </select>
+                    </div>
+
+                    <div class="wz-field">
+                        <label class="wz-label" for="city">縣市</label>
+                        <select id="city" class="wz-select">
+                            <partial name="_CityOptions" />
+                        </select>
+                    </div>
+
+                    <div class="wz-field">
+                        <label class="wz-label" for="totalFloorArea">總樓地板面積</label>
+                        <div class="input-group">
+                            <input type="number"
+                                   id="totalFloorArea"
+                                   class="wz-input"
+                                   min="0.01"
+                                   step="0.01"
+                                   placeholder="例如：12580.5" />
+                        </div>
+                    </div>
+
+                    <div class="wz-field">
+                        <label class="wz-label" for="floorCount">地上樓層</label>
+                        <input type="number"
+                               id="floorCount"
+                               class="wz-input"
+                               min="1"
+                               placeholder="例如：15" />
+                    </div>
+
+                    <div class="wz-field">
+                        <label class="wz-label" for="basementFloorCount">地下樓層</label>
+                        <input type="number"
+                               id="basementFloorCount"
+                               class="wz-input"
+                               min="0"
+                               value="0"
+                               placeholder="例如：2" />
+                    </div>
+
+                    <div class="wz-field">
+                        <label class="wz-label" for="projectMonth">建案年月</label>
+                        <input type="month"
+                               id="projectMonth"
+                               class="wz-input" />
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div class="form-section">
+            <div class="form-section-header">
+                <div class="form-section-title">2. 上傳最終決標標單</div>
+                <div class="form-section-description">支援 Excel .xlsx / .xls 格式；解析完成後寫入歷史資料並進行材料對應。</div>
             </div>
 
-            <div class="wz-field">
-                <label class="wz-label" for="structureType">結構類型</label>
-                <select id="structureType" class="wz-select" required>
-                    <option value="">請選擇</option>
-                    <option value="SC">SC</option>
-                    <option value="RC">RC</option>
-                    <option value="SRC">SRC</option>
-                </select>
+            <div class="form-section-body">
+                <input type="file"
+                       id="excelFile"
+                       class="file-input-native"
+                       accept=".xlsx,.xls" />
+
+                <label for="excelFile" class="file-picker">
+                    <span class="file-picker-button">選擇 Excel 檔案</span>
+                    <span id="excelFileName" class="file-picker-name">尚未選擇檔案</span>
+                </label>
+
+                <div class="upload-footer">
+                    <div class="upload-hint">請確認建案基本資料與標單檔案後再執行回寫。</div>
+                    <button id="btnUpload" class="btn-wz-primary">解析並回寫歷史資料</button>
+                </div>
+
+                <div id="loadingText"
+                     class="loading-text"
+                     style="display:none;">
+                    系統正在解析標單並同步至資料庫，請稍候。
+                </div>
             </div>
-
-            <div class="wz-field">
-                <label class="wz-label" for="city">區域/縣市</label>
-                    <select id="city"
-                            class="form-select">
-                        <partial name="_CityOptions" />
-                    </select>
-            </div>
-        </div>
-        <div class="wz-field">
-            <label class="wz-label" for="totalFloorArea">
-                總樓地板面積（㎡）
-            </label>
-
-            <input type="number"
-                id="totalFloorArea"
-                class="wz-input"
-                min="0.01"
-                step="0.01"
-                placeholder="例如：12580.5" />
-        </div>
-        <div class="wz-field">
-            <label class="wz-label" for="floorCount">地上樓層數</label>
-            <input type="number"
-                id="floorCount"
-                class="wz-input"
-                min="1"
-                placeholder="例如：15" />
         </div>
 
-        <div class="wz-field">
-            <label class="wz-label" for="basementFloorCount">地下樓層數</label>
-            <input type="number"
-                id="basementFloorCount"
-                class="wz-input"
-                min="0"
-                value="0"
-                placeholder="例如：2" />
-        </div>
-
-        <div class="wz-field">
-            <label class="wz-label" for="projectMonth">建案年月</label>
-
-            <input type="month"
-                id="projectMonth"
-                class="wz-input" />
-        </div>
-        <div class="section-title">2. 選擇最終決標 Excel 檔案</div>
-        <div class="file-upload-row">
-            <input type="file" id="excelFile" class="file-input-native" accept=".xlsx,.xls" />
-            <label for="excelFile" class="file-picker">
-                <span class="file-picker-button">選擇 Excel 檔案</span>
-                <span id="excelFileName" class="file-picker-name">尚未選擇檔案</span>
-            </label>
-        </div>
-
-        <div class="upload-actions">
-            <button id="btnUpload" class="btn-wz-primary">開始解析並寫入歷史資料庫</button>
-        </div>
-
-        <div id="loadingText" class="text-center text-muted mt-3 fw-bold" style="display:none;">
-            ⏳ 系統正在深度解析標單並同步至資料庫，請稍候...
-        </div>
     </div>
 
     <div id="resultBox" class="mt-4" style="display:none;">

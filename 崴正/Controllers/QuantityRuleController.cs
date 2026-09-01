@@ -1,138 +1,287 @@
 using Microsoft.AspNetCore.Mvc;
-using Microsoft.AspNetCore.Mvc.Rendering;
-using 崴正.Data;
 using 崴正.Models;
-using System.Linq;
-using Microsoft.AspNetCore.Authorization;
-
+using 崴正.Services;
 
 namespace 崴正.Controllers
 {
-    public class QuantityRuleViewModel
-    {
-        public int RuleID { get; set; }
-        public int Material_ID { get; set; }
-        public string? MaterialName { get; set; }
-        public string? BaseUnit { get; set; }
-        public decimal Z_Score_Threshold { get; set; }
-        public decimal Base_Unit_Ratio { get; set; }
-        public decimal Unit_Consumption { get; set; } 
-        public string? Project_Type { get; set; }
-        public string? Structure_Type { get; set; }
-        public string? Floor_Zone { get; set; }
-        public decimal Waste_Rate_Percent { get; set; }
-    }
     public class QuantityRuleController : Controller
     {
-        private readonly ApplicationDbContext _context;
+        private readonly EstimationSettingsService
+            _estimationSettingsService;
 
-        public QuantityRuleController(ApplicationDbContext context)
+        private readonly CoreMaterialService
+            _coreMaterialService;
+
+
+        public QuantityRuleController(
+            EstimationSettingsService estimationSettingsService,
+            CoreMaterialService coreMaterialService)
         {
-            _context = context;
+            _estimationSettingsService =
+                estimationSettingsService;
+
+            _coreMaterialService =
+                coreMaterialService;
         }
 
-        // ==========================================
-        // 1. 列表頁 (Read)
-        // ==========================================
-        public IActionResult Index()
-        {
-            var rules = (from r in _context.QuantityRuleBases
-                         join m in _context.MaterialMasters on r.Material_ID equals m.MaterialId
-                         select new QuantityRuleViewModel
-                         {
-                             RuleID = r.RuleID,
-                             Material_ID = r.Material_ID,
-                             MaterialName = m.MaterialName,
-                             BaseUnit = m.BaseUnit,
-                            Z_Score_Threshold = r.Z_Score_Threshold,
-                            Unit_Consumption = r.Unit_Consumption, 
-                            Project_Type = r.Project_Type,         
-                            Structure_Type = r.Structure_Type,     
-                            Floor_Zone = r.Floor_Zone,            
-                            Waste_Rate_Percent = r.Waste_Rate_Percent 
-                         }).ToList();
 
-            return View(rules);
+        // ==========================================
+        // 參數管理首頁
+        // ==========================================
+
+        public async Task<IActionResult> Index()
+        {
+            var settings =
+                await _estimationSettingsService
+                    .GetCurrentAsync();
+
+            var coreMaterials =
+                await _coreMaterialService
+                    .GetMaterialSettingsAsync();
+
+
+            var viewModel =
+                new QuantityRuleManagementViewModel
+                {
+                    EstimationSettings =
+                        new EstimationSettingsFormViewModel
+                        {
+                            TopK =
+                                settings.TopK,
+
+                            MinimumSampleCount =
+                                settings.MinimumSampleCount,
+
+
+                            LowerQuantilePercent =
+                                settings.LowerQuantile *
+                                100m,
+
+                            MedianQuantilePercent =
+                                settings.MedianQuantile *
+                                100m,
+
+                            UpperQuantilePercent =
+                                settings.UpperQuantile *
+                                100m,
+
+
+                            SimilarityExponent =
+                                settings.SimilarityExponent,
+
+                            TimeHalfLifeYears =
+                                settings.TimeHalfLifeYears,
+
+                            MinimumSimilarityScore =
+                                settings.MinimumSimilarityScore,
+
+
+                            StructureWeight =
+                                settings.StructureWeight,
+
+                            AreaWeight =
+                                settings.AreaWeight,
+
+                            FloorWeight =
+                                settings.FloorWeight,
+
+                            YearWeight =
+                                settings.YearWeight,
+
+                            CityWeight =
+                                settings.CityWeight,
+
+
+                            AreaDifferenceCutoffPercent =
+                                settings.AreaDifferenceCutoffRatio *
+                                100m,
+
+                            GroundFloorPenaltyPercent =
+                                settings.GroundFloorPenaltyRatio *
+                                100m,
+
+                            BasementFloorPenaltyPercent =
+                                settings.BasementFloorPenaltyRatio *
+                                100m,
+
+
+                            YearDifferenceCutoffYears =
+                                settings.YearDifferenceCutoffYears,
+
+                            UpdatedAt =
+                                settings.UpdatedAt,
+
+                            UpdatedBy =
+                                settings.UpdatedBy
+                        },
+
+                    CoreMaterials =
+                        coreMaterials
+                };
+
+
+            return View(
+                viewModel
+            );
         }
 
+
         // ==========================================
-        // 2. 編輯功能 (Update)
+        // 更新估算與異常模型參數
         // ==========================================
-        // (GET) 打開編輯畫面
-        public IActionResult Edit(int id)
-        {
-            var rule = _context.QuantityRuleBases.FirstOrDefault(r => r.RuleID == id);
-            if (rule == null) return NotFound();
 
-            var material = _context.MaterialMasters.FirstOrDefault(m => m.MaterialId == rule.Material_ID);
-            ViewBag.MaterialName = material?.MaterialName ?? "未知建材";
-            ViewBag.BaseUnit = material?.BaseUnit ?? "";
-
-            return View(rule);
-        }
-
-        // (POST) 儲存編輯資料
         [HttpPost]
-        public IActionResult Edit(QuantityRuleBase updatedRule)
+        [ValidateAntiForgeryToken]
+        public async Task<IActionResult>
+            UpdateEstimationSettings(
+                [Bind(Prefix = "EstimationSettings")]
+                EstimationSettingsFormViewModel form)
         {
-            _context.QuantityRuleBases.Update(updatedRule);
-            _context.SaveChanges();
-            TempData["SuccessMessage"] = "參數規則修改成功！";
-            return RedirectToAction("Index");
-        }
+            var request =
+                new EstimationSettingsUpdateRequest
+                {
+                    TopK =
+                        form.TopK,
 
-        // ==========================================
-        // 3. 新增功能 (Create)
-        // ==========================================
-        public IActionResult Create()
-        {
-            var materials = _context.MaterialMasters.ToList();
-            ViewBag.Materials = materials;
-            return View();
-        }
+                    MinimumSampleCount =
+                        form.MinimumSampleCount,
 
-        // (POST) 接收表單，執行防呆與存檔
-// (POST) 接收表單，執行防呆與存檔
-        [HttpPost]
-        public IActionResult Create(QuantityRuleBase newRule)
-        {
-            // 🛡️ 多維度防呆：檢查同一個建材，在「完全相同的情境條件」下是否重複？
-            // (允許同一個建材，在不同樓層有不同的規則)
-            var existingRule = _context.QuantityRuleBases
-                .FirstOrDefault(r => 
-                    r.Material_ID == newRule.Material_ID &&
-                    r.Project_Type == newRule.Project_Type &&
-                    r.Structure_Type == newRule.Structure_Type &&
-                    r.Floor_Zone == newRule.Floor_Zone);
 
-            if (existingRule != null)
+                    LowerQuantile =
+                        form.LowerQuantilePercent /
+                        100m,
+
+                    MedianQuantile =
+                        form.MedianQuantilePercent /
+                        100m,
+
+                    UpperQuantile =
+                        form.UpperQuantilePercent /
+                        100m,
+
+
+                    SimilarityExponent =
+                        form.SimilarityExponent,
+
+                    TimeHalfLifeYears =
+                        form.TimeHalfLifeYears,
+
+                    MinimumSimilarityScore =
+                        form.MinimumSimilarityScore,
+
+
+                    StructureWeight =
+                        form.StructureWeight,
+
+                    AreaWeight =
+                        form.AreaWeight,
+
+                    FloorWeight =
+                        form.FloorWeight,
+
+                    YearWeight =
+                        form.YearWeight,
+
+                    CityWeight =
+                        form.CityWeight,
+
+
+                    AreaDifferenceCutoffRatio =
+                        form.AreaDifferenceCutoffPercent /
+                        100m,
+
+                    GroundFloorPenaltyRatio =
+                        form.GroundFloorPenaltyPercent /
+                        100m,
+
+                    BasementFloorPenaltyRatio =
+                        form.BasementFloorPenaltyPercent /
+                        100m,
+
+
+                    YearDifferenceCutoffYears =
+                        form.YearDifferenceCutoffYears
+                };
+
+
+            var result =
+                await _estimationSettingsService
+                    .UpdateAsync(
+                        request,
+                        User.Identity?.Name
+                    );
+
+
+            if (!result.Success)
             {
-                TempData["ErrorMessage"] = "建立失敗！該建材在「相同的情境條件下」已經有設定過規則了。";
-                return RedirectToAction("Index");
+                TempData["ErrorMessage"] =
+                    result.ErrorMessage;
+
+                return RedirectToAction(
+                    nameof(Index)
+                );
             }
 
-            _context.QuantityRuleBases.Add(newRule);
-            _context.SaveChanges();
-            
-            TempData["SuccessMessage"] = "參數規則新增成功！";
-            return RedirectToAction("Index");
+
+            TempData["SuccessMessage"] =
+                "估算與異常分析模型參數已更新。";
+
+
+            return RedirectToAction(
+                nameof(Index)
+            );
         }
 
+
         // ==========================================
-        // 4. 刪除功能 (Delete)
+        // 更新核心材料狀態
         // ==========================================
-        // (POST) 執行刪除
+
         [HttpPost]
-        public IActionResult Delete(int id)
+        [ValidateAntiForgeryToken]
+        public async Task<IActionResult>
+            UpdateCoreMaterial(
+                [FromBody]
+                CoreMaterialUpdateRequest request)
         {
-            var rule = _context.QuantityRuleBases.FirstOrDefault(r => r.RuleID == id);
-            if (rule != null)
+            var result =
+                await _coreMaterialService
+                    .UpdateCoreStatusAsync(
+                        request
+                    );
+
+
+            if (result.Success)
             {
-                _context.QuantityRuleBases.Remove(rule);
-                _context.SaveChanges();
-                TempData["SuccessMessage"] = "規則已成功刪除！";
+                return Ok(
+                    result.Data
+                );
             }
-            return RedirectToAction("Index");
+
+
+            return result.ErrorType switch
+            {
+                ServiceErrorType.NotFound =>
+                    NotFound(new
+                    {
+                        message =
+                            result.ErrorMessage
+                    }),
+
+                ServiceErrorType.Conflict =>
+                    Conflict(new
+                    {
+                        message =
+                            result.ErrorMessage
+                    }),
+
+                _ =>
+                    BadRequest(new
+                    {
+                        message =
+                            result.ErrorMessage
+                    })
+            };
         }
     }
 }

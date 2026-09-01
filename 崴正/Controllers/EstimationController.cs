@@ -21,98 +21,19 @@ namespace 崴正.Controllers
         private readonly MaterialMappingService _materialMappingService;
         private readonly FinalBidImportService _finalBidImportService;
         private readonly FinalBidQueryService _finalBidQueryService;
-        private readonly AnomalyDetectionService _anomalyDetectionService;
 
         public EstimationController(
             ApplicationDbContext context,
             FinalBidService finalBidService,
             MaterialMappingService materialMappingService,
             FinalBidImportService finalBidImportService,
-            FinalBidQueryService finalBidQueryService,
-            AnomalyDetectionService anomalyDetectionService)
+            FinalBidQueryService finalBidQueryService)
         {
             _context = context;
             _finalBidService = finalBidService;
             _materialMappingService = materialMappingService;
             _finalBidImportService = finalBidImportService;
             _finalBidQueryService = finalBidQueryService;
-            _anomalyDetectionService = anomalyDetectionService;
-        }
-
-        // 保留原本的 JSON 測試 API，避免其他地方若有用到會壞掉。
-        [HttpPost("analyze")]
-        public IActionResult AnalyzeBid(
-            [FromBody] BidRequestDto request)
-        {
-            var result =
-                _anomalyDetectionService
-                    .AnalyzeBid(request);
-
-            return Ok(result);
-        }
-
-        // 新版：直接上傳 Excel，不儲存本次標單；使用資料庫歷史資料計算時間權重 Z 分數。
-        [HttpPost("analyze-excel")]
-        public IActionResult AnalyzeExcel(
-            IFormFile excelFile)
-        {
-            if (excelFile == null ||
-                excelFile.Length == 0)
-            {
-                return BadRequest(new
-                {
-                    message =
-                        "請先選擇 Excel 檔案"
-                });
-            }
-
-            string extension =
-                Path.GetExtension(
-                    excelFile.FileName
-                ).ToLowerInvariant();
-
-            if (extension != ".xlsx")
-            {
-                return BadRequest(new
-                {
-                    message =
-                        "目前請先上傳 .xlsx 檔案；.xls 舊格式請先另存新檔為 .xlsx"
-                });
-            }
-
-            using var stream =
-                excelFile.OpenReadStream();
-
-            var result =
-                _anomalyDetectionService
-                    .AnalyzeExcel(
-                        stream,
-                        excelFile.FileName
-                    );
-
-            return ToActionResult(result);
-        }
-
-
-        // ==========================================
-        // UC-04：人工推翻異常判定並寫入 Audit Log
-        // ==========================================
-        [HttpPost("override")]
-        public IActionResult OverrideAnomaly(
-            [FromBody] OverrideRequestDto request)
-        {
-            string actionUser =
-                User?.Identity?.Name
-                ?? "Estimator_Staff";
-
-            var result =
-                _anomalyDetectionService
-                    .OverrideAnomaly(
-                        request,
-                        actionUser
-                    );
-
-            return ToActionResult(result);
         }
 
         
@@ -316,6 +237,7 @@ namespace 崴正.Controllers
         [HttpPost("update-bid-item-data")]
         public IActionResult UpdateBidItemData(
             [FromForm] long finalBidItemId,
+            [FromForm] string? itemName,
             [FromForm] decimal? qty,
             [FromForm] decimal? unitPrice,
             [FromForm] string? unit)
@@ -324,6 +246,7 @@ namespace 崴正.Controllers
                 _finalBidService
                     .UpdateBidItemData(
                         finalBidItemId,
+                        itemName,
                         qty,
                         unitPrice,
                         unit
@@ -339,6 +262,19 @@ namespace 崴正.Controllers
             var result =
                 _finalBidService
                     .IgnoreBidItem(
+                        finalBidItemId
+                    );
+
+            return ToActionResult(result);
+        }
+
+        [HttpPost("unignore-bid-item")]
+        public IActionResult UnignoreBidItem(
+            [FromForm] long finalBidItemId)
+        {
+            var result =
+                _finalBidService
+                    .UnignoreBidItem(
                         finalBidItemId
                     );
 

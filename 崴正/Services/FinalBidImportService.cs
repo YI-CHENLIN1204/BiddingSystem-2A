@@ -375,7 +375,7 @@ namespace 崴正.Services
                     }
 
                     if (!row.UnitPrice.HasValue ||
-                        row.UnitPrice.Value < 0)
+                        row.UnitPrice.Value <= 0)
                     {
                         invalidUnitPriceCount++;
                     }

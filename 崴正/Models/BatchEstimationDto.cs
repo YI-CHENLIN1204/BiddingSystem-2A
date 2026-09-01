@@ -30,6 +30,8 @@ namespace 崴正.Models
 
         public int ResultMaterialCount { get; set; }
 
+        public List<ProjectSimilarityDto>SimilarityRanking { get; set; }= new();
+
 
         // =========================
         // 每種材料的 Range 結果

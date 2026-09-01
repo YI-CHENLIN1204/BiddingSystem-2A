@@ -4,6 +4,22 @@ using 崴正.Models;
 
 namespace 崴正.Services
 {
+
+    public class MaterialMappingLookupItem
+    {
+        public string Keyword { get; set; }
+            = string.Empty;
+
+        public int MaterialId { get; set; }
+
+        public string MaterialName { get; set; }
+            = string.Empty;
+
+        public string BaseUnit { get; set; }
+            = string.Empty;
+
+        public string? Category { get; set; }
+    }
     public class MaterialMappingService
     {
         private readonly ApplicationDbContext _context;
@@ -291,6 +307,140 @@ namespace 崴正.Services
                 transaction.Rollback();
                 throw;
             }
+        }
+
+        // ==========================================
+        // 異常偵測 / 暫存 Excel 專用
+        //
+        // 一次把「字典 + 標準材料」載入記憶體。
+        // 只讀取，不修改任何資料。
+        // ==========================================
+        public async Task<List<MaterialMappingLookupItem>>
+            GetReadOnlyLookupAsync()
+        {
+            var lookup =
+                await (
+                    from dictionary
+                        in _context.ItemDictionaries
+                            .AsNoTracking()
+
+                    join material
+                        in _context.MaterialMasters
+                            .AsNoTracking()
+
+                    on dictionary.Material_Id
+                        equals material.MaterialId
+
+                    where
+                        dictionary.Keyword != null &&
+                        dictionary.Keyword != ""
+
+                    select new MaterialMappingLookupItem
+                    {
+                        Keyword =
+                            dictionary.Keyword,
+
+                        MaterialId =
+                            material.MaterialId,
+
+                        MaterialName =
+                            material.MaterialName,
+
+                        BaseUnit =
+                            material.BaseUnit,
+
+                        Category =
+                            material.Category
+                    }
+                )
+                .ToListAsync();
+
+
+            return lookup;
+        }
+
+
+        // ==========================================
+        // 從唯讀 Lookup 找最適合的標準材料
+        //
+        // Excel：
+        // ItemName 或 Spec
+        //      ↓
+        // ItemDictionary.Keyword
+        //
+        // 若同時命中多個 Keyword，
+        // 優先採用較長、較具體的 Keyword。
+        // ==========================================
+        public MaterialMappingLookupItem?
+            FindBestMatch(
+                IReadOnlyCollection<MaterialMappingLookupItem> lookup,
+                string? itemName,
+                string? spec)
+        {
+            string normalizedItemName =
+                NormalizeText(itemName);
+
+            string normalizedSpec =
+                NormalizeText(spec);
+
+
+            if (
+                string.IsNullOrWhiteSpace(normalizedItemName) &&
+                string.IsNullOrWhiteSpace(normalizedSpec)
+            )
+            {
+                return null;
+            }
+
+
+            var matched =
+                lookup
+                    .Where(x =>
+                        !string.IsNullOrWhiteSpace(
+                            x.Keyword
+                        )
+                        &&
+                        (
+                            (
+                                !string.IsNullOrWhiteSpace(
+                                    normalizedItemName
+                                )
+                                &&
+                                normalizedItemName.Contains(
+                                    x.Keyword,
+                                    StringComparison.OrdinalIgnoreCase
+                                )
+                            )
+                            ||
+                            (
+                                !string.IsNullOrWhiteSpace(
+                                    normalizedSpec
+                                )
+                                &&
+                                normalizedSpec.Contains(
+                                    x.Keyword,
+                                    StringComparison.OrdinalIgnoreCase
+                                )
+                            )
+                        )
+                    )
+
+                    // ------------------------------------------
+                    // 例如同時命中：
+                    //
+                    // 「鋼筋」
+                    // 「SD420鋼筋」
+                    //
+                    // 優先使用「SD420鋼筋」
+                    // ------------------------------------------
+                    .OrderByDescending(x =>
+                        x.Keyword.Length
+                    )
+
+                    .FirstOrDefault();
+
+
+            return matched;
         }
 
         private void UpdateDictionary(
