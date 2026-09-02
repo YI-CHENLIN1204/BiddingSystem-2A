@@ -521,7 +521,7 @@
             </div>
 
             <div class="card-desc-wz">
-                目前接受 Excel .xlsx 格式。上傳檔案只供本次分析，不會寫入歷史資料。
+                支援 .xlsx、.xls、.xlsm、.xlsb、.csv 格式；上傳檔案只供本次分析，不會寫入歷史資料。
             </div>
         </div>
 
@@ -533,7 +533,7 @@
                 <input type="file"
                        id="excelFile"
                        class="file-input-native"
-                       accept=".xlsx" />
+                       accept=".xlsx,.xls,.xlsm,.xlsb,.csv"/>
 
                 <label for="excelFile"
                        class="file-picker">
@@ -957,10 +957,33 @@
                     file.name.toLowerCase();
 
 
-                if (!fileName.endsWith(".xlsx")) {
-                    throw new Error(
-                        "目前僅接受 .xlsx 格式的 Excel 標單"
+                const allowedExtensions =
+                [
+                    '.xlsx',
+                    '.xls',
+                    '.xlsm',
+                    '.xlsb',
+                    '.csv'
+                ];
+
+                const lowerFileName =
+                    file.name.toLowerCase();
+
+                const isAllowed =
+                    allowedExtensions.some(
+                        extension =>
+                            lowerFileName.endsWith(
+                                extension
+                            )
                     );
+
+                if (!isAllowed) {
+
+                    showMessage(
+                        '支援格式：.xlsx、.xls、.xlsm、.xlsb、.csv'
+                    );
+
+                    return;
                 }
 
 

@@ -1,7 +1,10 @@
 using ClosedXML.Excel;
 using System.Text.RegularExpressions;
+using ExcelDataReader;
 using 崴正.Models;
 using System;
+using System.Globalization;
+using System.Text;
 
 namespace 崴正.Services
 {
@@ -9,6 +12,56 @@ namespace 崴正.Services
     {
         public List<TenderImportRowDto> Parse(Stream excelStream, string fileName)
         {
+            string extension =
+                    Path.GetExtension(fileName)
+                        .ToLowerInvariant();
+
+                if (
+                    extension == ".xls" ||
+                    extension == ".xlsb" ||
+                    extension == ".csv"
+                )
+                {
+                    using var convertedStream =
+                        ConvertToXlsx(
+                            excelStream,
+                            extension
+                        );
+
+                    var convertedFileName =
+                        Path.ChangeExtension(
+                            fileName,
+                            ".xlsx"
+                        );
+
+                    var rows =
+                        Parse(
+                            convertedStream,
+                            convertedFileName
+                        );
+
+                    // 保留使用者真正上傳的原始檔名
+                    foreach (var row in rows)
+                    {
+                        row.SourceFileName =
+                            fileName;
+                    }
+
+                    return rows;
+                }
+
+                if (
+                    extension != ".xlsx" &&
+                    extension != ".xls" &&
+                    extension != ".xlsm"&&
+                    extension != ".xlsb"&&
+                    extension != ".csv"
+                )
+                {
+                    throw new InvalidDataException(
+                        "不支援此檔案格式，請使用 .xlsx、.xls、.xlsm、.xlsb 或 .csv"
+                    );
+                }
             var result = new List<TenderImportRowDto>();
 
             using var workbook = new XLWorkbook(excelStream);
@@ -202,6 +255,214 @@ namespace 崴正.Services
             }
 
             return result;
+        }
+
+        private static MemoryStream ConvertToXlsx(
+            Stream sourceStream,
+            string extension)
+        {
+            if (sourceStream.CanSeek)
+            {
+                sourceStream.Position = 0;
+            }
+
+            IExcelDataReader reader;
+
+            if (extension == ".csv")
+            {
+                reader =
+                    ExcelReaderFactory.CreateCsvReader(
+                        sourceStream,
+                        new ExcelReaderConfiguration
+                        {
+                            // 台灣常見舊 CSV / Big5
+                            FallbackEncoding =
+                                Encoding.GetEncoding(950),
+
+                            AutodetectSeparators =
+                                new[]
+                                {
+                                    ',',
+                                    ';',
+                                    '\t',
+                                    '|'
+                                }
+                        }
+                    );
+            }
+            else
+            {
+                reader =
+                    ExcelReaderFactory.CreateReader(
+                        sourceStream
+                    );
+            }
+
+            using (reader)
+            using (var workbook =
+                new XLWorkbook())
+            {
+                int sheetIndex = 1;
+
+                do
+                {
+                    string sheetName =
+                        CreateSafeWorksheetName(
+                            reader.Name,
+                            sheetIndex,
+                            workbook
+                        );
+
+                    var worksheet =
+                        workbook.Worksheets
+                            .Add(sheetName);
+
+                    int rowNumber = 1;
+
+                    while (reader.Read())
+                    {
+                        for (
+                            int columnIndex = 0;
+                            columnIndex <
+                            reader.FieldCount;
+                            columnIndex++)
+                        {
+                            object? value =
+                                reader.GetValue(
+                                    columnIndex
+                                );
+
+                            worksheet.Cell(
+                                rowNumber,
+                                columnIndex + 1
+                            ).Value =
+                                ConvertCellValueToText(
+                                    value
+                                );
+                        }
+
+                        rowNumber++;
+                    }
+
+                    sheetIndex++;
+                }
+                while (reader.NextResult());
+
+                var output =
+                    new MemoryStream();
+
+                workbook.SaveAs(
+                    output
+                );
+
+                output.Position = 0;
+
+                return output;
+            }
+        }
+
+        private static string ConvertCellValueToText(
+            object? value)
+        {
+            if (value == null)
+            {
+                return string.Empty;
+            }
+
+            if (value is DateTime dateTime)
+            {
+                return dateTime.ToString(
+                    "yyyy-MM-dd HH:mm:ss",
+                    CultureInfo.InvariantCulture
+                );
+            }
+
+            if (value is IFormattable formattable)
+            {
+                return formattable.ToString(
+                    null,
+                    CultureInfo.InvariantCulture
+                ) ?? string.Empty;
+            }
+
+            return value.ToString()?.Trim()
+                ?? string.Empty;
+        }
+
+        private static string CreateSafeWorksheetName(
+            string? originalName,
+            int sheetIndex,
+            XLWorkbook workbook)
+        {
+            string name =
+                string.IsNullOrWhiteSpace(
+                    originalName
+                )
+                    ? $"工作表{sheetIndex}"
+                    : originalName.Trim();
+
+            char[] invalidCharacters =
+            {
+                ':',
+                '\\',
+                '/',
+                '?',
+                '*',
+                '[',
+                ']'
+            };
+
+            foreach (
+                char invalidCharacter
+                in invalidCharacters)
+            {
+                name =
+                    name.Replace(
+                        invalidCharacter,
+                        '_'
+                    );
+            }
+
+            if (name.Length > 31)
+            {
+                name =
+                    name[..31];
+            }
+
+            string baseName =
+                name;
+
+            int number = 2;
+
+            while (
+                workbook.Worksheets.Any(x =>
+                    string.Equals(
+                        x.Name,
+                        name,
+                        StringComparison.OrdinalIgnoreCase
+                    )
+                )
+            )
+            {
+                string suffix =
+                    $"_{number}";
+
+                int maxBaseLength =
+                    31 - suffix.Length;
+
+                name =
+                    baseName[
+                        ..Math.Min(
+                            baseName.Length,
+                            maxBaseLength
+                        )
+                    ] +
+                    suffix;
+
+                number++;
+            }
+
+            return name;
         }
 
         public decimal? ExtractTotalFloorArea(Stream excelStream)

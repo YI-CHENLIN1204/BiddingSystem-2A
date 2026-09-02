@@ -116,6 +116,11 @@ namespace 崴正.Services
                         request.ExcelBytes
                     );
 
+                Console.WriteLine(
+                    $"[ANOMALY-XLS] Before Parse | " +
+                    $"File={request.FileName} | " +
+                    $"Bytes={request.ExcelBytes.Length}"
+                );
 
                 var parsedRows =
                     parser.Parse(
@@ -123,7 +128,10 @@ namespace 崴正.Services
                         request.FileName ?? string.Empty
                     );
 
-
+                Console.WriteLine(
+                    $"[ANOMALY-XLS] After Parse | " +
+                    $"Rows={parsedRows.Count}"
+                );
 
                 if (
                     parsedRows == null ||

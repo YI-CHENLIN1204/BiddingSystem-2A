@@ -5,8 +5,21 @@ using Microsoft.EntityFrameworkCore;
 using Microsoft.AspNetCore.Authentication.Cookies;
 using Microsoft.AspNetCore.HttpOverrides;
 using Microsoft.AspNetCore.DataProtection;
+using Microsoft.AspNetCore.Http.Features;
+
+System.Text.Encoding.RegisterProvider(
+    System.Text.CodePagesEncodingProvider.Instance
+);
 
 var builder = WebApplication.CreateBuilder(args);
+
+builder.WebHost.ConfigureKestrel(options =>
+{
+    options.Limits.MaxRequestBodySize =
+        100 * 1024 * 1024;
+});
+
+
 
 var dataProtectionKeysPath =
     builder.Configuration["DataProtection:KeysPath"]
@@ -24,6 +37,7 @@ builder.Services
 
 // Add services to the container.
 builder.Services.AddControllersWithViews();
+builder.Services.Configure<FormOptions>(options =>{options.MultipartBodyLengthLimit =100 * 1024 * 1024;});
 builder.Services.AddScoped<ProjectSimilarityService>();
 builder.Services.AddScoped<FinalBidService>();
 builder.Services.AddScoped<MaterialMappingService>();

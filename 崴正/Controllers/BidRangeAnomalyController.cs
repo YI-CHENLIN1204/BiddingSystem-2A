@@ -84,12 +84,22 @@ namespace 崴正.Controllers
                 .ToLowerInvariant();
 
 
-            if (extension != ".xlsx")
+            string[] allowedExtensions =
+            {
+                ".xlsx",
+                ".xls",
+                ".xlsm",
+                ".xlsb",
+                ".csv"
+            };
+
+            if (!allowedExtensions.Contains(
+                    extension))
             {
                 return BadRequest(new
                 {
                     message =
-                        "目前僅接受 .xlsx 格式的標單"
+                        "支援格式：.xlsx、.xls、.xlsm、.xlsb、.csv"
                 });
             }
 
@@ -207,6 +217,8 @@ namespace 崴正.Controllers
                 new MemoryStream();
 
 
+
+
             await excelFile.CopyToAsync(
                 buffer
             );
@@ -267,6 +279,7 @@ namespace 崴正.Controllers
             // ======================================
             // 6. 執行新版異常分析
             // ======================================
+
 
             var result =
                 await _analysisService

@@ -34,10 +34,20 @@ namespace 崴正.Services
                     request.FileName
                 ).ToLowerInvariant();
 
-            if (extension != ".xlsx")
+            string[] allowedExtensions =
+            {
+                ".xlsx",
+                ".xls",
+                ".xlsm",
+                ".xlsb",
+                ".csv"
+            };
+
+            if (!allowedExtensions.Contains(
+                    extension))
             {
                 return ServiceResult.Validation(
-                    "目前僅接受 .xlsx 檔案"
+                    "支援格式：.xlsx、.xls、.xlsm、.xlsb、.csv"
                 );
             }
 
