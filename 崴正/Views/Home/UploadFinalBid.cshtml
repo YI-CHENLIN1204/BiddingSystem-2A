@@ -332,8 +332,7 @@
                                    id="totalFloorArea"
                                    class="wz-input"
                                    min="0.01"
-                                   step="0.01"
-                                   placeholder="例如：12580.5" />
+                                   step="0.01"/>
                         </div>
                     </div>
 
@@ -342,8 +341,7 @@
                         <input type="number"
                                id="floorCount"
                                class="wz-input"
-                               min="1"
-                               placeholder="例如：15" />
+                               min="1" />
                     </div>
 
                     <div class="wz-field">
@@ -351,9 +349,7 @@
                         <input type="number"
                                id="basementFloorCount"
                                class="wz-input"
-                               min="0"
-                               value="0"
-                               placeholder="例如：2" />
+                               min="0" />
                     </div>
 
                     <div class="wz-field">
@@ -1103,6 +1099,52 @@
         );
     }
 
+    function getMaterialCategoryOptions() {
+
+        const categoryMap =
+            new Map();
+
+
+        materialOptions.forEach(material => {
+
+            const categoryId =
+                Number(
+                    material.categoryId
+                );
+
+            const categoryName =
+                material.category
+                    ? material.category.trim()
+                    : '';
+
+
+            if (
+                categoryId > 0 &&
+                categoryName !== ''
+            ) {
+                categoryMap.set(
+                    categoryId,
+                    {
+                        categoryId,
+                        categoryName
+                    }
+                );
+            }
+        });
+
+
+        return Array
+            .from(
+                categoryMap.values()
+            )
+            .sort((a, b) =>
+                a.categoryName.localeCompare(
+                    b.categoryName,
+                    'zh-Hant'
+                )
+            );
+    }
+
     function getMaterialUnits() {
         const units =
             materialOptions
@@ -1191,19 +1233,39 @@
                 'newMaterialName'
             );
 
-        modalCategory.innerHTML = '';
+        modalCategory.innerHTML =
+            '<option value="">請選擇材料分類</option>';
 
-        getMaterialCategories()
-            .forEach(category => {
-                modalCategory.innerHTML += `
-                    <option value="${escapeHtml(category)}">
-                        ${escapeHtml(category)}
-                    </option>
-                `;
-            });
+
+        const categoryOptions =
+            getMaterialCategoryOptions();
+
+
+        categoryOptions.forEach(category => {
+
+            modalCategory.innerHTML += `
+                <option value="${category.categoryId}">
+                    ${escapeHtml(
+                        category.categoryName
+                    )}
+                </option>
+            `;
+        });
+
+
+        const selectedCategoryOption =
+            categoryOptions.find(category =>
+                category.categoryName ===
+                selectedCategory
+            );
+
 
         modalCategory.value =
-            selectedCategory;
+            selectedCategoryOption
+                ? String(
+                    selectedCategoryOption.categoryId
+                )
+                : '';
 
         modalUnit.innerHTML =
             '<option value="">請選擇標準單位</option>';
@@ -1874,10 +1936,12 @@
                     'newMaterialName'
                 ).value.trim();
 
-            const category =
-                document.getElementById(
-                    'newMaterialCategory'
-                ).value;
+            const categoryId =
+                Number(
+                    document.getElementById(
+                        'newMaterialCategory'
+                    ).value
+                );
 
             const baseUnit =
                 document.getElementById(
@@ -1889,7 +1953,7 @@
                 return;
             }
 
-            if (!category) {
+            if (!categoryId) {
                 alert('請選擇材料分類');
                 return;
             }
@@ -1908,8 +1972,8 @@
             );
 
             formData.append(
-                'category',
-                category
+                'categoryId',
+                categoryId
             );
 
             formData.append(
@@ -1919,7 +1983,7 @@
 
             const response =
                 await fetch(
-                    '/api/Estimation/create-material',
+                    '/api/standard-material/create',
                     {
                         method: 'POST',
                         body: formData

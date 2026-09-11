@@ -21,6 +21,8 @@ namespace 崴正.Services
         public ServiceResult Import(
             FinalBidImportRequest request)
         {
+
+
             if (request.ExcelBytes == null ||
                 request.ExcelBytes.Length == 0)
             {
@@ -174,6 +176,8 @@ namespace 崴正.Services
                 );
             }
 
+
+
             var parser =
                 new TenderExcelParser();
 
@@ -184,6 +188,9 @@ namespace 崴正.Services
                     ),
                     request.FileName
                 );
+
+
+
 
             if (rows.Count == 0)
             {
@@ -256,7 +263,12 @@ namespace 崴正.Services
                     project
                 );
 
+
+
                 _context.SaveChanges();
+
+
+       
 
                 var dictionaryList =
                     _context.ItemDictionaries
@@ -265,6 +277,8 @@ namespace 崴正.Services
                 var materials =
                     _context.MaterialMasters
                         .ToList();
+
+
 
                 var materialDictionary =
                     materials.ToDictionary(
@@ -281,6 +295,8 @@ namespace 崴正.Services
                 int invalidQuantityCount = 0;
                 int invalidUnitPriceCount = 0;
                 int unitMismatchCount = 0;
+
+              
 
                 foreach (var row in rows)
                 {
@@ -456,6 +472,9 @@ namespace 崴正.Services
                             MaterialId =
                                 materialId,
 
+                            Material =
+                                material,
+
                             MappingStatus =
                                 mappingStatus,
 
@@ -493,34 +512,60 @@ namespace 崴正.Services
                     );
                 }
 
+  
+
+
+
+
+
+
+
                 _context.SaveChanges();
 
-                int historyInsertCount = 0;
 
-                foreach (var bidItem in createdItems)
-                {
-                    if (bidItem.MappingStatus !=
-                        "Auto")
-                    {
-                        continue;
-                    }
 
-                    if (bidItem.DataIssueCode ==
-                        null)
-                    {
-                        historyInsertCount++;
-                    }
+            int historyInsertCount = 0;
 
+
+
+            var histories =
+                new List<HistoricalTransaction>();
+
+            foreach (var bidItem in createdItems)
+            {
+                var history =
                     _finalBidService
-                        .SyncHistoricalTransaction(
+                        .BuildHistoricalTransactionForNewImport(
                             bidItem,
                             bidItem.DataIssueCode
                         );
+
+                if (history == null)
+                {
+                    continue;
                 }
+
+                histories.Add(
+                    history
+                );
+            }
+
+            historyInsertCount =
+                histories.Count;
+
+            _context.HistoricalTransactions
+                .AddRange(
+                    histories
+                );
+
+
 
                 _context.SaveChanges();
 
+
+
                 transaction.Commit();
+
 
                 return ServiceResult.Ok(new
                 {
@@ -586,6 +631,8 @@ namespace 崴正.Services
                     )
                 );
             }
+
+            
         }
 
         private static string NormalizeText(

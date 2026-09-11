@@ -343,118 +343,70 @@
     </div>
 
 </div>
+
 <div class="modal fade"
-     id="materialMappingModal"
+     id="createMaterialModal"
      tabindex="-1"
      aria-hidden="true">
 
-    <div class="modal-dialog modal-lg modal-dialog-centered">
+    <div class="modal-dialog modal-dialog-centered">
 
         <div class="modal-content">
 
             <div class="modal-header">
 
                 <h5 class="modal-title">
-                    修改材料對應
+                    新增標準材料
                 </h5>
 
                 <button type="button"
                         class="btn-close"
-                        data-bs-dismiss="modal">
+                        data-bs-dismiss="modal"
+                        aria-label="關閉">
                 </button>
 
             </div>
-
 
             <div class="modal-body">
 
                 <div class="mb-3">
 
-                    <div class="text-muted small">
-                        工項名稱
-                    </div>
+                    <label class="form-label fw-bold">
+                        材料名稱
+                    </label>
 
-                    <strong id="mappingItemName">
-                    </strong>
+                    <input type="text"
+                           id="newMaterialName"
+                           class="form-control"
+                           placeholder="請輸入標準材料名稱" />
 
                 </div>
-
 
                 <div class="mb-3">
 
-                    <div class="text-muted small">
-                        目前標準材料
-                    </div>
+                    <label class="form-label fw-bold">
+                        材料分類
+                    </label>
 
-                    <strong id="mappingCurrentMaterial">
-                        尚未對應
-                    </strong>
-
-                </div>
-
-
-                <hr>
-
-
-                <div class="row g-2 mb-3">
-
-                    <div class="col-md-6">
-
-                        <input id="materialSearch"
-                               type="search"
-                               class="form-control"
-                               placeholder="搜尋標準材料名稱">
-
-                    </div>
-
-
-                    <div class="col-md-3">
-
-                        <select id="materialCategoryFilter"
-                                class="form-select">
-
-                            <option value="All">
-                                全部材料分類
-                            </option>
-
-                        </select>
-
-                    </div>
-
-
-                    <div class="col-md-3">
-
-                        <select id="materialUnitFilter"
-                                class="form-select">
-
-                            <option value="All">
-                                全部單位
-                            </option>
-
-                        </select>
-
-                    </div>
+                    <select id="newMaterialCategory"
+                            class="form-select">
+                    </select>
 
                 </div>
 
+                <div class="mb-3">
 
-                <div id="materialOptionList"
-                     class="border rounded p-2"
-                     style="max-height:360px; overflow-y:auto;">
+                    <label class="form-label fw-bold">
+                        標準單位
+                    </label>
 
-                    <div class="text-muted p-3">
-                        載入標準材料中...
-                    </div>
+                    <select id="newMaterialBaseUnit"
+                            class="form-select">
+                    </select>
 
-                </div>
-
-
-                <div id="materialMappingMessage"
-                     class="small text-danger mt-3">
                 </div>
 
             </div>
-
 
             <div class="modal-footer">
 
@@ -465,9 +417,10 @@
                 </button>
 
                 <button type="button"
-                        id="saveMaterialMappingButton"
-                        class="btn btn-primary">
-                    儲存對應
+                        id="btnCreateMaterial"
+                        class="btn btn-primary"
+                        onclick="createMaterialForCurrentItem()">
+                    新增
                 </button>
 
             </div>
@@ -477,6 +430,7 @@
     </div>
 
 </div>
+
 
 @section Scripts
 {
@@ -496,9 +450,7 @@
 
     let materialOptions = [];
 
-    let mappingBidItemId = null;
-
-    let selectedMaterialId = null;
+    let creatingMaterialForItemId = null;
 
 
     document.addEventListener(
@@ -615,48 +567,6 @@
                 .addEventListener(
                     'click',
                     saveBidItem
-                );
-
-            document
-                .getElementById(
-                    'materialSearch'
-                )
-                .addEventListener(
-                    'input',
-                    debounce(
-                        renderMaterialOptions,
-                        200
-                    )
-                );
-
-
-            document
-                .getElementById(
-                    'materialCategoryFilter'
-                )
-                .addEventListener(
-                    'change',
-                    renderMaterialOptions
-                );
-
-
-            document
-                .getElementById(
-                    'materialUnitFilter'
-                )
-                .addEventListener(
-                    'change',
-                    renderMaterialOptions
-                );
-
-
-            document
-                .getElementById(
-                    'saveMaterialMappingButton'
-                )
-                .addEventListener(
-                    'click',
-                    saveMaterialMapping
                 );
 
         }
@@ -852,7 +762,8 @@
             });
     }
 
-    function getMaterialCategories() {
+    function getMaterialCategories() 
+    {
 
         const categories =
             materialOptions
@@ -874,6 +785,106 @@
                 'zh-Hant'
             )
         );
+    }
+
+    function getMaterialUnits() {
+
+        const units =
+            materialOptions
+                .map(material =>
+                    material.baseUnit
+                        ? material.baseUnit.trim()
+                        : ''
+                )
+                .filter(unit =>
+                    unit !== ''
+                );
+
+        return [
+            ...new Set(units)
+        ].sort((a, b) =>
+            a.localeCompare(
+                b,
+                'zh-Hant'
+            )
+        );
+    }
+
+
+    function openCreateMaterialModal(
+        finalBidItemId
+    ) {
+        creatingMaterialForItemId =
+            finalBidItemId;
+
+        const categorySelect =
+            document.getElementById(
+                `mappingCategory_${finalBidItemId}`
+            );
+
+        const selectedCategory =
+            categorySelect?.value ?? '';
+
+        const modalCategory =
+            document.getElementById(
+                'newMaterialCategory'
+            );
+
+        const modalUnit =
+            document.getElementById(
+                'newMaterialBaseUnit'
+            );
+
+        const materialName =
+            document.getElementById(
+                'newMaterialName'
+            );
+
+
+        modalCategory.innerHTML = '';
+
+        getMaterialCategories()
+            .forEach(category => {
+
+                modalCategory.innerHTML += `
+                    <option value="${escapeHtml(category)}">
+                        ${escapeHtml(category)}
+                    </option>
+                `;
+            });
+
+
+        modalCategory.value =
+            selectedCategory;
+
+
+        modalUnit.innerHTML =
+            '<option value="">請選擇標準單位</option>';
+
+
+        getMaterialUnits()
+            .forEach(unit => {
+
+                modalUnit.innerHTML += `
+                    <option value="${escapeHtml(unit)}">
+                        ${escapeHtml(unit)}
+                    </option>
+                `;
+            });
+
+
+        materialName.value = '';
+
+
+        const modal =
+            bootstrap.Modal.getOrCreateInstance(
+                document.getElementById(
+                    'createMaterialModal'
+                )
+            );
+
+
+        modal.show();
     }
 
 
@@ -930,6 +941,11 @@
                     </option>
                 `;
             });
+        options += `
+            <option value="__NEW__">
+                ＋ 新增標準材料
+            </option>
+        `;
 
 
         return options;
@@ -963,6 +979,270 @@
 
         materialSelect.disabled =
             !selectedCategory;
+
+        changeMaterialSelection(
+            finalBidItemId
+        );
+    }
+
+    function changeMaterialSelection(
+        finalBidItemId
+    ) {
+        const materialSelect =
+            document.getElementById(
+                `mappingMaterial_${finalBidItemId}`
+            );
+
+        const actionButton =
+            document.getElementById(
+                `mappingAction_${finalBidItemId}`
+            );
+
+
+        if (!materialSelect ||
+            !actionButton) {
+            return;
+        }
+
+
+        if (
+            materialSelect.value ===
+            '__NEW__'
+        ) {
+            actionButton.textContent =
+                '新增標準材料';
+        }
+        else {
+            actionButton.textContent =
+                actionButton.dataset.normalLabel;
+        }
+    }
+
+    async function createMaterialForCurrentItem() {
+
+        if (!creatingMaterialForItemId) {
+            alert('找不到目前要新增材料的工項');
+            return;
+        }
+
+
+        const materialName =
+            document.getElementById(
+                'newMaterialName'
+            ).value.trim();
+
+        const category =
+            document.getElementById(
+                'newMaterialCategory'
+            ).value;
+
+        const baseUnit =
+            document.getElementById(
+                'newMaterialBaseUnit'
+            ).value;
+
+
+        if (!materialName) {
+            alert('請輸入標準材料名稱');
+            return;
+        }
+
+        if (!category) {
+            alert('請選擇材料分類');
+            return;
+        }
+
+        if (!baseUnit) {
+            alert('請選擇標準單位');
+            return;
+        }
+
+
+        const button =
+            document.getElementById(
+                'btnCreateMaterial'
+            );
+        
+        const selectedCategory =
+            materialOptions.find(material =>
+                (material.category ?? '').trim() ===
+                category.trim()
+            );
+
+        const categoryId =
+            selectedCategory?.categoryId;
+
+        if (!categoryId) {
+            alert('找不到指定的材料分類');
+            return;
+        }
+
+        button.disabled = true;
+
+
+        try {
+
+            const formData =
+                new FormData();
+
+            formData.append(
+                'materialName',
+                materialName
+            );
+
+            formData.append(
+                'categoryId',
+                categoryId
+            );
+
+            formData.append(
+                'baseUnit',
+                baseUnit
+            );
+
+
+            const response =
+                await fetch(
+                    '/api/standard-material/create',
+                    {
+                        method: 'POST',
+                        body: formData
+                    }
+                );
+
+
+            const text =
+                await response.text();
+
+            let data = {};
+
+            try {
+                data =
+                    text
+                        ? JSON.parse(text)
+                        : {};
+            }
+            catch {
+                alert(
+                    '新增標準材料時系統回傳格式錯誤'
+                );
+                return;
+            }
+
+
+            if (!response.ok) {
+
+                alert(
+                    data.message ??
+                    '新增標準材料失敗'
+                );
+
+                return;
+            }
+
+
+            await loadMaterialOptions();
+
+
+            const itemId =
+                creatingMaterialForItemId;
+
+
+            const categorySelect =
+                document.getElementById(
+                    `mappingCategory_${itemId}`
+                );
+
+            const materialSelect =
+                document.getElementById(
+                    `mappingMaterial_${itemId}`
+                );
+
+
+            categorySelect.value =
+                data.category;
+
+
+            materialSelect.innerHTML =
+                buildMaterialOptions(
+                    data.category,
+                    data.materialId
+                );
+
+
+            materialSelect.disabled =
+                false;
+
+            materialSelect.value =
+                data.materialId;
+
+
+            changeMaterialSelection(
+                itemId
+            );
+
+
+            bootstrap.Modal
+                .getInstance(
+                    document.getElementById(
+                        'createMaterialModal'
+                    )
+                )
+                ?.hide();
+
+
+            creatingMaterialForItemId =
+                null;
+
+        }
+        catch (error) {
+
+            console.error(
+                '新增標準材料失敗',
+                error
+            );
+
+            alert(
+                '新增標準材料失敗：' +
+                (error.message ?? '未知錯誤')
+            );
+        }
+        finally {
+
+            button.disabled = false;
+        }
+    }
+
+
+    function handleMappingAction(
+        finalBidItemId
+    ) {
+        const materialSelect =
+            document.getElementById(
+                `mappingMaterial_${finalBidItemId}`
+            );
+
+
+        if (!materialSelect) {
+            return;
+        }
+
+
+        if (
+            materialSelect.value ===
+            '__NEW__'
+        ) {
+            openCreateMaterialModal(
+                finalBidItemId
+            );
+
+            return;
+        }
+
+
+        updateMaterialMapping(
+            finalBidItemId
+        );
     }
 
 
@@ -1423,14 +1703,14 @@
                                             標準材料
                                         </label>
 
+                                            <select class="form-select"
+                                                    id="mappingMaterial_${item.finalBidItemId}"
+                                                    onchange="changeMaterialSelection(${item.finalBidItemId})"
+                                                    ${selectedCategory ? '' : 'disabled'}>
 
-                                        <select class="form-select"
-                                                id="mappingMaterial_${item.finalBidItemId}"
-                                                ${selectedCategory ? '' : 'disabled'}>
+                                                ${materialSelectOptions}
 
-                                            ${materialSelectOptions}
-
-                                        </select>
+                                            </select>
 
                                     </div>
 
@@ -1442,13 +1722,15 @@
                                         </label>
 
 
-                                        <button class="btn btn-outline-primary w-100"
-                                                type="button"
-                                                onclick="updateMaterialMapping(${item.finalBidItemId})">
+                                            <button class="btn btn-outline-primary w-100"
+                                                    type="button"
+                                                    id="mappingAction_${item.finalBidItemId}"
+                                                    data-normal-label="${actionLabel}"
+                                                    onclick="handleMappingAction(${item.finalBidItemId})">
 
-                                            ${actionLabel}
+                                                ${actionLabel}
 
-                                        </button>
+                                            </button>
 
                                     </div>
 
@@ -2018,34 +2300,6 @@
                 '/api/Estimation/material-options'
             );
 
-
-        const data =
-            await response.json();
-
-
-        if (!response.ok) {
-
-            throw new Error(
-                data.message ??
-                '讀取標準材料失敗'
-            );
-        }
-
-
-        materialOptions =
-            data ?? [];
-
-
-        buildMaterialFilters();
-    }
-
-    async function loadMaterialOptions() {
-
-        const response =
-            await fetch(
-                '/api/Estimation/material-options'
-            );
-
         const data =
             await response.json();
 
@@ -2316,92 +2570,6 @@
                     delay
                 );
         };
-    }
-
-    function buildMaterialFilters() {
-
-        const categories =
-            [
-                ...new Set(
-                    materialOptions
-                        .map(x =>
-                            x.category?.trim()
-                        )
-                        .filter(Boolean)
-                )
-            ]
-            .sort((a, b) =>
-                a.localeCompare(
-                    b,
-                    'zh-Hant'
-                )
-            );
-
-
-        const units =
-            [
-                ...new Set(
-                    materialOptions
-                        .map(x =>
-                            x.baseUnit?.trim()
-                        )
-                        .filter(Boolean)
-                )
-            ]
-            .sort((a, b) =>
-                a.localeCompare(
-                    b,
-                    'zh-Hant'
-                )
-            );
-
-
-        const categorySelect =
-            document.getElementById(
-                'materialCategoryFilter'
-            );
-
-
-        categorySelect.innerHTML =
-            `
-            <option value="All">
-                全部材料分類
-            </option>
-            `;
-
-
-        categories.forEach(category => {
-
-            categorySelect.innerHTML += `
-                <option value="${escapeHtml(category)}">
-                    ${escapeHtml(category)}
-                </option>
-            `;
-        });
-
-
-        const unitSelect =
-            document.getElementById(
-                'materialUnitFilter'
-            );
-
-
-        unitSelect.innerHTML =
-            `
-            <option value="All">
-                全部單位
-            </option>
-            `;
-
-
-        units.forEach(unit => {
-
-            unitSelect.innerHTML += `
-                <option value="${escapeHtml(unit)}">
-                    ${escapeHtml(unit)}
-                </option>
-            `;
-        });
     }
 </script>
 }

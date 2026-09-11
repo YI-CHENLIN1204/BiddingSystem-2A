@@ -91,7 +91,7 @@ namespace 崴正.Services
                             m.BaseUnit,
 
                         Category =
-                            m.Category,
+                            m.MaterialCategory.CategoryName,
 
                         ProjectType =
                             r.Project_Type,
@@ -163,9 +163,9 @@ namespace 崴正.Services
 
                         BaseUnit =
                             m.BaseUnit,
-
+                        
                         Category =
-                            m.Category,
+                            m.MaterialCategory.CategoryName,
 
                         ProjectType =
                             r.Project_Type,

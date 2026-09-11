@@ -6,12 +6,6 @@ namespace 崴正.Models
         ManualInput
     }
 
-    public enum EstimationScopeMode
-    {
-        CoreMaterials,
-        SpecifiedMaterials,
-        UploadedFile
-    }
 
 
     public class EstimationTargetRequest
@@ -45,17 +39,4 @@ namespace 崴正.Models
         public string? ProjectMonth { get; set; }
     }
 
-
-    public class EstimationRequest
-    {
-        public EstimationTargetRequest Target { get; set; } =
-            new();
-
-        public EstimationScopeMode Scope { get; set; }
-
-
-        // 指定材料模式使用
-        public List<int> MaterialIds { get; set; } =
-            new();
-    }
 }

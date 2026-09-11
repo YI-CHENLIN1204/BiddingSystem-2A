@@ -6,14 +6,32 @@ namespace 崴正.Models
     public class AuditLog
     {
         [Key]
-        public int LogId { get; set; }
-        public string SourceFileName { get; set; } = "";
-        public string SheetName { get; set; } = "";
-        public int RowNumber { get; set; }
-        public string ItemName { get; set; } = "";
-        public string? OriginalStatusMessage { get; set; }
-        public string OverrideReason { get; set; } = "";
-        public string ActionUser { get; set; } = "Estimator_Staff";
-        public DateTime CreatedAt { get; set; } = DateTime.UtcNow;
+        public long LogId { get; set; }
+
+        public string Module { get; set; }
+            = string.Empty;
+
+        public string ActionType { get; set; }
+            = string.Empty;
+
+        public string EntityType { get; set; }
+            = string.Empty;
+
+        public string? EntityId { get; set; }
+
+        public int? ProjectId { get; set; }
+
+        public string Description { get; set; }
+            = string.Empty;
+
+        public string? OldValue { get; set; }
+
+        public string? NewValue { get; set; }
+
+        public string ActionUser { get; set; }
+            = string.Empty;
+
+        public DateTime CreatedAt { get; set; }
+            = DateTime.UtcNow;
     }
 }

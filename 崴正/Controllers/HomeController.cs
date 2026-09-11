@@ -48,7 +48,7 @@ public class HomeController : Controller
             await _context.MaterialMasters
                 .AsNoTracking()
                 .OrderBy(x =>
-                    x.Category
+                    x.MaterialCategory.CategoryName
                 )
                 .ThenBy(x =>
                     x.MaterialName
@@ -66,7 +66,7 @@ public class HomeController : Controller
                             x.BaseUnit,
 
                         Category =
-                            x.Category
+                            x.MaterialCategory.CategoryName
                     }
                 )
                 .ToListAsync();

@@ -1,7 +1,7 @@
 @model 崴正.Models.QuantityRuleManagementViewModel
 
 @{
-    ViewData["Title"] = "模型參數管理";
+    ViewData["Title"] = "參數管理";
 }
 
 <style>
@@ -339,11 +339,11 @@
 <div class="settings-page mt-4">
 
     <h2 class="page-title">
-        模型參數管理
+        參數管理
     </h2>
 
     <div class="page-description">
-        管理相似建案分析、合理用量區間與後續異常判定所使用的模型參數。
+        管理估算與異常模型、核心材料及材料主檔設定。
     </div>
 
 
@@ -397,6 +397,16 @@
                         type="button">
 
                     核心材料設定
+                </button>
+            </li>
+
+            <li class="nav-item">
+                <button class="nav-link"
+                        data-bs-toggle="tab"
+                        data-bs-target="#material-master-settings"
+                        type="button">
+
+                    材料主檔管理
                 </button>
             </li>
 
@@ -1118,8 +1128,530 @@
 
 </div>
 
+<!-- ===================================================== -->
+<!-- 材料主檔管理 -->
+<!-- ===================================================== -->
+
+<div class="tab-pane fade"
+     id="material-master-settings">
+
+    <div class="mb-3">
+
+        <div class="fw-bold mb-1">
+            材料主檔管理
+        </div>
+
+        <div class="text-muted small">
+            管理系統使用的標準材料與材料分類。
+            已使用中的分類停用後不會影響既有歷史資料，
+            只會停止後續新增材料使用。
+        </div>
+
+    </div>
 
 
+    <ul class="nav nav-tabs mb-3"
+        id="materialMasterTabs">
+
+        <li class="nav-item">
+            <button class="nav-link active"
+                    data-bs-toggle="tab"
+                    data-bs-target="#material-category-panel"
+                    type="button">
+
+                材料分類
+            </button>
+        </li>
+
+        <li class="nav-item">
+            <button class="nav-link"
+                    data-bs-toggle="tab"
+                    data-bs-target="#standard-material-panel"
+                    type="button">
+
+                標準材料
+            </button>
+        </li>
+
+    </ul>
+
+
+    <div class="tab-content">
+
+        <!-- ============================================= -->
+        <!-- 材料分類 -->
+        <!-- ============================================= -->
+
+        <div class="tab-pane fade show active"
+             id="material-category-panel">
+
+            <div class="section-card">
+
+                <div class="section-header
+                            d-flex
+                            justify-content-between
+                            align-items-center
+                            gap-3">
+
+                    <div>
+                        <h5 class="section-title">
+                            材料分類
+                        </h5>
+
+                        <div class="section-description">
+                            分類為標準材料的受控主檔，
+                            避免出現名稱相近但實際重複的分類。
+                        </div>
+                    </div>
+
+                    <button type="button"
+                            class="btn btn-primary btn-sm"
+                            id="createMaterialCategoryBtn">
+
+                        新增材料分類
+                    </button>
+
+                </div>
+
+
+                <div class="section-body">
+
+                    <div id="materialCategoryMessage">
+                    </div>
+
+
+                    <div class="row g-3 mb-3">
+
+                        <div class="col-lg-5 col-md-8">
+
+                            <label class="form-label fw-bold">
+                                搜尋分類
+                            </label>
+
+                            <input type="text"
+                                   class="form-control"
+                                   id="materialCategorySearch"
+                                   placeholder="輸入材料分類名稱..." />
+
+                        </div>
+
+                    </div>
+
+
+                    <div class="d-flex
+                                justify-content-between
+                                align-items-center
+                                mb-2">
+
+                        <div class="small text-muted">
+                            共
+                            <strong id="materialCategoryCount">
+                                0
+                            </strong>
+                            個材料分類
+                        </div>
+
+                    </div>
+
+
+                    <div class="admin-table-wrapper">
+
+                        <table class="admin-table">
+
+                            <thead>
+                                <tr>
+                                    <th>材料分類</th>
+                                    <th>標準材料數</th>
+                                    <th>狀態</th>
+                                    <th>操作</th>
+                                </tr>
+                            </thead>
+
+                            <tbody id="materialCategoryTableBody">
+
+                                <tr>
+                                    <td colspan="4"
+                                        class="text-muted py-4">
+
+                                        載入中...
+
+                                    </td>
+                                </tr>
+
+                            </tbody>
+
+                        </table>
+
+                    </div>
+
+                </div>
+
+            </div>
+
+        </div>
+
+
+
+        <div class="tab-pane fade"
+            id="standard-material-panel">
+
+            <div class="section-card">
+
+                <div class="section-header
+                            d-flex
+                            justify-content-between
+                            align-items-center
+                            gap-3">
+
+                    <div>
+                        <h5 class="section-title">
+                            標準材料
+                        </h5>
+
+                        <div class="section-description">
+                            管理系統使用的標準材料名稱、材料分類、
+                            標準單位與啟用狀態。
+                        </div>
+                    </div>
+
+                    <button type="button"
+                            class="btn btn-primary btn-sm"
+                            id="createStandardMaterialBtn">
+
+                        新增標準材料
+                    </button>
+
+                </div>
+
+
+                <div class="section-body">
+
+                    <div id="standardMaterialMessage">
+                    </div>
+
+
+                    <div class="row g-3 mb-3">
+
+                        <div class="col-lg-4">
+
+                            <label class="form-label fw-bold">
+                                搜尋標準材料
+                            </label>
+
+                            <input type="text"
+                                class="form-control"
+                                id="standardMaterialSearch"
+                                placeholder="輸入材料名稱或分類..." />
+
+                        </div>
+
+
+                        <div class="col-lg-3">
+
+                            <label class="form-label fw-bold">
+                                材料分類
+                            </label>
+
+                            <select class="form-select"
+                                    id="standardMaterialCategoryFilter">
+
+                                <option value="">
+                                    全部
+                                </option>
+
+                            </select>
+
+                        </div>
+
+
+                        <div class="col-lg-2">
+
+                            <label class="form-label fw-bold">
+                                標準單位
+                            </label>
+
+                            <select class="form-select"
+                                    id="standardMaterialUnitFilter">
+
+                                <option value="">
+                                    全部
+                                </option>
+
+                            </select>
+
+                        </div>
+
+
+                        <div class="col-lg-3">
+
+                            <label class="form-label fw-bold">
+                                狀態
+                            </label>
+
+                            <select class="form-select"
+                                    id="standardMaterialStatusFilter">
+
+                                <option value="">
+                                    全部
+                                </option>
+
+                                <option value="true">
+                                    啟用
+                                </option>
+
+                                <option value="false">
+                                    停用
+                                </option>
+
+                            </select>
+
+                        </div>
+
+                    </div>
+
+
+                    <div class="d-flex
+                                justify-content-between
+                                align-items-center
+                                mb-2">
+
+                        <div class="small text-muted">
+                            共
+                            <strong id="standardMaterialCount">
+                                0
+                            </strong>
+                            個標準材料
+                        </div>
+
+                    </div>
+
+
+                    <div class="admin-table-wrapper">
+
+                        <table class="admin-table">
+
+                            <thead>
+                                <tr>
+                                    <th>標準材料</th>
+                                    <th>材料分類</th>
+                                    <th>標準單位</th>
+                                    <th>字典對應</th>
+                                    <th>歷史資料</th>
+                                    <th>決標工項</th>
+                                    <th>狀態</th>
+                                    <th>操作</th>
+                                </tr>
+                            </thead>
+
+                            <tbody id="standardMaterialTableBody">
+
+                                <tr>
+                                    <td colspan="8"
+                                        class="text-muted py-4">
+
+                                        載入中...
+
+                                    </td>
+                                </tr>
+
+                            </tbody>
+
+                        </table>
+
+                    </div>
+
+                </div>
+
+            </div>
+
+        </div>
+
+    </div>
+
+</div>
+
+
+        </div>
+
+    </div>
+
+</div>
+
+<!-- ===================================================== -->
+<!-- 新增 / 編輯材料分類 Modal -->
+<!-- ===================================================== -->
+
+<div class="modal fade"
+     id="materialCategoryModal"
+     tabindex="-1"
+     aria-hidden="true">
+
+    <div class="modal-dialog">
+
+        <div class="modal-content">
+
+            <div class="modal-header">
+
+                <h5 class="modal-title"
+                    id="materialCategoryModalTitle">
+
+                    新增材料分類
+                </h5>
+
+                <button type="button"
+                        class="btn-close"
+                        data-bs-dismiss="modal">
+                </button>
+
+            </div>
+
+
+            <div class="modal-body">
+
+                <input type="hidden"
+                       id="materialCategoryId" />
+
+                <label class="form-label fw-bold">
+                    材料分類名稱
+                </label>
+
+                <input type="text"
+                       class="form-control"
+                       id="materialCategoryName"
+                       maxlength="100"
+                       placeholder="例如：混凝土、鋼筋、防水" />
+
+                <div class="form-text">
+                    分類名稱不可與現有分類重複。
+                </div>
+
+            </div>
+
+
+            <div class="modal-footer">
+
+                <button type="button"
+                        class="btn btn-light"
+                        data-bs-dismiss="modal">
+
+                    取消
+                </button>
+
+                <button type="button"
+                        class="btn btn-primary"
+                        id="saveMaterialCategoryBtn">
+
+                    儲存
+                </button>
+
+            </div>
+
+        </div>
+
+    </div>
+
+</div>
+
+<div class="modal fade"
+     id="standardMaterialModal"
+     tabindex="-1"
+     aria-hidden="true">
+
+    <div class="modal-dialog modal-dialog-centered">
+
+        <div class="modal-content">
+
+            <div class="modal-header">
+
+                <h5 class="modal-title"
+                    id="standardMaterialModalTitle">
+
+                    新增標準材料
+                </h5>
+
+                <button type="button"
+                        class="btn-close"
+                        data-bs-dismiss="modal">
+                </button>
+
+            </div>
+
+
+            <div class="modal-body">
+
+                <input type="hidden"
+                       id="standardMaterialId" />
+
+
+                <div class="mb-3">
+
+                    <label class="form-label fw-bold">
+                        材料名稱
+                    </label>
+
+                    <input type="text"
+                           class="form-control"
+                           id="standardMaterialName"
+                           placeholder="請輸入標準材料名稱" />
+
+                </div>
+
+
+                <div class="mb-3">
+
+                    <label class="form-label fw-bold">
+                        材料分類
+                    </label>
+
+                    <select class="form-select"
+                            id="standardMaterialCategory">
+
+                        <option value="">
+                            請選擇材料分類
+                        </option>
+
+                    </select>
+
+                </div>
+
+
+                <div class="mb-3">
+
+                    <label class="form-label fw-bold">
+                        標準單位
+                    </label>
+
+                    <select class="form-select"
+                            id="standardMaterialBaseUnit">
+
+                        <option value="">
+                            請選擇標準單位
+                        </option>
+
+                    </select>
+
+                </div>
+
+            </div>
+
+
+            <div class="modal-footer">
+
+                <button type="button"
+                        class="btn btn-light"
+                        data-bs-dismiss="modal">
+
+                    取消
+                </button>
+
+                <button type="button"
+                        class="btn btn-primary"
+                        id="saveStandardMaterialBtn">
+
+                    儲存
+                </button>
+
+            </div>
 
         </div>
 
@@ -1837,4 +2369,1600 @@
 
         updateSimilarityWeightTotal();
     })();
+</script>
+<script>
+document.addEventListener(
+    "DOMContentLoaded",
+    () => {
+
+    const tableBody =
+        document.getElementById(
+            "materialCategoryTableBody"
+        );
+
+    const searchInput =
+        document.getElementById(
+            "materialCategorySearch"
+        );
+
+    const countElement =
+        document.getElementById(
+            "materialCategoryCount"
+        );
+
+    const messageBox =
+        document.getElementById(
+            "materialCategoryMessage"
+        );
+
+    const createButton =
+        document.getElementById(
+            "createMaterialCategoryBtn"
+        );
+
+    const saveButton =
+        document.getElementById(
+            "saveMaterialCategoryBtn"
+        );
+
+    const categoryIdInput =
+        document.getElementById(
+            "materialCategoryId"
+        );
+
+    const categoryNameInput =
+        document.getElementById(
+            "materialCategoryName"
+        );
+
+    const modalTitle =
+        document.getElementById(
+            "materialCategoryModalTitle"
+        );
+
+    const modalElement =
+        document.getElementById(
+            "materialCategoryModal"
+        );
+
+
+    if (
+        !tableBody ||
+        !modalElement
+    ) {
+        return;
+    }
+
+
+    const categoryModal =
+        new bootstrap.Modal(
+            modalElement
+        );
+
+
+    let categories = [];
+
+
+    // ==========================================
+    // HTML Escape
+    // ==========================================
+
+    function escapeHtml(value) {
+
+        return String(value ?? "")
+            .replaceAll("&", "&amp;")
+            .replaceAll("<", "&lt;")
+            .replaceAll(">", "&gt;")
+            .replaceAll('"', "&quot;")
+            .replaceAll("'", "&#039;");
+    }
+
+
+    // ==========================================
+    // 顯示訊息
+    // ==========================================
+
+    function showMessage(
+        message,
+        type = "success"
+    ) {
+
+        if (!messageBox) {
+            return;
+        }
+
+
+        messageBox.innerHTML = `
+            <div class="alert alert-${type}
+                        alert-dismissible
+                        fade show py-2">
+
+                ${escapeHtml(message)}
+
+                <button type="button"
+                        class="btn-close"
+                        data-bs-dismiss="alert">
+                </button>
+
+            </div>
+        `;
+    }
+
+
+    // ==========================================
+    // 讀取 API 錯誤
+    // ==========================================
+
+    async function readError(
+        response,
+        fallbackMessage
+    ) {
+
+        try {
+
+            const result =
+                await response.json();
+
+            return result.message ??
+                fallbackMessage;
+
+        }
+        catch {
+
+            return fallbackMessage;
+        }
+    }
+
+
+    // ==========================================
+    // 取得材料分類
+    // ==========================================
+
+    async function loadCategories() {
+
+        tableBody.innerHTML = `
+            <tr>
+                <td colspan="4"
+                    class="text-muted py-4">
+
+                    載入中...
+
+                </td>
+            </tr>
+        `;
+
+
+        try {
+
+            const response =
+                await fetch(
+                    "/api/material-category"
+                );
+
+
+            if (!response.ok) {
+
+                throw new Error(
+                    await readError(
+                        response,
+                        "材料分類載入失敗"
+                    )
+                );
+            }
+
+
+            categories =
+                await response.json();
+
+
+            renderCategories();
+
+        }
+        catch (error) {
+
+            tableBody.innerHTML = `
+                <tr>
+                    <td colspan="4"
+                        class="text-danger py-4">
+
+                        ${escapeHtml(
+                            error.message ??
+                            "材料分類載入失敗"
+                        )}
+
+                    </td>
+                </tr>
+            `;
+        }
+    }
+
+
+    // ==========================================
+    // 顯示分類
+    // ==========================================
+
+    function renderCategories() {
+
+        const keyword =
+            (searchInput?.value ?? "")
+                .trim()
+                .toLowerCase();
+
+
+        const filtered =
+            categories.filter(x =>
+
+                !keyword ||
+
+                String(
+                    x.categoryName ?? ""
+                )
+                .toLowerCase()
+                .includes(keyword)
+            );
+
+
+        if (countElement) {
+
+            countElement.textContent =
+                filtered.length;
+        }
+
+
+        if (filtered.length === 0) {
+
+            tableBody.innerHTML = `
+                <tr>
+                    <td colspan="4"
+                        class="text-muted py-4">
+
+                        沒有符合條件的材料分類
+
+                    </td>
+                </tr>
+            `;
+
+            return;
+        }
+
+
+        tableBody.innerHTML =
+            filtered
+                .map(category => {
+
+                    const statusBadge =
+                        category.isActive
+                            ? `
+                                <span class="badge
+                                             bg-success">
+                                    啟用
+                                </span>
+                              `
+                            : `
+                                <span class="badge
+                                             bg-secondary">
+                                    停用
+                                </span>
+                              `;
+
+
+                    const activeButton =
+                        category.isActive
+                            ? `
+                                <button type="button"
+                                        class="btn
+                                               btn-sm
+                                               btn-outline-secondary
+                                               category-active-btn"
+                                        data-category-id="${category.categoryId}"
+                                        data-active="false">
+
+                                    停用
+                                </button>
+                              `
+                            : `
+                                <button type="button"
+                                        class="btn
+                                               btn-sm
+                                               btn-outline-success
+                                               category-active-btn"
+                                        data-category-id="${category.categoryId}"
+                                        data-active="true">
+
+                                    啟用
+                                </button>
+                              `;
+
+
+                    return `
+                        <tr>
+
+                            <td class="fw-bold">
+                                ${escapeHtml(
+                                    category.categoryName
+                                )}
+                            </td>
+
+                            <td>
+                                ${category.materialCount ?? 0}
+                            </td>
+
+                            <td>
+                                ${statusBadge}
+                            </td>
+
+                            <td>
+
+                                <div class="d-flex
+                                            justify-content-center
+                                            gap-2">
+
+                                    <button type="button"
+                                            class="btn
+                                                   btn-sm
+                                                   btn-outline-primary
+                                                   category-edit-btn"
+                                            data-category-id="${category.categoryId}">
+
+                                        編輯
+                                    </button>
+
+                                    ${activeButton}
+
+                                </div>
+
+                            </td>
+
+                        </tr>
+                    `;
+                })
+                .join("");
+
+
+        bindRowActions();
+    }
+
+
+    // ==========================================
+    // 綁定表格操作
+    // ==========================================
+
+    function bindRowActions() {
+
+        document
+            .querySelectorAll(
+                ".category-edit-btn"
+            )
+            .forEach(button => {
+
+                button.addEventListener(
+                    "click",
+                    () => {
+
+                        const categoryId =
+                            Number(
+                                button.dataset.categoryId
+                            );
+
+
+                        const category =
+                            categories.find(x =>
+                                x.categoryId ===
+                                categoryId
+                            );
+
+
+                        if (!category) {
+                            return;
+                        }
+
+
+                        categoryIdInput.value =
+                            category.categoryId;
+
+                        categoryNameInput.value =
+                            category.categoryName;
+
+                        modalTitle.textContent =
+                            "編輯材料分類";
+
+
+                        categoryModal.show();
+
+
+                        setTimeout(
+                            () =>
+                                categoryNameInput.focus(),
+                            200
+                        );
+                    }
+                );
+
+            });
+
+
+        document
+            .querySelectorAll(
+                ".category-active-btn"
+            )
+            .forEach(button => {
+
+                button.addEventListener(
+                    "click",
+                    async () => {
+
+                        const categoryId =
+                            Number(
+                                button.dataset.categoryId
+                            );
+
+                        const isActive =
+                            button.dataset.active ===
+                            "true";
+
+
+                        await setCategoryActive(
+                            categoryId,
+                            isActive
+                        );
+                    }
+                );
+
+            });
+    }
+
+
+    // ==========================================
+    // 新增分類
+    // ==========================================
+
+    createButton?.addEventListener(
+        "click",
+        () => {
+
+            categoryIdInput.value = "";
+            categoryNameInput.value = "";
+
+            modalTitle.textContent =
+                "新增材料分類";
+
+
+            categoryModal.show();
+
+
+            setTimeout(
+                () =>
+                    categoryNameInput.focus(),
+                200
+            );
+        }
+    );
+
+
+    // ==========================================
+    // 儲存新增 / 修改
+    // ==========================================
+
+    saveButton?.addEventListener(
+        "click",
+        async () => {
+
+            const categoryName =
+                categoryNameInput.value.trim();
+
+            const categoryId =
+                Number(
+                    categoryIdInput.value
+                );
+
+
+            if (!categoryName) {
+
+                showMessage(
+                    "請輸入材料分類名稱",
+                    "warning"
+                );
+
+                return;
+            }
+
+
+            const isEdit =
+                Number.isInteger(categoryId) &&
+                categoryId > 0;
+
+
+            const formData =
+                new FormData();
+
+            formData.append(
+                "categoryName",
+                categoryName
+            );
+
+
+            let url =
+                "/api/material-category/create";
+
+
+            if (isEdit) {
+
+                url =
+                    "/api/material-category/update";
+
+                formData.append(
+                    "categoryId",
+                    categoryId
+                );
+            }
+
+
+            saveButton.disabled =
+                true;
+
+
+            try {
+
+                const response =
+                    await fetch(
+                        url,
+                        {
+                            method: "POST",
+                            body: formData
+                        }
+                    );
+
+
+                if (!response.ok) {
+
+                    throw new Error(
+                        await readError(
+                            response,
+                            "材料分類儲存失敗"
+                        )
+                    );
+                }
+
+
+                const result =
+                    await response.json();
+
+
+                categoryModal.hide();
+
+
+                showMessage(
+                    result.message ??
+                    "材料分類已儲存"
+                );
+
+
+                await loadCategories();
+
+            }
+            catch (error) {
+
+                showMessage(
+                    error.message ??
+                    "材料分類儲存失敗",
+                    "danger"
+                );
+            }
+            finally {
+
+                saveButton.disabled =
+                    false;
+            }
+
+        }
+    );
+
+
+    // ==========================================
+    // 啟用 / 停用
+    // ==========================================
+
+    async function setCategoryActive(
+        categoryId,
+        isActive
+    ) {
+
+        const category =
+            categories.find(x =>
+                x.categoryId === categoryId
+            );
+
+
+        if (!category) {
+            return;
+        }
+
+
+        if (
+            !isActive &&
+            !confirm(
+                `確定要停用「${category.categoryName}」嗎？\n\n` +
+                "既有標準材料與歷史資料不會被刪除，" +
+                "但後續新增標準材料將無法再選擇此分類。"
+            )
+        ) {
+            return;
+        }
+
+
+        const formData =
+            new FormData();
+
+        formData.append(
+            "categoryId",
+            categoryId
+        );
+
+        formData.append(
+            "isActive",
+            isActive
+        );
+
+
+        try {
+
+            const response =
+                await fetch(
+                    "/api/material-category/set-active",
+                    {
+                        method: "POST",
+                        body: formData
+                    }
+                );
+
+
+            if (!response.ok) {
+
+                throw new Error(
+                    await readError(
+                        response,
+                        "材料分類狀態更新失敗"
+                    )
+                );
+            }
+
+
+            const result =
+                await response.json();
+
+
+            showMessage(
+                result.message ??
+                "材料分類狀態已更新"
+            );
+
+
+            await loadCategories();
+
+        }
+        catch (error) {
+
+            showMessage(
+                error.message ??
+                "材料分類狀態更新失敗",
+                "danger"
+            );
+        }
+    }
+
+
+    // ==========================================
+    // 搜尋
+    // ==========================================
+
+    searchInput?.addEventListener(
+        "input",
+        renderCategories
+    );
+
+
+    // ==========================================
+    // 第一次載入
+    // ==========================================
+
+    loadCategories();
+
+});
+</script>
+<script>
+document.addEventListener(
+    "DOMContentLoaded",
+    () => {
+
+        const tableBody =
+            document.getElementById(
+                "standardMaterialTableBody"
+            );
+
+        if (!tableBody) {
+            return;
+        }
+
+
+        const searchInput =
+            document.getElementById(
+                "standardMaterialSearch"
+            );
+
+        const categoryFilter =
+            document.getElementById(
+                "standardMaterialCategoryFilter"
+            );
+
+        const unitFilter =
+            document.getElementById(
+                "standardMaterialUnitFilter"
+            );
+
+        const statusFilter =
+            document.getElementById(
+                "standardMaterialStatusFilter"
+            );
+
+        const countElement =
+            document.getElementById(
+                "standardMaterialCount"
+            );
+
+        const messageBox =
+            document.getElementById(
+                "standardMaterialMessage"
+            );
+
+
+        const createButton =
+            document.getElementById(
+                "createStandardMaterialBtn"
+            );
+
+        const saveButton =
+            document.getElementById(
+                "saveStandardMaterialBtn"
+            );
+
+
+        const modalElement =
+            document.getElementById(
+                "standardMaterialModal"
+            );
+
+        const modalTitle =
+            document.getElementById(
+                "standardMaterialModalTitle"
+            );
+
+        const materialIdInput =
+            document.getElementById(
+                "standardMaterialId"
+            );
+
+        const materialNameInput =
+            document.getElementById(
+                "standardMaterialName"
+            );
+
+        const materialCategorySelect =
+            document.getElementById(
+                "standardMaterialCategory"
+            );
+
+        const materialUnitSelect =
+            document.getElementById(
+                "standardMaterialBaseUnit"
+            );
+
+
+        const materialModal =
+            bootstrap.Modal.getOrCreateInstance(
+                modalElement
+            );
+
+
+        let materials = [];
+        let filterOptions = null;
+
+
+        function escapeHtml(value) {
+
+            return String(value ?? "")
+                .replaceAll("&", "&amp;")
+                .replaceAll("<", "&lt;")
+                .replaceAll(">", "&gt;")
+                .replaceAll('"', "&quot;")
+                .replaceAll("'", "&#039;");
+        }
+
+
+        async function readError(
+            response,
+            fallback
+        ) {
+
+            try {
+
+                const result =
+                    await response.json();
+
+                return result.message ??
+                    fallback;
+
+            }
+            catch {
+
+                return fallback;
+            }
+        }
+
+
+        function showMessage(
+            message,
+            type = "success"
+        ) {
+
+            messageBox.innerHTML = `
+                <div class="alert alert-${type}
+                            alert-dismissible
+                            fade show py-2">
+
+                    ${escapeHtml(message)}
+
+                    <button type="button"
+                            class="btn-close"
+                            data-bs-dismiss="alert">
+                    </button>
+
+                </div>
+            `;
+        }
+
+
+        async function loadFilterOptions() {
+
+            const response =
+                await fetch(
+                    "/api/standard-material/filter-options"
+                );
+
+
+            if (!response.ok) {
+
+                throw new Error(
+                    await readError(
+                        response,
+                        "篩選資料載入失敗"
+                    )
+                );
+            }
+
+
+            filterOptions =
+                await response.json();
+
+
+            categoryFilter.innerHTML =
+                `<option value="">全部</option>`;
+
+
+            materialCategorySelect.innerHTML =
+                `<option value="">
+                    請選擇材料分類
+                 </option>`;
+
+
+            filterOptions.categories
+                .forEach(category => {
+
+                    categoryFilter.innerHTML += `
+                        <option value="${category.categoryId}">
+                            ${escapeHtml(
+                                category.categoryName
+                            )}
+                        </option>
+                    `;
+
+
+                    // 新增 / 編輯材料只能使用啟用分類
+                    if (category.isActive) {
+
+                        materialCategorySelect.innerHTML += `
+                            <option value="${category.categoryId}">
+                                ${escapeHtml(
+                                    category.categoryName
+                                )}
+                            </option>
+                        `;
+                    }
+                });
+
+
+            unitFilter.innerHTML =
+                `<option value="">全部</option>`;
+
+            materialUnitSelect.innerHTML =
+                `<option value="">
+                    請選擇標準單位
+                 </option>`;
+
+
+            filterOptions.baseUnits
+                .forEach(unit => {
+
+                    const text =
+                        escapeHtml(unit);
+
+                    unitFilter.innerHTML += `
+                        <option value="${text}">
+                            ${text}
+                        </option>
+                    `;
+
+                    materialUnitSelect.innerHTML += `
+                        <option value="${text}">
+                            ${text}
+                        </option>
+                    `;
+                });
+        }
+
+
+        async function loadMaterials() {
+
+            const parameters =
+                new URLSearchParams();
+
+
+            const search =
+                searchInput.value.trim();
+
+            if (search) {
+
+                parameters.append(
+                    "search",
+                    search
+                );
+            }
+
+
+            if (categoryFilter.value) {
+
+                parameters.append(
+                    "categoryId",
+                    categoryFilter.value
+                );
+            }
+
+
+            if (unitFilter.value) {
+
+                parameters.append(
+                    "baseUnit",
+                    unitFilter.value
+                );
+            }
+
+
+            if (statusFilter.value) {
+
+                parameters.append(
+                    "isActive",
+                    statusFilter.value
+                );
+            }
+
+
+            tableBody.innerHTML = `
+                <tr>
+                    <td colspan="8"
+                        class="text-muted py-4">
+
+                        載入中...
+
+                    </td>
+                </tr>
+            `;
+
+
+            try {
+
+                const response =
+                    await fetch(
+                        "/api/standard-material?" +
+                        parameters.toString()
+                    );
+
+
+                if (!response.ok) {
+
+                    throw new Error(
+                        await readError(
+                            response,
+                            "標準材料載入失敗"
+                        )
+                    );
+                }
+
+
+                materials =
+                    await response.json();
+
+
+                renderMaterials();
+
+            }
+            catch (error) {
+
+                tableBody.innerHTML = `
+                    <tr>
+                        <td colspan="8"
+                            class="text-danger py-4">
+
+                            ${escapeHtml(
+                                error.message
+                            )}
+
+                        </td>
+                    </tr>
+                `;
+            }
+        }
+
+
+        function renderMaterials() {
+
+            countElement.textContent =
+                materials.length;
+
+
+            if (!materials.length) {
+
+                tableBody.innerHTML = `
+                    <tr>
+                        <td colspan="8"
+                            class="text-muted py-4">
+
+                            沒有符合條件的標準材料
+
+                        </td>
+                    </tr>
+                `;
+
+                return;
+            }
+
+
+            tableBody.innerHTML =
+                materials
+                    .map(material => {
+
+                        const status =
+                            material.isActive
+                                ? `
+                                    <span class="badge bg-success">
+                                        啟用
+                                    </span>
+                                  `
+                                : `
+                                    <span class="badge bg-secondary">
+                                        停用
+                                    </span>
+                                  `;
+
+
+                        const activeButton =
+                            material.isActive
+                                ? `
+                                    <button type="button"
+                                            class="btn btn-sm
+                                                   btn-outline-secondary
+                                                   standard-material-active-btn"
+                                            data-material-id="${material.materialId}"
+                                            data-active="false">
+
+                                        停用
+                                    </button>
+                                  `
+                                : `
+                                    <button type="button"
+                                            class="btn btn-sm
+                                                   btn-outline-success
+                                                   standard-material-active-btn"
+                                            data-material-id="${material.materialId}"
+                                            data-active="true">
+
+                                        啟用
+                                    </button>
+                                  `;
+
+
+                        return `
+                            <tr>
+
+                                <td class="fw-bold">
+                                    ${escapeHtml(
+                                        material.materialName
+                                    )}
+                                </td>
+
+                                <td>
+                                    ${escapeHtml(
+                                        material.categoryName ?? "-"
+                                    )}
+                                </td>
+
+                                <td>
+                                    ${escapeHtml(
+                                        material.baseUnit
+                                    )}
+                                </td>
+
+                                <td>
+                                    ${material.dictionaryCount ?? 0}
+                                </td>
+
+                                <td>
+                                    ${material.historicalCount ?? 0}
+                                </td>
+
+                                <td>
+                                    ${material.finalBidItemCount ?? 0}
+                                </td>
+
+                                <td>
+                                    ${status}
+                                </td>
+
+                                <td>
+
+                                    <div class="d-flex
+                                                justify-content-center
+                                                gap-2">
+
+                                        <button type="button"
+                                                class="btn btn-sm
+                                                       btn-outline-primary
+                                                       standard-material-edit-btn"
+                                                data-material-id="${material.materialId}">
+
+                                            編輯
+                                        </button>
+
+                                        ${activeButton}
+
+                                    </div>
+
+                                </td>
+
+                            </tr>
+                        `;
+                    })
+                    .join("");
+
+
+            bindRowActions();
+        }
+
+
+        function bindRowActions() {
+
+            document
+                .querySelectorAll(
+                    ".standard-material-edit-btn"
+                )
+                .forEach(button => {
+
+                    button.addEventListener(
+                        "click",
+                        () => {
+
+                            const materialId =
+                                Number(
+                                    button.dataset.materialId
+                                );
+
+
+                            const material =
+                                materials.find(x =>
+                                    x.materialId ===
+                                    materialId
+                                );
+
+
+                            if (!material) {
+                                return;
+                            }
+
+
+                            materialIdInput.value =
+                                material.materialId;
+
+                            materialNameInput.value =
+                                material.materialName;
+
+                            materialCategorySelect.value =
+                                material.categoryId ?? "";
+
+                            materialUnitSelect.value =
+                                material.baseUnit ?? "";
+
+                            modalTitle.textContent =
+                                "編輯標準材料";
+
+
+                            materialModal.show();
+                        }
+                    );
+                });
+
+
+            document
+                .querySelectorAll(
+                    ".standard-material-active-btn"
+                )
+                .forEach(button => {
+
+                    button.addEventListener(
+                        "click",
+                        async () => {
+
+                            const materialId =
+                                Number(
+                                    button.dataset.materialId
+                                );
+
+                            const isActive =
+                                button.dataset.active ===
+                                "true";
+
+
+                            await setMaterialActive(
+                                materialId,
+                                isActive
+                            );
+                        }
+                    );
+                });
+        }
+
+
+        createButton.addEventListener(
+            "click",
+            async () => {
+
+                try {
+                    // 每次開啟新增視窗前，
+                    // 重新取得最新材料分類與單位
+                    await loadFilterOptions();
+                }
+                catch (error) {
+                    showMessage(
+                        error.message ??
+                        "材料分類載入失敗",
+                        "danger"
+                    );
+
+                    return;
+                }
+
+                materialIdInput.value = "";
+                materialNameInput.value = "";
+                materialCategorySelect.value = "";
+                materialUnitSelect.value = "";
+
+                modalTitle.textContent =
+                    "新增標準材料";
+
+                materialModal.show();
+            }
+        );
+
+
+        saveButton.addEventListener(
+            "click",
+            async () => {
+
+                const materialId =
+                    Number(
+                        materialIdInput.value
+                    );
+
+                const materialName =
+                    materialNameInput.value.trim();
+
+                const categoryId =
+                    Number(
+                        materialCategorySelect.value
+                    );
+
+                const baseUnit =
+                    materialUnitSelect.value;
+
+
+                if (!materialName) {
+
+                    showMessage(
+                        "請輸入標準材料名稱",
+                        "warning"
+                    );
+
+                    return;
+                }
+
+
+                if (!categoryId) {
+
+                    showMessage(
+                        "請選擇材料分類",
+                        "warning"
+                    );
+
+                    return;
+                }
+
+
+                if (!baseUnit) {
+
+                    showMessage(
+                        "請選擇標準單位",
+                        "warning"
+                    );
+
+                    return;
+                }
+
+
+                const isEdit =
+                    Number.isInteger(materialId) &&
+                    materialId > 0;
+
+
+                const formData =
+                    new FormData();
+
+
+                formData.append(
+                    "materialName",
+                    materialName
+                );
+
+                formData.append(
+                    "categoryId",
+                    categoryId
+                );
+
+                formData.append(
+                    "baseUnit",
+                    baseUnit
+                );
+
+
+                let url =
+                    "/api/standard-material/create";
+
+
+                if (isEdit) {
+
+                    url =
+                        "/api/standard-material/update";
+
+                    formData.append(
+                        "materialId",
+                        materialId
+                    );
+                }
+
+
+                saveButton.disabled =
+                    true;
+
+
+                try {
+
+                    const response =
+                        await fetch(
+                            url,
+                            {
+                                method: "POST",
+                                body: formData
+                            }
+                        );
+
+
+                    if (!response.ok) {
+
+                        throw new Error(
+                            await readError(
+                                response,
+                                "標準材料儲存失敗"
+                            )
+                        );
+                    }
+
+
+                    const result =
+                        await response.json();
+
+
+                    materialModal.hide();
+
+
+                    showMessage(
+                        result.message ??
+                        "標準材料已儲存"
+                    );
+
+
+                    await loadFilterOptions();
+                    await loadMaterials();
+
+                }
+                catch (error) {
+
+                    showMessage(
+                        error.message ??
+                        "標準材料儲存失敗",
+                        "danger"
+                    );
+                }
+                finally {
+
+                    saveButton.disabled =
+                        false;
+                }
+            }
+        );
+
+
+        async function setMaterialActive(
+            materialId,
+            isActive
+        ) {
+
+            const material =
+                materials.find(x =>
+                    x.materialId ===
+                    materialId
+                );
+
+
+            if (!material) {
+                return;
+            }
+
+
+            if (
+                !isActive &&
+                !confirm(
+                    `確定要停用「${material.materialName}」嗎？\n\n` +
+                    "既有字典、決標資料與歷史資料不會被刪除。"
+                )
+            ) {
+                return;
+            }
+
+
+            const formData =
+                new FormData();
+
+            formData.append(
+                "materialId",
+                materialId
+            );
+
+            formData.append(
+                "isActive",
+                isActive
+            );
+
+
+            try {
+
+                const response =
+                    await fetch(
+                        "/api/standard-material/set-active",
+                        {
+                            method: "POST",
+                            body: formData
+                        }
+                    );
+
+
+                if (!response.ok) {
+
+                    throw new Error(
+                        await readError(
+                            response,
+                            "標準材料狀態更新失敗"
+                        )
+                    );
+                }
+
+
+                const result =
+                    await response.json();
+
+
+                showMessage(
+                    result.message ??
+                    "標準材料狀態已更新"
+                );
+
+
+                await loadMaterials();
+
+            }
+            catch (error) {
+
+                showMessage(
+                    error.message ??
+                    "標準材料狀態更新失敗",
+                    "danger"
+                );
+            }
+        }
+
+
+        let searchTimer = null;
+
+
+        searchInput.addEventListener(
+            "input",
+            () => {
+
+                clearTimeout(
+                    searchTimer
+                );
+
+                searchTimer =
+                    setTimeout(
+                        loadMaterials,
+                        250
+                    );
+            }
+        );
+
+
+        categoryFilter.addEventListener(
+            "change",
+            loadMaterials
+        );
+
+        unitFilter.addEventListener(
+            "change",
+            loadMaterials
+        );
+
+        statusFilter.addEventListener(
+            "change",
+            loadMaterials
+        );
+
+
+        async function initialize() {
+
+            try {
+
+                await loadFilterOptions();
+                await loadMaterials();
+
+            }
+            catch (error) {
+
+                showMessage(
+                    error.message ??
+                    "標準材料管理初始化失敗",
+                    "danger"
+                );
+            }
+        }
+
+
+        initialize();
+
+    }
+);
 </script>

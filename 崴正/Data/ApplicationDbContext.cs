@@ -12,11 +12,11 @@ namespace 崴正.Data
 
         public DbSet<ProjectMaster> ProjectMasters { get; set; }
         public DbSet<MaterialMaster> MaterialMasters { get; set; }
+        public DbSet<MaterialCategory> MaterialCategories { get; set; }
         public DbSet<QuantityRuleBase> QuantityRuleBases { get; set; }
         public DbSet<HistoricalTransaction> HistoricalTransactions { get; set; }
         public DbSet<ItemDictionary> ItemDictionaries { get; set; }
         public DbSet<AuditLog> AuditLogs { get; set; }
-        public DbSet<UnmappedItem> UnmappedItems { get; set; }
         public DbSet<FinalBidItem> FinalBidItems { get; set; }
         public DbSet<EstimationSetting> EstimationSettings { get; set; }
 
@@ -24,14 +24,32 @@ namespace 崴正.Data
         {
             base.OnModelCreating(modelBuilder);
 
+                modelBuilder.Entity<MaterialCategory>(
+                entity =>
+                {
+                    entity.ToTable("material_category");
+
+                    entity.HasKey(e => e.CategoryId);
+
+                    entity.Property(e => e.CategoryId).HasColumnName("category_id");
+
+                    entity.Property(e => e.CategoryName).HasColumnName("category_name");
+
+                    entity.Property(e => e.IsActive).HasColumnName("is_active");
+
+                    entity.Property(e => e.SortOrder).HasColumnName("sort_order");
+
+                    entity.HasIndex(e => e.CategoryName).IsUnique();
+                }
+            );
+
             modelBuilder.Entity<ProjectMaster>(entity =>
             {
                 entity.ToTable("project_master");
 
                 entity.HasKey(e => e.ProjectId);
 
-                entity.Property(e => e.ProjectId)
-                    .HasColumnName("project_id");
+                entity.Property(e => e.ProjectId).HasColumnName("project_id");
 
                 entity.Property(e => e.ProjectName).HasColumnName("project_name");
 
@@ -63,16 +81,35 @@ namespace 崴正.Data
             modelBuilder.Entity<AuditLog>(entity =>
             {
                 entity.ToTable("audit_log");
-                entity.HasKey(e => e.LogId);
-                entity.Property(e => e.LogId).HasColumnName("log_id");
-                entity.Property(e => e.SourceFileName).HasColumnName("source_file_name");
-                entity.Property(e => e.SheetName).HasColumnName("sheet_name");
-                entity.Property(e => e.RowNumber).HasColumnName("row_number");
-                entity.Property(e => e.ItemName).HasColumnName("item_name");
-                entity.Property(e => e.OriginalStatusMessage).HasColumnName("original_status_message");
-                entity.Property(e => e.OverrideReason).HasColumnName("override_reason");
-                entity.Property(e => e.ActionUser).HasColumnName("action_user");
-                entity.Property(e => e.CreatedAt).HasColumnName("created_at");
+
+                entity.HasKey(e =>e.LogId);
+
+                entity.Property(e =>e.LogId).HasColumnName("log_id");
+
+                entity.Property(e =>e.Module).HasColumnName("module");
+
+                entity.Property(e =>e.ActionType).HasColumnName("action_type");
+
+                entity.Property(e =>e.EntityType).HasColumnName("entity_type");
+
+                entity.Property(e =>e.EntityId).HasColumnName("entity_id");
+
+                entity.Property(e =>e.ProjectId).HasColumnName("project_id");
+
+                entity.Property(e =>e.Description).HasColumnName("description");
+
+                entity.Property(e =>e.OldValue).HasColumnName("old_value");
+
+                entity.Property(e =>e.NewValue).HasColumnName("new_value");
+
+                entity.Property(e =>e.ActionUser).HasColumnName("action_user");
+
+                entity.Property(e =>
+                    e.CreatedAt)
+                    .HasColumnName("created_at")
+                    .HasColumnType(
+                        "timestamp with time zone"
+                    );
             });
 
             modelBuilder.Entity<MaterialMaster>(entity =>
@@ -82,8 +119,10 @@ namespace 崴正.Data
 
                 entity.Property(e => e.MaterialId).HasColumnName("material_id");
                 entity.Property(e => e.MaterialName).HasColumnName("material_name");
-                entity.Property(e => e.Category).HasColumnName("category");
+                entity.Property(e => e.CategoryId).HasColumnName("category_id");
+                entity.HasOne(e => e.MaterialCategory).WithMany(e => e.Materials).HasForeignKey(e => e.CategoryId).OnDelete(DeleteBehavior.Restrict).HasConstraintName("fk_material_master_category");
                 entity.Property(e => e.BaseUnit).HasColumnName("base_unit");
+                entity.Property(e => e.IsActive).HasColumnName("is_active");
             });
 
 
@@ -137,8 +176,7 @@ namespace 崴正.Data
                     .WithMany(e => e.HistoricalTransactions)
                     .HasForeignKey(e => e.ProjectMasterId)
                     .OnDelete(DeleteBehavior.SetNull)
-                    .HasConstraintName(
-                        "fk_historical_transaction_project_master");
+                    .HasConstraintName("fk_historical_transaction_project_master");
             });
 
             modelBuilder.Entity<FinalBidItem>(entity =>

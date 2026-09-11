@@ -337,6 +337,68 @@ namespace 崴正.Services
             );
         }
 
+        public HistoricalTransaction?
+            BuildHistoricalTransactionForNewImport(
+                FinalBidItem bidItem,
+                string? dataIssueCode)
+        {
+            if (!IsHistoryEligible(
+                    bidItem,
+                    dataIssueCode))
+            {
+                return null;
+            }
+
+            var material =
+                bidItem.Material;
+
+            if (material == null)
+            {
+                return null;
+            }
+
+            var conversion =
+                _unitConversionService.Convert(
+                    bidItem.Qty!.Value,
+                    bidItem.UnitPrice!.Value,
+                    bidItem.Unit,
+                    material.BaseUnit
+                );
+
+            if (!conversion.Success)
+            {
+                return null;
+            }
+
+            return new HistoricalTransaction
+            {
+                MaterialId =
+                    material.MaterialId,
+
+                ActualQuantity =
+                    conversion.Quantity,
+
+                UnitPrice =
+                    conversion.UnitPrice,
+
+                TransactionDate =
+                    bidItem.ProjectMaster.StartDate
+                    ?? DateTime.UtcNow.Date,
+
+                IsDeleted =
+                    false,
+
+                IsOutlier =
+                    false,
+
+                ProjectMasterId =
+                    bidItem.ProjectMasterId,
+
+                FinalBidItemId =
+                    bidItem.FinalBidItemId
+            };
+        }
+
         public string SyncHistoricalTransaction(
             FinalBidItem bidItem,
             string? dataIssueCode)

@@ -165,9 +165,9 @@ namespace 崴正.Services
 
                 query = query.Where(x =>
                     x.Material != null &&
-                    x.Material.Category != null &&
-                    x.Material.Category ==
-                        selectedCategory);
+                    x.Material.MaterialCategory.CategoryName ==
+                        selectedCategory
+                );
             }
 
             if (!string.IsNullOrWhiteSpace(unit) &&
@@ -284,7 +284,7 @@ namespace 崴正.Services
 
                     materialCategory =
                         x.Material != null
-                            ? x.Material.Category
+                            ? x.Material.MaterialCategory.CategoryName
                             : null,
 
                     materialUnit =
@@ -498,17 +498,18 @@ namespace 崴正.Services
                     .OrderBy(x => x)
                     .ToList();
 
-            var categories =
-                _context.MaterialMasters
-                    .AsNoTracking()
-                    .Where(x =>
-                        x.Category != null &&
-                        x.Category != "")
-                    .Select(x =>
-                        x.Category!)
-                    .Distinct()
-                    .OrderBy(x => x)
-                    .ToList();
+                var categories =
+                    _context.MaterialCategories
+                        .AsNoTracking()
+                        .Where(x =>
+                            x.IsActive)
+                        .OrderBy(x =>
+                            x.SortOrder)
+                        .ThenBy(x =>
+                            x.CategoryName)
+                        .Select(x =>
+                            x.CategoryName)
+                        .ToList();
 
             return ServiceResult.Ok(new
             {
@@ -523,6 +524,8 @@ namespace 崴正.Services
             var query =
                 _context.MaterialMasters
                     .AsNoTracking()
+                    .Where(x =>
+                        x.IsActive)
                     .AsQueryable();
 
             if (!string.IsNullOrWhiteSpace(
@@ -537,12 +540,9 @@ namespace 崴正.Services
                         pattern
                     )
                     ||
-                    (
-                        x.Category != null &&
-                        EF.Functions.ILike(
-                            x.Category,
-                            pattern
-                        )
+                    EF.Functions.ILike(
+                        x.MaterialCategory.CategoryName,
+                        pattern
                     )
                 );
             }
@@ -559,8 +559,11 @@ namespace 崴正.Services
                         materialName =
                             x.MaterialName,
 
+                        categoryId =
+                            x.CategoryId,
+
                         category =
-                            x.Category,
+                            x.MaterialCategory.CategoryName,
 
                         baseUnit =
                             x.BaseUnit

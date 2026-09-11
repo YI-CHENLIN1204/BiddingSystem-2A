@@ -51,6 +51,9 @@ builder.Services.AddScoped<EstimationTargetService>();
 builder.Services.AddScoped<BatchEstimationService>();
 builder.Services.AddScoped<CoreMaterialService>();
 builder.Services.AddScoped<BidRangeAnomalyAnalysisService>();
+builder.Services.AddScoped<MaterialCategoryService>();
+builder.Services.AddScoped<StandardMaterialService>();
+builder.Services.AddScoped<AuditLogService>();
 
 
 builder.Services.AddDbContext<ApplicationDbContext>(options =>

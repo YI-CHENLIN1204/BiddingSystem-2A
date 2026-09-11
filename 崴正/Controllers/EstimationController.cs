@@ -1,14 +1,6 @@
 using Microsoft.AspNetCore.Mvc;
-using System;
-using System.Collections.Generic;
 using System.IO;
-using System.Linq;
-using 崴正.Data;
-using 崴正.Models;
 using 崴正.Services;
-using Microsoft.AspNetCore.Authorization;
-using Microsoft.EntityFrameworkCore;
-using System.Security.Cryptography;
 
 namespace 崴正.Controllers
 {
@@ -16,20 +8,17 @@ namespace 崴正.Controllers
     [ApiController]
     public class EstimationController : ControllerBase
     {
-        private readonly ApplicationDbContext _context;
         private readonly FinalBidService _finalBidService;
         private readonly MaterialMappingService _materialMappingService;
         private readonly FinalBidImportService _finalBidImportService;
         private readonly FinalBidQueryService _finalBidQueryService;
 
         public EstimationController(
-            ApplicationDbContext context,
             FinalBidService finalBidService,
             MaterialMappingService materialMappingService,
             FinalBidImportService finalBidImportService,
             FinalBidQueryService finalBidQueryService)
         {
-            _context = context;
             _finalBidService = finalBidService;
             _materialMappingService = materialMappingService;
             _finalBidImportService = finalBidImportService;
@@ -186,26 +175,6 @@ namespace 崴正.Controllers
             return ToActionResult(result);
         }
 
-
-        // ==========================================
-        // 新增標準材料
-        // ==========================================
-        [HttpPost("create-material")]
-        public IActionResult CreateMaterial(
-            [FromForm] string materialName,
-            [FromForm] string category,
-            [FromForm] string baseUnit)
-        {
-            var result =
-                _materialMappingService
-                    .CreateMaterial(
-                        materialName,
-                        category,
-                        baseUnit
-                    );
-
-            return ToActionResult(result);
-        }
         // ==========================================
         // 人工指定 / 修改材料對應
         //

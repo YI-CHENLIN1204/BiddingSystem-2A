@@ -24,14 +24,16 @@ namespace 崴正.Services
     {
         private readonly ApplicationDbContext _context;
         private readonly FinalBidService _finalBidService;
+        private readonly AuditLogService _auditLogService;
 
         public MaterialMappingService(
             ApplicationDbContext context,
-            FinalBidService finalBidService)
+            FinalBidService finalBidService,
+            AuditLogService auditLogService)
         {
             _context = context;
-            _finalBidService =
-                finalBidService;
+            _finalBidService =finalBidService;
+            _auditLogService =auditLogService;
         }
 
         public ServiceResult CreateMaterial(
@@ -72,13 +74,31 @@ namespace 崴正.Services
                 );
             }
 
+            var materialCategory =
+                _context.MaterialCategories
+                    .FirstOrDefault(x =>
+                        x.IsActive &&
+                        EF.Functions.ILike(
+                            x.CategoryName,
+                            category
+                        )
+                    );
+
+            if (materialCategory == null)
+            {
+                return ServiceResult.Validation(
+                    "找不到指定的材料分類，請先建立材料分類"
+                );
+            }
+
             bool exists =
                 _context.MaterialMasters.Any(x =>
                     EF.Functions.ILike(
                         x.MaterialName,
                         materialName
                     ) &&
-                    x.Category == category &&
+                    x.CategoryId ==
+                        materialCategory.CategoryId &&
                     x.BaseUnit == baseUnit
                 );
 
@@ -95,8 +115,8 @@ namespace 崴正.Services
                     MaterialName =
                         materialName,
 
-                    Category =
-                        category,
+                    CategoryId =
+                        materialCategory.CategoryId,
 
                     BaseUnit =
                         baseUnit
@@ -119,8 +139,11 @@ namespace 崴正.Services
                 materialName =
                     material.MaterialName,
 
+                categoryId =
+                    material.CategoryId,
+
                 category =
-                    material.Category,
+                    materialCategory.CategoryName,
 
                 baseUnit =
                     material.BaseUnit
@@ -162,6 +185,13 @@ namespace 崴正.Services
                 {
                     return ServiceResult.Validation(
                         "找不到指定的標準材料"
+                    );
+                }
+
+                if (!material.IsActive)
+                {
+                    return ServiceResult.Validation(
+                        "此標準材料目前已停用，無法建立新的人工對應"
                     );
                 }
 
@@ -231,44 +261,51 @@ namespace 崴正.Services
                             dataIssue.Code
                         );
 
-                var log =
-                    new AuditLog
-                    {
-                        SourceFileName =
-                            bidItem.SourceFileName,
+                _auditLogService.AddLog(
+                    module:
+                        "材料對應",
 
-                        SheetName =
-                            bidItem.SheetName ??
-                            string.Empty,
+                    actionType:
+                        "UpdateMapping",
 
-                        RowNumber =
-                            bidItem.RowNumber ?? 0,
+                    entityType:
+                        "FinalBidItem",
 
-                        ItemName =
-                            bidItem.ItemName,
+                    entityId:
+                        bidItem.FinalBidItemId,
 
-                        OriginalStatusMessage =
-                            $"原狀態：{oldStatus}；" +
-                            $"原 MaterialId：" +
-                            $"{oldMaterialId?.ToString() ?? "NULL"}",
+                    description:
+                        $"將工項「{bidItem.ItemName}」" +
+                        $"人工對應至「{material.MaterialName}」",
 
-                        OverrideReason =
-                            $"人工修改材料對應為：" +
-                            $"{material.MaterialName} " +
-                            $"(MaterialId={material.MaterialId})",
+                    actionUser:
+                        actionUser,
 
-                        ActionUser =
-                            string.IsNullOrWhiteSpace(
-                                actionUser)
-                                ? "Estimator_Staff"
-                                : actionUser,
+                    projectId:
+                        bidItem.ProjectMasterId,
 
-                        CreatedAt =
-                            DateTime.UtcNow
-                    };
+                    oldValue:
+                        new
+                        {
+                            materialId =
+                                oldMaterialId,
 
-                _context.AuditLogs.Add(
-                    log
+                            mappingStatus =
+                                oldStatus
+                        },
+
+                    newValue:
+                        new
+                        {
+                            materialId =
+                                material.MaterialId,
+
+                            materialName =
+                                material.MaterialName,
+
+                            mappingStatus =
+                                "Manual"
+                        }
                 );
 
                 _context.SaveChanges();
@@ -349,8 +386,7 @@ namespace 崴正.Services
                         BaseUnit =
                             material.BaseUnit,
 
-                        Category =
-                            material.Category
+                        Category =material.MaterialCategory.CategoryName
                     }
                 )
                 .ToListAsync();

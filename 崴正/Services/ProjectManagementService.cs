@@ -581,7 +581,8 @@ namespace 崴正.Services
                     {
                         m.MaterialId,
                         m.MaterialName,
-                        m.Category,
+                        Category =
+                            m.MaterialCategory.CategoryName,
                         m.BaseUnit
                     }
                     into g
