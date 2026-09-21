@@ -251,9 +251,15 @@
                     <span class="sidebar-icon"></span>
                     <span>決標回寫</span>
                 </a>
-                <a class="sidebar-link @(currentController == "ProjectManagement" ? "active" : "")"asp-controller="ProjectManagement"asp-action="Index">
+                <a class="sidebar-link @(currentController == "ProjectManagement" ? "active" : "")" asp-controller="ProjectManagement" asp-action="Index">
                     <span class="sidebar-icon"></span>
                     <span>建案管理</span>
+                </a>
+
+                <div class="sidebar-heading">系統</div>
+                <a class="sidebar-link @(currentController == "AuditLog" ? "active" : "")" asp-controller="AuditLog" asp-action="Index">
+                    <span class="sidebar-icon"></span>
+                    <span>操作紀錄</span>
                 </a>
             </nav>
         </aside>
@@ -265,7 +271,7 @@
             </header>
 
             <div class="breadcrumb-strip">
-                工程類 / @ViewData["Title"]
+                @(currentController == "AuditLog" ? "系統" : "工程類") / @ViewData["Title"]
             </div>
 
             <div class="main-shell">

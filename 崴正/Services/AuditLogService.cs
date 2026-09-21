@@ -1,3 +1,4 @@
+using Microsoft.EntityFrameworkCore;
 using System.Text.Json;
 using 崴正.Data;
 using 崴正.Models;
@@ -75,6 +76,369 @@ namespace 崴正.Services
         }
 
 
+        // ==========================================
+        // 操作紀錄管理頁
+        // ==========================================
+        public async Task<AuditLogPageViewModel>
+            GetPageAsync(
+                string? search,
+                string? module,
+                string? actionType,
+                string? actionUser,
+                DateTime? startDate,
+                DateTime? endDate,
+                int page,
+                int pageSize)
+        {
+            search =
+                NormalizeOptional(
+                    search
+                );
+
+            module =
+                NormalizeOptional(
+                    module
+                );
+
+            actionType =
+                NormalizeOptional(
+                    actionType
+                );
+
+            actionUser =
+                NormalizeOptional(
+                    actionUser
+                );
+
+
+            if (page < 1)
+            {
+                page = 1;
+            }
+
+
+            if (
+                pageSize != 25 &&
+                pageSize != 50 &&
+                pageSize != 100
+            )
+            {
+                pageSize = 25;
+            }
+
+
+            var query =
+                _context.AuditLogs
+                    .AsNoTracking()
+                    .AsQueryable();
+
+
+            if (!string.IsNullOrWhiteSpace(
+                    search))
+            {
+                string pattern =
+                    $"%{search}%";
+
+                query =
+                    query.Where(x =>
+                        EF.Functions.ILike(
+                            x.Module,
+                            pattern
+                        )
+                        ||
+                        EF.Functions.ILike(
+                            x.ActionType,
+                            pattern
+                        )
+                        ||
+                        EF.Functions.ILike(
+                            x.EntityType,
+                            pattern
+                        )
+                        ||
+                        (
+                            x.EntityId != null &&
+                            EF.Functions.ILike(
+                                x.EntityId,
+                                pattern
+                            )
+                        )
+                        ||
+                        EF.Functions.ILike(
+                            x.Description,
+                            pattern
+                        )
+                        ||
+                        EF.Functions.ILike(
+                            x.ActionUser,
+                            pattern
+                        )
+                    );
+            }
+
+
+            if (!string.IsNullOrWhiteSpace(
+                    module))
+            {
+                query =
+                    query.Where(x =>
+                        x.Module ==
+                        module
+                    );
+            }
+
+
+            if (!string.IsNullOrWhiteSpace(
+                    actionType))
+            {
+                query =
+                    query.Where(x =>
+                        x.ActionType ==
+                        actionType
+                    );
+            }
+
+
+            if (!string.IsNullOrWhiteSpace(
+                    actionUser))
+            {
+                query =
+                    query.Where(x =>
+                        x.ActionUser ==
+                        actionUser
+                    );
+            }
+
+
+            if (startDate.HasValue)
+            {
+                DateTime startUtc =
+                    DateTime.SpecifyKind(
+                        startDate.Value.Date,
+                        DateTimeKind.Utc
+                    );
+
+                query =
+                    query.Where(x =>
+                        x.CreatedAt >=
+                        startUtc
+                    );
+            }
+
+
+            if (endDate.HasValue)
+            {
+                DateTime endExclusiveUtc =
+                    DateTime.SpecifyKind(
+                        endDate.Value.Date
+                            .AddDays(1),
+                        DateTimeKind.Utc
+                    );
+
+                query =
+                    query.Where(x =>
+                        x.CreatedAt <
+                        endExclusiveUtc
+                    );
+            }
+
+
+            int totalCount =
+                await query.CountAsync();
+
+
+            int totalPages =
+                totalCount == 0
+                    ? 1
+                    : (int)Math.Ceiling(
+                        totalCount /
+                        (double)pageSize
+                    );
+
+
+            if (page > totalPages)
+            {
+                page =
+                    totalPages;
+            }
+
+
+            var logs =
+                await query
+                    .OrderByDescending(x =>
+                        x.CreatedAt)
+                    .ThenByDescending(x =>
+                        x.LogId)
+                    .Skip(
+                        (page - 1) *
+                        pageSize
+                    )
+                    .Take(
+                        pageSize
+                    )
+                    .ToListAsync();
+
+
+            var projectIds =
+                logs
+                    .Where(x =>
+                        x.ProjectId.HasValue)
+                    .Select(x =>
+                        x.ProjectId!.Value)
+                    .Distinct()
+                    .ToList();
+
+
+            var projectNames =
+                projectIds.Count == 0
+                    ? new Dictionary<int, string>()
+                    : await _context.ProjectMasters
+                        .AsNoTracking()
+                        .Where(x =>
+                            projectIds.Contains(
+                                x.ProjectId
+                            ))
+                        .ToDictionaryAsync(
+                            x =>
+                                x.ProjectId,
+                            x =>
+                                x.ProjectName
+                        );
+
+
+            var modules =
+                await _context.AuditLogs
+                    .AsNoTracking()
+                    .Where(x =>
+                        x.Module != "")
+                    .Select(x =>
+                        x.Module)
+                    .Distinct()
+                    .OrderBy(x =>
+                        x)
+                    .ToListAsync();
+
+
+            var actionTypes =
+                await _context.AuditLogs
+                    .AsNoTracking()
+                    .Where(x =>
+                        x.ActionType != "")
+                    .Select(x =>
+                        x.ActionType)
+                    .Distinct()
+                    .OrderBy(x =>
+                        x)
+                    .ToListAsync();
+
+
+            var actionUsers =
+                await _context.AuditLogs
+                    .AsNoTracking()
+                    .Where(x =>
+                        x.ActionUser != "")
+                    .Select(x =>
+                        x.ActionUser)
+                    .Distinct()
+                    .OrderBy(x =>
+                        x)
+                    .ToListAsync();
+
+
+            return new AuditLogPageViewModel
+            {
+                Search =
+                    search,
+
+                Module =
+                    module,
+
+                ActionType =
+                    actionType,
+
+                ActionUser =
+                    actionUser,
+
+                StartDate =
+                    startDate?.Date,
+
+                EndDate =
+                    endDate?.Date,
+
+                Page =
+                    page,
+
+                PageSize =
+                    pageSize,
+
+                TotalCount =
+                    totalCount,
+
+                TotalPages =
+                    totalPages,
+
+                Modules =
+                    modules,
+
+                ActionTypes =
+                    actionTypes,
+
+                ActionUsers =
+                    actionUsers,
+
+                Items =
+                    logs
+                        .Select(log =>
+                            new AuditLogListItemViewModel
+                            {
+                                LogId =
+                                    log.LogId,
+
+                                Module =
+                                    log.Module,
+
+                                ActionType =
+                                    log.ActionType,
+
+                                EntityType =
+                                    log.EntityType,
+
+                                EntityId =
+                                    log.EntityId,
+
+                                ProjectId =
+                                    log.ProjectId,
+
+                                ProjectName =
+                                    log.ProjectId.HasValue &&
+                                    projectNames.TryGetValue(
+                                        log.ProjectId.Value,
+                                        out var projectName
+                                    )
+                                        ? projectName
+                                        : null,
+
+                                Description =
+                                    log.Description,
+
+                                OldValue =
+                                    log.OldValue,
+
+                                NewValue =
+                                    log.NewValue,
+
+                                ActionUser =
+                                    log.ActionUser,
+
+                                CreatedAt =
+                                    log.CreatedAt
+                            }
+                        )
+                        .ToList()
+            };
+        }
+
+
         private static string?
             SerializeValue(
                 object? value)
@@ -101,6 +465,17 @@ namespace 崴正.Services
             return string.IsNullOrWhiteSpace(
                     value)
                 ? string.Empty
+                : value.Trim();
+        }
+
+
+        private static string?
+            NormalizeOptional(
+                string? value)
+        {
+            return string.IsNullOrWhiteSpace(
+                    value)
+                ? null
                 : value.Trim();
         }
     }

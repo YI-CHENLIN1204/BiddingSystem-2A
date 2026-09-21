@@ -1,0 +1,735 @@
+@model 崴正.Models.AuditLogPageViewModel
+
+@{
+    ViewData["Title"] = "操作紀錄";
+
+    int startPage =
+        Math.Max(
+            1,
+            Model.Page - 2
+        );
+
+    int endPage =
+        Math.Min(
+            Model.TotalPages,
+            Model.Page + 2
+        );
+}
+
+<style>
+    .audit-page {
+        display: flex;
+        flex-direction: column;
+        gap: 16px;
+    }
+
+    .audit-title-row {
+        display: flex;
+        align-items: flex-end;
+        justify-content: space-between;
+        gap: 16px;
+    }
+
+    .audit-title {
+        margin: 0;
+        font-size: 26px;
+        font-weight: 800;
+    }
+
+    .audit-subtitle {
+        margin-top: 4px;
+        color: #6c757d;
+        font-size: 14px;
+    }
+
+    .audit-count {
+        color: #6c757d;
+        font-size: 14px;
+        white-space: nowrap;
+    }
+
+    .audit-filter-card {
+        background: #ffffff;
+        border: 1px solid var(--wz-border);
+        border-radius: 6px;
+        padding: 18px;
+    }
+
+    .audit-filter-grid {
+        display: grid;
+        grid-template-columns:
+            minmax(220px, 2fr)
+            repeat(3, minmax(150px, 1fr))
+            repeat(2, minmax(145px, .9fr))
+            auto;
+        gap: 12px;
+        align-items: end;
+    }
+
+    .audit-filter-item label {
+        display: block;
+        margin-bottom: 6px;
+        color: #5b6573;
+        font-size: 13px;
+        font-weight: 700;
+    }
+
+    .audit-filter-actions {
+        display: flex;
+        gap: 8px;
+    }
+
+    .audit-table-card {
+        background: #ffffff;
+        border: 1px solid var(--wz-border);
+        border-radius: 6px;
+        overflow: hidden;
+    }
+
+    .audit-table-wrap {
+        overflow-x: auto;
+    }
+
+    .audit-table {
+        min-width: 1100px;
+        margin: 0;
+    }
+
+    .audit-table thead th {
+        padding: 12px 14px;
+        background: #f7f8fa;
+        border-bottom: 1px solid var(--wz-border);
+        color: #4f5965;
+        font-size: 13px;
+        font-weight: 800;
+        white-space: nowrap;
+    }
+
+    .audit-table tbody td {
+        padding: 12px 14px;
+        vertical-align: middle;
+        border-color: #eef0f2;
+        font-size: 14px;
+    }
+
+    .audit-module {
+        font-weight: 700;
+    }
+
+    .audit-action {
+        display: inline-block;
+        padding: 4px 8px;
+        border: 1px solid #d9dce1;
+        border-radius: 999px;
+        background: #f8f9fa;
+        color: #45505d;
+        font-size: 12px;
+        font-weight: 700;
+        white-space: nowrap;
+    }
+
+    .audit-description {
+        min-width: 260px;
+        max-width: 440px;
+    }
+
+    .audit-project {
+        min-width: 150px;
+    }
+
+    .audit-project-id {
+        margin-top: 2px;
+        color: #8a949e;
+        font-size: 12px;
+    }
+
+    .audit-empty {
+        padding: 48px 20px !important;
+        text-align: center;
+        color: #7b8490;
+    }
+
+    .audit-footer {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        gap: 16px;
+        padding: 14px 16px;
+        border-top: 1px solid var(--wz-border);
+        background: #ffffff;
+    }
+
+    .audit-page-info {
+        color: #6c757d;
+        font-size: 13px;
+    }
+
+    .audit-json {
+        min-height: 120px;
+        max-height: 320px;
+        margin: 0;
+        padding: 14px;
+        overflow: auto;
+        border: 1px solid #e0e3e7;
+        border-radius: 6px;
+        background: #f7f8fa;
+        color: #27313c;
+        font-size: 13px;
+        white-space: pre-wrap;
+        word-break: break-word;
+    }
+
+    .audit-detail-meta {
+        display: grid;
+        grid-template-columns: repeat(2, minmax(0, 1fr));
+        gap: 12px;
+        margin-bottom: 16px;
+    }
+
+    .audit-meta-item {
+        padding: 10px 12px;
+        border: 1px solid #e8eaed;
+        border-radius: 6px;
+        background: #fbfbfc;
+    }
+
+    .audit-meta-label {
+        margin-bottom: 3px;
+        color: #7b8490;
+        font-size: 12px;
+    }
+
+    .audit-meta-value {
+        color: #27313c;
+        font-size: 14px;
+        font-weight: 700;
+        word-break: break-word;
+    }
+
+    @@media (max-width: 1200px) {
+        .audit-filter-grid {
+            grid-template-columns:
+                repeat(2, minmax(180px, 1fr));
+        }
+    }
+</style>
+
+<div class="audit-page">
+    <div class="audit-title-row">
+        <div>
+            <h1 class="audit-title">操作紀錄</h1>
+            <div class="audit-subtitle">
+                查詢系統內各項資料異動與分析操作紀錄
+            </div>
+        </div>
+
+        <div class="audit-count">
+            共 @Model.TotalCount 筆
+        </div>
+    </div>
+
+
+    <form method="get"
+          asp-controller="AuditLog"
+          asp-action="Index"
+          class="audit-filter-card">
+
+        <div class="audit-filter-grid">
+            <div class="audit-filter-item">
+                <label for="search">關鍵字</label>
+                <input id="search"
+                       name="search"
+                       class="form-control"
+                       value="@Model.Search"
+                       placeholder="說明、模組、操作、Entity ID..." />
+            </div>
+
+
+            <div class="audit-filter-item">
+                <label for="module">模組</label>
+                <select id="module"
+                        name="module"
+                        class="form-select">
+                    <option value="">全部模組</option>
+
+                    @foreach (var item in Model.Modules)
+                    {
+                        <option value="@item"
+                                selected="@(Model.Module == item)">
+                            @item
+                        </option>
+                    }
+                </select>
+            </div>
+
+
+            <div class="audit-filter-item">
+                <label for="actionType">操作類型</label>
+                <select id="actionType"
+                        name="actionType"
+                        class="form-select">
+                    <option value="">全部操作</option>
+
+                    @foreach (var item in Model.ActionTypes)
+                    {
+                        <option value="@item"
+                                selected="@(Model.ActionType == item)">
+                            @item
+                        </option>
+                    }
+                </select>
+            </div>
+
+
+            <div class="audit-filter-item">
+                <label for="actionUser">操作者</label>
+                <select id="actionUser"
+                        name="actionUser"
+                        class="form-select">
+                    <option value="">全部操作者</option>
+
+                    @foreach (var item in Model.ActionUsers)
+                    {
+                        <option value="@item"
+                                selected="@(Model.ActionUser == item)">
+                            @item
+                        </option>
+                    }
+                </select>
+            </div>
+
+
+            <div class="audit-filter-item">
+                <label for="startDate">開始日期</label>
+                <input id="startDate"
+                       name="startDate"
+                       type="date"
+                       class="form-control"
+                       value="@(Model.StartDate?.ToString("yyyy-MM-dd"))" />
+            </div>
+
+
+            <div class="audit-filter-item">
+                <label for="endDate">結束日期</label>
+                <input id="endDate"
+                       name="endDate"
+                       type="date"
+                       class="form-control"
+                       value="@(Model.EndDate?.ToString("yyyy-MM-dd"))" />
+            </div>
+
+
+            <div class="audit-filter-actions">
+                <button type="submit"
+                        class="btn btn-primary">
+                    查詢
+                </button>
+
+                <a asp-controller="AuditLog"
+                   asp-action="Index"
+                   class="btn btn-outline-secondary">
+                    清除
+                </a>
+            </div>
+        </div>
+
+
+        <input type="hidden"
+               name="pageSize"
+               value="@Model.PageSize" />
+    </form>
+
+
+    <div class="audit-table-card">
+        <div class="audit-table-wrap">
+            <table class="table audit-table">
+                <thead>
+                    <tr>
+                        <th>時間</th>
+                        <th>操作者</th>
+                        <th>模組</th>
+                        <th>操作</th>
+                        <th>說明</th>
+                        <th>建案</th>
+                        <th>詳細</th>
+                    </tr>
+                </thead>
+
+                <tbody>
+                    @if (Model.Items.Count == 0)
+                    {
+                        <tr>
+                            <td colspan="7"
+                                class="audit-empty">
+                                沒有符合條件的操作紀錄
+                            </td>
+                        </tr>
+                    }
+                    else
+                    {
+                        @foreach (var item in Model.Items)
+                        {
+                            <tr>
+                                <td>
+                                    <span class="audit-time"
+                                          data-utc="@item.CreatedAt.ToUniversalTime().ToString("O")">
+                                        @item.CreatedAt.ToString("yyyy-MM-dd HH:mm:ss")
+                                    </span>
+                                </td>
+
+                                <td>@item.ActionUser</td>
+
+                                <td>
+                                    <span class="audit-module">
+                                        @item.Module
+                                    </span>
+                                </td>
+
+                                <td>
+                                    <span class="audit-action">
+                                        @item.ActionType
+                                    </span>
+                                </td>
+
+                                <td class="audit-description">
+                                    @item.Description
+                                </td>
+
+                                <td class="audit-project">
+                                    @if (!string.IsNullOrWhiteSpace(
+                                            item.ProjectName))
+                                    {
+                                        <div>@item.ProjectName</div>
+                                    }
+                                    else
+                                    {
+                                        <div class="text-muted">—</div>
+                                    }
+
+                                    @if (item.ProjectId.HasValue)
+                                    {
+                                        <div class="audit-project-id">
+                                            Project ID：@item.ProjectId
+                                        </div>
+                                    }
+                                </td>
+
+                                <td>
+                                    <button type="button"
+                                            class="btn btn-sm btn-outline-primary audit-detail-button"
+                                            data-bs-toggle="modal"
+                                            data-bs-target="#auditDetailModal"
+                                            data-log-id="@item.LogId"
+                                            data-module="@item.Module"
+                                            data-action="@item.ActionType"
+                                            data-entity-type="@item.EntityType"
+                                            data-entity-id="@item.EntityId"
+                                            data-user="@item.ActionUser"
+                                            data-description="@item.Description">
+                                        查看
+                                    </button>
+
+                                    <textarea id="audit-old-@item.LogId"
+                                              hidden>@item.OldValue</textarea>
+
+                                    <textarea id="audit-new-@item.LogId"
+                                              hidden>@item.NewValue</textarea>
+                                </td>
+                            </tr>
+                        }
+                    }
+                </tbody>
+            </table>
+        </div>
+
+
+        <div class="audit-footer">
+            <div class="audit-page-info">
+                第 @Model.Page / @Model.TotalPages 頁
+            </div>
+
+            @if (Model.TotalPages > 1)
+            {
+                <nav aria-label="Audit log pagination">
+                    <ul class="pagination pagination-sm mb-0">
+                        <li class="page-item @(Model.Page <= 1 ? "disabled" : "")">
+                            <a class="page-link"
+                               asp-controller="AuditLog"
+                               asp-action="Index"
+                               asp-route-search="@Model.Search"
+                               asp-route-module="@Model.Module"
+                               asp-route-actionType="@Model.ActionType"
+                               asp-route-actionUser="@Model.ActionUser"
+                               asp-route-startDate="@(Model.StartDate?.ToString("yyyy-MM-dd"))"
+                               asp-route-endDate="@(Model.EndDate?.ToString("yyyy-MM-dd"))"
+                               asp-route-page="@(Model.Page - 1)"
+                               asp-route-pageSize="@Model.PageSize">
+                                上一頁
+                            </a>
+                        </li>
+
+                        @for (int pageNumber = startPage;
+                            pageNumber <= endPage;
+                            pageNumber++)
+                        {
+                            <li class="page-item @(pageNumber == Model.Page ? "active" : "")">
+                                <a class="page-link"
+                                   asp-controller="AuditLog"
+                                   asp-action="Index"
+                                   asp-route-search="@Model.Search"
+                                   asp-route-module="@Model.Module"
+                                   asp-route-actionType="@Model.ActionType"
+                                   asp-route-actionUser="@Model.ActionUser"
+                                   asp-route-startDate="@(Model.StartDate?.ToString("yyyy-MM-dd"))"
+                                   asp-route-endDate="@(Model.EndDate?.ToString("yyyy-MM-dd"))"
+                                   asp-route-page="@pageNumber"
+                                   asp-route-pageSize="@Model.PageSize">
+                                    @pageNumber
+                                </a>
+                            </li>
+                        }
+
+                        <li class="page-item @(Model.Page >= Model.TotalPages ? "disabled" : "")">
+                            <a class="page-link"
+                               asp-controller="AuditLog"
+                               asp-action="Index"
+                               asp-route-search="@Model.Search"
+                               asp-route-module="@Model.Module"
+                               asp-route-actionType="@Model.ActionType"
+                               asp-route-actionUser="@Model.ActionUser"
+                               asp-route-startDate="@(Model.StartDate?.ToString("yyyy-MM-dd"))"
+                               asp-route-endDate="@(Model.EndDate?.ToString("yyyy-MM-dd"))"
+                               asp-route-page="@(Model.Page + 1)"
+                               asp-route-pageSize="@Model.PageSize">
+                                下一頁
+                            </a>
+                        </li>
+                    </ul>
+                </nav>
+            }
+        </div>
+    </div>
+</div>
+
+
+<div class="modal fade"
+     id="auditDetailModal"
+     tabindex="-1"
+     aria-hidden="true">
+    <div class="modal-dialog modal-lg modal-dialog-scrollable">
+        <div class="modal-content">
+            <div class="modal-header">
+                <div>
+                    <h5 class="modal-title">
+                        操作紀錄詳細內容
+                    </h5>
+                    <div class="text-muted small"
+                         id="auditDetailId">
+                    </div>
+                </div>
+
+                <button type="button"
+                        class="btn-close"
+                        data-bs-dismiss="modal"
+                        aria-label="Close">
+                </button>
+            </div>
+
+            <div class="modal-body">
+                <div class="audit-detail-meta">
+                    <div class="audit-meta-item">
+                        <div class="audit-meta-label">模組</div>
+                        <div class="audit-meta-value"
+                             id="auditDetailModule">
+                        </div>
+                    </div>
+
+                    <div class="audit-meta-item">
+                        <div class="audit-meta-label">操作</div>
+                        <div class="audit-meta-value"
+                             id="auditDetailAction">
+                        </div>
+                    </div>
+
+                    <div class="audit-meta-item">
+                        <div class="audit-meta-label">資料類型</div>
+                        <div class="audit-meta-value"
+                             id="auditDetailEntity">
+                        </div>
+                    </div>
+
+                    <div class="audit-meta-item">
+                        <div class="audit-meta-label">操作者</div>
+                        <div class="audit-meta-value"
+                             id="auditDetailUser">
+                        </div>
+                    </div>
+                </div>
+
+                <div class="mb-3">
+                    <div class="fw-bold mb-2">操作說明</div>
+                    <div id="auditDetailDescription"></div>
+                </div>
+
+                <div class="mb-3">
+                    <div class="fw-bold mb-2">修改前</div>
+                    <pre class="audit-json"
+                         id="auditDetailOld">—</pre>
+                </div>
+
+                <div>
+                    <div class="fw-bold mb-2">修改後</div>
+                    <pre class="audit-json"
+                         id="auditDetailNew">—</pre>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+
+@section Scripts {
+    <script>
+        (() => {
+            function prettyValue(value) {
+                if (!value || !value.trim()) {
+                    return "—";
+                }
+
+                try {
+                    return JSON.stringify(
+                        JSON.parse(value),
+                        null,
+                        2
+                    );
+                } catch {
+                    return value;
+                }
+            }
+
+
+            document
+                .querySelectorAll(".audit-time")
+                .forEach(element => {
+                    const utc =
+                        element.dataset.utc;
+
+                    if (!utc) {
+                        return;
+                    }
+
+                    const date =
+                        new Date(utc);
+
+                    if (Number.isNaN(
+                            date.getTime())) {
+                        return;
+                    }
+
+                    element.textContent =
+                        date.toLocaleString(
+                            "zh-TW",
+                            {
+                                year: "numeric",
+                                month: "2-digit",
+                                day: "2-digit",
+                                hour: "2-digit",
+                                minute: "2-digit",
+                                second: "2-digit",
+                                hour12: false
+                            }
+                        );
+                });
+
+
+            document
+                .querySelectorAll(
+                    ".audit-detail-button"
+                )
+                .forEach(button => {
+                    button.addEventListener(
+                        "click",
+                        () => {
+                            const logId =
+                                button.dataset.logId;
+
+                            const oldValue =
+                                document.getElementById(
+                                    `audit-old-${logId}`
+                                )?.value ?? "";
+
+                            const newValue =
+                                document.getElementById(
+                                    `audit-new-${logId}`
+                                )?.value ?? "";
+
+
+                            document.getElementById(
+                                "auditDetailId"
+                            ).textContent =
+                                `Log ID：${logId}`;
+
+
+                            document.getElementById(
+                                "auditDetailModule"
+                            ).textContent =
+                                button.dataset.module
+                                || "—";
+
+
+                            document.getElementById(
+                                "auditDetailAction"
+                            ).textContent =
+                                button.dataset.action
+                                || "—";
+
+
+                            const entityType =
+                                button.dataset.entityType
+                                || "—";
+
+                            const entityId =
+                                button.dataset.entityId
+                                || "—";
+
+
+                            document.getElementById(
+                                "auditDetailEntity"
+                            ).textContent =
+                                `${entityType} / ${entityId}`;
+
+
+                            document.getElementById(
+                                "auditDetailUser"
+                            ).textContent =
+                                button.dataset.user
+                                || "—";
+
+
+                            document.getElementById(
+                                "auditDetailDescription"
+                            ).textContent =
+                                button.dataset.description
+                                || "—";
+
+
+                            document.getElementById(
+                                "auditDetailOld"
+                            ).textContent =
+                                prettyValue(
+                                    oldValue
+                                );
+
+
+                            document.getElementById(
+                                "auditDetailNew"
+                            ).textContent =
+                                prettyValue(
+                                    newValue
+                                );
+                        }
+                    );
+                });
+        })();
+    </script>
+}
