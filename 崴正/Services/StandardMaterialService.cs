@@ -1,4 +1,5 @@
 using Microsoft.EntityFrameworkCore;
+using 崴正.Models;
 using 崴正.Data;
 
 namespace 崴正.Services
@@ -6,16 +7,15 @@ namespace 崴正.Services
     public class StandardMaterialService
     {
         private readonly ApplicationDbContext _context;
-        private readonly MaterialMappingService _materialMappingService;
+        private readonly AuditLogService _auditLogService;
 
         public StandardMaterialService(
             ApplicationDbContext context,
-            MaterialMappingService materialMappingService)
+            AuditLogService auditLogService)
         {
             _context = context;
 
-            _materialMappingService =
-                materialMappingService;
+            _auditLogService = auditLogService;
         }
 
         // ==========================================
@@ -24,15 +24,31 @@ namespace 崴正.Services
         public ServiceResult CreateMaterial(
             string materialName,
             int categoryId,
-            string baseUnit)
+            int unitId,
+            string actionUser)
         {
+            materialName =
+                NormalizeText(
+                    materialName
+                );
+
+
+            if (string.IsNullOrWhiteSpace(
+                    materialName))
+            {
+                return ServiceResult.Validation(
+                    "請輸入標準材料名稱"
+                );
+            }
+
+
             var category =
                 _context.MaterialCategories
-                    .AsNoTracking()
                     .FirstOrDefault(x =>
                         x.CategoryId ==
                             categoryId
                     );
+
 
             if (category == null)
             {
@@ -41,6 +57,7 @@ namespace 崴正.Services
                 );
             }
 
+
             if (!category.IsActive)
             {
                 return ServiceResult.Validation(
@@ -48,12 +65,169 @@ namespace 崴正.Services
                 );
             }
 
-            return _materialMappingService
-                .CreateMaterial(
-                    materialName,
-                    category.CategoryName,
-                    baseUnit
+
+            var unit =
+                _context.UnitMasters
+                    .FirstOrDefault(x =>
+                        x.UnitId ==
+                            unitId
+                    );
+
+
+            if (unit == null)
+            {
+                return ServiceResult.Validation(
+                    "找不到指定的標準單位"
                 );
+            }
+
+
+            if (!unit.IsActive)
+            {
+                return ServiceResult.Validation(
+                    "指定的標準單位目前已停用"
+                );
+            }
+
+
+            bool exists =
+                _context.MaterialMasters.Any(x =>
+                    EF.Functions.ILike(
+                        x.MaterialName,
+                        materialName
+                    )
+                    &&
+                    x.CategoryId ==
+                        categoryId
+                    &&
+                    x.UnitId ==
+                        unitId
+                );
+
+
+            if (exists)
+            {
+                return ServiceResult.Conflict(
+                    "相同名稱、分類與單位的標準材料已經存在"
+                );
+            }
+
+
+            using var transaction =
+                _context.Database.BeginTransaction();
+
+
+            try
+            {
+                var material =
+                    new MaterialMaster
+                    {
+                        MaterialName =
+                            materialName,
+
+                        CategoryId =
+                            category.CategoryId,
+
+                        UnitId =
+                            unit.UnitId,
+
+                        IsActive =
+                            true
+                    };
+
+
+                _context.MaterialMasters.Add(
+                    material
+                );
+
+
+                // 先取得 DB 產生的 MaterialId
+                _context.SaveChanges();
+
+
+                _auditLogService.AddLog(
+                    module:
+                        "標準材料",
+
+                    actionType:
+                        "CreateMaterial",
+
+                    entityType:
+                        "MaterialMaster",
+
+                    entityId:
+                        material.MaterialId,
+
+                    description:
+                        $"新增標準材料「{material.MaterialName}」",
+
+                    actionUser:
+                        actionUser,
+
+                    newValue:
+                        new
+                        {
+                            materialId =
+                                material.MaterialId,
+
+                            materialName =
+                                material.MaterialName,
+
+                            categoryId =
+                                material.CategoryId,
+
+                            categoryName =
+                                category.CategoryName,
+
+                            unitId =
+                                material.UnitId,
+
+                            unitName =
+                                unit.UnitName,
+
+                            isActive =
+                                material.IsActive
+                        }
+                );
+
+
+                _context.SaveChanges();
+
+                transaction.Commit();
+
+
+                return ServiceResult.Ok(new
+                {
+                    message =
+                        $"已新增標準材料「{material.MaterialName}」",
+
+                    materialId =
+                        material.MaterialId,
+
+                    materialName =
+                        material.MaterialName,
+
+                    categoryId =
+                        material.CategoryId,
+
+                    categoryName =
+                        category.CategoryName,
+
+                    unitId =
+                        material.UnitId,
+
+                    unitName =
+                        unit.UnitName,
+
+                    isActive =
+                        material.IsActive
+                });
+            }
+            catch
+            {
+                transaction.Rollback();
+                throw;
+            }
         }
 
 
@@ -63,7 +237,7 @@ namespace 崴正.Services
         public ServiceResult GetMaterials(
             string? search,
             int? categoryId,
-            string? baseUnit,
+            int? unitId,
             bool? isActive)
         {
             var query =
@@ -102,15 +276,11 @@ namespace 崴正.Services
             }
 
 
-            if (!string.IsNullOrWhiteSpace(
-                    baseUnit))
+            if (unitId.HasValue)
             {
-                string selectedUnit =
-                    baseUnit.Trim();
-
                 query = query.Where(x =>
-                    x.BaseUnit ==
-                    selectedUnit
+                    x.UnitId ==
+                    unitId.Value
                 );
             }
 
@@ -146,8 +316,11 @@ namespace 崴正.Services
                         categoryName =
                             x.MaterialCategory.CategoryName,
 
-                        baseUnit =
-                            x.BaseUnit,
+                        unitId =
+                            x.UnitId,
+
+                        unitName =
+                            x.UnitMaster.UnitName,
 
                         isActive =
                             x.IsActive,
@@ -206,22 +379,33 @@ namespace 崴正.Services
                     .ToList();
 
 
-            var baseUnits =
-                _context.MaterialMasters
+            var units =
+                _context.UnitMasters
                     .AsNoTracking()
-                    .Where(x =>
-                        x.BaseUnit != "")
-                    .Select(x =>
-                        x.BaseUnit)
-                    .Distinct()
-                    .OrderBy(x => x)
+                    .OrderBy(x =>
+                        x.UnitCategory.SortOrder)
+                    .ThenBy(x =>
+                        x.SortOrder)
+                    .ThenBy(x =>
+                        x.UnitName)
+                    .Select(x => new
+                    {
+                        unitId =
+                            x.UnitId,
+
+                        unitName =
+                            x.UnitName,
+
+                        isActive =
+                            x.IsActive
+                    })
                     .ToList();
 
 
             return ServiceResult.Ok(new
             {
                 categories,
-                baseUnits
+                units
             });
         }
 
@@ -233,13 +417,25 @@ namespace 崴正.Services
             int materialId,
             string materialName,
             int categoryId,
-            string baseUnit)
+            int unitId,
+            string actionUser)
         {
             materialName =
                 NormalizeText(materialName);
 
-            baseUnit =
-                NormalizeText(baseUnit);
+            var unit =
+                _context.UnitMasters
+                    .FirstOrDefault(x =>
+                        x.UnitId ==
+                        unitId
+                    );
+
+            if (unit == null)
+            {
+                return ServiceResult.Validation(
+                    "找不到指定的標準單位"
+                );
+            }
 
 
             if (string.IsNullOrWhiteSpace(
@@ -247,15 +443,6 @@ namespace 崴正.Services
             {
                 return ServiceResult.Validation(
                     "請輸入標準材料名稱"
-                );
-            }
-
-
-            if (string.IsNullOrWhiteSpace(
-                    baseUnit))
-            {
-                return ServiceResult.Validation(
-                    "請選擇標準單位"
                 );
             }
 
@@ -274,6 +461,21 @@ namespace 崴正.Services
                     "找不到標準材料"
                 );
             }
+
+            var oldValue = new
+            {
+                materialName =
+                    material.MaterialName,
+
+                categoryId =
+                    material.CategoryId,
+
+                unitId =
+                    material.UnitId,
+
+                isActive =
+                    material.IsActive
+            };
 
 
             var category =
@@ -313,8 +515,7 @@ namespace 崴正.Services
                     x.CategoryId ==
                         categoryId
                     &&
-                    x.BaseUnit ==
-                        baseUnit
+                    x.UnitId == unitId
                 );
 
 
@@ -333,8 +534,54 @@ namespace 崴正.Services
                 category.CategoryId;
 
 
-            material.BaseUnit =
-                baseUnit;
+            material.UnitId =
+                unit.UnitId;
+
+
+            _auditLogService.AddLog(
+                module:
+                    "標準材料",
+
+                actionType:
+                    "UpdateMaterial",
+
+                entityType:
+                    "MaterialMaster",
+
+                entityId:
+                    material.MaterialId,
+
+                description:
+                    $"修改標準材料「{material.MaterialName}」",
+
+                actionUser:
+                    actionUser,
+
+                oldValue:
+                    oldValue,
+
+                newValue:
+                    new
+                    {
+                        materialName =
+                            material.MaterialName,
+
+                        categoryId =
+                            material.CategoryId,
+
+                        categoryName =
+                            category.CategoryName,
+
+                        unitId =
+                            material.UnitId,
+
+                        unitName =
+                            unit.UnitName,
+
+                        isActive =
+                            material.IsActive
+                    }
+            );
 
 
             _context.SaveChanges();
@@ -357,8 +604,11 @@ namespace 崴正.Services
                 categoryName =
                     category.CategoryName,
 
-                baseUnit =
-                    material.BaseUnit,
+                unitId =
+                    unit.UnitId,
+
+                unitName =
+                    unit.UnitName,
 
                 isActive =
                     material.IsActive
@@ -371,7 +621,8 @@ namespace 崴正.Services
         // ==========================================
         public ServiceResult SetMaterialActive(
             int materialId,
-            bool isActive)
+            bool isActive,
+            string actionUser)
         {
             var material =
                 _context.MaterialMasters
@@ -388,9 +639,51 @@ namespace 崴正.Services
                 );
             }
 
+            bool oldIsActive = 
+                material.IsActive;
+
 
             material.IsActive =
                 isActive;
+
+
+            _auditLogService.AddLog(
+                module:
+                    "標準材料",
+
+                actionType:
+                    isActive
+                        ? "EnableMaterial"
+                        : "DisableMaterial",
+
+                entityType:
+                    "MaterialMaster",
+
+                entityId:
+                    material.MaterialId,
+
+                description:
+                    isActive
+                        ? $"啟用標準材料「{material.MaterialName}」"
+                        : $"停用標準材料「{material.MaterialName}」",
+
+                actionUser:
+                    actionUser,
+
+                oldValue:
+                    new
+                    {
+                        isActive =
+                            oldIsActive
+                    },
+
+                newValue:
+                    new
+                    {
+                        isActive =
+                            material.IsActive
+                    }
+            );
 
 
             _context.SaveChanges();

@@ -15,8 +15,10 @@ namespace 崴正.Services
         public string MaterialName { get; set; }
             = string.Empty;
 
-        public string BaseUnit { get; set; }
+        public string UnitName { get; set; }
             = string.Empty;
+
+        public int UnitId { get; set; }
 
         public string? Category { get; set; }
     }
@@ -34,120 +36,6 @@ namespace 崴正.Services
             _context = context;
             _finalBidService =finalBidService;
             _auditLogService =auditLogService;
-        }
-
-        public ServiceResult CreateMaterial(
-            string materialName,
-            string category,
-            string baseUnit)
-        {
-            materialName =
-                NormalizeText(materialName);
-
-            category =
-                NormalizeText(category);
-
-            baseUnit =
-                NormalizeText(baseUnit);
-
-            if (string.IsNullOrWhiteSpace(
-                    materialName))
-            {
-                return ServiceResult.Validation(
-                    "請輸入標準材料名稱"
-                );
-            }
-
-            if (string.IsNullOrWhiteSpace(
-                    category))
-            {
-                return ServiceResult.Validation(
-                    "請選擇材料分類"
-                );
-            }
-
-            if (string.IsNullOrWhiteSpace(
-                    baseUnit))
-            {
-                return ServiceResult.Validation(
-                    "請選擇標準單位"
-                );
-            }
-
-            var materialCategory =
-                _context.MaterialCategories
-                    .FirstOrDefault(x =>
-                        x.IsActive &&
-                        EF.Functions.ILike(
-                            x.CategoryName,
-                            category
-                        )
-                    );
-
-            if (materialCategory == null)
-            {
-                return ServiceResult.Validation(
-                    "找不到指定的材料分類，請先建立材料分類"
-                );
-            }
-
-            bool exists =
-                _context.MaterialMasters.Any(x =>
-                    EF.Functions.ILike(
-                        x.MaterialName,
-                        materialName
-                    ) &&
-                    x.CategoryId ==
-                        materialCategory.CategoryId &&
-                    x.BaseUnit == baseUnit
-                );
-
-            if (exists)
-            {
-                return ServiceResult.Conflict(
-                    "相同名稱、分類與單位的標準材料已經存在"
-                );
-            }
-
-            var material =
-                new MaterialMaster
-                {
-                    MaterialName =
-                        materialName,
-
-                    CategoryId =
-                        materialCategory.CategoryId,
-
-                    BaseUnit =
-                        baseUnit
-                };
-
-            _context.MaterialMasters.Add(
-                material
-            );
-
-            _context.SaveChanges();
-
-            return ServiceResult.Ok(new
-            {
-                message =
-                    $"已新增標準材料「{material.MaterialName}」",
-
-                materialId =
-                    material.MaterialId,
-
-                materialName =
-                    material.MaterialName,
-
-                categoryId =
-                    material.CategoryId,
-
-                category =
-                    materialCategory.CategoryName,
-
-                baseUnit =
-                    material.BaseUnit
-            });
         }
 
         public ServiceResult UpdateMaterialMapping(
@@ -383,8 +271,11 @@ namespace 崴正.Services
                         MaterialName =
                             material.MaterialName,
 
-                        BaseUnit =
-                            material.BaseUnit,
+                        UnitName =
+                            material.UnitMaster.UnitName,
+
+                        UnitId =
+                            material.UnitId,
 
                         Category =material.MaterialCategory.CategoryName
                     }

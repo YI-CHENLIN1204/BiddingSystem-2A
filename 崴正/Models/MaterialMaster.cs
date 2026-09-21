@@ -15,9 +15,12 @@
         public MaterialCategory MaterialCategory { get; set; }
             = null!;
 
-        public string BaseUnit { get; set; }
-            = string.Empty;
         public bool IsActive { get; set; }
         = true;
+
+        public int UnitId { get; set; }
+
+        public UnitMaster UnitMaster { get; set; }
+            = null!;
     }
 }

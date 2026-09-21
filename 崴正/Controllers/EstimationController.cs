@@ -89,9 +89,16 @@ namespace 崴正.Controllers
                         projectMonth
                 };
 
+            string actionUser =
+                User?.Identity?.Name
+                ?? "Estimator_Staff";
+
             var result =
                 _finalBidImportService
-                    .Import(request);
+                    .Import(
+                        request,
+                        actionUser
+                    );
 
             return ToActionResult(result);
         }
@@ -211,6 +218,11 @@ namespace 崴正.Controllers
             [FromForm] decimal? unitPrice,
             [FromForm] string? unit)
         {
+
+            string actionUser =
+                User?.Identity?.Name
+                ?? "Estimator_Staff";
+
             var result =
                 _finalBidService
                     .UpdateBidItemData(
@@ -218,7 +230,8 @@ namespace 崴正.Controllers
                         itemName,
                         qty,
                         unitPrice,
-                        unit
+                        unit,
+                        actionUser
                     );
 
             return ToActionResult(result);
@@ -228,10 +241,15 @@ namespace 崴正.Controllers
         public IActionResult IgnoreBidItem(
             [FromForm] long finalBidItemId)
         {
+            string actionUser =
+                User?.Identity?.Name
+                ?? "Estimator_Staff";
+
             var result =
                 _finalBidService
                     .IgnoreBidItem(
-                        finalBidItemId
+                        finalBidItemId,
+                        actionUser
                     );
 
             return ToActionResult(result);
@@ -241,12 +259,17 @@ namespace 崴正.Controllers
         public IActionResult UnignoreBidItem(
             [FromForm] long finalBidItemId)
         {
+            string actionUser =
+                User?.Identity?.Name
+                ?? "Estimator_Staff";
+
             var result =
                 _finalBidService
                     .UnignoreBidItem(
-                        finalBidItemId
+                        finalBidItemId,
+                        actionUser
                     );
-
+                    
             return ToActionResult(result);
         }
 

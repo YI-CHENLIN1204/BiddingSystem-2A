@@ -400,7 +400,7 @@
                         標準單位
                     </label>
 
-                    <select id="newMaterialBaseUnit"
+                    <select id="newMaterialUnitId"
                             class="form-select">
                     </select>
 
@@ -450,6 +450,13 @@
 
     let materialOptions = [];
 
+    let mappingCategories = [];
+
+    let standardMaterialFilterOptions = {
+        categories: [],
+        units: []
+    };
+
     let creatingMaterialForItemId = null;
 
 
@@ -457,15 +464,15 @@
         'DOMContentLoaded',
         async function () {
 
-            await loadProject();
+        await loadProject();
 
-            await loadBidFilterOptions();
-            
-            await loadMaterialOptions();
+        await loadBidFilterOptions();
 
-            await loadFinalBidItems();
+        await loadStandardMaterialFilterOptions();
 
-            await loadHistoricalData();
+        await loadMaterialOptions();
+
+        await loadFinalBidItems();
 
 
             document
@@ -726,8 +733,11 @@
             </option>
             `;
 
+        mappingCategories =
+            data.categories ?? [];
 
-        (data.categories ?? [])
+
+        mappingCategories
             .forEach(category => {
 
                 categorySelect.innerHTML += `
@@ -762,47 +772,12 @@
             });
     }
 
-    function getMaterialCategories() 
-    {
-
-        const categories =
-            materialOptions
-                .map(material =>
-                    material.category
-                        ? material.category.trim()
-                        : ''
-                )
-                .filter(category =>
-                    category !== ''
-                );
+    function getMaterialCategories() {
 
         return [
-            ...new Set(categories)
+            ...mappingCategories
         ]
         .sort((a, b) =>
-            a.localeCompare(
-                b,
-                'zh-Hant'
-            )
-        );
-    }
-
-    function getMaterialUnits() {
-
-        const units =
-            materialOptions
-                .map(material =>
-                    material.baseUnit
-                        ? material.baseUnit.trim()
-                        : ''
-                )
-                .filter(unit =>
-                    unit !== ''
-                );
-
-        return [
-            ...new Set(units)
-        ].sort((a, b) =>
             a.localeCompare(
                 b,
                 'zh-Hant'
@@ -832,7 +807,7 @@
 
         const modalUnit =
             document.getElementById(
-                'newMaterialBaseUnit'
+                'newMaterialUnitId'
             );
 
         const materialName =
@@ -841,36 +816,72 @@
             );
 
 
-        modalCategory.innerHTML = '';
+        modalCategory.innerHTML =
+            '<option value="">請選擇材料分類</option>';
 
-        getMaterialCategories()
+
+        (
+            standardMaterialFilterOptions
+                .categories ?? []
+        )
+            .filter(category =>
+                category.isActive
+            )
             .forEach(category => {
 
                 modalCategory.innerHTML += `
-                    <option value="${escapeHtml(category)}">
-                        ${escapeHtml(category)}
+                    <option value="${category.categoryId}">
+                        ${escapeHtml(
+                            category.categoryName
+                        )}
                     </option>
                 `;
             });
 
+        const selectedCategoryOption =
+        (
+            standardMaterialFilterOptions
+                .categories ?? []
+        )
+        .find(category =>
+            category.categoryName ===
+            selectedCategory
+        );
 
-        modalCategory.value =
-            selectedCategory;
+
+    modalCategory.value =
+        selectedCategoryOption
+            ? String(
+                selectedCategoryOption.categoryId
+            )
+            : '';
 
 
-        modalUnit.innerHTML =
-            '<option value="">請選擇標準單位</option>';
+    // ==========================================
+    // 標準單位
+    // ==========================================
+
+    modalUnit.innerHTML =
+        '<option value="">請選擇標準單位</option>';
 
 
-        getMaterialUnits()
-            .forEach(unit => {
+    (
+        standardMaterialFilterOptions
+            .units ?? []
+    )
+        .filter(unit =>
+            unit.isActive
+        )
+        .forEach(unit => {
 
-                modalUnit.innerHTML += `
-                    <option value="${escapeHtml(unit)}">
-                        ${escapeHtml(unit)}
-                    </option>
-                `;
-            });
+            modalUnit.innerHTML += `
+                <option value="${unit.unitId}">
+                    ${escapeHtml(
+                        unit.unitName
+                    )}
+                </option>
+            `;
+        });
 
 
         materialName.value = '';
@@ -935,8 +946,8 @@
                     <option value="${material.materialId}"
                             ${selected}>
 
-                        ${escapeHtml(material.materialName)}
-                        (${escapeHtml(material.baseUnit)})
+                            ${escapeHtml(material.materialName)}
+                            (${escapeHtml(material.unitName)})
 
                     </option>
                 `;
@@ -1031,15 +1042,19 @@
                 'newMaterialName'
             ).value.trim();
 
-        const category =
-            document.getElementById(
-                'newMaterialCategory'
-            ).value;
+        const categoryId =
+            Number(
+                document.getElementById(
+                    'newMaterialCategory'
+                ).value
+            );
 
-        const baseUnit =
-            document.getElementById(
-                'newMaterialBaseUnit'
-            ).value;
+        const unitId =
+            Number(
+                document.getElementById(
+                    'newMaterialUnitId'
+                ).value
+            );
 
 
         if (!materialName) {
@@ -1047,12 +1062,12 @@
             return;
         }
 
-        if (!category) {
+        if (!categoryId) {
             alert('請選擇材料分類');
             return;
         }
 
-        if (!baseUnit) {
+        if (!unitId) {
             alert('請選擇標準單位');
             return;
         }
@@ -1062,20 +1077,7 @@
             document.getElementById(
                 'btnCreateMaterial'
             );
-        
-        const selectedCategory =
-            materialOptions.find(material =>
-                (material.category ?? '').trim() ===
-                category.trim()
-            );
 
-        const categoryId =
-            selectedCategory?.categoryId;
-
-        if (!categoryId) {
-            alert('找不到指定的材料分類');
-            return;
-        }
 
         button.disabled = true;
 
@@ -1096,8 +1098,8 @@
             );
 
             formData.append(
-                'baseUnit',
-                baseUnit
+                'unitId',
+                unitId
             );
 
 
@@ -2261,7 +2263,7 @@
 
                                             <td>
                                                 ${Number(item.totalQuantity).toLocaleString()}
-                                                ${escapeHtml(item.baseUnit)}
+                                                ${escapeHtml(item.unitName)}
                                             </td>
 
                                             <td>
@@ -2275,7 +2277,7 @@
                                                         }
                                                     )
                                                 }
-                                                元/${escapeHtml(item.baseUnit)}
+                                                元/${escapeHtml(item.unitName)}
                                             </td>
 
                                         </tr>
@@ -2315,6 +2317,33 @@
 
         materialOptions =
             data ?? [];
+    }
+
+    async function loadStandardMaterialFilterOptions() {
+
+        const response =
+            await fetch(
+                '/api/standard-material/filter-options'
+            );
+
+        const data =
+            await response.json();
+
+        if (!response.ok) {
+
+            alert(
+                data.message ??
+                '讀取標準材料選項失敗'
+            );
+
+            return;
+        }
+
+        standardMaterialFilterOptions =
+            data ?? {
+                categories: [],
+                units: []
+            };
     }
 
     async function updateMaterialMapping(

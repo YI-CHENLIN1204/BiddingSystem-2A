@@ -7,11 +7,14 @@ namespace 崴正.Services
     public class MaterialCategoryService
     {
         private readonly ApplicationDbContext _context;
+        private readonly AuditLogService _auditLogService;
 
         public MaterialCategoryService(
-            ApplicationDbContext context)
+            ApplicationDbContext context,
+            AuditLogService auditLogService)
         {
             _context = context;
+            _auditLogService = auditLogService;
         }
 
 
@@ -54,7 +57,8 @@ namespace 崴正.Services
         // 新增材料分類
         // ==========================================
         public ServiceResult CreateCategory(
-            string categoryName)
+            string categoryName,
+            string actionUser)
         {
             categoryName =
                 NormalizeText(categoryName);
@@ -89,54 +93,105 @@ namespace 崴正.Services
                         (int?)x.SortOrder)
                     .Max() ?? 0;
 
-            var category =
-                new MaterialCategory
-                {
-                    CategoryName =
-                        categoryName,
+            using var transaction =
+                _context.Database
+                    .BeginTransaction();
 
-                    IsActive =
-                        true,
-
-                    SortOrder =
-                        nextSortOrder + 1
-                };
-
-            _context.MaterialCategories.Add(
-                category
-            );
-
-            _context.SaveChanges();
-
-            return ServiceResult.Ok(new
+            try
             {
-                message =
-                    $"已新增材料分類「{category.CategoryName}」",
+                var category =
+                    new MaterialCategory
+                    {
+                        CategoryName =
+                            categoryName,
 
-                categoryId =
-                    category.CategoryId,
+                        IsActive =
+                            true,
 
-                categoryName =
-                    category.CategoryName,
+                        SortOrder =
+                            nextSortOrder + 1
+                    };
 
-                isActive =
-                    category.IsActive,
+                _context.MaterialCategories.Add(
+                    category
+                );
 
-                sortOrder =
-                    category.SortOrder
-            });
+                // 先取得資料庫產生的 CategoryId
+                _context.SaveChanges();
+
+                _auditLogService.AddLog(
+                    module:
+                        "材料分類",
+
+                    actionType:
+                        "CreateCategory",
+
+                    entityType:
+                        "MaterialCategory",
+
+                    entityId:
+                        category.CategoryId,
+
+                    description:
+                        $"新增材料分類「{category.CategoryName}」",
+
+                    actionUser:
+                        actionUser,
+
+                    newValue:
+                        new
+                        {
+                            categoryId =
+                                category.CategoryId,
+
+                            categoryName =
+                                category.CategoryName,
+
+                            isActive =
+                                category.IsActive,
+
+                            sortOrder =
+                                category.SortOrder
+                        }
+                );
+
+                _context.SaveChanges();
+
+                transaction.Commit();
+
+                return ServiceResult.Ok(new
+                {
+                    message =
+                        $"已新增材料分類「{category.CategoryName}」",
+
+                    categoryId =
+                        category.CategoryId,
+
+                    categoryName =
+                        category.CategoryName,
+
+                    isActive =
+                        category.IsActive,
+
+                    sortOrder =
+                        category.SortOrder
+                });
+            }
+            catch
+            {
+                transaction.Rollback();
+                throw;
+            }
         }
 
 
         // ==========================================
         // 修改材料分類名稱
-        //
-        // 過渡期間：
-        // 同步更新 MaterialMaster.Category 舊文字欄位
         // ==========================================
         public ServiceResult UpdateCategory(
             int categoryId,
-            string categoryName)
+            string categoryName,
+            string actionUser)
         {
             categoryName =
                 NormalizeText(categoryName);
@@ -181,6 +236,18 @@ namespace 崴正.Services
                 );
             }
 
+            var oldValue = new
+            {
+                categoryName =
+                    category.CategoryName,
+
+                isActive =
+                    category.IsActive,
+
+                sortOrder =
+                    category.SortOrder
+            };
+
             using var transaction =
                 _context.Database
                     .BeginTransaction();
@@ -189,6 +256,42 @@ namespace 崴正.Services
             {
                 category.CategoryName =
                     categoryName;
+
+                _auditLogService.AddLog(
+                    module:
+                        "材料分類",
+
+                    actionType:
+                        "UpdateCategory",
+
+                    entityType:
+                        "MaterialCategory",
+
+                    entityId:
+                        category.CategoryId,
+
+                    description:
+                        $"修改材料分類名稱為「{category.CategoryName}」",
+
+                    actionUser:
+                        actionUser,
+
+                    oldValue:
+                        oldValue,
+
+                    newValue:
+                        new
+                        {
+                            categoryName =
+                                category.CategoryName,
+
+                            isActive =
+                                category.IsActive,
+
+                            sortOrder =
+                                category.SortOrder
+                        }
+                );
 
                 _context.SaveChanges();
 
@@ -221,7 +324,8 @@ namespace 崴正.Services
         // ==========================================
         public ServiceResult SetCategoryActive(
             int categoryId,
-            bool isActive)
+            bool isActive,
+            string actionUser)
         {
             var category =
                 _context.MaterialCategories
@@ -236,8 +340,49 @@ namespace 崴正.Services
                 );
             }
 
+            bool oldIsActive =
+                category.IsActive;
+
             category.IsActive =
                 isActive;
+
+            _auditLogService.AddLog(
+                module:
+                    "材料分類",
+
+                actionType:
+                    isActive
+                        ? "EnableCategory"
+                        : "DisableCategory",
+
+                entityType:
+                    "MaterialCategory",
+
+                entityId:
+                    category.CategoryId,
+
+                description:
+                    isActive
+                        ? $"啟用材料分類「{category.CategoryName}」"
+                        : $"停用材料分類「{category.CategoryName}」",
+
+                actionUser:
+                    actionUser,
+
+                oldValue:
+                    new
+                    {
+                        isActive =
+                            oldIsActive
+                    },
+
+                newValue:
+                    new
+                    {
+                        isActive =
+                            category.IsActive
+                    }
+            );
 
             _context.SaveChanges();
 

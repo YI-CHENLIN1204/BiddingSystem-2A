@@ -209,6 +209,7 @@ namespace 崴正.Controllers
                     .UpdateAsync(
                         request,
                         User.Identity?.Name
+                            ?? "System"
                     );
 
 
@@ -247,7 +248,9 @@ namespace 崴正.Controllers
             var result =
                 await _coreMaterialService
                     .UpdateCoreStatusAsync(
-                        request
+                        request,
+                        User.Identity?.Name
+                            ?? "System"
                     );
 
 

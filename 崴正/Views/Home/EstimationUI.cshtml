@@ -17,8 +17,8 @@
     var materialUnits =
         Model.Materials
             .Where(x =>
-                !string.IsNullOrWhiteSpace(x.BaseUnit))
-            .Select(x => x.BaseUnit)
+                !string.IsNullOrWhiteSpace(x.UnitName))
+            .Select(x => x.UnitName)
             .Distinct()
             .OrderBy(x => x)
             .ToList();
@@ -791,8 +791,8 @@
 
                         <label class="material-row"
                             data-category="@category"
-                            data-unit="@material.BaseUnit"
-                            data-search="@($"{material.MaterialName} {category} {material.BaseUnit}".ToLower())">
+                            data-unit="@material.UnitName"
+                            data-search="@($"{material.MaterialName} {category} {material.UnitName}".ToLower())">
 
                             <input type="checkbox"
                                 class="form-check-input material-checkbox"
@@ -805,7 +805,7 @@
                                 </strong>
 
                                 <span class="material-unit">
-                                    @material.BaseUnit
+                                    @material.UnitName
                                 </span>
 
                             </span>
@@ -1183,7 +1183,7 @@
                         [
                             x.MaterialName,
                             x.Category,
-                            x.BaseUnit
+                            x.UnitName
                         ]
                         .filter(Boolean)
                         .join(" ")
@@ -1270,7 +1270,7 @@
 
                     <td>
                         ${escapeHtml(
-                            material.BaseUnit ?? ""
+                            material.UnitName ?? ""
                         )}
                     </td>
                 `;
@@ -1675,7 +1675,7 @@
 
                     <td>
                         ${escapeHtml(
-                            item.baseUnit ?? ""
+                            item.UnitName ?? ""
                         )}
                     </td>
 

@@ -41,10 +41,15 @@ namespace 崴正.Controllers
         public IActionResult CreateCategory(
             [FromForm] string categoryName)
         {
+            string actionUser =
+                User?.Identity?.Name
+                ?? "System";
+
             var result =
                 _materialCategoryService
                     .CreateCategory(
-                        categoryName
+                        categoryName,
+                        actionUser
                     );
 
             return ToActionResult(result);
@@ -59,11 +64,16 @@ namespace 崴正.Controllers
             [FromForm] int categoryId,
             [FromForm] string categoryName)
         {
+            string actionUser =
+                User?.Identity?.Name
+                ?? "System";
+
             var result =
                 _materialCategoryService
                     .UpdateCategory(
                         categoryId,
-                        categoryName
+                        categoryName,
+                        actionUser
                     );
 
             return ToActionResult(result);
@@ -78,11 +88,16 @@ namespace 崴正.Controllers
             [FromForm] int categoryId,
             [FromForm] bool isActive)
         {
+            string actionUser =
+                User?.Identity?.Name
+                ?? "System";
+
             var result =
                 _materialCategoryService
                     .SetCategoryActive(
                         categoryId,
-                        isActive
+                        isActive,
+                        actionUser
                     );
 
             return ToActionResult(result);

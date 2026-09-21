@@ -62,8 +62,8 @@ public class HomeController : Controller
                         MaterialName =
                             x.MaterialName,
 
-                        BaseUnit =
-                            x.BaseUnit,
+                        UnitName =
+                            x.UnitMaster.UnitName,
 
                         Category =
                             x.MaterialCategory.CategoryName
@@ -95,8 +95,8 @@ public class HomeController : Controller
                         MaterialName =
                             x.MaterialName,
 
-                        BaseUnit =
-                            x.BaseUnit,
+                        UnitName =
+                            x.UnitName,
 
                         Category =
                             x.Category,

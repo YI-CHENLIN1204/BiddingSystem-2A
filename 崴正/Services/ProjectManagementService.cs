@@ -8,11 +8,14 @@ namespace 崴正.Services
     public class ProjectManagementService
     {
         private readonly ApplicationDbContext _context;
+        private readonly AuditLogService _auditLogService;
 
         public ProjectManagementService(
-            ApplicationDbContext context)
+            ApplicationDbContext context,
+            AuditLogService auditLogService)
         {
             _context = context;
+            _auditLogService = auditLogService;
         }
 
 
@@ -252,7 +255,8 @@ namespace 崴正.Services
         public async Task<ServiceResult>
             UpdateProjectAsync(
                 int projectId,
-                ProjectSaveRequest request)
+                ProjectSaveRequest request,
+                string? actionUser)
         {
             var validation =
                 ValidateRequest(
@@ -300,6 +304,20 @@ namespace 崴正.Services
                 );
             }
 
+            var oldValue = new
+            {
+                project.ProjectName,
+                project.ProjectType,
+                project.StructureType,
+                project.City,
+                project.TotalFloorArea,
+                project.FloorCount,
+                project.BasementFloorCount,
+                project.FloorRange,
+                project.StartDate,
+                project.IsDeleted
+            };
+
             project.ProjectName =
                 projectName;
 
@@ -332,6 +350,47 @@ namespace 崴正.Services
             project.StartDate =
                 projectDate;
 
+            _auditLogService.AddLog(
+                module:
+                    "建案管理",
+
+                actionType:
+                    "UpdateProject",
+
+                entityType:
+                    "ProjectMaster",
+
+                entityId:
+                    project.ProjectId,
+
+                description:
+                    $"修改建案「{project.ProjectName}」",
+
+                actionUser:
+                    actionUser ?? "System",
+
+                projectId:
+                    project.ProjectId,
+
+                oldValue:
+                    oldValue,
+
+                newValue:
+                    new
+                    {
+                        project.ProjectName,
+                        project.ProjectType,
+                        project.StructureType,
+                        project.City,
+                        project.TotalFloorArea,
+                        project.FloorCount,
+                        project.BasementFloorCount,
+                        project.FloorRange,
+                        project.StartDate,
+                        project.IsDeleted
+                    }
+            );
+
             await _context.SaveChangesAsync();
 
             return ServiceResult.Ok(new
@@ -344,7 +403,8 @@ namespace 崴正.Services
 
         public async Task<ServiceResult>
             DeleteProjectAsync(
-                int projectId)
+                int projectId,
+                string? actionUser)
         {
             using var transaction =
                 await _context.Database
@@ -384,6 +444,49 @@ namespace 崴正.Services
                     history.IsDeleted =
                         true;
                 }
+
+                _auditLogService.AddLog(
+                    module:
+                        "建案管理",
+
+                    actionType:
+                        "DeleteProject",
+
+                    entityType:
+                        "ProjectMaster",
+
+                    entityId:
+                        project.ProjectId,
+
+                    description:
+                        $"刪除建案「{project.ProjectName}」",
+
+                    actionUser:
+                        actionUser ?? "System",
+
+                    projectId:
+                        project.ProjectId,
+
+                    oldValue:
+                        new
+                        {
+                            isDeleted =
+                                false,
+
+                            activeHistoricalTransactionCount =
+                                histories.Count
+                        },
+
+                    newValue:
+                        new
+                        {
+                            isDeleted =
+                                true,
+
+                            deletedHistoricalTransactionCount =
+                                histories.Count
+                        }
+                );
 
                 await _context.SaveChangesAsync();
 
@@ -519,7 +622,7 @@ namespace 崴正.Services
 
                         materialUnit =
                             x.Material != null
-                                ? x.Material.BaseUnit
+                                ? x.Material.UnitMaster.UnitName
                                 : null,
 
                         sheetName =
@@ -583,7 +686,7 @@ namespace 崴正.Services
                         m.MaterialName,
                         Category =
                             m.MaterialCategory.CategoryName,
-                        m.BaseUnit
+                        UnitName = m.UnitMaster.UnitName
                     }
                     into g
 
@@ -598,8 +701,8 @@ namespace 崴正.Services
                         category =
                             g.Key.Category,
 
-                        baseUnit =
-                            g.Key.BaseUnit,
+                        unitName =
+                            g.Key.UnitName,
 
                         transactionCount =
                             g.Count(),

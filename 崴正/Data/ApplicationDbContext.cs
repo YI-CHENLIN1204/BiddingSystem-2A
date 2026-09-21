@@ -19,29 +19,31 @@ namespace 崴正.Data
         public DbSet<AuditLog> AuditLogs { get; set; }
         public DbSet<FinalBidItem> FinalBidItems { get; set; }
         public DbSet<EstimationSetting> EstimationSettings { get; set; }
+        public DbSet<UnitCategory> UnitCategories { get; set; }
+        public DbSet<UnitMaster> UnitMasters { get; set; }
 
         protected override void OnModelCreating(ModelBuilder modelBuilder)
         {
             base.OnModelCreating(modelBuilder);
 
-                modelBuilder.Entity<MaterialCategory>(
-                entity =>
-                {
-                    entity.ToTable("material_category");
+            modelBuilder.Entity<MaterialCategory>(
+            entity =>
+            {
+                entity.ToTable("material_category");
 
-                    entity.HasKey(e => e.CategoryId);
+                entity.HasKey(e => e.CategoryId);
 
-                    entity.Property(e => e.CategoryId).HasColumnName("category_id");
+                entity.Property(e => e.CategoryId).HasColumnName("category_id");
 
-                    entity.Property(e => e.CategoryName).HasColumnName("category_name");
+                entity.Property(e => e.CategoryName).HasColumnName("category_name");
 
-                    entity.Property(e => e.IsActive).HasColumnName("is_active");
+                entity.Property(e => e.IsActive).HasColumnName("is_active");
 
-                    entity.Property(e => e.SortOrder).HasColumnName("sort_order");
+                entity.Property(e => e.SortOrder).HasColumnName("sort_order");
 
-                    entity.HasIndex(e => e.CategoryName).IsUnique();
-                }
-            );
+                entity.HasIndex(e => e.CategoryName).IsUnique();
+            }
+        );
 
             modelBuilder.Entity<ProjectMaster>(entity =>
             {
@@ -54,7 +56,7 @@ namespace 崴正.Data
                 entity.Property(e => e.ProjectName).HasColumnName("project_name");
 
                 entity.Property(e => e.TotalFloorArea).HasColumnName("total_floor_area");
-                
+
                 entity.Property(e => e.FloorRange).HasColumnName("floor_range");
 
                 entity.Property(e => e.FloorCount).HasColumnName("floor_count");
@@ -70,39 +72,136 @@ namespace 崴正.Data
                 entity.Property(e => e.StructureType).HasColumnName("structure_type");
 
                 entity.Property(e => e.City).HasColumnName("city");
-                
+
                 entity.Property(e => e.SourceFileName).HasColumnName("source_file_name");
 
                 entity.Property(e => e.SourceFileHash).HasColumnName("source_file_hash");
 
-                entity.Property(e => e.ImportedAt).HasColumnName("imported_at") .HasColumnType("timestamp with time zone");
+                entity.Property(e => e.ImportedAt).HasColumnName("imported_at").HasColumnType("timestamp with time zone");
             });
+
+            modelBuilder.Entity<UnitCategory>(
+                entity =>
+                {
+                    entity.ToTable("unit_category");
+
+                    entity.HasKey(e =>
+                        e.UnitCategoryId);
+
+                    entity.Property(e =>
+                            e.UnitCategoryId)
+                        .HasColumnName(
+                            "unit_category_id");
+
+                    entity.Property(e =>
+                            e.CategoryName)
+                        .HasColumnName(
+                            "category_name");
+
+                    entity.Property(e =>
+                            e.AllowConversion)
+                        .HasColumnName(
+                            "allow_conversion");
+
+                    entity.Property(e =>
+                            e.IsActive)
+                        .HasColumnName(
+                            "is_active");
+
+                    entity.Property(e =>
+                            e.SortOrder)
+                        .HasColumnName(
+                            "sort_order");
+                }
+            );
+
+            modelBuilder.Entity<UnitMaster>(
+                entity =>
+                {
+                    entity.ToTable("unit_master");
+
+                    entity.HasKey(e =>
+                        e.UnitId);
+
+                    entity.Property(e =>
+                            e.UnitId)
+                        .HasColumnName(
+                            "unit_id");
+
+                    entity.Property(e =>
+                            e.UnitName)
+                        .HasColumnName(
+                            "unit_name");
+
+                    entity.Property(e =>
+                            e.UnitCategoryId)
+                        .HasColumnName(
+                            "unit_category_id");
+
+                    entity.Property(e =>
+                            e.ToBaseFactor)
+                        .HasColumnName(
+                            "to_base_factor")
+                        .HasPrecision(20, 10);
+
+                    entity.Property(e =>
+                            e.IsBaseUnit)
+                        .HasColumnName(
+                            "is_base_unit");
+
+                    entity.Property(e =>
+                            e.IsActive)
+                        .HasColumnName(
+                            "is_active");
+
+                    entity.Property(e =>
+                            e.SortOrder)
+                        .HasColumnName(
+                            "sort_order");
+
+                    entity.HasOne(e =>
+                            e.UnitCategory)
+                        .WithMany(e =>
+                            e.Units)
+                        .HasForeignKey(e =>
+                            e.UnitCategoryId)
+                        .OnDelete(
+                            DeleteBehavior.Restrict)
+                        .HasConstraintName(
+                            "fk_unit_master_category");
+
+                    entity.HasIndex(e =>
+                            e.UnitCategoryId)
+                        .HasDatabaseName(
+                            "ix_unit_master_category");
+                }
+            );
 
             modelBuilder.Entity<AuditLog>(entity =>
             {
                 entity.ToTable("audit_log");
 
-                entity.HasKey(e =>e.LogId);
+                entity.HasKey(e => e.LogId);
 
-                entity.Property(e =>e.LogId).HasColumnName("log_id");
+                entity.Property(e => e.LogId).HasColumnName("log_id");
 
-                entity.Property(e =>e.Module).HasColumnName("module");
+                entity.Property(e => e.Module).HasColumnName("module");
 
-                entity.Property(e =>e.ActionType).HasColumnName("action_type");
+                entity.Property(e => e.ActionType).HasColumnName("action_type");
 
-                entity.Property(e =>e.EntityType).HasColumnName("entity_type");
+                entity.Property(e => e.EntityType).HasColumnName("entity_type");
 
-                entity.Property(e =>e.EntityId).HasColumnName("entity_id");
+                entity.Property(e => e.EntityId).HasColumnName("entity_id");
 
-                entity.Property(e =>e.ProjectId).HasColumnName("project_id");
+                entity.Property(e => e.ProjectId).HasColumnName("project_id");
 
-                entity.Property(e =>e.Description).HasColumnName("description");
+                entity.Property(e => e.Description).HasColumnName("description");
 
-                entity.Property(e =>e.OldValue).HasColumnName("old_value");
+                entity.Property(e => e.OldValue).HasColumnName("old_value");
 
-                entity.Property(e =>e.NewValue).HasColumnName("new_value");
+                entity.Property(e => e.NewValue).HasColumnName("new_value");
 
-                entity.Property(e =>e.ActionUser).HasColumnName("action_user");
+                entity.Property(e => e.ActionUser).HasColumnName("action_user");
 
                 entity.Property(e =>
                     e.CreatedAt)
@@ -121,8 +220,9 @@ namespace 崴正.Data
                 entity.Property(e => e.MaterialName).HasColumnName("material_name");
                 entity.Property(e => e.CategoryId).HasColumnName("category_id");
                 entity.HasOne(e => e.MaterialCategory).WithMany(e => e.Materials).HasForeignKey(e => e.CategoryId).OnDelete(DeleteBehavior.Restrict).HasConstraintName("fk_material_master_category");
-                entity.Property(e => e.BaseUnit).HasColumnName("base_unit");
                 entity.Property(e => e.IsActive).HasColumnName("is_active");
+                entity.Property(e => e.UnitId).HasColumnName("unit_id");
+                entity.HasOne(e =>e.UnitMaster).WithMany().HasForeignKey(e =>e.UnitId).OnDelete(DeleteBehavior.Restrict).HasConstraintName("fk_material_master_unit");
             });
 
 
@@ -169,9 +269,9 @@ namespace 崴正.Data
                 entity.Property(e => e.IsOutlier).HasColumnName("is_outlier");
 
                 entity.HasIndex(e => e.ProjectMasterId).HasDatabaseName("ix_historical_transaction_project_master_id");
-                
+
                 entity.Property(e => e.FinalBidItemId).HasColumnName("final_bid_item_id");
-                
+
                 entity.HasOne(e => e.ProjectMaster)
                     .WithMany(e => e.HistoricalTransactions)
                     .HasForeignKey(e => e.ProjectMasterId)
@@ -195,9 +295,9 @@ namespace 崴正.Data
                 entity.Property(e => e.ItemName).HasColumnName("item_name");
                 entity.Property(e => e.Spec).HasColumnName("spec");
                 entity.Property(e => e.Unit).HasColumnName("unit");
-                entity.Property(e => e.Qty) .HasColumnName("qty");
-                entity.Property(e => e.UnitPrice) .HasColumnName("unit_price");
-                entity.Property(e => e.Amount) .HasColumnName("amount");
+                entity.Property(e => e.Qty).HasColumnName("qty");
+                entity.Property(e => e.UnitPrice).HasColumnName("unit_price");
+                entity.Property(e => e.Amount).HasColumnName("amount");
                 entity.Property(e => e.Note).HasColumnName("note");
                 entity.Property(e => e.MaterialId).HasColumnName("material_id");
                 entity.Property(e => e.MappingStatus).HasColumnName("mapping_status");
@@ -211,7 +311,7 @@ namespace 崴正.Data
                 entity.HasOne(e => e.ProjectMaster).WithMany().HasForeignKey(e => e.ProjectMasterId).OnDelete(DeleteBehavior.Cascade);
                 entity.HasOne(e => e.Material).WithMany().HasForeignKey(e => e.MaterialId).OnDelete(DeleteBehavior.Restrict);
                 entity.Property(e => e.IsIgnored).HasColumnName("is_ignored");
-            });    
+            });
 
             modelBuilder.Entity<EstimationSetting>(entity =>
             {
@@ -279,7 +379,7 @@ namespace 崴正.Data
 
                 entity.Property(e => e.UpdatedBy)
                     .HasColumnName("updated_by");
-            });       
+            });
         }
     }
 }

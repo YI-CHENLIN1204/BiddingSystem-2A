@@ -1011,7 +1011,7 @@
                                     @item.MaterialName
 
                                     <span class="unit-text">
-                                        (@item.BaseUnit)
+                                        (@item.UnitName)
                                     </span>
 
                                 </div>
@@ -1166,6 +1166,16 @@
         <li class="nav-item">
             <button class="nav-link"
                     data-bs-toggle="tab"
+                    data-bs-target="#standard-unit-panel"
+                    type="button">
+
+                標準單位
+            </button>
+        </li>
+
+        <li class="nav-item">
+            <button class="nav-link"
+                    data-bs-toggle="tab"
                     data-bs-target="#standard-material-panel"
                     type="button">
 
@@ -1268,6 +1278,171 @@
                             </thead>
 
                             <tbody id="materialCategoryTableBody">
+
+                                <tr>
+                                    <td colspan="4"
+                                        class="text-muted py-4">
+
+                                        載入中...
+
+                                    </td>
+                                </tr>
+
+                            </tbody>
+
+                        </table>
+
+                    </div>
+
+                </div>
+
+            </div>
+
+        </div>
+
+        <!-- ============================================= -->
+        <!-- 標準單位 -->
+        <!-- ============================================= -->
+
+        <div class="tab-pane fade"
+            id="standard-unit-panel">
+
+            <div class="section-card">
+
+                <div class="section-header d-flex justify-content-between align-items-center gap-3">
+
+                    <div>
+                        <h5 class="section-title">
+                            標準單位
+                        </h5>
+
+                        <div class="section-description">
+                            管理系統使用的標準單位與所屬單位類別。
+                        </div>
+                    </div>
+
+                        <div class="d-flex gap-2">
+
+                            <button type="button"
+                                    class="btn btn-outline-primary btn-sm"
+                                    data-bs-toggle="modal"
+                                    data-bs-target="#createUnitCategoryModal">
+
+                                新增單位類別
+                            </button>
+
+                            <button type="button"
+                                    class="btn btn-primary btn-sm"
+                                    data-bs-toggle="modal"
+                                    data-bs-target="#createUnitModal">
+
+                                新增單位
+                            </button>
+
+                        </div>
+
+                </div>
+
+
+                <div class="section-body">
+
+                    <div id="standardUnitMessage">
+                    </div>
+
+
+                    <div class="row g-3 mb-3">
+
+                        <div class="col-lg-4">
+
+                            <label class="form-label fw-bold">
+                                搜尋單位
+                            </label>
+
+                            <input type="text"
+                                class="form-control"
+                                id="standardUnitSearch"
+                                placeholder="輸入單位名稱或類別..." />
+
+                        </div>
+
+
+                        <div class="col-lg-4">
+
+                            <label class="form-label fw-bold">
+                                單位類別
+                            </label>
+
+                            <select class="form-select"
+                                    id="standardUnitCategoryFilter">
+
+                                <option value="">
+                                    全部
+                                </option>
+
+                            </select>
+
+                        </div>
+
+
+                        <div class="col-lg-4">
+
+                            <label class="form-label fw-bold">
+                                狀態
+                            </label>
+
+                            <select class="form-select"
+                                    id="standardUnitStatusFilter">
+
+                                <option value="">
+                                    全部
+                                </option>
+
+                                <option value="true">
+                                    啟用
+                                </option>
+
+                                <option value="false">
+                                    停用
+                                </option>
+
+                            </select>
+
+                        </div>
+
+                    </div>
+
+
+                    <div class="d-flex
+                                justify-content-between
+                                align-items-center
+                                mb-2">
+
+                        <div class="small text-muted">
+                            共
+                            <strong id="standardUnitCount">
+                                0
+                            </strong>
+                            個標準單位
+                        </div>
+
+                    </div>
+
+
+                    <div class="admin-table-wrapper">
+
+                        <table class="admin-table">
+
+                            <thead>
+                                <tr>
+                                    <th>單位名稱</th>
+                                    <th>單位類別</th>
+                                    <th>基準單位</th>
+                                    <th>狀態</th>
+                                    <th>操作</th>
+                                </tr>
+                            </thead>
+
+                            <tbody id="standardUnitTableBody">
 
                                 <tr>
                                     <td colspan="4"
@@ -1622,7 +1797,7 @@
                     </label>
 
                     <select class="form-select"
-                            id="standardMaterialBaseUnit">
+                            id="standardMaterialUnitId">
 
                         <option value="">
                             請選擇標準單位
@@ -1647,6 +1822,376 @@
                 <button type="button"
                         class="btn btn-primary"
                         id="saveStandardMaterialBtn">
+
+                    儲存
+                </button>
+
+            </div>
+
+        </div>
+
+    </div>
+
+</div>
+
+<!-- ============================================= -->
+<!-- 新增單位類別 Modal -->
+<!-- ============================================= -->
+
+<div class="modal fade"
+     id="createUnitCategoryModal"
+     tabindex="-1">
+
+    <div class="modal-dialog">
+
+        <div class="modal-content">
+
+            <div class="modal-header">
+
+                <h5 class="modal-title">
+                    新增單位類別
+                </h5>
+
+                <button type="button"
+                        class="btn-close"
+                        data-bs-dismiss="modal">
+                </button>
+
+            </div>
+
+
+            <div class="modal-body">
+
+                <div id="createUnitCategoryMessage">
+                </div>
+
+
+                <div class="mb-3">
+
+                    <label class="form-label fw-bold">
+                        單位類別名稱
+                    </label>
+
+                    <input type="text"
+                           class="form-control"
+                           id="createUnitCategoryName"
+                           placeholder="例如：長度、重量、其他" />
+
+                </div>
+
+
+                <div class="mb-3">
+
+                    <label class="form-label fw-bold">
+                        是否允許單位換算
+                    </label>
+
+                    <select class="form-select"
+                            id="createUnitCategoryAllowConversion">
+
+                        <option value="true">
+                            是
+                        </option>
+
+                        <option value="false">
+                            否
+                        </option>
+
+                    </select>
+
+                </div>
+
+
+                <div class="mb-3"
+                     id="createUnitCategoryBaseUnitWrapper">
+
+                    <label class="form-label fw-bold">
+                        基準單位名稱
+                    </label>
+
+                    <input type="text"
+                           class="form-control"
+                           id="createUnitCategoryBaseUnitName"
+                           placeholder="例如：公尺" />
+
+                    <div class="form-text">
+                        建立後此基準單位不可修改。
+                    </div>
+
+                </div>
+
+            </div>
+
+
+            <div class="modal-footer">
+
+                <button type="button"
+                        class="btn btn-light"
+                        data-bs-dismiss="modal">
+
+                    取消
+                </button>
+
+                <button type="button"
+                        class="btn btn-primary"
+                        id="createUnitCategorySubmit">
+
+                    新增
+                </button>
+
+            </div>
+
+        </div>
+
+    </div>
+
+</div>
+
+<!-- ============================================= -->
+<!-- 新增單位 Modal -->
+<!-- ============================================= -->
+
+<div class="modal fade"
+     id="createUnitModal"
+     tabindex="-1">
+
+    <div class="modal-dialog">
+
+        <div class="modal-content">
+
+            <div class="modal-header">
+
+                <h5 class="modal-title">
+                    新增單位
+                </h5>
+
+                <button type="button"
+                        class="btn-close"
+                        data-bs-dismiss="modal">
+                </button>
+
+            </div>
+
+
+            <div class="modal-body">
+
+                <div id="createUnitMessage">
+                </div>
+
+
+                <div class="mb-3">
+
+                    <label class="form-label fw-bold">
+                        單位名稱
+                    </label>
+
+                    <input type="text"
+                           class="form-control"
+                           id="createUnitName"
+                           placeholder="例如：公分、kg、支" />
+
+                </div>
+
+
+                <div class="mb-3">
+
+                    <label class="form-label fw-bold">
+                        單位類別
+                    </label>
+
+                    <select class="form-select"
+                            id="createUnitCategory">
+
+                        <option value="">
+                            請選擇單位類別
+                        </option>
+
+                    </select>
+
+                </div>
+
+
+                <!-- 可換算類別才顯示 -->
+                <div class="mb-3"
+                     id="createUnitFactorWrapper"
+                     style="display:none;">
+
+                    <label class="form-label fw-bold">
+                        單位換算
+                    </label>
+
+                    <div class="input-group">
+
+                        <span class="input-group-text">
+                            1
+                        </span>
+
+                        <span class="input-group-text"
+                              id="createUnitSourceName">
+                            新單位
+                        </span>
+
+                        <span class="input-group-text">
+                            =
+                        </span>
+
+                        <input type="number"
+                               class="form-control"
+                               id="createUnitFactor"
+                               min="0"
+                               step="any"
+                               placeholder="請輸入倍率" />
+
+                        <span class="input-group-text"
+                              id="createUnitBaseName">
+                        </span>
+
+                    </div>
+
+                    <div class="form-text"
+                         id="createUnitFactorHint">
+                    </div>
+
+                </div>
+
+            </div>
+
+
+            <div class="modal-footer">
+
+                <button type="button"
+                        class="btn btn-light"
+                        data-bs-dismiss="modal">
+
+                    取消
+                </button>
+
+                <button type="button"
+                        class="btn btn-primary"
+                        id="createUnitSubmit">
+
+                    新增
+                </button>
+
+            </div>
+
+        </div>
+
+    </div>
+
+</div>
+
+<!-- ============================================= -->
+<!-- 編輯單位 Modal -->
+<!-- ============================================= -->
+
+<div class="modal fade"
+     id="editUnitModal"
+     tabindex="-1">
+
+    <div class="modal-dialog">
+
+        <div class="modal-content">
+
+            <div class="modal-header">
+
+                <h5 class="modal-title">
+                    編輯單位
+                </h5>
+
+                <button type="button"
+                        class="btn-close"
+                        data-bs-dismiss="modal">
+                </button>
+
+            </div>
+
+            <div class="modal-body">
+
+                <div id="editUnitMessage">
+                </div>
+
+                <input type="hidden"
+                       id="editUnitId" />
+
+
+                <div class="mb-3">
+
+                    <label class="form-label fw-bold">
+                        單位名稱
+                    </label>
+
+                    <input type="text"
+                           class="form-control"
+                           id="editUnitName" />
+
+                </div>
+
+
+                <div class="mb-3">
+
+                    <label class="form-label fw-bold">
+                        單位類別
+                    </label>
+
+                    <select class="form-select"
+                            id="editUnitCategory">
+                    </select>
+
+                </div>
+
+
+                <div class="mb-3"
+                     id="editUnitFactorWrapper"
+                     style="display:none;">
+
+                    <label class="form-label fw-bold">
+                        單位換算
+                    </label>
+
+                    <div class="input-group">
+
+                        <span class="input-group-text">
+                            1
+                        </span>
+
+                        <span class="input-group-text"
+                              id="editUnitSourceName">
+                        </span>
+
+                        <span class="input-group-text">
+                            =
+                        </span>
+
+                        <input type="number"
+                               class="form-control"
+                               id="editUnitFactor"
+                               min="0"
+                               step="any" />
+
+                        <span class="input-group-text"
+                              id="editUnitBaseName">
+                        </span>
+
+                    </div>
+
+                </div>
+
+            </div>
+
+
+            <div class="modal-footer">
+
+                <button type="button"
+                        class="btn btn-light"
+                        data-bs-dismiss="modal">
+
+                    取消
+                </button>
+
+                <button type="button"
+                        class="btn btn-primary"
+                        id="editUnitSubmit">
 
                     儲存
                 </button>
@@ -3153,7 +3698,7 @@ document.addEventListener(
 
         const materialUnitSelect =
             document.getElementById(
-                "standardMaterialBaseUnit"
+                "standardMaterialUnitId"
             );
 
 
@@ -3289,23 +3834,37 @@ document.addEventListener(
                  </option>`;
 
 
-            filterOptions.baseUnits
+            filterOptions.units
                 .forEach(unit => {
 
-                    const text =
-                        escapeHtml(unit);
+                    const unitId =
+                        unit.unitId;
 
+                    const unitName =
+                        escapeHtml(
+                            unit.unitName
+                        );
+
+
+                    // 篩選可以看到全部單位，
+                    // 包含已停用單位
                     unitFilter.innerHTML += `
-                        <option value="${text}">
-                            ${text}
+                        <option value="${unitId}">
+                            ${unitName}
                         </option>
                     `;
 
-                    materialUnitSelect.innerHTML += `
-                        <option value="${text}">
-                            ${text}
-                        </option>
-                    `;
+
+                    // 新增 / 編輯標準材料
+                    // 只能選啟用中的單位
+                    if (unit.isActive) {
+
+                        materialUnitSelect.innerHTML += `
+                            <option value="${unitId}">
+                                ${unitName}
+                            </option>
+                        `;
+                    }
                 });
         }
 
@@ -3340,7 +3899,7 @@ document.addEventListener(
             if (unitFilter.value) {
 
                 parameters.append(
-                    "baseUnit",
+                    "unitId",
                     unitFilter.value
                 );
             }
@@ -3496,7 +4055,7 @@ document.addEventListener(
 
                                 <td>
                                     ${escapeHtml(
-                                        material.baseUnit
+                                        material.unitName
                                     )}
                                 </td>
 
@@ -3587,7 +4146,9 @@ document.addEventListener(
                                 material.categoryId ?? "";
 
                             materialUnitSelect.value =
-                                material.baseUnit ?? "";
+                                material.unitId
+                                    ? String(material.unitId)
+                                    : "";
 
                             modalTitle.textContent =
                                 "編輯標準材料";
@@ -3678,8 +4239,10 @@ document.addEventListener(
                         materialCategorySelect.value
                     );
 
-                const baseUnit =
-                    materialUnitSelect.value;
+                const unitId =
+                    Number(
+                        materialUnitSelect.value
+                    );
 
 
                 if (!materialName) {
@@ -3704,7 +4267,7 @@ document.addEventListener(
                 }
 
 
-                if (!baseUnit) {
+                if (!unitId) {
 
                     showMessage(
                         "請選擇標準單位",
@@ -3735,8 +4298,8 @@ document.addEventListener(
                 );
 
                 formData.append(
-                    "baseUnit",
-                    baseUnit
+                    "unitId",
+                    unitId
                 );
 
 
@@ -3959,6 +4522,1496 @@ document.addEventListener(
                 );
             }
         }
+
+
+        initialize();
+
+    }
+);
+</script>
+
+<script>
+document.addEventListener(
+    "DOMContentLoaded",
+    () => {
+
+        const tableBody =
+            document.getElementById(
+                "standardUnitTableBody"
+            );
+
+        if (!tableBody) {
+            return;
+        }
+
+
+        const searchInput =
+            document.getElementById(
+                "standardUnitSearch"
+            );
+
+        const categoryFilter =
+            document.getElementById(
+                "standardUnitCategoryFilter"
+            );
+
+        const statusFilter =
+            document.getElementById(
+                "standardUnitStatusFilter"
+            );
+
+        const countElement =
+            document.getElementById(
+                "standardUnitCount"
+            );
+
+        const messageBox =
+            document.getElementById(
+                "standardUnitMessage"
+            );
+
+
+        let units = [];
+        let unitCategories = [];
+
+
+        function escapeHtml(value) {
+
+            return String(value ?? "")
+                .replaceAll("&", "&amp;")
+                .replaceAll("<", "&lt;")
+                .replaceAll(">", "&gt;")
+                .replaceAll('"', "&quot;")
+                .replaceAll("'", "&#039;");
+        }
+
+
+        async function readError(
+            response,
+            fallback
+        ) {
+
+            try {
+
+                const result =
+                    await response.json();
+
+                return result.message ??
+                    fallback;
+
+            }
+            catch {
+
+                return fallback;
+            }
+        }
+
+
+        function showMessage(
+            message,
+            type = "danger"
+        ) {
+
+            messageBox.innerHTML = `
+                <div class="alert alert-${type}
+                            alert-dismissible
+                            fade show py-2">
+
+                    ${escapeHtml(message)}
+
+                    <button type="button"
+                            class="btn-close"
+                            data-bs-dismiss="alert">
+                    </button>
+
+                </div>
+            `;
+        }
+
+
+        async function loadCategories() {
+
+            const response =
+                await fetch(
+                    "/api/unit-category"
+                );
+
+
+            if (!response.ok) {
+
+                throw new Error(
+                    await readError(
+                        response,
+                        "單位類別載入失敗"
+                    )
+                );
+            }
+
+
+            unitCategories =
+                await response.json();
+
+
+            categoryFilter.innerHTML =
+                `<option value="">全部</option>`;
+
+
+            unitCategories.forEach(category => {
+
+                categoryFilter.innerHTML += `
+                    <option value="${category.unitCategoryId}">
+                        ${escapeHtml(
+                            category.categoryName
+                        )}
+                    </option>
+                `;
+            });
+
+            const createUnitCategory =
+                document.getElementById(
+                    "createUnitCategory"
+                );
+
+            const editUnitCategory =
+                document.getElementById(
+                    "editUnitCategory"
+                );
+
+
+            if (editUnitCategory) {
+
+                editUnitCategory.innerHTML =
+                    "";
+
+                unitCategories.forEach(category => {
+
+                    editUnitCategory.innerHTML += `
+                        <option value="${category.unitCategoryId}">
+                            ${escapeHtml(
+                                category.categoryName
+                            )}
+                        </option>
+                    `;
+                });
+            }
+
+            if (createUnitCategory) {
+
+                createUnitCategory.innerHTML =
+                    `
+                    <option value="">
+                        請選擇單位類別
+                    </option>
+                    `;
+
+                unitCategories.forEach(category => {
+
+                    createUnitCategory.innerHTML += `
+                        <option value="${category.unitCategoryId}">
+                            ${escapeHtml(
+                                category.categoryName
+                            )}
+                        </option>
+                    `;
+                });
+            }
+        }
+
+
+        async function loadUnits() {
+
+            const parameters =
+                new URLSearchParams();
+
+
+            const search =
+                searchInput.value.trim();
+
+
+            if (search) {
+
+                parameters.append(
+                    "search",
+                    search
+                );
+            }
+
+
+            if (categoryFilter.value) {
+
+                parameters.append(
+                    "unitCategoryId",
+                    categoryFilter.value
+                );
+            }
+
+
+            if (statusFilter.value) {
+
+                parameters.append(
+                    "isActive",
+                    statusFilter.value
+                );
+            }
+
+
+            tableBody.innerHTML = `
+                <tr>
+                    <td colspan="4"
+                        class="text-muted py-4">
+
+                        載入中...
+
+                    </td>
+                </tr>
+            `;
+
+
+            try {
+
+                const response =
+                    await fetch(
+                        "/api/unit-master?" +
+                        parameters.toString()
+                    );
+
+
+                if (!response.ok) {
+
+                    throw new Error(
+                        await readError(
+                            response,
+                            "標準單位載入失敗"
+                        )
+                    );
+                }
+
+
+                units =
+                    await response.json();
+
+
+                renderUnits();
+
+            }
+            catch (error) {
+
+                tableBody.innerHTML = `
+                    <tr>
+                        <td colspan="4"
+                            class="text-danger py-4">
+
+                            ${escapeHtml(
+                                error.message
+                            )}
+
+                        </td>
+                    </tr>
+                `;
+            }
+        }
+
+
+        function renderUnits() {
+
+            countElement.textContent =
+                units.length;
+
+
+            if (!units.length) {
+
+                tableBody.innerHTML = `
+                    <tr>
+                        <td colspan="4"
+                            class="text-muted py-4">
+
+                            沒有符合條件的標準單位
+
+                        </td>
+                    </tr>
+                `;
+
+                return;
+            }
+
+
+            tableBody.innerHTML =
+                units
+                    .map(unit => {
+
+                        const baseBadge =
+                            unit.isBaseUnit
+                                ? `
+                                    <span class="badge bg-primary">
+                                        是
+                                    </span>
+                                  `
+                                : `
+                                    <span class="text-muted">
+                                        -
+                                    </span>
+                                  `;
+
+
+                        const statusBadge =
+                            unit.isActive
+                                ? `
+                                    <span class="badge bg-success">
+                                        啟用
+                                    </span>
+                                  `
+                                : `
+                                    <span class="badge bg-secondary">
+                                        停用
+                                    </span>
+                                  `;
+
+
+                        return `
+                            <tr>
+
+                                <td class="fw-bold">
+                                    ${escapeHtml(
+                                        unit.unitName
+                                    )}
+                                </td>
+
+                                <td>
+                                    ${escapeHtml(
+                                        unit.categoryName
+                                    )}
+                                </td>
+
+                                <td>
+                                    ${baseBadge}
+                                </td>
+
+                                <td>
+                                    ${statusBadge}
+                                </td>
+
+                                <td>
+                                    ${
+                                        unit.isBaseUnit
+                                            ? `
+                                                <span class="text-muted">
+                                                    基準單位
+                                                </span>
+                                            `
+                                            : `
+                                                <div class="d-flex gap-2">
+
+                                                    <button type="button"
+                                                            class="btn btn-sm
+                                                                btn-outline-primary
+                                                                edit-unit-btn"
+                                                            data-unit-id="${unit.unitId}">
+
+                                                        編輯
+                                                    </button>
+
+                                                    <button type="button"
+                                                            class="btn btn-sm
+                                                                ${
+                                                                    unit.isActive
+                                                                        ? "btn-outline-secondary"
+                                                                        : "btn-outline-success"
+                                                                }
+                                                                toggle-unit-active-btn"
+                                                            data-unit-id="${unit.unitId}"
+                                                            data-is-active="${unit.isActive}">
+
+                                                        ${
+                                                            unit.isActive
+                                                                ? "停用"
+                                                                : "啟用"
+                                                        }
+
+                                                    </button>
+
+                                                </div>
+                                            `
+                                    }
+                                </td>
+
+                            </tr>
+                        `;
+                    })
+                    .join("");
+        }
+
+
+        let searchTimer = null;
+
+
+        searchInput.addEventListener(
+            "input",
+            () => {
+
+                clearTimeout(
+                    searchTimer
+                );
+
+                searchTimer =
+                    setTimeout(
+                        loadUnits,
+                        250
+                    );
+            }
+        );
+
+
+        categoryFilter.addEventListener(
+            "change",
+            loadUnits
+        );
+
+
+        statusFilter.addEventListener(
+            "change",
+            loadUnits
+        );
+
+
+        async function initialize() {
+
+            try {
+
+                await loadCategories();
+                await loadUnits();
+
+            }
+            catch (error) {
+
+                showMessage(
+                    error.message ??
+                    "標準單位管理初始化失敗"
+                );
+            }
+        }
+
+        // ==========================================
+        // 新增單位類別
+        // ==========================================
+
+        const createCategoryModalElement =
+            document.getElementById(
+                "createUnitCategoryModal"
+            );
+
+        const createCategoryName =
+            document.getElementById(
+                "createUnitCategoryName"
+            );
+
+        const createCategoryAllowConversion =
+            document.getElementById(
+                "createUnitCategoryAllowConversion"
+            );
+
+        const createCategoryBaseUnitWrapper =
+            document.getElementById(
+                "createUnitCategoryBaseUnitWrapper"
+            );
+
+        const createCategoryBaseUnitName =
+            document.getElementById(
+                "createUnitCategoryBaseUnitName"
+            );
+
+        const createCategorySubmit =
+            document.getElementById(
+                "createUnitCategorySubmit"
+            );
+
+        const createCategoryMessage =
+            document.getElementById(
+                "createUnitCategoryMessage"
+            );
+
+
+        function updateCreateCategoryForm() {
+
+            const allowConversion =
+                createCategoryAllowConversion.value ===
+                "true";
+
+
+            createCategoryBaseUnitWrapper.style.display =
+                allowConversion
+                    ? ""
+                    : "none";
+
+
+            if (!allowConversion) {
+
+                createCategoryBaseUnitName.value =
+                    "";
+            }
+        }
+
+
+        createCategoryAllowConversion.addEventListener(
+            "change",
+            updateCreateCategoryForm
+        );
+
+
+        createCategoryModalElement.addEventListener(
+            "show.bs.modal",
+            () => {
+
+                createCategoryName.value =
+                    "";
+
+                createCategoryAllowConversion.value =
+                    "true";
+
+                createCategoryBaseUnitName.value =
+                    "";
+
+                createCategoryMessage.innerHTML =
+                    "";
+
+                updateCreateCategoryForm();
+            }
+        );
+
+
+        createCategorySubmit.addEventListener(
+            "click",
+            async () => {
+
+                const categoryName =
+                    createCategoryName.value.trim();
+
+                const allowConversion =
+                    createCategoryAllowConversion.value ===
+                    "true";
+
+                const baseUnitName =
+                    createCategoryBaseUnitName.value.trim();
+
+
+                if (!categoryName) {
+
+                    createCategoryMessage.innerHTML = `
+                        <div class="alert alert-danger py-2">
+                            請輸入單位類別名稱
+                        </div>
+                    `;
+
+                    return;
+                }
+
+
+                if (allowConversion &&
+                    !baseUnitName) {
+
+                    createCategoryMessage.innerHTML = `
+                        <div class="alert alert-danger py-2">
+                            請輸入基準單位名稱
+                        </div>
+                    `;
+
+                    return;
+                }
+
+
+                const formData =
+                    new FormData();
+
+                formData.append(
+                    "categoryName",
+                    categoryName
+                );
+
+                formData.append(
+                    "allowConversion",
+                    allowConversion
+                );
+
+
+                if (allowConversion) {
+
+                    formData.append(
+                        "baseUnitName",
+                        baseUnitName
+                    );
+                }
+
+
+                createCategorySubmit.disabled =
+                    true;
+
+
+                try {
+
+                    const response =
+                        await fetch(
+                            "/api/unit-category/create",
+                            {
+                                method: "POST",
+                                body: formData
+                            }
+                        );
+
+
+                    if (!response.ok) {
+
+                        throw new Error(
+                            await readError(
+                                response,
+                                "新增單位類別失敗"
+                            )
+                        );
+                    }
+
+
+                    const result =
+                        await response.json();
+
+
+                    bootstrap.Modal
+                        .getOrCreateInstance(
+                            createCategoryModalElement
+                        )
+                        .hide();
+
+
+                    showMessage(
+                        result.message ??
+                        "單位類別新增成功",
+                        "success"
+                    );
+
+
+                    // 類別下拉重新載入
+                    await loadCategories();
+
+                    // 可換算類別會自動產生基準單位，
+                    // 所以單位列表也要一起重新載入
+                    await loadUnits();
+
+                }
+                catch (error) {
+
+                    createCategoryMessage.innerHTML = `
+                        <div class="alert alert-danger py-2">
+                            ${escapeHtml(
+                                error.message
+                            )}
+                        </div>
+                    `;
+                }
+                finally {
+
+                    createCategorySubmit.disabled =
+                        false;
+                }
+            }
+        );
+
+        // ==========================================
+        // 新增單位
+        // ==========================================
+
+        const createUnitModalElement =
+            document.getElementById(
+                "createUnitModal"
+            );
+
+        const createUnitName =
+            document.getElementById(
+                "createUnitName"
+            );
+
+        const createUnitCategory =
+            document.getElementById(
+                "createUnitCategory"
+            );
+
+        const createUnitFactorWrapper =
+            document.getElementById(
+                "createUnitFactorWrapper"
+            );
+
+        const createUnitFactor =
+            document.getElementById(
+                "createUnitFactor"
+            );
+
+        const createUnitSourceName =
+            document.getElementById(
+                "createUnitSourceName"
+            );
+
+        const createUnitBaseName =
+            document.getElementById(
+                "createUnitBaseName"
+            );
+
+        const createUnitFactorHint =
+            document.getElementById(
+                "createUnitFactorHint"
+            );
+
+        const createUnitSubmit =
+            document.getElementById(
+                "createUnitSubmit"
+            );
+
+        const createUnitMessage =
+            document.getElementById(
+                "createUnitMessage"
+            );
+
+
+        function getSelectedUnitCategory() {
+
+            const categoryId =
+                Number(
+                    createUnitCategory.value
+                );
+
+            return unitCategories.find(
+                x =>
+                    x.unitCategoryId ===
+                    categoryId
+            );
+        }
+
+
+        function updateCreateUnitForm() {
+
+            const category =
+                getSelectedUnitCategory();
+
+
+            if (!category) {
+
+                createUnitFactorWrapper.style.display =
+                    "none";
+
+                createUnitFactor.value =
+                    "";
+
+                return;
+            }
+
+
+            if (!category.allowConversion) {
+
+                createUnitFactorWrapper.style.display =
+                    "none";
+
+                createUnitFactor.value =
+                    "";
+
+                return;
+            }
+
+
+            createUnitFactorWrapper.style.display =
+                "";
+
+
+            createUnitBaseName.textContent =
+                category.baseUnitName ??
+                "";
+
+
+            createUnitFactorHint.textContent =
+                category.baseUnitName
+                    ? `請輸入此單位相對於「${category.baseUnitName}」的倍率`
+                    : "";
+        }
+
+
+        function updateCreateUnitSourceName() {
+
+            const name =
+                createUnitName.value.trim();
+
+            createUnitSourceName.textContent =
+                name || "新單位";
+        }
+
+
+        createUnitCategory.addEventListener(
+            "change",
+            updateCreateUnitForm
+        );
+
+
+        createUnitName.addEventListener(
+            "input",
+            updateCreateUnitSourceName
+        );
+
+
+        createUnitModalElement.addEventListener(
+            "show.bs.modal",
+            () => {
+
+                createUnitName.value =
+                    "";
+
+                createUnitCategory.value =
+                    "";
+
+                createUnitFactor.value =
+                    "";
+
+                createUnitMessage.innerHTML =
+                    "";
+
+                createUnitSourceName.textContent =
+                    "新單位";
+
+                createUnitBaseName.textContent =
+                    "";
+
+                createUnitFactorWrapper.style.display =
+                    "none";
+            }
+        );
+
+
+        createUnitSubmit.addEventListener(
+            "click",
+            async () => {
+
+                const unitName =
+                    createUnitName.value.trim();
+
+                const category =
+                    getSelectedUnitCategory();
+
+
+                if (!unitName) {
+
+                    createUnitMessage.innerHTML = `
+                        <div class="alert alert-danger py-2">
+                            請輸入單位名稱
+                        </div>
+                    `;
+
+                    return;
+                }
+
+
+                if (!category) {
+
+                    createUnitMessage.innerHTML = `
+                        <div class="alert alert-danger py-2">
+                            請選擇單位類別
+                        </div>
+                    `;
+
+                    return;
+                }
+
+
+                let factor =
+                    null;
+
+
+                if (category.allowConversion) {
+
+                    factor =
+                        Number(
+                            createUnitFactor.value
+                        );
+
+
+                    if (!factor ||
+                        factor <= 0) {
+
+                        createUnitMessage.innerHTML = `
+                            <div class="alert alert-danger py-2">
+                                請輸入正確的換算倍率
+                            </div>
+                        `;
+
+                        return;
+                    }
+                }
+
+
+                const formData =
+                    new FormData();
+
+
+                formData.append(
+                    "unitName",
+                    unitName
+                );
+
+                formData.append(
+                    "unitCategoryId",
+                    category.unitCategoryId
+                );
+
+
+                if (category.allowConversion) {
+
+                    formData.append(
+                        "toBaseFactor",
+                        factor
+                    );
+                }
+
+
+                createUnitSubmit.disabled =
+                    true;
+
+
+                try {
+
+                    const response =
+                        await fetch(
+                            "/api/unit-master/create",
+                            {
+                                method: "POST",
+                                body: formData
+                            }
+                        );
+
+
+                    if (!response.ok) {
+
+                        throw new Error(
+                            await readError(
+                                response,
+                                "新增單位失敗"
+                            )
+                        );
+                    }
+
+
+                    const result =
+                        await response.json();
+
+
+                    bootstrap.Modal
+                        .getOrCreateInstance(
+                            createUnitModalElement
+                        )
+                        .hide();
+
+
+                    showMessage(
+                        result.message ??
+                        "單位新增成功",
+                        "success"
+                    );
+
+
+                    await loadUnits();
+
+                }
+                catch (error) {
+
+                    createUnitMessage.innerHTML = `
+                        <div class="alert alert-danger py-2">
+                            ${escapeHtml(
+                                error.message
+                            )}
+                        </div>
+                    `;
+                }
+                finally {
+
+                    createUnitSubmit.disabled =
+                        false;
+                }
+            }
+        );
+
+        // ==========================================
+        // 編輯單位
+        // ==========================================
+
+        const editUnitModalElement =
+            document.getElementById(
+                "editUnitModal"
+            );
+
+        const editUnitId =
+            document.getElementById(
+                "editUnitId"
+            );
+
+        const editUnitName =
+            document.getElementById(
+                "editUnitName"
+            );
+
+        const editUnitCategory =
+            document.getElementById(
+                "editUnitCategory"
+            );
+
+        const editUnitFactorWrapper =
+            document.getElementById(
+                "editUnitFactorWrapper"
+            );
+
+        const editUnitFactor =
+            document.getElementById(
+                "editUnitFactor"
+            );
+
+        const editUnitSourceName =
+            document.getElementById(
+                "editUnitSourceName"
+            );
+
+        const editUnitBaseName =
+            document.getElementById(
+                "editUnitBaseName"
+            );
+
+        const editUnitMessage =
+            document.getElementById(
+                "editUnitMessage"
+            );
+
+        const editUnitSubmit =
+            document.getElementById(
+                "editUnitSubmit"
+            );
+
+
+        function getEditUnitCategory() {
+
+            const categoryId =
+                Number(
+                    editUnitCategory.value
+                );
+
+            return unitCategories.find(
+                x =>
+                    x.unitCategoryId ===
+                    categoryId
+            );
+        }
+
+
+        function updateEditUnitForm() {
+
+            const category =
+                getEditUnitCategory();
+
+
+            editUnitSourceName.textContent =
+                editUnitName.value.trim() ||
+                "單位";
+
+
+            if (!category ||
+                !category.allowConversion) {
+
+                editUnitFactorWrapper.style.display =
+                    "none";
+
+                editUnitFactor.value =
+                    "";
+
+                return;
+            }
+
+
+            editUnitFactorWrapper.style.display =
+                "";
+
+            editUnitBaseName.textContent =
+                category.baseUnitName ??
+                "";
+        }
+
+
+        editUnitName.addEventListener(
+            "input",
+            () => {
+
+                editUnitSourceName.textContent =
+                    editUnitName.value.trim() ||
+                    "單位";
+            }
+        );
+
+
+        editUnitCategory.addEventListener(
+            "change",
+            updateEditUnitForm
+        );
+
+
+        // ------------------------------------------
+        // 因為列表會重新 render，使用事件委派
+        // ------------------------------------------
+
+        tableBody.addEventListener(
+            "click",
+            event => {
+
+                const button =
+                    event.target.closest(
+                        ".edit-unit-btn"
+                    );
+
+
+                if (!button) {
+                    return;
+                }
+
+
+                const unitId =
+                    Number(
+                        button.dataset.unitId
+                    );
+
+
+                const unit =
+                    units.find(
+                        x =>
+                            x.unitId ===
+                            unitId
+                    );
+
+
+                if (!unit ||
+                    unit.isBaseUnit) {
+
+                    return;
+                }
+
+
+                editUnitId.value =
+                    unit.unitId;
+
+                editUnitName.value =
+                    unit.unitName;
+
+                editUnitCategory.value =
+                    String(
+                        unit.unitCategoryId
+                    );
+
+                editUnitFactor.value =
+                    unit.toBaseFactor ??
+                    "";
+
+                editUnitMessage.innerHTML =
+                    "";
+
+                updateEditUnitForm();
+
+
+                bootstrap.Modal
+                    .getOrCreateInstance(
+                        editUnitModalElement
+                    )
+                    .show();
+            }
+        );
+
+        // ==========================================
+        // 啟用 / 停用單位
+        // ==========================================
+
+        tableBody.addEventListener(
+            "click",
+            async event => {
+
+                const button =
+                    event.target.closest(
+                        ".toggle-unit-active-btn"
+                    );
+
+
+                if (!button) {
+                    return;
+                }
+
+
+                const unitId =
+                    Number(
+                        button.dataset.unitId
+                    );
+
+                const currentIsActive =
+                    button.dataset.isActive ===
+                    "true";
+
+                const unit =
+                    units.find(
+                        x =>
+                            x.unitId ===
+                            unitId
+                    );
+
+
+                if (!unit ||
+                    unit.isBaseUnit) {
+
+                    return;
+                }
+
+
+                const nextIsActive =
+                    !currentIsActive;
+
+
+                const actionText =
+                    nextIsActive
+                        ? "啟用"
+                        : "停用";
+
+
+                const confirmed =
+                    confirm(
+                        `確定要${actionText}單位「${unit.unitName}」嗎？`
+                    );
+
+
+                if (!confirmed) {
+                    return;
+                }
+
+
+                const formData =
+                    new FormData();
+
+
+                formData.append(
+                    "unitId",
+                    unitId
+                );
+
+                formData.append(
+                    "isActive",
+                    nextIsActive
+                );
+
+
+                button.disabled =
+                    true;
+
+
+                try {
+
+                    const response =
+                        await fetch(
+                            "/api/unit-master/set-active",
+                            {
+                                method: "POST",
+                                body: formData
+                            }
+                        );
+
+
+                    if (!response.ok) {
+
+                        throw new Error(
+                            await readError(
+                                response,
+                                `${actionText}單位失敗`
+                            )
+                        );
+                    }
+
+
+                    const result =
+                        await response.json();
+
+
+                    showMessage(
+                        result.message ??
+                        `單位${actionText}成功`,
+                        "success"
+                    );
+
+
+                    await loadUnits();
+
+                }
+                catch (error) {
+
+                    showMessage(
+                        error.message ??
+                        `${actionText}單位失敗`
+                    );
+
+                    button.disabled =
+                        false;
+                }
+            }
+        );
+
+
+        editUnitSubmit.addEventListener(
+            "click",
+            async () => {
+
+                const unitId =
+                    Number(
+                        editUnitId.value
+                    );
+
+                const unitName =
+                    editUnitName.value.trim();
+
+                const category =
+                    getEditUnitCategory();
+
+
+                if (!unitName) {
+
+                    editUnitMessage.innerHTML = `
+                        <div class="alert alert-danger py-2">
+                            請輸入單位名稱
+                        </div>
+                    `;
+
+                    return;
+                }
+
+
+                if (!category) {
+
+                    editUnitMessage.innerHTML = `
+                        <div class="alert alert-danger py-2">
+                            請選擇單位類別
+                        </div>
+                    `;
+
+                    return;
+                }
+
+
+                let factor =
+                    null;
+
+
+                if (category.allowConversion) {
+
+                    factor =
+                        Number(
+                            editUnitFactor.value
+                        );
+
+
+                    if (!factor ||
+                        factor <= 0) {
+
+                        editUnitMessage.innerHTML = `
+                            <div class="alert alert-danger py-2">
+                                請輸入正確的換算倍率
+                            </div>
+                        `;
+
+                        return;
+                    }
+                }
+
+
+                const formData =
+                    new FormData();
+
+
+                formData.append(
+                    "unitId",
+                    unitId
+                );
+
+                formData.append(
+                    "unitName",
+                    unitName
+                );
+
+                formData.append(
+                    "unitCategoryId",
+                    category.unitCategoryId
+                );
+
+
+                if (category.allowConversion) {
+
+                    formData.append(
+                        "toBaseFactor",
+                        factor
+                    );
+                }
+
+
+                editUnitSubmit.disabled =
+                    true;
+
+
+                try {
+
+                    const response =
+                        await fetch(
+                            "/api/unit-master/update",
+                            {
+                                method: "POST",
+                                body: formData
+                            }
+                        );
+
+
+                    if (!response.ok) {
+
+                        throw new Error(
+                            await readError(
+                                response,
+                                "更新單位失敗"
+                            )
+                        );
+                    }
+
+
+                    const result =
+                        await response.json();
+
+
+                    bootstrap.Modal
+                        .getOrCreateInstance(
+                            editUnitModalElement
+                        )
+                        .hide();
+
+
+                    showMessage(
+                        result.message ??
+                        "單位更新成功",
+                        "success"
+                    );
+
+
+                    await loadUnits();
+
+                }
+                catch (error) {
+
+                    editUnitMessage.innerHTML = `
+                        <div class="alert alert-danger py-2">
+                            ${escapeHtml(
+                                error.message
+                            )}
+                        </div>
+                    `;
+                }
+                finally {
+
+                    editUnitSubmit.disabled =
+                        false;
+                }
+            }
+        );
 
 
         initialize();

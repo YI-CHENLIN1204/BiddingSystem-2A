@@ -42,7 +42,7 @@ namespace 崴正.Models
         public string MaterialName { get; set; } =
             string.Empty;
 
-        public string BaseUnit { get; set; } =
+        public string UnitName { get; set; } =
             string.Empty;
 
         public string UsagePerAreaUnit { get; set; } =

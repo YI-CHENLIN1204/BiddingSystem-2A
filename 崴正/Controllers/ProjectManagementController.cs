@@ -66,11 +66,16 @@ namespace 崴正.Controllers
             [FromQuery] int projectId,
             [FromBody] ProjectSaveRequest request)
         {
+            string actionUser =
+                User?.Identity?.Name
+                ?? "System";
+
             var result =
                 await _projectManagementService
                     .UpdateProjectAsync(
                         projectId,
-                        request
+                        request,
+                        actionUser
                     );
 
             return ToActionResult(result);
@@ -81,10 +86,15 @@ namespace 崴正.Controllers
         public async Task<IActionResult> Delete(
             [FromQuery] int projectId)
         {
+            string actionUser =
+                User?.Identity?.Name
+                ?? "System";
+
             var result =
                 await _projectManagementService
                     .DeleteProjectAsync(
-                        projectId
+                        projectId,
+                        actionUser
                     );
 
             return ToActionResult(result);

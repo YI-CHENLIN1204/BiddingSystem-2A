@@ -1,3 +1,6 @@
+using Microsoft.EntityFrameworkCore;
+using 崴正.Data;
+
 namespace 崴正.Services
 {
     public class UnitConversionResult
@@ -8,314 +11,70 @@ namespace 崴正.Services
 
         public decimal UnitPrice { get; set; }
 
-        public string SourceUnit { get; set; } =
-            string.Empty;
+        public string SourceUnit { get; set; }
+            = string.Empty;
 
-        public string TargetUnit { get; set; } =
-            string.Empty;
+        public string TargetUnit { get; set; }
+            = string.Empty;
 
         public decimal ConversionFactor { get; set; }
 
         public string? ErrorMessage { get; set; }
     }
 
+
     public class UnitConversionService
     {
+        private readonly ApplicationDbContext _context;
+
+        private Dictionary<string, UnitDefinition>?
+            _unitsByName;
+
+        private Dictionary<int, UnitDefinition>?
+            _unitsById;
+
+
         private sealed class UnitDefinition
         {
-            public string Dimension { get; init; } =
-                string.Empty;
+            public int UnitId { get; init; }
 
-            public decimal ToBaseFactor { get; init; }
+            public string UnitName { get; init; }
+                = string.Empty;
+
+            public int UnitCategoryId { get; init; }
+
+            public bool AllowConversion { get; init; }
+
+            public decimal? ToBaseFactor { get; init; }
         }
 
-        private static readonly Dictionary<
-            string,
-            UnitDefinition
-        > UnitDefinitions =
-            new(StringComparer.OrdinalIgnoreCase)
-            {
-                // ==========================================
-                // 長度
-                // 基準：m
-                // ==========================================
 
-                ["m"] = new UnitDefinition
-                {
-                    Dimension = "length",
-                    ToBaseFactor = 1m
-                },
-
-                ["公尺"] = new UnitDefinition
-                {
-                    Dimension = "length",
-                    ToBaseFactor = 1m
-                },
-
-                ["米"] = new UnitDefinition
-                {
-                    Dimension = "length",
-                    ToBaseFactor = 1m
-                },
-
-                ["cm"] = new UnitDefinition
-                {
-                    Dimension = "length",
-                    ToBaseFactor = 0.01m
-                },
-
-                ["公分"] = new UnitDefinition
-                {
-                    Dimension = "length",
-                    ToBaseFactor = 0.01m
-                },
-
-                ["厘米"] = new UnitDefinition
-                {
-                    Dimension = "length",
-                    ToBaseFactor = 0.01m
-                },
-
-                ["mm"] = new UnitDefinition
-                {
-                    Dimension = "length",
-                    ToBaseFactor = 0.001m
-                },
-
-                ["毫米"] = new UnitDefinition
-                {
-                    Dimension = "length",
-                    ToBaseFactor = 0.001m
-                },
-
-
-                // ==========================================
-                // 面積
-                // 基準：m2
-                // ==========================================
-
-                ["m2"] = new UnitDefinition
-                {
-                    Dimension = "area",
-                    ToBaseFactor = 1m
-                },
-
-                ["㎡"] = new UnitDefinition
-                {
-                    Dimension = "area",
-                    ToBaseFactor = 1m
-                },
-
-                ["m²"] = new UnitDefinition
-                {
-                    Dimension = "area",
-                    ToBaseFactor = 1m
-                },
-
-                ["平方公尺"] = new UnitDefinition
-                {
-                    Dimension = "area",
-                    ToBaseFactor = 1m
-                },
-
-                ["平方米"] = new UnitDefinition
-                {
-                    Dimension = "area",
-                    ToBaseFactor = 1m
-                },
-
-                ["cm2"] = new UnitDefinition
-                {
-                    Dimension = "area",
-                    ToBaseFactor = 0.0001m
-                },
-
-                ["cm²"] = new UnitDefinition
-                {
-                    Dimension = "area",
-                    ToBaseFactor = 0.0001m
-                },
-
-                ["平方公分"] = new UnitDefinition
-                {
-                    Dimension = "area",
-                    ToBaseFactor = 0.0001m
-                },
-
-                ["mm2"] = new UnitDefinition
-                {
-                    Dimension = "area",
-                    ToBaseFactor = 0.000001m
-                },
-
-                ["mm²"] = new UnitDefinition
-                {
-                    Dimension = "area",
-                    ToBaseFactor = 0.000001m
-                },
-
-                ["平方毫米"] = new UnitDefinition
-                {
-                    Dimension = "area",
-                    ToBaseFactor = 0.000001m
-                },
-
-                ["坪"] = new UnitDefinition
-                {
-                    Dimension = "area",
-                    ToBaseFactor = 3.305785124m
-                },
-
-
-                // ==========================================
-                // 體積
-                // 基準：m3
-                // ==========================================
-
-                ["m3"] = new UnitDefinition
-                {
-                    Dimension = "volume",
-                    ToBaseFactor = 1m
-                },
-
-                ["m³"] = new UnitDefinition
-                {
-                    Dimension = "volume",
-                    ToBaseFactor = 1m
-                },
-
-                ["立方公尺"] = new UnitDefinition
-                {
-                    Dimension = "volume",
-                    ToBaseFactor = 1m
-                },
-
-                ["立方米"] = new UnitDefinition
-                {
-                    Dimension = "volume",
-                    ToBaseFactor = 1m
-                },
-
-                ["l"] = new UnitDefinition
-                {
-                    Dimension = "volume",
-                    ToBaseFactor = 0.001m
-                },
-
-                ["公升"] = new UnitDefinition
-                {
-                    Dimension = "volume",
-                    ToBaseFactor = 0.001m
-                },
-
-                ["升"] = new UnitDefinition
-                {
-                    Dimension = "volume",
-                    ToBaseFactor = 0.001m
-                },
-
-                ["ml"] = new UnitDefinition
-                {
-                    Dimension = "volume",
-                    ToBaseFactor = 0.000001m
-                },
-
-                ["毫升"] = new UnitDefinition
-                {
-                    Dimension = "volume",
-                    ToBaseFactor = 0.000001m
-                },
-
-
-                // ==========================================
-                // 重量
-                // 基準：kg
-                // ==========================================
-
-                ["kg"] = new UnitDefinition
-                {
-                    Dimension = "mass",
-                    ToBaseFactor = 1m
-                },
-
-                ["公斤"] = new UnitDefinition
-                {
-                    Dimension = "mass",
-                    ToBaseFactor = 1m
-                },
-
-                ["千克"] = new UnitDefinition
-                {
-                    Dimension = "mass",
-                    ToBaseFactor = 1m
-                },
-
-                ["g"] = new UnitDefinition
-                {
-                    Dimension = "mass",
-                    ToBaseFactor = 0.001m
-                },
-
-                ["公克"] = new UnitDefinition
-                {
-                    Dimension = "mass",
-                    ToBaseFactor = 0.001m
-                },
-
-                ["克"] = new UnitDefinition
-                {
-                    Dimension = "mass",
-                    ToBaseFactor = 0.001m
-                },
-
-                ["t"] = new UnitDefinition
-                {
-                    Dimension = "mass",
-                    ToBaseFactor = 1000m
-                },
-
-                ["ton"] = new UnitDefinition
-                {
-                    Dimension = "mass",
-                    ToBaseFactor = 1000m
-                },
-
-                ["噸"] = new UnitDefinition
-                {
-                    Dimension = "mass",
-                    ToBaseFactor = 1000m
-                },
-
-                ["公噸"] = new UnitDefinition
-                {
-                    Dimension = "mass",
-                    ToBaseFactor = 1000m
-                }
-            };
+        public UnitConversionService(
+            ApplicationDbContext context)
+        {
+            _context = context;
+        }
 
 
         public string NormalizeUnit(
             string? unit)
         {
-            if (string.IsNullOrWhiteSpace(unit))
-            {
-                return string.Empty;
-            }
-
-            return unit
-                .Trim()
-                .ToLowerInvariant()
-                .Replace(" ", "");
+            return string.IsNullOrWhiteSpace(unit)
+                ? string.Empty
+                : unit.Trim()
+                    .ToLowerInvariant()
+                    .Replace(" ", "");
         }
 
 
         public bool CanConvert(
             string? sourceUnit,
-            string? targetUnit)
+            int targetUnitId)
         {
             return TryGetConversionFactor(
                 sourceUnit,
-                targetUnit,
+                targetUnitId,
+                out _,
                 out _
             );
         }
@@ -323,61 +82,85 @@ namespace 崴正.Services
 
         public bool TryGetConversionFactor(
             string? sourceUnit,
-            string? targetUnit,
-            out decimal factor)
+            int targetUnitId,
+            out decimal factor,
+            out string targetUnitName)
         {
+            EnsureUnitsLoaded();
+
             factor = 0m;
+            targetUnitName =
+                string.Empty;
+
 
             string source =
-                NormalizeUnit(sourceUnit);
+                NormalizeUnit(
+                    sourceUnit
+                );
 
-            string target =
-                NormalizeUnit(targetUnit);
 
-            if (string.IsNullOrWhiteSpace(source) ||
-                string.IsNullOrWhiteSpace(target))
+            if (string.IsNullOrWhiteSpace(
+                    source))
             {
                 return false;
             }
 
-            // ==========================================
-            // 完全相同的未知單位仍然可以使用
-            //
-            // 例如：
-            // 式 → 式
-            // 組 → 組
-            // 支 → 支
-            // ==========================================
 
-            if (source == target)
+            if (!_unitsById!.TryGetValue(
+                    targetUnitId,
+                    out var targetDefinition))
             {
-                factor = 1m;
-                return true;
+                return false;
             }
 
-            if (!UnitDefinitions.TryGetValue(
+
+            targetUnitName =
+                targetDefinition.UnitName;
+
+
+            if (!_unitsByName!.TryGetValue(
                     source,
                     out var sourceDefinition))
             {
                 return false;
             }
 
-            if (!UnitDefinitions.TryGetValue(
-                    target,
-                    out var targetDefinition))
+
+            if (sourceDefinition.UnitId ==
+                targetDefinition.UnitId)
+            {
+                factor = 1m;
+
+                return true;
+            }
+
+
+            if (sourceDefinition.UnitCategoryId !=
+                targetDefinition.UnitCategoryId)
             {
                 return false;
             }
 
-            if (sourceDefinition.Dimension !=
-                targetDefinition.Dimension)
+
+            // 不允許換算的類別：
+            // 只有完全相同單位才成立
+            if (!targetDefinition.AllowConversion)
             {
                 return false;
             }
+
+
+            if (!sourceDefinition.ToBaseFactor.HasValue ||
+                !targetDefinition.ToBaseFactor.HasValue)
+            {
+                return false;
+            }
+
 
             factor =
-                sourceDefinition.ToBaseFactor /
-                targetDefinition.ToBaseFactor;
+                sourceDefinition.ToBaseFactor.Value /
+                targetDefinition.ToBaseFactor.Value;
+
 
             return true;
         }
@@ -387,53 +170,115 @@ namespace 崴正.Services
             decimal quantity,
             decimal unitPrice,
             string? sourceUnit,
-            string? targetUnit)
+            int targetUnitId)
         {
             if (!TryGetConversionFactor(
                     sourceUnit,
-                    targetUnit,
-                    out decimal factor))
+                    targetUnitId,
+                    out decimal factor,
+                    out string targetUnitName))
             {
                 return new UnitConversionResult
                 {
                     Success = false,
 
                     SourceUnit =
-                        sourceUnit ?? string.Empty,
+                        sourceUnit ??
+                        string.Empty,
 
                     TargetUnit =
-                        targetUnit ?? string.Empty,
+                        targetUnitName,
 
                     ErrorMessage =
-                        $"單位「{sourceUnit ?? "空白"}」無法轉換為「{targetUnit ?? "空白"}」"
+                        $"單位「{sourceUnit ?? "空白"}」無法轉換為標準材料單位「{targetUnitName}」"
                 };
             }
 
-            decimal convertedQuantity =
-                quantity * factor;
-
-            decimal convertedUnitPrice =
-                unitPrice / factor;
 
             return new UnitConversionResult
             {
                 Success = true,
 
                 Quantity =
-                    convertedQuantity,
+                    quantity * factor,
 
                 UnitPrice =
-                    convertedUnitPrice,
+                    unitPrice / factor,
 
                 SourceUnit =
-                    sourceUnit ?? string.Empty,
+                    sourceUnit ??
+                    string.Empty,
 
                 TargetUnit =
-                    targetUnit ?? string.Empty,
+                    targetUnitName,
 
                 ConversionFactor =
                     factor
             };
+        }
+
+
+        public string GetUnitName(
+            int unitId)
+        {
+            EnsureUnitsLoaded();
+
+            return _unitsById!
+                .TryGetValue(
+                    unitId,
+                    out var definition)
+                ? definition.UnitName
+                : string.Empty;
+        }
+
+
+        private void EnsureUnitsLoaded()
+        {
+            if (_unitsByName != null &&
+                _unitsById != null)
+            {
+                return;
+            }
+
+
+            var units =
+                _context.UnitMasters
+                    .AsNoTracking()
+                    .Select(x => new UnitDefinition
+                    {
+                        UnitId =
+                            x.UnitId,
+
+                        UnitName =
+                            x.UnitName,
+
+                        UnitCategoryId =
+                            x.UnitCategoryId,
+
+                        AllowConversion =
+                            x.UnitCategory
+                                .AllowConversion,
+
+                        ToBaseFactor =
+                            x.ToBaseFactor
+                    })
+                    .ToList();
+
+
+            _unitsById =
+                units.ToDictionary(
+                    x => x.UnitId
+                );
+
+
+            _unitsByName =
+                units.ToDictionary(
+                    x =>
+                        NormalizeUnit(
+                            x.UnitName
+                        ),
+                    StringComparer.OrdinalIgnoreCase
+                );
         }
     }
 }

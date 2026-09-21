@@ -43,7 +43,7 @@ builder.Services.AddScoped<FinalBidService>();
 builder.Services.AddScoped<MaterialMappingService>();
 builder.Services.AddScoped<FinalBidImportService>();
 builder.Services.AddScoped<FinalBidQueryService>();
-builder.Services.AddSingleton<UnitConversionService>();
+builder.Services.AddScoped<UnitConversionService>();
 builder.Services.AddScoped<EstimationSettingsService>();
 builder.Services.AddScoped<RangeEstimationService>();
 builder.Services.AddScoped<ProjectManagementService>();
@@ -54,6 +54,8 @@ builder.Services.AddScoped<BidRangeAnomalyAnalysisService>();
 builder.Services.AddScoped<MaterialCategoryService>();
 builder.Services.AddScoped<StandardMaterialService>();
 builder.Services.AddScoped<AuditLogService>();
+builder.Services.AddScoped<UnitCategoryService>();
+builder.Services.AddScoped<UnitMasterService>();
 
 
 builder.Services.AddDbContext<ApplicationDbContext>(options =>

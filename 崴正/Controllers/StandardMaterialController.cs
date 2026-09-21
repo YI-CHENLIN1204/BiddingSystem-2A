@@ -25,14 +25,20 @@ namespace 崴正.Controllers
         public IActionResult CreateMaterial(
             [FromForm] string materialName,
             [FromForm] int categoryId,
-            [FromForm] string baseUnit)
+            [FromForm] int unitId)
         {
+
+            string actionUser =
+                User?.Identity?.Name
+                ?? "System";
+
             var result =
                 _standardMaterialService
                     .CreateMaterial(
                         materialName,
                         categoryId,
-                        baseUnit
+                        unitId,
+                        actionUser
                     );
 
             return ToActionResult(result);
@@ -46,7 +52,7 @@ namespace 崴正.Controllers
         public IActionResult GetMaterials(
             [FromQuery] string? search,
             [FromQuery] int? categoryId,
-            [FromQuery] string? baseUnit,
+            [FromQuery] int? unitId,
             [FromQuery] bool? isActive)
         {
             var result =
@@ -54,7 +60,7 @@ namespace 崴正.Controllers
                     .GetMaterials(
                         search,
                         categoryId,
-                        baseUnit,
+                        unitId,
                         isActive
                     );
 
@@ -84,15 +90,20 @@ namespace 崴正.Controllers
             [FromForm] int materialId,
             [FromForm] string materialName,
             [FromForm] int categoryId,
-            [FromForm] string baseUnit)
+            [FromForm] int unitId)
         {
+            string actionUser =
+                User?.Identity?.Name
+                ?? "System";
+
             var result =
                 _standardMaterialService
                     .UpdateMaterial(
                         materialId,
                         materialName,
                         categoryId,
-                        baseUnit
+                        unitId,
+                        actionUser
                     );
 
             return ToActionResult(result);
@@ -107,11 +118,16 @@ namespace 崴正.Controllers
             [FromForm] int materialId,
             [FromForm] bool isActive)
         {
+            string actionUser =
+                User?.Identity?.Name
+                ?? "System";
+
             var result =
                 _standardMaterialService
                     .SetMaterialActive(
                         materialId,
-                        isActive
+                        isActive,
+                        actionUser
                     );
 
             return ToActionResult(result);
@@ -153,5 +169,7 @@ namespace 崴正.Controllers
                     })
             };
         }
+
+        
     }
 }

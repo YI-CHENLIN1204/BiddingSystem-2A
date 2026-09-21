@@ -7,12 +7,15 @@ namespace 崴正.Services
     public class CoreMaterialService
     {
         private readonly ApplicationDbContext _context;
+        private readonly AuditLogService _auditLogService;
         
 
         public CoreMaterialService(
-            ApplicationDbContext context)
+            ApplicationDbContext context,
+            AuditLogService auditLogService)
         {
             _context = context;
+            _auditLogService = auditLogService;
         }
 
 
@@ -87,8 +90,8 @@ namespace 崴正.Services
                         MaterialName =
                             m.MaterialName,
 
-                        BaseUnit =
-                            m.BaseUnit,
+                        UnitName =
+                            m.UnitMaster.UnitName,
 
                         Category =
                             m.MaterialCategory.CategoryName,
@@ -161,8 +164,8 @@ namespace 崴正.Services
                         MaterialName =
                             m.MaterialName,
 
-                        BaseUnit =
-                            m.BaseUnit,
+                        UnitName =
+                            m.UnitMaster.UnitName,
                         
                         Category =
                             m.MaterialCategory.CategoryName,
@@ -213,8 +216,8 @@ namespace 崴正.Services
                             MaterialName =
                                 g.First().MaterialName,
 
-                            BaseUnit =
-                                g.First().BaseUnit,
+                            UnitName =
+                                g.First().UnitName,
 
                             Category =
                                 g.First().Category,
@@ -386,7 +389,8 @@ namespace 崴正.Services
 
         public async Task<ServiceResult>
             UpdateCoreStatusAsync(
-                CoreMaterialUpdateRequest request)
+                CoreMaterialUpdateRequest request,
+                string? actionUser)
         {
             if (request.MaterialId <= 0)
             {
@@ -457,11 +461,76 @@ namespace 崴正.Services
             }
 
 
+            var oldStatuses =
+                rules
+                    .Select(x =>
+                        x.Is_Core_Estimation)
+                    .Distinct()
+                    .ToList();
+
+
             foreach (var rule in rules)
             {
                 rule.Is_Core_Estimation =
                     request.IsCoreEstimation;
             }
+
+
+            _auditLogService.AddLog(
+                module:
+                    "核心材料",
+
+                actionType:
+                    request.IsCoreEstimation
+                        ? "EnableCoreMaterial"
+                        : "DisableCoreMaterial",
+
+                entityType:
+                    "MaterialMaster",
+
+                entityId:
+                    request.MaterialId,
+
+                description:
+                    request.IsCoreEstimation
+                        ? $"啟用材料 ID {request.MaterialId} 的核心材料設定"
+                        : $"停用材料 ID {request.MaterialId} 的核心材料設定",
+
+                actionUser:
+                    actionUser ?? "System",
+
+                oldValue:
+                    new
+                    {
+                        ProjectType =
+                            projectType,
+
+                        StructureType =
+                            structureType,
+
+                        IsCoreEstimationValues =
+                            oldStatuses,
+
+                        RuleCount =
+                            rules.Count
+                    },
+
+                newValue:
+                    new
+                    {
+                        ProjectType =
+                            projectType,
+
+                        StructureType =
+                            structureType,
+
+                        IsCoreEstimation =
+                            request.IsCoreEstimation,
+
+                        RuleCount =
+                            rules.Count
+                    }
+            );
 
 
             await _context.SaveChangesAsync();

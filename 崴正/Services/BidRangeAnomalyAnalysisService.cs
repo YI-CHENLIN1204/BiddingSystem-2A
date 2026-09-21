@@ -1,3 +1,4 @@
+using 崴正.Data;
 using 崴正.Models;
 
 namespace 崴正.Services
@@ -13,11 +14,19 @@ namespace 崴正.Services
         private readonly BatchEstimationService
             _batchEstimationService;
 
+        private readonly ApplicationDbContext
+            _context;
+
+        private readonly AuditLogService
+            _auditLogService;
+
 
         public BidRangeAnomalyAnalysisService(
             MaterialMappingService materialMappingService,
             UnitConversionService unitConversionService,
-            BatchEstimationService batchEstimationService)
+            BatchEstimationService batchEstimationService,
+            ApplicationDbContext context,
+            AuditLogService auditLogService)
         {
             _materialMappingService =
                 materialMappingService;
@@ -27,6 +36,12 @@ namespace 崴正.Services
 
             _batchEstimationService =
                 batchEstimationService;
+
+            _context =
+                context;
+
+            _auditLogService =
+                auditLogService;
         }
 
 
@@ -36,25 +51,26 @@ namespace 崴正.Services
         // 同一 MaterialId 的多個 Excel 工項
         // 最後會加總成一筆。
         // ==========================================
-        private class MaterialActualAccumulator
-        {
-            public int MaterialId { get; set; }
+    private class MaterialActualAccumulator
+    {
+        public int MaterialId { get; set; }
 
-            public string MaterialName { get; set; }
-                = string.Empty;
+        public string MaterialName { get; set; }
+            = string.Empty;
 
-            public string BaseUnit { get; set; }
-                = string.Empty;
+        public string UnitName { get; set; }
+            = string.Empty;
 
-            public decimal ActualQuantity { get; set; }
+        public decimal ActualQuantity { get; set; }
 
-            public int SourceRowCount { get; set; }
-        }
+        public int SourceRowCount { get; set; }
+    }
 
 
         public async Task<ServiceResult>
             AnalyzeAsync(
-                BidRangeAnomalyAnalysisRequest request)
+                BidRangeAnomalyAnalysisRequest request,
+                string actionUser)
         {
             // ==========================================
             // 1. 基本驗證
@@ -308,7 +324,6 @@ namespace 崴正.Services
                     //
                     // Excel Unit
                     //      ↓
-                    // MaterialMaster.BaseUnit
                     //
                     // UnitPrice 在新版數量異常判定中
                     // 暫時不使用，但 Convert() 需要參數，
@@ -325,7 +340,7 @@ namespace 崴正.Services
 
                                 row.Unit,
 
-                                matched.BaseUnit
+                                matched.UnitId
                             );
 
 
@@ -406,8 +421,8 @@ namespace 崴正.Services
                                 MaterialName =
                                     matched.MaterialName,
 
-                                BaseUnit =
-                                    matched.BaseUnit
+                                UnitName =
+                                    matched.UnitName
                             };
 
                         actualByMaterial.Add(
@@ -443,6 +458,12 @@ namespace 崴正.Services
 
                 if (!actualByMaterial.Any())
                 {
+                    await WriteAuditLogAsync(
+                        request,
+                        response,
+                        actionUser
+                    );
+
                     return ServiceResult.Ok(
                         response
                     );
@@ -517,8 +538,8 @@ namespace 崴正.Services
                             MaterialName =
                                 range.MaterialName,
 
-                            BaseUnit =
-                                range.BaseUnit,
+                            UnitName =
+                                range.UnitName,
 
                             ActualQuantity =
                                 actual.ActualQuantity,
@@ -587,7 +608,7 @@ namespace 崴正.Services
 
                         item.StatusMessage =
                             $"實際用量低於 P15 合理下界 " +
-                            $"({range.LowerQuantity.Value:N2} {range.BaseUnit})";
+                            $"({range.LowerQuantity.Value:N2} {range.UnitName})";
 
 
                         response.LowCount++;
@@ -608,7 +629,7 @@ namespace 崴正.Services
 
                         item.StatusMessage =
                             $"實際用量高於 P85 合理上界 " +
-                            $"({range.UpperQuantity.Value:N2} {range.BaseUnit})";
+                            $"({range.UpperQuantity.Value:N2} {range.UnitName})";
 
 
                         response.HighCount++;
@@ -669,6 +690,13 @@ namespace 崴正.Services
 
 
 
+                await WriteAuditLogAsync(
+                    request,
+                    response,
+                    actionUser
+                );
+
+
                 return ServiceResult.Ok(
                     response
                 );
@@ -679,6 +707,94 @@ namespace 崴正.Services
                     $"標單分析失敗：{ex.Message}"
                 );
             }
+        }
+
+
+        private async Task WriteAuditLogAsync(
+            BidRangeAnomalyAnalysisRequest request,
+            BidRangeAnomalyAnalysisResponseDto response,
+            string actionUser)
+        {
+            _auditLogService.AddLog(
+                module:
+                    "異常偵測",
+
+                actionType:
+                    "AnalyzeBidRange",
+
+                entityType:
+                    "BidRangeAnomalyAnalysis",
+
+                entityId:
+                    null,
+
+                description:
+                    $"執行標單異常偵測「{request.FileName ?? "未命名檔案"}」",
+
+                actionUser:
+                    actionUser,
+
+                newValue:
+                    new
+                    {
+                        fileName =
+                            request.FileName,
+
+                        projectType =
+                            request.Target.ProjectType,
+
+                        structureType =
+                            request.Target.StructureType,
+
+                        city =
+                            request.Target.City,
+
+                        totalFloorArea =
+                            request.Target.TotalFloorArea,
+
+                        floorCount =
+                            request.Target.FloorCount,
+
+                        basementFloorCount =
+                            request.Target.BasementFloorCount,
+
+                        projectMonth =
+                            request.Target.ProjectMonth,
+
+                        parsedRowCount =
+                            response.ParsedRowCount,
+
+                        mappedRowCount =
+                            response.MappedRowCount,
+
+                        unmappedRowCount =
+                            response.UnmappedRowCount,
+
+                        invalidRowCount =
+                            response.InvalidRowCount,
+
+                        materialCount =
+                            response.MaterialCount,
+
+                        candidateProjectCount =
+                            response.CandidateProjectCount,
+
+                        lowCount =
+                            response.LowCount,
+
+                        highCount =
+                            response.HighCount,
+
+                        normalCount =
+                            response.NormalCount,
+
+                        insufficientSampleCount =
+                            response.InsufficientSampleCount
+                    }
+            );
+
+
+            await _context.SaveChangesAsync();
         }
 
 

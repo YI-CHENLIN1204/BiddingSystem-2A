@@ -9,17 +9,21 @@ namespace 崴正.Services
     {
         private readonly ApplicationDbContext _context;
         private readonly FinalBidService _finalBidService;
+        private readonly AuditLogService _auditLogService;
 
         public FinalBidImportService(
             ApplicationDbContext context,
-            FinalBidService finalBidService)
+            FinalBidService finalBidService,
+            AuditLogService auditLogService)
         {
             _context = context;
             _finalBidService = finalBidService;
+            _auditLogService = auditLogService;
         }
 
         public ServiceResult Import(
-            FinalBidImportRequest request)
+            FinalBidImportRequest request,
+            string actionUser)
         {
 
 
@@ -559,9 +563,60 @@ namespace 崴正.Services
                 );
 
 
+                _auditLogService.AddLog(
+                    module:
+                        "決標回寫",
+
+                    actionType:
+                        "ImportFinalBid",
+
+                    entityType:
+                        "ProjectMaster",
+
+                    entityId:
+                        project.ProjectId,
+
+                    description:
+                        $"回寫決標標單「{project.ProjectName}」",
+
+                    actionUser:
+                        actionUser,
+
+                    projectId:
+                        project.ProjectId,
+
+                    newValue:
+                        new
+                        {
+                            projectId =
+                                project.ProjectId,
+
+                            projectName =
+                                project.ProjectName,
+
+                            sourceFileName =
+                                project.SourceFileName,
+
+                            totalCount =
+                                rows.Count,
+
+                            autoMappedCount,
+
+                            unmappedCount =
+                                pendingCount,
+
+                            historyInsertCount,
+
+                            invalidQuantityCount,
+
+                            invalidUnitPriceCount,
+
+                            unitMismatchCount
+                        }
+                );
+
 
                 _context.SaveChanges();
-
 
 
                 transaction.Commit();

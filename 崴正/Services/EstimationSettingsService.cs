@@ -7,11 +7,14 @@ namespace 崴正.Services
     public class EstimationSettingsService 
     {
         private readonly ApplicationDbContext _context;
+        private readonly AuditLogService _auditLogService;
 
         public EstimationSettingsService(
-            ApplicationDbContext context)
+            ApplicationDbContext context,
+            AuditLogService auditLogService)
         {
             _context = context;
+            _auditLogService = auditLogService;
         }
 
         public async Task<EstimationSetting>
@@ -52,6 +55,30 @@ namespace 崴正.Services
                     "找不到估算系統參數設定"
                 );
             }
+
+
+            var oldValue = new
+            {
+                settings.TopK,
+                settings.MinimumSampleCount,
+                settings.LowerQuantile,
+                settings.MedianQuantile,
+                settings.UpperQuantile,
+                settings.SimilarityExponent,
+                settings.TimeHalfLifeYears,
+                settings.MinimumSimilarityScore,
+                settings.StructureWeight,
+                settings.AreaWeight,
+                settings.FloorWeight,
+                settings.YearWeight,
+                settings.CityWeight,
+                settings.AreaDifferenceCutoffRatio,
+                settings.GroundFloorPenaltyRatio,
+                settings.BasementFloorPenaltyRatio,
+                settings.YearDifferenceCutoffYears,
+                settings.UpdatedAt,
+                settings.UpdatedBy
+            };
 
 
             settings.TopK =
@@ -124,6 +151,55 @@ namespace 崴正.Services
                     ex.Message
                 );
             }
+
+
+            _auditLogService.AddLog(
+                module:
+                    "估算參數",
+
+                actionType:
+                    "UpdateEstimationSettings",
+
+                entityType:
+                    "EstimationSetting",
+
+                entityId:
+                    settings.SettingsId,
+
+                description:
+                    "更新估算與異常分析模型參數",
+
+                actionUser:
+                    settings.UpdatedBy
+                        ?? "SYSTEM",
+
+                oldValue:
+                    oldValue,
+
+                newValue:
+                    new
+                    {
+                        settings.TopK,
+                        settings.MinimumSampleCount,
+                        settings.LowerQuantile,
+                        settings.MedianQuantile,
+                        settings.UpperQuantile,
+                        settings.SimilarityExponent,
+                        settings.TimeHalfLifeYears,
+                        settings.MinimumSimilarityScore,
+                        settings.StructureWeight,
+                        settings.AreaWeight,
+                        settings.FloorWeight,
+                        settings.YearWeight,
+                        settings.CityWeight,
+                        settings.AreaDifferenceCutoffRatio,
+                        settings.GroundFloorPenaltyRatio,
+                        settings.BasementFloorPenaltyRatio,
+                        settings.YearDifferenceCutoffYears,
+                        settings.UpdatedAt,
+                        settings.UpdatedBy
+                    }
+            );
 
 
             await _context.SaveChangesAsync();

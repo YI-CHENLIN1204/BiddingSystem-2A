@@ -281,10 +281,16 @@ namespace 崴正.Controllers
             // ======================================
 
 
+            string actionUser =
+                User?.Identity?.Name
+                ?? "Estimator_Staff";
+
+
             var result =
                 await _analysisService
                     .AnalyzeAsync(
-                        request
+                        request,
+                        actionUser
                     );
 
 

@@ -8,13 +8,17 @@ namespace 崴正.Services
     {
         private readonly ApplicationDbContext _context;
         private readonly UnitConversionService _unitConversionService;
+        private readonly AuditLogService _auditLogService;
 
         public FinalBidService(
             ApplicationDbContext context,
-            UnitConversionService unitConversionService)
+            UnitConversionService unitConversionService,
+            AuditLogService auditLogService)
         {
             _context = context;
-            _unitConversionService = unitConversionService;
+            _unitConversionService =unitConversionService;
+
+            _auditLogService =auditLogService;
         }
 
         public ServiceResult UpdateBidItemData(
@@ -22,7 +26,8 @@ namespace 崴正.Services
             string? itemName,
             decimal? qty,
             decimal? unitPrice,
-            string? unit)
+            string? unit,
+            string actionUser)
         {
             itemName =
                 NormalizeText(
@@ -59,6 +64,27 @@ namespace 崴正.Services
                         "找不到此工項"
                     );
                 }
+
+                var oldValue = new
+                {
+                    itemName =
+                        bidItem.ItemName,
+
+                    qty =
+                        bidItem.Qty,
+
+                    unitPrice =
+                        bidItem.UnitPrice,
+
+                    unit =
+                        bidItem.Unit,
+
+                    dataIssueCode =
+                        bidItem.DataIssueCode,
+
+                    dataIssueMessage =
+                        bidItem.DataIssueMessage
+                };
 
 
                 // ==============================
@@ -111,6 +137,56 @@ namespace 崴正.Services
                         bidItem,
                         dataIssue.Code
                     );
+
+                _auditLogService.AddLog(
+                    module:
+                        "決標工項",
+
+                    actionType:
+                        "UpdateBidItem",
+
+                    entityType:
+                        "FinalBidItem",
+
+                    entityId:
+                        bidItem.FinalBidItemId,
+
+                    description:
+                        $"更新決標工項「{bidItem.ItemName}」",
+
+                    actionUser:
+                        actionUser,
+
+                    projectId:
+                        bidItem.ProjectMasterId,
+
+                    oldValue:
+                        oldValue,
+
+                    newValue:
+                        new
+                        {
+                            itemName =
+                                bidItem.ItemName,
+
+                            qty =
+                                bidItem.Qty,
+
+                            unitPrice =
+                                bidItem.UnitPrice,
+
+                            unit =
+                                bidItem.Unit,
+
+                            dataIssueCode =
+                                bidItem.DataIssueCode,
+
+                            dataIssueMessage =
+                                bidItem.DataIssueMessage,
+
+                            historyAction
+                        }
+                );
 
 
                 _context.SaveChanges();
@@ -165,7 +241,7 @@ namespace 崴正.Services
         }
 
         public ServiceResult IgnoreBidItem(
-            long finalBidItemId)
+            long finalBidItemId,string actionUser)
         {
             using var transaction =
                 _context.Database.BeginTransaction();
@@ -184,6 +260,12 @@ namespace 崴正.Services
                     );
                 }
 
+                var oldValue = new
+                {
+                    isIgnored =
+                        bidItem.IsIgnored
+                };
+
                 bidItem.IsIgnored = true;
                 bidItem.UpdatedAt = DateTime.UtcNow;
 
@@ -197,6 +279,43 @@ namespace 崴正.Services
                 {
                     history.IsDeleted = true;
                 }
+
+
+                _auditLogService.AddLog(
+                    module:
+                        "決標工項",
+
+                    actionType:
+                        "IgnoreBidItem",
+
+                    entityType:
+                        "FinalBidItem",
+
+                    entityId:
+                        bidItem.FinalBidItemId,
+
+                    description:
+                        $"忽略決標工項「{bidItem.ItemName}」",
+
+                    actionUser:
+                        actionUser,
+
+                    projectId:
+                        bidItem.ProjectMasterId,
+
+                    oldValue:
+                        oldValue,
+
+                    newValue:
+                        new
+                        {
+                            isIgnored =
+                                bidItem.IsIgnored,
+
+                            historyDeleted =
+                                history?.IsDeleted
+                        }
+                );
 
                 _context.SaveChanges();
                 transaction.Commit();
@@ -215,7 +334,7 @@ namespace 崴正.Services
         }
 
         public ServiceResult UnignoreBidItem(
-            long finalBidItemId)
+            long finalBidItemId,string actionUser)
         {
             using var transaction =
                 _context.Database.BeginTransaction();
@@ -236,6 +355,18 @@ namespace 崴正.Services
                         "找不到此工項"
                     );
                 }
+
+                var oldValue = new
+                {
+                    isIgnored =
+                        bidItem.IsIgnored,
+
+                    dataIssueCode =
+                        bidItem.DataIssueCode,
+
+                    dataIssueMessage =
+                        bidItem.DataIssueMessage
+                };
 
                 bidItem.IsIgnored = false;
                 bidItem.UpdatedAt = DateTime.UtcNow;
@@ -259,6 +390,47 @@ namespace 崴正.Services
                         bidItem,
                         dataIssue.Code
                     );
+
+                _auditLogService.AddLog(
+                    module:
+                        "決標工項",
+
+                    actionType:
+                        "UnignoreBidItem",
+
+                    entityType:
+                        "FinalBidItem",
+
+                    entityId:
+                        bidItem.FinalBidItemId,
+
+                    description:
+                        $"取消忽略決標工項「{bidItem.ItemName}」",
+
+                    actionUser:
+                        actionUser,
+
+                    projectId:
+                        bidItem.ProjectMasterId,
+
+                    oldValue:
+                        oldValue,
+
+                    newValue:
+                        new
+                        {
+                            isIgnored =
+                                bidItem.IsIgnored,
+
+                            dataIssueCode =
+                                bidItem.DataIssueCode,
+
+                            dataIssueMessage =
+                                bidItem.DataIssueMessage,
+
+                            historyAction
+                        }
+                );
 
                 _context.SaveChanges();
 
@@ -316,14 +488,14 @@ namespace 崴正.Services
             if (material != null &&
                 !_unitConversionService.CanConvert(
                     unit,
-                    material.BaseUnit))
+                    material.UnitId))
             {
                 code ??=
                     "UNIT_MISMATCH";
 
                 messages.Add(
                     $"標單單位「{unit ?? "空白"}」" +
-                    $"無法轉換為標準材料單位「{material.BaseUnit}」"
+                    $"無法轉換為標準材料單位「{_unitConversionService.GetUnitName(material.UnitId)}」"
                 );
             }
 
@@ -362,7 +534,7 @@ namespace 崴正.Services
                     bidItem.Qty!.Value,
                     bidItem.UnitPrice!.Value,
                     bidItem.Unit,
-                    material.BaseUnit
+                    material.UnitId
                 );
 
             if (!conversion.Success)
@@ -458,7 +630,7 @@ namespace 崴正.Services
                     bidItem.Qty!.Value,
                     bidItem.UnitPrice!.Value,
                     bidItem.Unit,
-                    material.BaseUnit
+                    material.UnitId
                 );
 
             if (!conversion.Success)

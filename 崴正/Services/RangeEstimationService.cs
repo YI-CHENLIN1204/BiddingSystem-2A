@@ -680,11 +680,11 @@ namespace 崴正.Services
                 MaterialName =
                     material.MaterialName,
 
-                BaseUnit =
-                    material.BaseUnit,
+                UnitName =
+                    material.UnitMaster.UnitName,
 
                 UsagePerAreaUnit =
-                    $"{material.BaseUnit}/m²",
+                    $"{material.UnitMaster.UnitName}/m²",
 
                 TopK =
                     settings.TopK,

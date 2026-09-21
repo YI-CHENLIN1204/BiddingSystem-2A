@@ -116,21 +116,19 @@ namespace 崴正.Services
                                 x.FinalBidItemId,
                                 x.Unit,
 
-                                MaterialUnit =
+                                MaterialUnitId =
                                     x.Material != null
-                                        ? x.Material.BaseUnit
+                                        ? (int?)x.Material.UnitId
                                         : null
                             })
                             .ToList();
 
                         var unitMismatchIds = candidates
                             .Where(x =>
-                                !string.IsNullOrWhiteSpace(
-                                    x.MaterialUnit
-                                ) &&
+                                x.MaterialUnitId.HasValue &&
                                 !_unitConversionService.CanConvert(
                                     x.Unit,
-                                    x.MaterialUnit
+                                    x.MaterialUnitId.Value
                                 )
                             )
                             .Select(x =>
@@ -287,9 +285,14 @@ namespace 崴正.Services
                             ? x.Material.MaterialCategory.CategoryName
                             : null,
 
+                    materialUnitId =
+                        x.Material != null
+                            ? (int?)x.Material.UnitId
+                            : null,
+
                     materialUnit =
                         x.Material != null
-                            ? x.Material.BaseUnit
+                            ? x.Material.UnitMaster.UnitName
                             : null,
 
                     mappingStatus =
@@ -337,6 +340,7 @@ namespace 崴正.Services
                     x.materialName,
                     x.materialCategory,
                     x.isIgnored,
+                    x.materialUnitId,
                     x.materialUnit,
                     x.mappingStatus,
                     x.mappingIssueCode,
@@ -356,12 +360,10 @@ namespace 崴正.Services
 
                     unitMismatch =
                         x.materialId.HasValue &&
-                        !string.IsNullOrWhiteSpace(
-                            x.materialUnit
-                        ) &&
+                        x.materialUnitId.HasValue &&
                         !_unitConversionService.CanConvert(
                             x.unit,
-                            x.materialUnit
+                            x.materialUnitId.Value
                         )
                 })
                 .ToList();
@@ -441,21 +443,19 @@ namespace 崴正.Services
                     {
                         x.Unit,
 
-                        MaterialUnit =
+                        MaterialUnitId =
                             x.Material != null
-                                ? x.Material.BaseUnit
+                                ? (int?)x.Material.UnitId
                                 : null
                     })
                     .ToList();
 
                     int unitMismatchCount =
                         unitCandidates.Count(x =>
-                            !string.IsNullOrWhiteSpace(
-                                x.MaterialUnit
-                            ) &&
+                            x.MaterialUnitId.HasValue &&
                             !_unitConversionService.CanConvert(
                                 x.Unit,
-                                x.MaterialUnit
+                                x.MaterialUnitId.Value
                             )
                         );
 
@@ -565,8 +565,11 @@ namespace 崴正.Services
                         category =
                             x.MaterialCategory.CategoryName,
 
-                        baseUnit =
-                            x.BaseUnit
+                        unitId =
+                            x.UnitId,
+
+                        unitName =
+                            x.UnitMaster.UnitName
                     })
                     .Take(200)
                     .ToList();
