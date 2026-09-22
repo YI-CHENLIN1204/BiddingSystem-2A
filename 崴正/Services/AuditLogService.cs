@@ -57,11 +57,10 @@ namespace 崴正.Services
                         SerializeValue(
                             newValue),
 
+                    // 目前系統不做登入 / 權限，
+                    // 因此不建立虛假的使用者身分。
                     ActionUser =
-                        string.IsNullOrWhiteSpace(
-                            actionUser)
-                            ? "System"
-                            : actionUser.Trim(),
+                        "System",
 
                     CreatedAt =
                         DateTime.UtcNow
@@ -84,7 +83,6 @@ namespace 崴正.Services
                 string? search,
                 string? module,
                 string? actionType,
-                string? actionUser,
                 DateTime? startDate,
                 DateTime? endDate,
                 int page,
@@ -103,11 +101,6 @@ namespace 崴正.Services
             actionType =
                 NormalizeOptional(
                     actionType
-                );
-
-            actionUser =
-                NormalizeOptional(
-                    actionUser
                 );
 
 
@@ -168,11 +161,6 @@ namespace 崴正.Services
                             x.Description,
                             pattern
                         )
-                        ||
-                        EF.Functions.ILike(
-                            x.ActionUser,
-                            pattern
-                        )
                     );
             }
 
@@ -195,17 +183,6 @@ namespace 崴正.Services
                     query.Where(x =>
                         x.ActionType ==
                         actionType
-                    );
-            }
-
-
-            if (!string.IsNullOrWhiteSpace(
-                    actionUser))
-            {
-                query =
-                    query.Where(x =>
-                        x.ActionUser ==
-                        actionUser
                     );
             }
 
@@ -332,19 +309,6 @@ namespace 崴正.Services
                     .ToListAsync();
 
 
-            var actionUsers =
-                await _context.AuditLogs
-                    .AsNoTracking()
-                    .Where(x =>
-                        x.ActionUser != "")
-                    .Select(x =>
-                        x.ActionUser)
-                    .Distinct()
-                    .OrderBy(x =>
-                        x)
-                    .ToListAsync();
-
-
             return new AuditLogPageViewModel
             {
                 Search =
@@ -355,9 +319,6 @@ namespace 崴正.Services
 
                 ActionType =
                     actionType,
-
-                ActionUser =
-                    actionUser,
 
                 StartDate =
                     startDate?.Date,
@@ -382,9 +343,6 @@ namespace 崴正.Services
 
                 ActionTypes =
                     actionTypes,
-
-                ActionUsers =
-                    actionUsers,
 
                 Items =
                     logs
@@ -426,9 +384,6 @@ namespace 崴正.Services
 
                                 NewValue =
                                     log.NewValue,
-
-                                ActionUser =
-                                    log.ActionUser,
 
                                 CreatedAt =
                                     log.CreatedAt

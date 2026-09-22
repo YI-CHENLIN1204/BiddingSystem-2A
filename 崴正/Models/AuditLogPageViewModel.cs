@@ -8,8 +8,6 @@ namespace 崴正.Models
 
         public string? ActionType { get; set; }
 
-        public string? ActionUser { get; set; }
-
         public DateTime? StartDate { get; set; }
 
         public DateTime? EndDate { get; set; }
@@ -26,9 +24,6 @@ namespace 崴正.Models
             = new();
 
         public List<string> ActionTypes { get; set; }
-            = new();
-
-        public List<string> ActionUsers { get; set; }
             = new();
 
         public List<AuditLogListItemViewModel>
@@ -62,9 +57,6 @@ namespace 崴正.Models
         public string? OldValue { get; set; }
 
         public string? NewValue { get; set; }
-
-        public string ActionUser { get; set; }
-            = string.Empty;
 
         public DateTime CreatedAt { get; set; }
     }
