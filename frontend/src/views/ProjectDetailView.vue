@@ -41,6 +41,7 @@ interface HistoryItem {
 
 interface FilterOptions { categories: string[]; units: string[] }
 interface PageResult<T> { totalCount: number; page: number; pageSize: number; items: T[] }
+interface MasterOption { categoryId?: number; categoryName?: string; unitId?: number; unitName?: string; isActive: boolean }
 
 const route = useRoute()
 const projectId = Number(route.params.id)
@@ -50,6 +51,7 @@ const bidItems = ref<BidItem[]>([])
 const historyItems = ref<HistoryItem[]>([])
 const materialOptions = ref<MaterialOption[]>([])
 const filterOptions = ref<FilterOptions>({ categories: [], units: [] })
+const masterOptions = ref<{ categories: MasterOption[]; units: MasterOption[] }>({ categories: [], units: [] })
 const selectedCategory = ref<Record<number, string>>({})
 const selectedMaterial = ref<Record<number, number | null>>({})
 const search = ref('')
@@ -67,6 +69,8 @@ const message = ref('')
 const openMenuId = ref<number | null>(null)
 const editingItem = ref<BidItem | null>(null)
 const editForm = ref({ itemName: '', unit: '', qty: null as number | null, unitPrice: null as number | null })
+const creatingFor = ref<BidItem | null>(null)
+const newMaterial = ref({ materialName: '', categoryId: null as number | null, unitId: null as number | null })
 let searchTimer: number | undefined
 
 const totalPages = computed(() => Math.max(1, Math.ceil(totalCount.value / pageSize.value)))
@@ -99,12 +103,14 @@ async function loadProject() {
 }
 
 async function loadFilterOptions() {
-  const [filters, materials] = await Promise.all([
+  const [filters, materials, masters] = await Promise.all([
     api<FilterOptions>(`/Estimation/mapping-filter-options${queryString({ projectId })}`),
     api<MaterialOption[]>('/Estimation/material-options'),
+    api<{ categories: MasterOption[]; units: MasterOption[] }>('/standard-material/filter-options'),
   ])
   filterOptions.value = filters
   materialOptions.value = materials
+  masterOptions.value = masters
 }
 
 async function loadBidItems() {
@@ -224,6 +230,43 @@ async function saveItem() {
   }
 }
 
+function openCreate(item: BidItem) {
+  openMenuId.value = null
+  creatingFor.value = item
+  const selected = masterOptions.value.categories.find(x => x.categoryName === selectedCategory.value[item.finalBidItemId])
+  newMaterial.value = { materialName: '', categoryId: selected?.categoryId ?? null, unitId: null }
+}
+
+async function createMaterial() {
+  const target = creatingFor.value
+  const materialName = newMaterial.value.materialName.trim()
+  if (!target || !materialName || !newMaterial.value.categoryId || !newMaterial.value.unitId) {
+    error.value = '請完整填寫材料名稱、分類與單位。'
+    return
+  }
+
+  busyId.value = target.finalBidItemId
+  error.value = ''
+  try {
+    const form = new FormData()
+    form.append('materialName', materialName)
+    form.append('categoryId', String(newMaterial.value.categoryId))
+    form.append('unitId', String(newMaterial.value.unitId))
+    const created = await apiForm<{ materialId?: number; categoryName?: string }>('/standard-material/create', form)
+    await loadFilterOptions()
+    selectedCategory.value[target.finalBidItemId] = created.categoryName
+      ?? masterOptions.value.categories.find(x => x.categoryId === newMaterial.value.categoryId)?.categoryName
+      ?? ''
+    selectedMaterial.value[target.finalBidItemId] = created.materialId ?? null
+    creatingFor.value = null
+    message.value = '標準材料已新增，請確認後執行人工對應。'
+  } catch (caught) {
+    error.value = caught instanceof Error ? caught.message : '新增標準材料失敗'
+  } finally {
+    busyId.value = null
+  }
+}
+
 function resetAndLoad() {
   page.value = 1
   loadBidItems()
@@ -336,7 +379,7 @@ onMounted(async () => {
           <div v-if="!item.isIgnored" class="row g-2">
             <div class="col-md-4"><label class="form-label small fw-bold">材料分類</label><select v-model="selectedCategory[item.finalBidItemId]" class="form-select" @change="changeCategory(item)"><option value="">請選擇材料分類</option><option v-for="entry in filterOptions.categories" :key="entry" :value="entry">{{ entry }}</option></select></div>
             <div class="col-md-5"><label class="form-label small fw-bold">標準材料</label><select v-model="selectedMaterial[item.finalBidItemId]" class="form-select" :disabled="!selectedCategory[item.finalBidItemId]"><option :value="null">請選擇標準材料</option><option v-for="material in materialsFor(item)" :key="material.materialId" :value="material.materialId">{{ material.materialName }} ({{ material.unitName }})</option></select></div>
-            <div class="col-md-3"><label class="form-label small fw-bold">&nbsp;</label><button class="btn btn-outline-primary w-100" type="button" :disabled="busyId === item.finalBidItemId" @click="updateMapping(item)">{{ item.mappingStatus === 'Pending' ? '人工對應' : '修改對應' }}</button></div>
+            <div class="col-md-3"><label class="form-label small fw-bold">&nbsp;</label><div class="d-flex gap-1"><button class="btn btn-outline-primary flex-grow-1" type="button" :disabled="busyId === item.finalBidItemId" @click="updateMapping(item)">{{ item.mappingStatus === 'Pending' ? '人工對應' : '修改對應' }}</button><button class="btn btn-outline-secondary" type="button" title="新增標準材料" @click="openCreate(item)">＋</button></div></div>
           </div>
         </div>
       </article>
@@ -368,6 +411,20 @@ onMounted(async () => {
             <div class="row g-3"><div class="col-md-6"><label class="form-label">數量</label><input v-model.number="editForm.qty" type="number" step="any" class="form-control" /></div><div class="col-md-6"><label class="form-label">單價</label><input v-model.number="editForm.unitPrice" type="number" step="any" class="form-control" /></div></div>
           </div>
           <div class="modal-footer"><button type="button" class="btn btn-secondary" @click="editingItem = null">取消</button><button type="submit" class="btn btn-primary" :disabled="busyId != null">儲存</button></div>
+        </form>
+      </div>
+    </div>
+
+    <div v-if="creatingFor" class="modal-backdrop-custom" @mousedown.self="creatingFor = null">
+      <div class="modal-dialog" role="dialog" aria-modal="true" aria-labelledby="create-material-title">
+        <form class="modal-content" @submit.prevent="createMaterial">
+          <div class="modal-header"><h5 id="create-material-title" class="modal-title">新增標準材料</h5><button type="button" class="btn-close" aria-label="關閉" @click="creatingFor = null"></button></div>
+          <div class="modal-body">
+            <div class="mb-3"><label class="form-label">材料名稱</label><input v-model="newMaterial.materialName" class="form-control" required /></div>
+            <div class="mb-3"><label class="form-label">材料分類</label><select v-model="newMaterial.categoryId" class="form-select" required><option :value="null">請選擇材料分類</option><option v-for="entry in masterOptions.categories.filter(x => x.isActive)" :key="entry.categoryId" :value="entry.categoryId">{{ entry.categoryName }}</option></select></div>
+            <div class="mb-3"><label class="form-label">標準單位</label><select v-model="newMaterial.unitId" class="form-select" required><option :value="null">請選擇標準單位</option><option v-for="entry in masterOptions.units.filter(x => x.isActive)" :key="entry.unitId" :value="entry.unitId">{{ entry.unitName }}</option></select></div>
+          </div>
+          <div class="modal-footer"><button type="button" class="btn btn-secondary" @click="creatingFor = null">取消</button><button type="submit" class="btn btn-primary" :disabled="busyId != null">新增</button></div>
         </form>
       </div>
     </div>

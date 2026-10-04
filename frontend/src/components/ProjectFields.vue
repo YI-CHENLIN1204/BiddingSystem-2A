@@ -5,6 +5,7 @@ defineProps<{
   modelValue: ProjectForm
   options: SystemOptions
   includeName?: boolean
+  nameLabel?: string
 }>()
 
 defineEmits<{ 'update:modelValue': [value: ProjectForm] }>()
@@ -13,7 +14,7 @@ defineEmits<{ 'update:modelValue': [value: ProjectForm] }>()
 <template>
   <div class="form-grid">
     <label v-if="includeName" class="field span-2">
-      <span>專案名稱</span>
+      <span>{{ nameLabel ?? '建案名稱' }}</span>
       <input
         :value="modelValue.projectName"
         required
@@ -54,15 +55,6 @@ defineEmits<{ 'update:modelValue': [value: ProjectForm] }>()
       </select>
     </label>
     <label class="field">
-      <span>建案年月</span>
-      <input
-        type="month"
-        :value="modelValue.projectMonth"
-        required
-        @input="$emit('update:modelValue', { ...modelValue, projectMonth: ($event.target as HTMLInputElement).value })"
-      />
-    </label>
-    <label class="field">
       <span>總樓地板面積</span>
       <input
         type="number"
@@ -91,6 +83,15 @@ defineEmits<{ 'update:modelValue': [value: ProjectForm] }>()
         :value="modelValue.basementFloorCount ?? ''"
         required
         @input="$emit('update:modelValue', { ...modelValue, basementFloorCount: Number(($event.target as HTMLInputElement).value) })"
+      />
+    </label>
+    <label class="field">
+      <span>建案年月</span>
+      <input
+        type="month"
+        :value="modelValue.projectMonth"
+        required
+        @input="$emit('update:modelValue', { ...modelValue, projectMonth: ($event.target as HTMLInputElement).value })"
       />
     </label>
   </div>

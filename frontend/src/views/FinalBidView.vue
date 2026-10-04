@@ -247,7 +247,7 @@ watch([status, issueCode, category, unit], resetAndLoad)
     <form class="admin-main-card" @submit.prevent="upload">
       <div class="form-section">
         <div class="form-section-header"><div class="form-section-title">1. 建案基本資料</div><div class="form-section-description">建立本次決標資料所屬的歷史建案條件。</div></div>
-        <div class="form-section-body"><ProjectFields v-model="project" :options="options" include-name /></div>
+        <div class="form-section-body"><ProjectFields v-model="project" :options="options" include-name name-label="工程專案名稱" /></div>
       </div>
       <div class="form-section">
         <div class="form-section-header"><div class="form-section-title">2. 上傳最終決標標單</div><div class="form-section-description">支援 .xlsx、.xls、.xlsm、.xlsb、.csv 格式；解析完成後寫入歷史資料並進行材料對應。</div></div>
