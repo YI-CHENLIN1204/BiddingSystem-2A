@@ -3,7 +3,6 @@ using System.Data;
 using 崴正.Services;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.AspNetCore.HttpOverrides;
-using Microsoft.AspNetCore.DataProtection;
 using Microsoft.AspNetCore.Http.Features;
 
 System.Text.Encoding.RegisterProvider(
@@ -17,22 +16,6 @@ builder.WebHost.ConfigureKestrel(options =>
     options.Limits.MaxRequestBodySize =
         100 * 1024 * 1024;
 });
-
-
-
-var dataProtectionKeysPath =
-    builder.Configuration["DataProtection:KeysPath"]
-    ?? Path.Combine(
-        builder.Environment.ContentRootPath,
-        ".data-protection-keys");
-
-Directory.CreateDirectory(dataProtectionKeysPath);
-
-builder.Services
-    .AddDataProtection()
-    .PersistKeysToFileSystem(
-        new DirectoryInfo(dataProtectionKeysPath))
-    .SetApplicationName("BiddingSystem2A");
 
 builder.Services.AddControllers();
 builder.Services.AddCors(options =>
