@@ -4,7 +4,24 @@
     <TargetFramework>net10.0</TargetFramework>
     <Nullable>enable</Nullable>
     <ImplicitUsings>enable</ImplicitUsings>
+    <EnableLegacyUi Condition="'$(EnableLegacyUi)' == ''">false</EnableLegacyUi>
+    <DefaultItemExcludes>$(DefaultItemExcludes);publish-server\**</DefaultItemExcludes>
   </PropertyGroup>
+
+  <PropertyGroup Condition="'$(EnableLegacyUi)' == 'true'">
+    <DefineConstants>$(DefineConstants);LEGACY_UI</DefineConstants>
+  </PropertyGroup>
+
+  <ItemGroup Condition="'$(EnableLegacyUi)' != 'true'">
+    <Compile Remove="Controllers\AuditLogController.cs" />
+    <Compile Remove="Controllers\HomeController.cs" />
+    <Compile Remove="Controllers\ProjectManagementController.cs" />
+    <Compile Remove="Controllers\QuantityRuleController.cs" />
+    <Content Remove="Views\**\*" />
+    <Content Remove="wwwroot\**\*" />
+    <None Remove="Views\**\*" />
+    <RazorGenerate Remove="Views\**\*.cshtml" />
+  </ItemGroup>
 
   <ItemGroup>
     <PackageReference Include="ClosedXML" Version="0.105.0" />

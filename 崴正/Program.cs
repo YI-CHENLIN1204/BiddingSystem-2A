@@ -12,8 +12,24 @@ System.Text.Encoding.RegisterProvider(
 );
 
 var builder = WebApplication.CreateBuilder(args);
-var legacyUiEnabled =
+var legacyUiRequested =
     builder.Configuration.GetValue<bool>("LegacyUi:Enabled");
+
+#if LEGACY_UI
+const bool legacyUiCompiled = true;
+#else
+const bool legacyUiCompiled = false;
+#endif
+
+if (legacyUiRequested && !legacyUiCompiled)
+{
+    throw new InvalidOperationException(
+        "Legacy UI was requested but is not part of this build. " +
+        "Rebuild with -p:EnableLegacyUi=true or set LegacyUi:Enabled=false.");
+}
+
+var legacyUiEnabled =
+    legacyUiCompiled && legacyUiRequested;
 
 builder.WebHost.ConfigureKestrel(options =>
 {
@@ -38,7 +54,11 @@ builder.Services
     .SetApplicationName("BiddingSystem2A");
 
 // Add services to the container.
+#if LEGACY_UI
 builder.Services.AddControllersWithViews();
+#else
+builder.Services.AddControllers();
+#endif
 builder.Services.AddCors(options =>
 {
     options.AddPolicy("Frontend", policy =>

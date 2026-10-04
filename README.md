@@ -1,6 +1,7 @@
 # BiddingSystem-2A
 
-專案目前採前後端分離架構，並暫時保留舊 Razor UI 作為遷移期回退路徑。
+專案目前採前後端分離架構。後端預設只建置 Web API；舊 Razor UI 原始碼
+暫時保留，作為遷移期的明確回退路徑。
 
 ## 目錄
 
@@ -43,6 +44,14 @@ proxy 開發時維持 `/api` 即可；前後端部署在不同網域時，改成
 材料與單位主檔，以及操作紀錄。確認新前端正式環境功能無誤後，才移除
 後端的 `Views/` 與 `wwwroot/` 相容層。
 
-後端預設 `LegacyUi:Enabled=false`，只映射屬性路由 API。若需要回退至舊
-Razor UI，可暫時設定環境變數 `LegacyUi__Enabled=true` 後重新啟動後端；
-舊頁面與 MVC Controller 在遷移驗收完成前仍保留。
+後端預設不編譯舊 MVC 頁面 Controller、`Views/` 或 `wwwroot/`，執行時也只
+映射屬性路由 API。若需要回退至舊 Razor UI，必須同時在建置與執行時明確
+啟用：
+
+```powershell
+dotnet run --project .\崴正\崴正.csproj -p:EnableLegacyUi=true -- --LegacyUi:Enabled=true
+```
+
+只設定 `LegacyUi:Enabled=true` 而未使用建置參數時，後端會立即停止並說明
+設定錯誤，避免產生半啟用狀態。舊頁面與 MVC Controller 在遷移驗收完成前
+仍保留於儲存庫。
