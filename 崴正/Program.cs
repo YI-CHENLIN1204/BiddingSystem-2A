@@ -12,6 +12,8 @@ System.Text.Encoding.RegisterProvider(
 );
 
 var builder = WebApplication.CreateBuilder(args);
+var legacyUiEnabled =
+    builder.Configuration.GetValue<bool>("LegacyUi:Enabled");
 
 builder.WebHost.ConfigureKestrel(options =>
 {
@@ -101,7 +103,28 @@ app.UseForwardedHeaders();
 
 if (!app.Environment.IsDevelopment())
 {
-    app.UseExceptionHandler("/Home/Error");
+    if (legacyUiEnabled)
+    {
+        app.UseExceptionHandler("/Home/Error");
+    }
+    else
+    {
+        app.UseExceptionHandler(errorApp =>
+        {
+            errorApp.Run(async context =>
+            {
+                context.Response.StatusCode =
+                    StatusCodes.Status500InternalServerError;
+
+                await context.Response.WriteAsJsonAsync(new
+                {
+                    message = "伺服器處理請求時發生錯誤。",
+                    traceId = context.TraceIdentifier
+                });
+            });
+        });
+    }
+
     app.UseHsts();
 }
 
@@ -179,12 +202,17 @@ app.Use(async (context, next) =>
 // 一定要在 UseAuthorization 前面
 app.UseAuthorization();
 
-app.MapStaticAssets();
+app.MapControllers();
 
-app.MapControllerRoute(
-    name: "default",
-    pattern: "{controller=Home}/{action=Index}/{id?}")
-    .WithStaticAssets();
+if (legacyUiEnabled)
+{
+    app.MapStaticAssets();
+
+    app.MapControllerRoute(
+        name: "legacy-ui",
+        pattern: "{controller=Home}/{action=Index}/{id?}")
+        .WithStaticAssets();
+}
 
 app.UseSwagger();
 app.UseSwaggerUI();

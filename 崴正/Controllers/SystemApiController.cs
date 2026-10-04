@@ -45,8 +45,8 @@ public class SystemApiController : ControllerBase
 
         return Ok(new
         {
-            projectTypes = new[] { "住宅", "集合住宅", "廠房", "辦公大樓", "其他" },
-            structureTypes = new[] { "RC", "SRC", "SC", "其他" },
+            projectTypes = new[] { "住宅", "廠房" },
+            structureTypes = new[] { "RC", "SC", "SRC" },
             cities = new[]
             {
                 "基隆市", "臺北市", "新北市", "桃園市", "新竹市", "新竹縣",

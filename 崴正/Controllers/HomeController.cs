@@ -35,7 +35,12 @@ public class HomeController : Controller
     [HttpGet]
     public IActionResult Error()
     {
-        return View();
+        return View(new ErrorViewModel
+        {
+            RequestId =
+                Activity.Current?.Id
+                ?? HttpContext.TraceIdentifier
+        });
     }
 
     public async Task<IActionResult> EstimationUI()
