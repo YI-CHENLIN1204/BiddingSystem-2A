@@ -37,6 +37,22 @@ builder.Services
 
 // Add services to the container.
 builder.Services.AddControllersWithViews();
+builder.Services.AddCors(options =>
+{
+    options.AddPolicy("Frontend", policy =>
+    {
+        var allowedOrigins =
+            builder.Configuration
+                .GetSection("Cors:AllowedOrigins")
+                .Get<string[]>()
+            ?? new[] { "http://localhost:5173" };
+
+        policy
+            .WithOrigins(allowedOrigins)
+            .AllowAnyHeader()
+            .AllowAnyMethod();
+    });
+});
 builder.Services.Configure<FormOptions>(options =>{options.MultipartBodyLengthLimit =100 * 1024 * 1024;});
 builder.Services.AddScoped<ProjectSimilarityService>();
 builder.Services.AddScoped<FinalBidService>();
@@ -92,6 +108,7 @@ if (!app.Environment.IsDevelopment())
 //app.UseHttpsRedirection();
 
 app.UseRouting();
+app.UseCors("Frontend");
 
 
 // ==========================================
