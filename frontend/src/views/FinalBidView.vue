@@ -1,10 +1,23 @@
 <script setup lang="ts">
-import { computed, ref } from 'vue'
-import DataTable from '../components/DataTable.vue'
+import { computed, ref, watch } from 'vue'
 import ProjectFields from '../components/ProjectFields.vue'
 import { useSystemOptions } from '../composables/useSystemOptions'
 import { api, apiForm, queryString } from '../services/api'
-import type { JsonRecord, ProjectForm } from '../types'
+import type { ProjectForm } from '../types'
+
+interface BidItem {
+  finalBidItemId: number; itemName: string; spec?: string | null; unit?: string | null
+  qty?: number | null; unitPrice?: number | null; materialId?: number | null
+  materialName?: string | null; materialCategory?: string | null; mappingStatus: string
+  isIgnored: boolean; invalidQuantity?: boolean; invalidUnitPrice?: boolean; unitMismatch?: boolean
+}
+interface MaterialOption { materialId: number; materialName: string; category?: string; unitName: string }
+interface MappingSummary {
+  totalCount: number; autoCount: number; manualCount: number; pendingCount: number
+  invalidQuantityCount: number; invalidUnitPriceCount: number; unitMismatchCount: number; ignoredCount: number
+}
+interface FilterOptions { categories: string[]; units: string[] }
+interface MasterOption { categoryId?: number; categoryName?: string; unitId?: number; unitName?: string; isActive: boolean }
 
 const { options, error: optionsError } = useSystemOptions()
 const project = ref<ProjectForm>({
@@ -12,99 +25,319 @@ const project = ref<ProjectForm>({
   floorCount: null, basementFloorCount: 0, projectMonth: '',
 })
 const file = ref<File | null>(null)
-const loading = ref(false)
+const fileInputKey = ref(0)
+const uploading = ref(false)
+const loadingMappings = ref(false)
+const busyId = ref<number | null>(null)
 const error = ref('')
 const message = ref('')
-const importResult = ref<JsonRecord | null>(null)
-const mappingResult = ref<JsonRecord | null>(null)
 const projectId = ref<number | null>(null)
+const summary = ref<MappingSummary | null>(null)
+const items = ref<BidItem[]>([])
+const materialOptions = ref<MaterialOption[]>([])
+const filters = ref<FilterOptions>({ categories: [], units: [] })
+const masterOptions = ref<{ categories: MasterOption[]; units: MasterOption[] }>({ categories: [], units: [] })
 const status = ref('Pending')
+const issueCode = ref('All')
+const category = ref('All')
+const unit = ref('All')
 const search = ref('')
+const page = ref(1)
+const pageSize = 50
+const totalCount = ref(0)
+const selectedCategory = ref<Record<number, string>>({})
+const selectedMaterial = ref<Record<number, number | null>>({})
+const editingItem = ref<BidItem | null>(null)
+const editForm = ref({ unit: '', qty: null as number | null, unitPrice: null as number | null })
+const creatingFor = ref<BidItem | null>(null)
+const newMaterial = ref({ materialName: '', categoryId: null as number | null, unitId: null as number | null })
+let searchTimer: number | undefined
 
-const mappingRows = computed<JsonRecord[]>(() => {
-  const value = mappingResult.value
-  if (!value) return []
-  const candidate = value.items ?? value.rows ?? value.data
-  return Array.isArray(candidate) ? candidate as JsonRecord[] : []
-})
+const totalPages = computed(() => Math.max(1, Math.ceil(totalCount.value / pageSize)))
 
 function selectFile(event: Event) {
   file.value = (event.target as HTMLInputElement).files?.[0] ?? null
 }
 
+function formatNumber(value?: number | null, digits = 2) {
+  return value == null ? '無' : new Intl.NumberFormat('zh-TW', { maximumFractionDigits: digits }).format(value)
+}
+
+function materialsFor(item: BidItem) {
+  const selected = selectedCategory.value[item.finalBidItemId]
+  return materialOptions.value.filter(x => (x.category ?? '') === selected)
+    .sort((a, b) => a.materialName.localeCompare(b.materialName, 'zh-Hant'))
+}
+
+function badge(item: BidItem) {
+  if (item.isIgnored) return { label: '已忽略', css: 'bg-secondary' }
+  if (item.mappingStatus === 'Auto') return { label: '自動對應', css: 'bg-success' }
+  if (item.mappingStatus === 'Manual') return { label: '手動對應', css: 'bg-primary' }
+  return { label: '未對應', css: 'bg-warning text-dark' }
+}
+
 async function upload() {
-  if (!file.value) return
-  loading.value = true
+  if (!file.value) { error.value = '請選擇 Excel 檔案。'; return }
+  uploading.value = true
   error.value = ''
   message.value = ''
   const form = new FormData()
   form.append('excelFile', file.value)
-  Object.entries(project.value).forEach(([key, value]) => {
-    if (value !== null) form.append(key, String(value))
-  })
-
+  Object.entries(project.value).forEach(([key, value]) => form.append(key, value == null ? '' : String(value)))
   try {
-    importResult.value = await apiForm<JsonRecord>('/Estimation/upload-final-bid', form)
-    const id = importResult.value.projectId ?? importResult.value.projectMasterId
-    projectId.value = typeof id === 'number' ? id : Number(id) || null
-    message.value = '決標資料匯入完成。'
-    await loadMappings()
+    const result = await apiForm<{ projectId: number; message?: string }>('/Estimation/upload-final-bid', form)
+    projectId.value = Number(result.projectId)
+    message.value = result.message ?? '決標資料已成功回寫。'
+    file.value = null
+    fileInputKey.value++
+    await loadMappingResources()
+    await Promise.all([loadSummary(), loadItems(1)])
   } catch (caught) {
-    error.value = caught instanceof Error ? caught.message : '匯入失敗'
+    error.value = caught instanceof Error ? caught.message : '決標資料回寫失敗'
   } finally {
-    loading.value = false
+    uploading.value = false
   }
 }
 
-async function loadMappings() {
+async function loadMappingResources() {
+  if (!projectId.value) return
+  const [materials, filterData, masters] = await Promise.all([
+    api<MaterialOption[]>('/Estimation/material-options'),
+    api<FilterOptions>(`/Estimation/mapping-filter-options${queryString({ projectId: projectId.value })}`),
+    api<{ categories: MasterOption[]; units: MasterOption[] }>('/standard-material/filter-options'),
+  ])
+  materialOptions.value = materials
+  filters.value = filterData
+  masterOptions.value = masters
+}
+
+async function loadSummary() {
+  if (!projectId.value) return
+  summary.value = await api<MappingSummary>(`/Estimation/mapping-summary${queryString({ projectId: projectId.value })}`)
+}
+
+async function loadItems(targetPage = page.value) {
+  if (!projectId.value) return
+  page.value = targetPage
+  loadingMappings.value = true
   error.value = ''
   try {
-    mappingResult.value = await api<JsonRecord>(`/Estimation/mapping-items${queryString({
-      projectId: projectId.value,
-      status: status.value,
-      search: search.value,
-      pageSize: 100,
+    const result = await api<{ totalCount: number; items: BidItem[] }>(`/Estimation/mapping-items${queryString({
+      projectId: projectId.value, status: status.value, issueCode: issueCode.value,
+      category: category.value, unit: unit.value, search: search.value.trim(), page: page.value, pageSize,
     })}`)
+    totalCount.value = result.totalCount
+    items.value = result.items
+    const categories: Record<number, string> = {}
+    const materials: Record<number, number | null> = {}
+    for (const item of result.items) {
+      categories[item.finalBidItemId] = item.materialCategory ?? ''
+      materials[item.finalBidItemId] = item.materialId ?? null
+    }
+    selectedCategory.value = categories
+    selectedMaterial.value = materials
   } catch (caught) {
-    error.value = caught instanceof Error ? caught.message : '無法載入材料對應資料'
+    error.value = caught instanceof Error ? caught.message : '讀取材料對應資料失敗'
+  } finally {
+    loadingMappings.value = false
   }
 }
+
+async function refreshMappings(text?: string) {
+  await Promise.all([loadSummary(), loadItems()])
+  if (text) message.value = text
+}
+
+function changeCategory(item: BidItem) {
+  if (!materialsFor(item).some(x => x.materialId === selectedMaterial.value[item.finalBidItemId])) {
+    selectedMaterial.value[item.finalBidItemId] = null
+  }
+}
+
+async function updateMapping(item: BidItem) {
+  const materialId = selectedMaterial.value[item.finalBidItemId]
+  if (!materialId) { error.value = '請先選擇標準材料。'; return }
+  busyId.value = item.finalBidItemId
+  try {
+    const form = new FormData()
+    form.append('finalBidItemId', String(item.finalBidItemId))
+    form.append('materialId', String(materialId))
+    await apiForm('/Estimation/update-material-mapping', form)
+    await refreshMappings('材料對應已更新。')
+  } catch (caught) {
+    error.value = caught instanceof Error ? caught.message : '材料對應失敗'
+  } finally { busyId.value = null }
+}
+
+function openEdit(item: BidItem) {
+  editingItem.value = item
+  editForm.value = { unit: item.unit ?? '', qty: item.qty ?? null, unitPrice: item.unitPrice ?? null }
+}
+
+async function saveItem() {
+  if (!editingItem.value) return
+  busyId.value = editingItem.value.finalBidItemId
+  try {
+    const form = new FormData()
+    form.append('finalBidItemId', String(editingItem.value.finalBidItemId))
+    form.append('itemName', editingItem.value.itemName)
+    form.append('unit', editForm.value.unit)
+    form.append('qty', editForm.value.qty == null ? '' : String(editForm.value.qty))
+    form.append('unitPrice', editForm.value.unitPrice == null ? '' : String(editForm.value.unitPrice))
+    await apiForm('/Estimation/update-bid-item-data', form)
+    editingItem.value = null
+    await refreshMappings('標單資料已修正。')
+  } catch (caught) {
+    error.value = caught instanceof Error ? caught.message : '工項更新失敗'
+  } finally { busyId.value = null }
+}
+
+async function ignore(item: BidItem) {
+  if (!window.confirm(`確定要忽略「${item.itemName}」嗎？\n\n忽略後，此工項不會進入模型歷史資料。`)) return
+  busyId.value = item.finalBidItemId
+  try {
+    const form = new FormData(); form.append('finalBidItemId', String(item.finalBidItemId))
+    await apiForm('/Estimation/ignore-bid-item', form)
+    await refreshMappings('工項已忽略。')
+  } catch (caught) {
+    error.value = caught instanceof Error ? caught.message : '忽略工項失敗'
+  } finally { busyId.value = null }
+}
+
+function openCreate(item: BidItem) {
+  creatingFor.value = item
+  const selected = masterOptions.value.categories.find(x => x.categoryName === selectedCategory.value[item.finalBidItemId])
+  newMaterial.value = { materialName: '', categoryId: selected?.categoryId ?? null, unitId: null }
+}
+
+async function createMaterial() {
+  if (!creatingFor.value || !newMaterial.value.categoryId || !newMaterial.value.unitId || !newMaterial.value.materialName.trim()) {
+    error.value = '請完整填寫材料名稱、分類與單位。'; return
+  }
+  busyId.value = creatingFor.value.finalBidItemId
+  try {
+    const form = new FormData()
+    form.append('materialName', newMaterial.value.materialName.trim())
+    form.append('categoryId', String(newMaterial.value.categoryId))
+    form.append('unitId', String(newMaterial.value.unitId))
+    const result = await apiForm<{ materialId?: number }>('/standard-material/create', form)
+    const target = creatingFor.value
+    creatingFor.value = null
+    await loadMappingResources()
+    if (result.materialId) selectedMaterial.value[target.finalBidItemId] = result.materialId
+    message.value = '標準材料已新增，請確認後執行人工對應。'
+  } catch (caught) {
+    error.value = caught instanceof Error ? caught.message : '新增標準材料失敗'
+  } finally { busyId.value = null }
+}
+
+function resetAndLoad() { page.value = 1; loadItems(1) }
+watch(search, () => { window.clearTimeout(searchTimer); searchTimer = window.setTimeout(resetAndLoad, 300) })
+watch([status, issueCode, category, unit], resetAndLoad)
 </script>
 
 <template>
-  <div class="page-stack">
-    <div class="page-intro">
-      <div><h2>決標資料匯入</h2><p>建立歷史專案並匯入決標 Excel，匯入後可立即檢查材料對應狀態。</p></div>
-    </div>
-    <div v-if="optionsError" class="notice error">{{ optionsError }}</div>
-    <div v-if="error" class="notice error">{{ error }}</div>
-    <div v-if="message" class="notice success">{{ message }}</div>
+  <div class="final-bid-page mt-4">
+    <h2 class="page-title">決標單歷史回寫</h2>
+    <div class="page-description">將已完成決標的標單匯入歷史資料庫，供後續工程用量估算與標單異常分析使用。</div>
 
-    <form class="card" @submit.prevent="upload">
-      <div class="card-header"><h3>專案與檔案</h3></div>
-      <div class="card-body">
-        <ProjectFields v-model="project" :options="options" include-name />
-        <div class="file-drop" style="margin-top: 18px">
-          <label class="field"><span>決標 Excel</span><input type="file" accept=".xlsx,.xls,.xlsm,.xlsb,.csv" required @change="selectFile" /></label>
+    <div v-if="optionsError || error" class="alert alert-danger">{{ optionsError || error }}</div>
+    <div v-if="message" class="alert alert-success alert-dismissible">{{ message }}<button type="button" class="btn-close" @click="message = ''"></button></div>
+
+    <form class="admin-main-card" @submit.prevent="upload">
+      <div class="form-section">
+        <div class="form-section-header"><div class="form-section-title">1. 建案基本資料</div><div class="form-section-description">建立本次決標資料所屬的歷史建案條件。</div></div>
+        <div class="form-section-body"><ProjectFields v-model="project" :options="options" include-name /></div>
+      </div>
+      <div class="form-section">
+        <div class="form-section-header"><div class="form-section-title">2. 上傳最終決標標單</div><div class="form-section-description">支援 .xlsx、.xls、.xlsm、.xlsb、.csv 格式；解析完成後寫入歷史資料並進行材料對應。</div></div>
+        <div class="form-section-body">
+          <input :key="fileInputKey" id="finalBidFile" class="file-input-native" type="file" accept=".xlsx,.xls,.xlsm,.xlsb,.csv" required @change="selectFile" />
+          <label for="finalBidFile" class="file-picker"><span class="file-picker-button">選擇 Excel 檔案</span><span class="file-picker-name" :class="{ 'has-file': file }">{{ file?.name ?? '尚未選擇檔案' }}</span></label>
+          <div class="upload-footer"><div class="upload-hint">請確認建案基本資料與標單檔案後再執行回寫。</div><button class="btn-wz-primary" type="submit" :disabled="uploading">{{ uploading ? '系統正在解析並同步，請稍候...' : '解析並回寫歷史資料' }}</button></div>
         </div>
-        <div class="actions"><button class="button primary" type="submit" :disabled="loading">{{ loading ? '匯入中…' : '匯入決標資料' }}</button></div>
       </div>
     </form>
 
-    <section v-if="importResult" class="card">
-      <div class="card-header"><h3>匯入結果</h3></div>
-      <div class="card-body"><pre class="json-result">{{ JSON.stringify(importResult, null, 2) }}</pre></div>
-    </section>
-
-    <section class="card">
-      <div class="card-header"><h3>材料對應檢查</h3></div>
-      <div class="card-body toolbar">
-        <label class="field"><span>專案 ID</span><input v-model.number="projectId" type="number" min="1" /></label>
-        <label class="field"><span>狀態</span><select v-model="status"><option>Pending</option><option>Mapped</option><option>Ignored</option><option>All</option></select></label>
-        <label class="field"><span>搜尋</span><input v-model="search" placeholder="項目或材料名稱" /></label>
-        <button class="button secondary" type="button" @click="loadMappings">查詢</button>
+    <div v-if="summary" class="mt-4">
+      <div class="alert alert-success shadow-sm result-summary">
+        <h4 class="alert-heading fw-bold mb-2">建案材料對應摘要</h4>
+        <div class="text-muted small mb-3">統計依目前資料庫狀態即時更新</div>
+        <div class="row g-2 mb-3">
+          <div v-for="entry in [
+            { label: '總工項', value: summary.totalCount, tone: 'dark' },
+            { label: '自動對應', value: summary.autoCount, tone: 'success' },
+            { label: '手動對應', value: summary.manualCount, tone: 'primary' },
+            { label: '待處理', value: summary.pendingCount, tone: 'warning' },
+          ]" :key="entry.label" class="col-md-3"><div class="stat-box" :class="`tone-${entry.tone}`"><div class="fw-bold">{{ entry.label }}</div><div class="stat-num">{{ entry.value }}</div></div></div>
+        </div>
+        <div class="row g-2">
+          <div v-for="entry in [
+            { label: '數量無效', value: summary.invalidQuantityCount },
+            { label: '單價無效', value: summary.invalidUnitPriceCount },
+            { label: '單位不符', value: summary.unitMismatchCount },
+            { label: '已忽略', value: summary.ignoredCount },
+          ]" :key="entry.label" class="col-md-3"><div class="stat-box"><div class="text-muted fw-bold">{{ entry.label }}</div><div class="stat-num">{{ entry.value }}</div></div></div>
+        </div>
       </div>
-      <DataTable :rows="mappingRows" empty-text="輸入專案 ID 後查詢材料對應狀態" />
-    </section>
+
+      <div class="mt-4">
+        <div class="d-flex justify-content-between align-items-center mb-3"><div><h4 class="mb-1">標單材料對應</h4><div class="text-muted small">可查詢尚未對應、自動對應及人工對應的所有工項</div></div><div class="text-muted small">共 {{ totalCount }} 筆</div></div>
+        <div class="card mb-3"><div class="card-body"><div class="mb-3"><input v-model="search" class="form-control" placeholder="搜尋工項名稱、規格、標準材料或建案名稱" /></div><div class="row g-2">
+          <div class="col-md-3"><label class="form-label small fw-bold">對應狀態</label><select v-model="status" class="form-select"><option value="Pending">未對應</option><option value="Auto">自動對應</option><option value="Manual">手動對應</option><option value="Ignored">已忽略</option><option value="All">全部</option></select></div>
+          <div class="col-md-3"><label class="form-label small fw-bold">待處理原因</label><select v-model="issueCode" class="form-select"><option value="All">全部</option><option value="INVALID_QUANTITY">數量無效</option><option value="INVALID_UNIT_PRICE">單價無效</option><option value="UNIT_MISMATCH">單位不符</option></select></div>
+          <div class="col-md-3"><label class="form-label small fw-bold">材料分類</label><select v-model="category" class="form-select"><option value="All">全部</option><option v-for="entry in filters.categories" :key="entry" :value="entry">{{ entry }}</option></select></div>
+          <div class="col-md-3"><label class="form-label small fw-bold">單位</label><select v-model="unit" class="form-select"><option value="All">全部</option><option v-for="entry in filters.units" :key="entry" :value="entry">{{ entry }}</option></select></div>
+        </div></div></div>
+
+        <div v-if="loadingMappings" class="card p-4 text-muted">載入材料對應資料中...</div>
+        <div v-else-if="!items.length" class="card p-4 text-muted">沒有符合條件的工項</div>
+        <article v-for="item in items" v-else :key="item.finalBidItemId" class="card mb-3 mapping-card"><div class="card-body">
+          <div class="d-flex justify-content-between align-items-start gap-3 mb-2"><h5 class="mb-1">{{ item.itemName }}</h5><div class="d-flex gap-1 flex-wrap justify-content-end"><span class="badge" :class="badge(item).css">{{ badge(item).label }}</span><span v-if="item.invalidQuantity" class="badge bg-danger">數量無效</span><span v-if="item.invalidUnitPrice" class="badge bg-danger">單價無效</span><span v-if="item.unitMismatch" class="badge bg-danger">單位不符</span></div></div>
+          <div class="text-muted small mb-3">單位：{{ item.unit || '無' }} ｜ 數量：{{ formatNumber(item.qty, 4) }} ｜ 單價：{{ formatNumber(item.unitPrice) }}</div>
+          <div class="d-flex justify-content-between align-items-center gap-2 mb-2 flex-wrap"><div class="small"><strong>目前標準材料：</strong><span v-if="item.materialName">{{ item.materialName }}</span><span v-else class="text-warning">尚未對應</span></div><div class="d-flex gap-2"><button class="btn btn-sm btn-outline-secondary" type="button" @click="openEdit(item)">修正標單資料</button><button v-if="!item.isIgnored" class="btn btn-sm btn-outline-danger" type="button" @click="ignore(item)">忽略</button></div></div>
+          <div v-if="!item.isIgnored" class="row g-2"><div class="col-md-4"><label class="form-label small fw-bold">材料分類</label><select v-model="selectedCategory[item.finalBidItemId]" class="form-select" @change="changeCategory(item)"><option value="">請選擇材料分類</option><option v-for="entry in filters.categories" :key="entry" :value="entry">{{ entry }}</option></select></div><div class="col-md-5"><label class="form-label small fw-bold">標準材料</label><select v-model="selectedMaterial[item.finalBidItemId]" class="form-select" :disabled="!selectedCategory[item.finalBidItemId]"><option :value="null">請選擇標準材料</option><option v-for="material in materialsFor(item)" :key="material.materialId" :value="material.materialId">{{ material.materialName }} ({{ material.unitName }})</option></select></div><div class="col-md-3"><label class="form-label small fw-bold">&nbsp;</label><div class="d-flex gap-1"><button class="btn btn-outline-primary flex-grow-1" type="button" :disabled="busyId === item.finalBidItemId" @click="updateMapping(item)">{{ item.mappingStatus === 'Pending' ? '人工對應' : '修改對應' }}</button><button class="btn btn-outline-secondary" type="button" title="新增標準材料" @click="openCreate(item)">＋</button></div></div></div>
+        </div></article>
+        <div class="d-flex justify-content-between align-items-center mt-3"><button class="btn btn-outline-secondary btn-sm" :disabled="page <= 1" @click="loadItems(page - 1)">上一頁</button><div class="text-muted small">第 {{ page }} / {{ totalPages }} 頁</div><button class="btn btn-outline-secondary btn-sm" :disabled="page >= totalPages" @click="loadItems(page + 1)">下一頁</button></div>
+      </div>
+    </div>
+
+    <div v-if="editingItem" class="modal-backdrop-custom" @mousedown.self="editingItem = null"><div class="modal-dialog"><form class="modal-content" @submit.prevent="saveItem"><div class="modal-header"><h5 class="modal-title">修正標單資料</h5><button type="button" class="btn-close" @click="editingItem = null"></button></div><div class="modal-body"><div class="mb-3"><label class="form-label fw-bold">工項</label><div class="form-control-plaintext">{{ editingItem.itemName }}</div></div><div class="mb-3"><label class="form-label fw-bold">數量</label><input v-model.number="editForm.qty" type="number" step="any" class="form-control" /></div><div class="mb-3"><label class="form-label fw-bold">單價</label><input v-model.number="editForm.unitPrice" type="number" step="any" class="form-control" /></div><div class="mb-3"><label class="form-label fw-bold">單位</label><select v-model="editForm.unit" class="form-select"><option value="">請選擇單位</option><option v-for="entry in filters.units" :key="entry" :value="entry">{{ entry }}</option></select></div></div><div class="modal-footer"><button type="button" class="btn btn-outline-secondary" @click="editingItem = null">取消</button><button type="submit" class="btn btn-primary">儲存修改</button></div></form></div></div>
+
+    <div v-if="creatingFor" class="modal-backdrop-custom" @mousedown.self="creatingFor = null"><div class="modal-dialog"><form class="modal-content" @submit.prevent="createMaterial"><div class="modal-header"><h5 class="modal-title">新增標準材料</h5><button type="button" class="btn-close" @click="creatingFor = null"></button></div><div class="modal-body"><div class="mb-3"><label class="form-label fw-bold">材料名稱</label><input v-model="newMaterial.materialName" class="form-control" required /></div><div class="mb-3"><label class="form-label fw-bold">材料分類</label><select v-model="newMaterial.categoryId" class="form-select" required><option :value="null">請選擇材料分類</option><option v-for="entry in masterOptions.categories.filter(x => x.isActive)" :key="entry.categoryId" :value="entry.categoryId">{{ entry.categoryName }}</option></select></div><div class="mb-3"><label class="form-label fw-bold">標準單位</label><select v-model="newMaterial.unitId" class="form-select" required><option :value="null">請選擇標準單位</option><option v-for="entry in masterOptions.units.filter(x => x.isActive)" :key="entry.unitId" :value="entry.unitId">{{ entry.unitName }}</option></select></div></div><div class="modal-footer"><button type="button" class="btn btn-outline-secondary" @click="creatingFor = null">取消</button><button type="submit" class="btn btn-primary">新增</button></div></form></div></div>
   </div>
 </template>
+
+<style scoped>
+.final-bid-page { max-width: 1280px; margin: 0 auto; padding-bottom: 40px; }
+.page-title { font-size: 1.55rem; font-weight: 800; margin-bottom: 4px; }
+.page-description { color: #6c757d; font-size: 14px; margin-bottom: 18px; }
+.admin-main-card { background: #fff; border: 1px solid #d8dbe0; border-radius: 8px; box-shadow: 0 2px 8px rgba(20,29,35,.06); overflow: hidden; }
+.form-section + .form-section { border-top: 1px solid #d8dbe0; }
+.form-section-header { padding: 12px 16px; background: #f8f9fa; border-bottom: 1px solid #e3e5e8; }
+.form-section-title { color: #321fdb; font-size: 14px; font-weight: 800; }
+.form-section-description { margin-top: 2px; color: #6c757d; font-size: 11px; }
+.form-section-body { padding: 16px; }
+.final-bid-page :deep(.form-grid) { grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 14px; }
+.final-bid-page :deep(.form-grid .span-2:first-child) { grid-column: 1 / -1; }
+.final-bid-page :deep(.field input), .final-bid-page :deep(.field select) { min-height: 38px; border-radius: 6px; }
+.file-input-native { position: absolute; width: 1px; height: 1px; padding: 0; margin: -1px; overflow: hidden; clip: rect(0,0,0,0); white-space: nowrap; border: 0; }
+.file-picker { width: 100%; min-height: 42px; border-radius: 6px; border: 1px solid #d8dbe0; background: #fff; display: flex; align-items: center; overflow: hidden; cursor: pointer; }
+.file-picker-button { align-self: stretch; padding: 0 18px; background: #ebe8ff; color: #321fdb; border-right: 1px solid #d8dbe0; display: inline-flex; align-items: center; font-weight: 800; font-size: 13px; }
+.file-picker-name { color: #6c757d; padding: 0 14px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; font-size: 13px; }
+.file-picker-name.has-file { color: #141d23; font-weight: 600; }
+.upload-footer { display: flex; justify-content: space-between; align-items: center; gap: 16px; margin-top: 14px; }
+.upload-hint { color: #6c757d; font-size: 12px; }
+.btn-wz-primary { background: #321fdb; color: #fff; border-radius: 6px; padding: 9px 20px; font-weight: 800; border: 0; }
+.result-summary { background: #fff; border-left: 5px solid #321fdb; }
+.result-summary .alert-heading { color: #321fdb; }
+.stat-box { height: 100%; background: #f8f9fa; border: 1px solid #dee2e6; border-radius: 6px; padding: 14px; text-align: center; }
+.stat-num { font-size: 2rem; font-weight: 900; }
+.tone-success { color: #198754; border-color: #198754; background: #f1faf5; }
+.tone-primary { color: #321fdb; border-color: #321fdb; background: #f3f1ff; }
+.tone-warning { color: #b58100; border-color: #ffc107; background: #fff9e6; }
+.modal-backdrop-custom { position: fixed; inset: 0; z-index: 1080; display: grid; place-items: center; padding: 1.5rem; background: rgba(0,0,0,.5); }
+.modal-backdrop-custom .modal-dialog { width: min(500px, 100%); margin: auto; }
+@media (max-width: 1000px) { .final-bid-page :deep(.form-grid) { grid-template-columns: repeat(2, minmax(0, 1fr)); } }
+@media (max-width: 650px) { .final-bid-page :deep(.form-grid) { grid-template-columns: 1fr; } .final-bid-page :deep(.form-grid .span-2:first-child) { grid-column: auto; } .file-picker, .upload-footer { flex-direction: column; align-items: stretch; } .file-picker-button { min-height: 42px; border-right: 0; border-bottom: 1px solid #d8dbe0; justify-content: center; } .file-picker-name { padding: 12px 16px; } }
+</style>

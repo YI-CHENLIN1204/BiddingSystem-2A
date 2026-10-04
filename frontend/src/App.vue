@@ -5,60 +5,62 @@ import { useRoute } from 'vue-router'
 const route = useRoute()
 const menuOpen = ref(false)
 const pageTitle = computed(() => String(route.meta.title ?? '系統'))
+const sectionTitle = computed(() => route.name === 'audit-logs' ? '系統' : '工程類')
 
 const navigation = [
-  { to: '/', label: '投標異常分析', icon: '◎' },
-  { to: '/estimation', label: '數量區間估算', icon: '∿' },
-  { to: '/final-bid', label: '決標資料匯入', icon: '⇧' },
-  { to: '/projects', label: '專案管理', icon: '▦' },
-  { to: '/settings', label: '參數管理', icon: '⚙' },
-  { to: '/audit-logs', label: '操作紀錄', icon: '≡' },
+  { to: '/', label: '異常偵測', section: '工程類' },
+  { to: '/settings', label: '參數管理', section: '工程類' },
+  { to: '/estimation', label: '估算大數據', section: '工程類' },
+  { to: '/final-bid', label: '決標回寫', section: '工程類' },
+  { to: '/projects', label: '建案管理', section: '工程類' },
+  { to: '/audit-logs', label: '操作紀錄', section: '系統' },
 ]
+
+const engineeringNavigation = navigation.filter((item) => item.section === '工程類')
+const systemNavigation = navigation.filter((item) => item.section === '系統')
 </script>
 
 <template>
   <div class="app-shell">
     <aside class="sidebar" :class="{ open: menuOpen }">
-      <div class="brand">
-        <span class="brand-mark">W</span>
-        <div>
-          <strong>崴正工程</strong>
-          <small>估價管理系統</small>
-        </div>
-      </div>
+      <div class="sidebar-brand"><span class="brand-title">崴正營造</span></div>
+      <div class="brand-user">估算系統</div>
 
-      <nav>
+      <nav class="sidebar-section">
+        <div class="sidebar-heading">工程類</div>
         <RouterLink
-          v-for="item in navigation"
+          v-for="item in engineeringNavigation"
           :key="item.to"
           :to="item.to"
-          class="nav-link"
+          class="sidebar-link"
           @click="menuOpen = false"
         >
-          <span class="nav-icon">{{ item.icon }}</span>
-          {{ item.label }}
+          <span class="sidebar-icon"></span>
+          <span>{{ item.label }}</span>
+        </RouterLink>
+
+        <div class="sidebar-heading">系統</div>
+        <RouterLink
+          v-for="item in systemNavigation"
+          :key="item.to"
+          :to="item.to"
+          class="sidebar-link"
+          @click="menuOpen = false"
+        >
+          <span class="sidebar-icon"></span>
+          <span>{{ item.label }}</span>
         </RouterLink>
       </nav>
-
-      <div class="sidebar-footer">
-        <span class="status-dot"></span>
-        前後端分離版本
-      </div>
     </aside>
 
-    <section class="workspace">
+    <section class="main-wrapper">
       <header class="topbar">
-        <button class="menu-button" type="button" @click="menuOpen = !menuOpen">☰</button>
-        <div>
-          <p class="eyebrow">BIDDING INTELLIGENCE</p>
-          <h1>{{ pageTitle }}</h1>
-        </div>
-        <div class="api-badge"><span></span> API</div>
+        <button class="topbar-menu" type="button" @click="menuOpen = !menuOpen">≡</button>
+        <div class="topbar-user"></div>
       </header>
 
-      <main class="page-container">
-        <RouterView />
-      </main>
+      <div class="breadcrumb-strip">{{ sectionTitle }} / {{ pageTitle }}</div>
+      <div class="main-shell"><main><RouterView /></main></div>
     </section>
   </div>
 </template>

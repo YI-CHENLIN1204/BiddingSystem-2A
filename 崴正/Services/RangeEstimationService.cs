@@ -143,6 +143,7 @@ namespace 崴正.Services
             var materials =
                 await _context.MaterialMasters
                     .AsNoTracking()
+                    .Include(x => x.UnitMaster)
                     .Where(x =>
                         requestedMaterialIds.Contains(
                             x.MaterialId
