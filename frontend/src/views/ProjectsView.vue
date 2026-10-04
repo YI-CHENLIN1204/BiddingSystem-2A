@@ -74,10 +74,7 @@ async function save() {
 }
 
 async function remove(project: ProjectSummary) {
-  const detail = project.historicalTransactionCount
-    ? `\n\n此建案的 ${project.historicalTransactionCount} 筆歷史資料也會一併停用。`
-    : ''
-  if (!window.confirm(`確定要刪除建案「${project.projectName}」？${detail}`)) return
+  if (!window.confirm(`確定要刪除建案「${project.projectName}」嗎？\n\n建案會被標記為已刪除，相關歷史交易也會停用。`)) return
   error.value = ''
   try {
     await api(`/projects/${project.projectId}`, { method: 'DELETE' })
@@ -100,7 +97,7 @@ onMounted(load)
   <div>
     <div class="mb-3">
       <h3 class="mb-1">建案管理</h3>
-      <div class="text-muted">查詢與管理已匯入的建案資料</div>
+      <div class="text-muted">查詢與管理歷史決標建案</div>
     </div>
 
     <div v-if="optionsError || error" class="alert alert-danger">{{ optionsError || error }}</div>
@@ -145,8 +142,8 @@ onMounted(load)
       <div class="row g-3 small">
         <div class="col-md-3"><div class="text-muted">總樓地板面積</div><strong>{{ project.totalFloorArea ?? '未設定' }} m²</strong></div>
         <div class="col-md-3"><div class="text-muted">地上 / 地下樓層</div><strong>{{ project.floorCount ?? '-' }} / {{ project.basementFloorCount ?? '-' }}</strong></div>
-        <div class="col-md-3"><div class="text-muted">決標筆數</div><strong>{{ project.finalBidItemCount ?? 0 }}</strong></div>
-        <div class="col-md-3"><div class="text-muted">有效歷史資料</div><strong>{{ project.historicalTransactionCount ?? 0 }}</strong></div>
+        <div class="col-md-3"><div class="text-muted">決標工項</div><strong>{{ project.finalBidItemCount ?? 0 }}</strong></div>
+        <div class="col-md-3"><div class="text-muted">有效歷史交易</div><strong>{{ project.historicalTransactionCount ?? 0 }}</strong></div>
       </div>
     </article>
 

@@ -271,7 +271,7 @@ onMounted(async () => {
         </div>
         <div class="text-end small text-muted">
           決標工項 {{ project.finalBidItemCount ?? 0 }} 筆<br />
-          歷史資料 {{ project.historicalTransactionCount ?? 0 }} 筆
+          有效歷史交易 {{ project.historicalTransactionCount ?? 0 }} 筆
         </div>
       </div>
     </div>
@@ -352,8 +352,8 @@ onMounted(async () => {
       <div v-if="!historyItems.length" class="p-4 text-muted">目前沒有可供模型使用的歷史資料</div>
       <div v-else class="table-responsive">
         <table class="table table-hover mb-0">
-          <thead><tr><th>材料分類</th><th>標準材料</th><th>單位</th><th class="text-end">交易筆數</th><th class="text-end">總數量</th><th class="text-end">平均單價</th></tr></thead>
-          <tbody><tr v-for="item in historyItems" :key="item.materialId"><td>{{ item.category }}</td><td>{{ item.materialName }}</td><td>{{ item.unitName }}</td><td class="text-end">{{ item.transactionCount }}</td><td class="text-end">{{ formatNumber(item.totalQuantity, 4) }}</td><td class="text-end">{{ formatNumber(item.averageUnitPrice) }}</td></tr></tbody>
+          <thead><tr><th>材料分類</th><th>標準材料</th><th>工項筆數</th><th>標準化總用量</th><th>平均單價</th></tr></thead>
+          <tbody><tr v-for="item in historyItems" :key="item.materialId"><td>{{ item.category }}</td><td>{{ item.materialName }}</td><td>{{ item.transactionCount }}</td><td>{{ formatNumber(item.totalQuantity, 4) }} {{ item.unitName }}</td><td>{{ formatNumber(item.averageUnitPrice) }} 元/{{ item.unitName }}</td></tr></tbody>
         </table>
       </div>
     </section>
