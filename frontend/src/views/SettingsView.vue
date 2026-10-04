@@ -5,6 +5,7 @@ import type { CoreMaterial } from '../types'
 
 type Tab = 'model' | 'core' | 'masters'
 type MasterTab = 'categories' | 'materials' | 'units'
+type CoreSortKey = 'materialName' | 'category' | 'projectType' | 'structureType' | 'validProjectCount' | 'historyRowCount' | 'coreEnabled'
 interface SettingsRecord { [key: string]: number | string | null }
 interface Category { categoryId: number; categoryName: string; isActive: boolean; sortOrder: number; materialCount: number }
 interface Material { materialId: number; materialName: string; categoryId: number; categoryName: string; unitId: number; unitName: string; isActive: boolean; dictionaryCount: number; historicalCount: number; finalBidItemCount: number }
@@ -27,6 +28,7 @@ const error = ref('')
 const message = ref('')
 
 const coreFilter = ref({ projectType: '', structureType: '', category: '', dataStatus: 'available', search: '' })
+const coreSort = ref<{ key: CoreSortKey; direction: 'asc' | 'desc' }>({ key: 'validProjectCount', direction: 'desc' })
 const materialFilter = ref({ search: '', categoryId: '', unitId: '', active: '' })
 const unitFilter = ref({ search: '', unitCategoryId: '', active: '' })
 const newCategory = ref('')
@@ -44,14 +46,23 @@ const structureTypes = computed(() => [...new Set(coreMaterials.value.map(x => x
 const coreCategories = computed(() => [...new Set(coreMaterials.value.map(x => x.category).filter(Boolean))].sort())
 const weightTotal = computed(() => ['structureWeight', 'areaWeight', 'floorWeight', 'cityWeight', 'yearWeight'].reduce((sum, key) => sum + Number(form.value[key] ?? 0), 0))
 
-const filteredCore = computed(() => coreMaterials.value.filter(item => {
-  if (coreFilter.value.projectType && item.projectType !== coreFilter.value.projectType) return false
-  if (coreFilter.value.structureType && item.structureType !== coreFilter.value.structureType) return false
-  if (coreFilter.value.category && item.category !== coreFilter.value.category) return false
-  if (coreFilter.value.dataStatus === 'available' && !(item.validProjectCount ?? 0)) return false
-  if (coreFilter.value.dataStatus === 'empty' && (item.validProjectCount ?? 0) > 0) return false
-  return !coreFilter.value.search || item.materialName.toLowerCase().includes(coreFilter.value.search.toLowerCase())
-}).sort((a, b) => (b.validProjectCount ?? 0) - (a.validProjectCount ?? 0)))
+const filteredCore = computed(() => {
+  const items = coreMaterials.value.filter(item => {
+    if (coreFilter.value.projectType && item.projectType !== coreFilter.value.projectType) return false
+    if (coreFilter.value.structureType && item.structureType !== coreFilter.value.structureType) return false
+    if (coreFilter.value.category && item.category !== coreFilter.value.category) return false
+    if (coreFilter.value.dataStatus === 'available' && !(item.validProjectCount ?? 0)) return false
+    if (coreFilter.value.dataStatus === 'empty' && (item.validProjectCount ?? 0) > 0) return false
+    return !coreFilter.value.search || item.materialName.toLowerCase().includes(coreFilter.value.search.toLowerCase())
+  })
+  const factor = coreSort.value.direction === 'asc' ? 1 : -1
+  return items.sort((a, b) => {
+    const key = coreSort.value.key
+    if (key === 'validProjectCount' || key === 'historyRowCount') return ((a[key] ?? 0) - (b[key] ?? 0)) * factor
+    if (key === 'coreEnabled') return (Number(a.isCoreEstimation) - Number(b.isCoreEstimation)) * factor
+    return String(a[key] ?? '').localeCompare(String(b[key] ?? ''), 'zh-Hant') * factor
+  })
+})
 
 const filteredMaterials = computed(() => materials.value.filter(item => {
   if (materialFilter.value.search && !`${item.materialName} ${item.categoryName}`.toLowerCase().includes(materialFilter.value.search.toLowerCase())) return false
@@ -76,6 +87,16 @@ function formData(values: Record<string, unknown>) {
 
 function formatDate(value: string) {
   return value ? new Date(value).toLocaleString('zh-TW') : '尚無紀錄'
+}
+
+function sortCore(key: CoreSortKey) {
+  coreSort.value = coreSort.value.key === key
+    ? { key, direction: coreSort.value.direction === 'asc' ? 'desc' : 'asc' }
+    : { key, direction: key === 'validProjectCount' ? 'desc' : 'asc' }
+}
+
+function coreSortIndicator(key: CoreSortKey) {
+  return coreSort.value.key === key ? (coreSort.value.direction === 'asc' ? '↑' : '↓') : '↕'
 }
 
 async function loadSettings() {
@@ -195,7 +216,7 @@ onMounted(async () => {
           <div class="mb-3"><div class="fw-bold">核心材料快速估算設定</div><div class="text-muted small">依建案類型與結構篩選材料；有效建案數才是模型可使用的樣本數。</div></div>
           <section class="section-card"><header><div class="section-title">材料篩選</div><div class="section-description">建議先選擇建案類型與結構，再依有效歷史建案數挑選核心材料。</div></header><div class="section-body"><div class="row g-3"><div class="col-lg-3 col-md-6"><label class="form-label fw-bold">建案類型</label><select v-model="coreFilter.projectType" class="form-select"><option value="">全部</option><option v-for="entry in projectTypes" :key="entry" :value="entry">{{ entry }}</option></select></div><div class="col-lg-3 col-md-6"><label class="form-label fw-bold">結構類型</label><select v-model="coreFilter.structureType" class="form-select"><option value="">全部</option><option v-for="entry in structureTypes" :key="entry" :value="entry">{{ entry }}</option></select></div><div class="col-lg-3 col-md-6"><label class="form-label fw-bold">材料類別</label><select v-model="coreFilter.category" class="form-select"><option value="">全部</option><option v-for="entry in coreCategories" :key="entry" :value="entry">{{ entry }}</option></select></div><div class="col-lg-3 col-md-6"><label class="form-label fw-bold">資料狀態</label><select v-model="coreFilter.dataStatus" class="form-select"><option value="available">有歷史資料</option><option value="">全部</option><option value="empty">尚無歷史資料</option></select></div><div class="col-12"><label class="form-label fw-bold">搜尋材料</label><input v-model="coreFilter.search" class="form-control" placeholder="輸入材料名稱，例如：SD420、混凝土、模板..." /></div></div></div></section>
           <div class="d-flex justify-content-between mb-2 text-muted small"><span>目前顯示 <strong>{{ filteredCore.length }}</strong> 筆材料情境</span><span>※ 同一材料在不同「建案類型 × 結構」會分開統計</span></div>
-          <div class="admin-table-wrapper"><table class="admin-table"><thead><tr><th>材料</th><th>類別</th><th>建案類型</th><th>結構</th><th>有效建案數</th><th>歷史筆數</th><th>核心估算</th></tr></thead><tbody><tr v-for="item in filteredCore" :key="`${item.materialId}-${item.projectType}-${item.structureType}`"><td>{{ item.materialName }} <span class="text-muted">({{ item.unitName }})</span></td><td>{{ item.category || '未分類' }}</td><td><span class="badge bg-secondary">{{ item.projectType || '通用' }}</span></td><td><span class="badge bg-secondary">{{ item.structureType || '通用' }}</span></td><td><strong>{{ item.validProjectCount ?? 0 }}</strong> 案</td><td>{{ item.historyRowCount ?? 0 }} 筆</td><td><div class="form-check form-switch d-inline-block"><input class="form-check-input" type="checkbox" :checked="item.isCoreEstimation" @change="toggleCore(item)" /></div></td></tr><tr v-if="!filteredCore.length"><td colspan="7" class="text-muted py-4">目前沒有符合條件的材料資料</td></tr></tbody></table></div>
+          <div class="admin-table-wrapper"><table class="admin-table"><thead><tr><th v-for="entry in ([['materialName','材料'],['category','類別'],['projectType','建案類型'],['structureType','結構'],['validProjectCount','有效建案數'],['historyRowCount','歷史筆數'],['coreEnabled','核心估算']] as const)" :key="entry[0]" class="sortable-th" @click="sortCore(entry[0])">{{ entry[1] }} <span class="sort-indicator">{{ coreSortIndicator(entry[0]) }}</span></th></tr></thead><tbody><tr v-for="item in filteredCore" :key="`${item.materialId}-${item.projectType}-${item.structureType}`"><td>{{ item.materialName }} <span class="text-muted">({{ item.unitName }})</span></td><td>{{ item.category || '未分類' }}</td><td><span class="badge bg-secondary">{{ item.projectType || '通用' }}</span></td><td><span class="badge bg-secondary">{{ item.structureType || '通用' }}</span></td><td><strong>{{ item.validProjectCount ?? 0 }}</strong> 案</td><td>{{ item.historyRowCount ?? 0 }} 筆</td><td><div class="form-check form-switch d-inline-block"><input class="form-check-input" type="checkbox" :checked="item.isCoreEstimation" @change="toggleCore(item)" /></div></td></tr><tr v-if="!filteredCore.length"><td colspan="7" class="text-muted py-4">目前沒有符合條件的材料資料</td></tr></tbody></table></div>
         </div>
 
         <div v-else>
@@ -233,6 +254,7 @@ onMounted(async () => {
 .weight-total { background: #ebe8ff; color: #321fdb; border: 1px solid #d9d4ff; border-radius: 6px; padding: 6px 10px; font-size: 12px; white-space: nowrap; }
 .save-bar { display: flex; justify-content: space-between; align-items: center; gap: 16px; padding: 12px 2px 0; }.btn-save { background: #321fdb; color: #fff; border: 0; border-radius: 6px; padding: 9px 22px; font-weight: 800; }
 .admin-table-wrapper { overflow-x: auto; }.admin-table { width: 100%; border-collapse: collapse; font-size: 14px; }.admin-table thead th { background: #5b5f63; color: #fff; padding: 11px 14px; text-align: center; white-space: nowrap; }.admin-table tbody td { padding: 11px 14px; border-bottom: 1px solid #e5e7eb; text-align: center; vertical-align: middle; }.admin-table tbody tr:hover { background: #f8f9fa; }
+.sortable-th { cursor: pointer; user-select: none; }.sort-indicator { display: inline-block; min-width: 1em; margin-left: 3px; }
 .modal-layer { position: fixed; inset: 0; z-index: 1080; display: grid; place-items: center; padding: 1.5rem; background: rgba(0,0,0,.5); }.modal-layer .modal-dialog { width: min(500px,100%); margin: auto; }
 @media (max-width: 1200px) { .parameter-grid.cols-5 { grid-template-columns: repeat(3,1fr); }.parameter-grid.cols-4 { grid-template-columns: repeat(2,1fr); } }
 @media (max-width: 760px) { .parameter-grid.cols-2,.parameter-grid.cols-3,.parameter-grid.cols-4,.parameter-grid.cols-5 { grid-template-columns: 1fr; }.model-section header.between,.save-bar { align-items: stretch; flex-direction: column; } }
