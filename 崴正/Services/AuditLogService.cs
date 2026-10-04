@@ -76,9 +76,9 @@ namespace 崴正.Services
 
 
         // ==========================================
-        // 操作紀錄管理頁
+        // 操作紀錄查詢
         // ==========================================
-        public async Task<AuditLogPageViewModel>
+        public async Task<AuditLogQueryResult>
             GetPageAsync(
                 string? search,
                 string? module,
@@ -309,7 +309,7 @@ namespace 崴正.Services
                     .ToListAsync();
 
 
-            return new AuditLogPageViewModel
+            return new AuditLogQueryResult
             {
                 Search =
                     search,
@@ -347,7 +347,7 @@ namespace 崴正.Services
                 Items =
                     logs
                         .Select(log =>
-                            new AuditLogListItemViewModel
+                            new AuditLogListItem
                             {
                                 LogId =
                                     log.LogId,

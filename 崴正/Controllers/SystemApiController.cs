@@ -1,7 +1,6 @@
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
 using 崴正.Data;
-using 崴正.Models;
 using 崴正.Services;
 
 namespace 崴正.Controllers;
@@ -31,7 +30,7 @@ public class SystemApiController : ControllerBase
             .AsNoTracking()
             .OrderBy(x => x.MaterialCategory.CategoryName)
             .ThenBy(x => x.MaterialName)
-            .Select(x => new EstimationMaterialOptionDto
+            .Select(x => new
             {
                 MaterialId = x.MaterialId,
                 MaterialName = x.MaterialName,

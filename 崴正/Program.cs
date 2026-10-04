@@ -2,7 +2,6 @@ using 崴正.Data;
 using System.Data;
 using 崴正.Services;
 using Microsoft.EntityFrameworkCore;
-using Microsoft.AspNetCore.Authentication.Cookies;
 using Microsoft.AspNetCore.HttpOverrides;
 using Microsoft.AspNetCore.DataProtection;
 using Microsoft.AspNetCore.Http.Features;
@@ -12,24 +11,6 @@ System.Text.Encoding.RegisterProvider(
 );
 
 var builder = WebApplication.CreateBuilder(args);
-var legacyUiRequested =
-    builder.Configuration.GetValue<bool>("LegacyUi:Enabled");
-
-#if LEGACY_UI
-const bool legacyUiCompiled = true;
-#else
-const bool legacyUiCompiled = false;
-#endif
-
-if (legacyUiRequested && !legacyUiCompiled)
-{
-    throw new InvalidOperationException(
-        "Legacy UI was requested but is not part of this build. " +
-        "Rebuild with -p:EnableLegacyUi=true or set LegacyUi:Enabled=false.");
-}
-
-var legacyUiEnabled =
-    legacyUiCompiled && legacyUiRequested;
 
 builder.WebHost.ConfigureKestrel(options =>
 {
@@ -53,12 +34,7 @@ builder.Services
         new DirectoryInfo(dataProtectionKeysPath))
     .SetApplicationName("BiddingSystem2A");
 
-// Add services to the container.
-#if LEGACY_UI
-builder.Services.AddControllersWithViews();
-#else
 builder.Services.AddControllers();
-#endif
 builder.Services.AddCors(options =>
 {
     options.AddPolicy("Frontend", policy =>
@@ -123,27 +99,20 @@ app.UseForwardedHeaders();
 
 if (!app.Environment.IsDevelopment())
 {
-    if (legacyUiEnabled)
+    app.UseExceptionHandler(errorApp =>
     {
-        app.UseExceptionHandler("/Home/Error");
-    }
-    else
-    {
-        app.UseExceptionHandler(errorApp =>
+        errorApp.Run(async context =>
         {
-            errorApp.Run(async context =>
-            {
-                context.Response.StatusCode =
-                    StatusCodes.Status500InternalServerError;
+            context.Response.StatusCode =
+                StatusCodes.Status500InternalServerError;
 
-                await context.Response.WriteAsJsonAsync(new
-                {
-                    message = "伺服器處理請求時發生錯誤。",
-                    traceId = context.TraceIdentifier
-                });
+            await context.Response.WriteAsJsonAsync(new
+            {
+                message = "伺服器處理請求時發生錯誤。",
+                traceId = context.TraceIdentifier
             });
         });
-    }
+    });
 
     app.UseHsts();
 }
@@ -164,10 +133,6 @@ app.Use(async (context, next) =>
         context.Request.Path;
 
     bool useSharedDbConnection =
-        path.StartsWithSegments("/QuantityRule") ||
-        path.StartsWithSegments("/ProjectManagement") ||
-        path.StartsWithSegments("/Home/EstimationUI") ||
-        path.StartsWithSegments("/Home/UploadFinalBid") ||
         path.StartsWithSegments("/api/range-estimation") ||
         path.StartsWithSegments("/api/bid-anomaly") ||
         path.StartsWithSegments("/api/Estimation");
@@ -223,16 +188,6 @@ app.Use(async (context, next) =>
 app.UseAuthorization();
 
 app.MapControllers();
-
-if (legacyUiEnabled)
-{
-    app.MapStaticAssets();
-
-    app.MapControllerRoute(
-        name: "legacy-ui",
-        pattern: "{controller=Home}/{action=Index}/{id?}")
-        .WithStaticAssets();
-}
 
 app.UseSwagger();
 app.UseSwaggerUI();

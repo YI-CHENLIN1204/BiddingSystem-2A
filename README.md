@@ -1,7 +1,7 @@
 # BiddingSystem-2A
 
-專案目前採前後端分離架構。後端預設只建置 Web API；舊 Razor UI 原始碼
-暫時保留，作為遷移期的明確回退路徑。
+專案採完全前後端分離架構：Vue 單頁應用程式只透過 HTTP API 與
+ASP.NET Core 後端溝通，後端不包含 Razor Views 或前端靜態資產。
 
 ## 目錄
 
@@ -38,20 +38,22 @@ npm run dev
 proxy 開發時維持 `/api` 即可；前後端部署在不同網域時，改成完整的
 後端網址，例如 `https://api.example.com/api`。
 
-## 遷移狀態
+## 架構邊界
 
-新前端已涵蓋投標異常分析、區間估價、決標匯入、專案管理、模型參數、
-材料與單位主檔，以及操作紀錄。確認新前端正式環境功能無誤後，才移除
-後端的 `Views/` 與 `wwwroot/` 相容層。
+- `frontend/` 可獨立安裝、建置與部署，不需要後端輸出任何頁面。
+- `崴正/` 只提供 `/api/*` 與 Swagger，不處理 SPA 路由或前端檔案。
+- 本機由 Vite proxy 轉送 `/api`；正式環境可使用反向代理或設定完整 API URL。
+- 資料庫存取只存在後端，前端不持有資料庫連線資訊。
 
-後端預設不編譯舊 MVC 頁面 Controller、`Views/` 或 `wwwroot/`，執行時也只
-映射屬性路由 API。若需要回退至舊 Razor UI，必須同時在建置與執行時明確
-啟用：
+舊 Razor UI 已從目前版本移除。如需查閱遷移前版本，可從 Git 提交
+`b8361f8` 復原；這不影響目前資料庫內容。
+
+## 建置
 
 ```powershell
-dotnet run --project .\崴正\崴正.csproj -p:EnableLegacyUi=true -- --LegacyUi:Enabled=true
-```
+dotnet publish .\崴正\崴正.csproj -c Release
 
-只設定 `LegacyUi:Enabled=true` 而未使用建置參數時，後端會立即停止並說明
-設定錯誤，避免產生半啟用狀態。舊頁面與 MVC Controller 在遷移驗收完成前
-仍保留於儲存庫。
+cd .\frontend
+npm ci
+npm run build
+```
