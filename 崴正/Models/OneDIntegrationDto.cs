@@ -76,6 +76,16 @@ namespace 崴正.Models
 
         public List<string> Units { get; set; }
             = new();
+
+        public decimal? TotalQuantity { get; set; }
+
+        public string? AggregateUnit { get; set; }
+
+        public string AggregationStatus { get; set; }
+            = string.Empty;
+
+        public string AggregationMessage { get; set; }
+            = string.Empty;
     }
 
     public class DetectionCategoryPreviewItem
