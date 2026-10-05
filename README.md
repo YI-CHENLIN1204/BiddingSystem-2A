@@ -60,3 +60,35 @@ cd .\frontend
 npm ci
 npm run build
 ```
+
+
+## 1D → 2A 介接（開發中）
+
+2A 目前新增一層唯讀的 1D 介接骨架，用來取得 1D 已完成並儲存的工程大項分類結果，
+再由 2A 建立異常偵測所需的材料細項分類。
+
+目前新增 API：
+
+- `GET /api/one-d/status`：檢查 1D API 是否已設定。
+- `GET /api/one-d/projects/{projectId}/result`：唯讀取得 1D 已儲存的分類結果。
+- `GET /api/one-d/projects/{projectId}/detection-preview`：取得 1D 結果後，預覽 2A 偵錯細項分類。
+- `POST /api/one-d/detection-preview`：不連線 1D，直接貼入測試資料進行細項分類預覽。
+
+目前偵錯細項規則先以 POC 方式支援：
+
+- 結構體工程 → 鋼筋
+- 結構體工程 → 混凝土
+- 結構體工程 → 模板
+- 鋼骨鋼構工程 → 鋼骨
+
+此階段不修改既有異常偵測主流程、不寫入新的分類資料表，
+等待需求確認「細項是否以鋼筋／混凝土／模板／鋼骨為分析粒度」後再正式串接。
+
+Docker 使用時可在根目錄 `.env` 設定：
+
+```env
+ONE_D_API_BASE_URL="http://<1D-host>:<1D-port>/"
+```
+
+若 1D 尚未部署或連線位址尚未確認，可先留空；
+2A 既有功能仍可正常啟動。
