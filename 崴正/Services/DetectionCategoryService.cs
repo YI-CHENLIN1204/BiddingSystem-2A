@@ -87,7 +87,40 @@ namespace 崴正.Services
                         x.DetectionCategory
                     })
                     .Select(g =>
-                        new DetectionCategoryGroupDto
+                    {
+                        var units =
+                            g.Select(x =>
+                                    x.Unit?.Trim()
+                                )
+                                .Where(x =>
+                                    !string.IsNullOrWhiteSpace(x)
+                                )
+                                .Select(x => x!)
+                                .Distinct(
+                                    StringComparer
+                                        .OrdinalIgnoreCase
+                                )
+                                .OrderBy(x => x)
+                                .ToList();
+
+                        var quantities =
+                            g.Where(x =>
+                                    x.Quantity.HasValue
+                                )
+                                .Select(x =>
+                                    x.Quantity!.Value
+                                )
+                                .ToList();
+
+                        bool hasMixedUnits =
+                            units.Count > 1;
+
+                        bool canAggregate =
+                            units.Count == 1 &&
+                            quantities.Count ==
+                            g.Count();
+
+                        return new DetectionCategoryGroupDto
                         {
                             MajorCategory =
                                 g.Key.MajorCategory,
@@ -99,21 +132,33 @@ namespace 崴正.Services
                                 g.Count(),
 
                             Units =
-                                g.Select(x =>
-                                        x.Unit?.Trim()
-                                    )
-                                    .Where(x =>
-                                        !string.IsNullOrWhiteSpace(x)
-                                    )
-                                    .Select(x => x!)
-                                    .Distinct(
-                                        StringComparer
-                                            .OrdinalIgnoreCase
-                                    )
-                                    .OrderBy(x => x)
-                                    .ToList()
-                        }
-                    )
+                                units,
+
+                            TotalQuantity =
+                                canAggregate
+                                    ? quantities.Sum()
+                                    : null,
+
+                            AggregateUnit =
+                                canAggregate
+                                    ? units[0]
+                                    : null,
+
+                            AggregationStatus =
+                                canAggregate
+                                    ? "Ready"
+                                    : hasMixedUnits
+                                        ? "NeedsUnitNormalization"
+                                        : "MissingQuantityOrUnit",
+
+                            AggregationMessage =
+                                canAggregate
+                                    ? "同一偵錯細項之工項單位一致，可直接彙整。"
+                                    : hasMixedUnits
+                                        ? "同一偵錯細項出現不同單位，需先依 2A 單位主檔完成標準化後再彙整。"
+                                        : "部分工項缺少數量或單位，暫不納入正式數量彙整。"
+                        };
+                    })
                     .OrderBy(x =>
                         x.MajorCategory)
                     .ThenBy(x =>
