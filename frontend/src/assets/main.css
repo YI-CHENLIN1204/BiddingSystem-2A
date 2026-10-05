@@ -74,6 +74,33 @@ a { color: inherit; }
   border-radius: 6px;
 }
 
+/* Vue renders modal overlays directly instead of using Bootstrap's .modal node.
+   Define the same variables here so Bootstrap's modal-content/header/body/footer
+   rules keep their complete background, spacing, borders and rounded corners. */
+.modal-layer,
+.modal-backdrop-custom {
+  --bs-modal-zindex: 1055;
+  --bs-modal-width: 500px;
+  --bs-modal-padding: 1rem;
+  --bs-modal-margin: .5rem;
+  --bs-modal-color: var(--bs-body-color);
+  --bs-modal-bg: var(--bs-body-bg);
+  --bs-modal-border-color: var(--bs-border-color-translucent);
+  --bs-modal-border-width: var(--bs-border-width);
+  --bs-modal-border-radius: var(--bs-border-radius-lg);
+  --bs-modal-inner-border-radius: calc(var(--bs-border-radius-lg) - var(--bs-border-width));
+  --bs-modal-header-padding-x: 1rem;
+  --bs-modal-header-padding-y: 1rem;
+  --bs-modal-header-padding: 1rem 1rem;
+  --bs-modal-header-border-color: var(--bs-border-color);
+  --bs-modal-header-border-width: var(--bs-border-width);
+  --bs-modal-title-line-height: 1.5;
+  --bs-modal-footer-gap: .5rem;
+  --bs-modal-footer-bg: transparent;
+  --bs-modal-footer-border-color: var(--bs-border-color);
+  --bs-modal-footer-border-width: var(--bs-border-width);
+}
+
 .app-shell { min-height: 100vh; background: var(--wz-bg); }
 .sidebar {
   position: fixed;
