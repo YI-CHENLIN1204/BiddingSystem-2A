@@ -1,0 +1,12 @@
+.git/
+.github/
+.vs/
+.agents/
+.codex/
+.data-protection-keys/
+.env
+.env.*
+**/bin/
+**/obj/
+frontend/
+*.zip
