@@ -14,6 +14,10 @@ interface DetectionGroup {
   detectionCategory: string
   itemCount: number
   units: string[]
+  totalQuantity?: number | null
+  aggregateUnit?: string | null
+  aggregationStatus: string
+  aggregationMessage: string
 }
 
 interface DetectionItem {
@@ -328,7 +332,13 @@ onMounted(loadStatus)
               <div class="group-category">{{ group.detectionCategory }}</div>
               <div class="group-meta">
                 {{ group.itemCount }} 筆工項
-                <span v-if="group.units.length">｜單位：{{ group.units.join('、') }}</span>
+                <span v-if="group.units.length">｜原單位：{{ group.units.join('、') }}</span>
+              </div>
+              <div class="group-total" v-if="group.aggregationStatus === 'Ready'">
+                彙整數量：{{ formatNumber(group.totalQuantity) }} {{ group.aggregateUnit }}
+              </div>
+              <div class="group-warning" v-else>
+                {{ group.aggregationMessage }}
               </div>
             </article>
           </div>
@@ -378,5 +388,7 @@ onMounted(loadStatus)
 .group-major { color: #6c757d; font-size: 12px; }
 .group-category { margin-top: 3px; font-size: 18px; font-weight: 800; color: #1f2d3d; }
 .group-meta { margin-top: 8px; color: #6c757d; font-size: 12px; }
+.group-total { margin-top: 10px; font-size: 13px; font-weight: 800; color: #0f5132; }
+.group-warning { margin-top: 10px; font-size: 12px; line-height: 1.5; color: #664d03; background: #fff3cd; border-radius: 5px; padding: 7px 9px; }
 @media (max-width: 900px) { .action-grid, .summary-grid { grid-template-columns: 1fr; } .status-row, .input-row { align-items: stretch; flex-direction: column; } }
 </style>
