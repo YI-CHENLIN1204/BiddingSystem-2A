@@ -6,6 +6,9 @@ defineProps<{
   options: SystemOptions
   includeName?: boolean
   nameLabel?: string
+  areaLabel?: string
+  floorLabel?: string
+  basementFloorLabel?: string
 }>()
 
 defineEmits<{ 'update:modelValue': [value: ProjectForm] }>()
@@ -55,7 +58,7 @@ defineEmits<{ 'update:modelValue': [value: ProjectForm] }>()
       </select>
     </label>
     <label class="field">
-      <span>總樓地板面積</span>
+      <span>{{ areaLabel ?? '總樓地板面積' }}</span>
       <input
         type="number"
         min="0"
@@ -66,7 +69,7 @@ defineEmits<{ 'update:modelValue': [value: ProjectForm] }>()
       />
     </label>
     <label class="field">
-      <span>地上樓層</span>
+      <span>{{ floorLabel ?? '地上樓層' }}</span>
       <input
         type="number"
         min="1"
@@ -76,7 +79,7 @@ defineEmits<{ 'update:modelValue': [value: ProjectForm] }>()
       />
     </label>
     <label class="field">
-      <span>地下樓層</span>
+      <span>{{ basementFloorLabel ?? '地下樓層' }}</span>
       <input
         type="number"
         min="0"

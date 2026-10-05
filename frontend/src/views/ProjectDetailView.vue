@@ -53,7 +53,7 @@ const materialOptions = ref<MaterialOption[]>([])
 const filterOptions = ref<FilterOptions>({ categories: [], units: [] })
 const masterOptions = ref<{ categories: MasterOption[]; units: MasterOption[] }>({ categories: [], units: [] })
 const selectedCategory = ref<Record<number, string>>({})
-const selectedMaterial = ref<Record<number, number | null>>({})
+const selectedMaterial = ref<Record<number, number | '__NEW__' | null>>({})
 const search = ref('')
 const status = ref('All')
 const category = ref('All')
@@ -128,7 +128,7 @@ async function loadBidItems() {
       return await loadBidItems()
     }
     const categories: Record<number, string> = {}
-    const materials: Record<number, number | null> = {}
+    const materials: Record<number, number | '__NEW__' | null> = {}
     for (const item of result.items) {
       categories[item.finalBidItemId] = item.materialCategory ?? ''
       materials[item.finalBidItemId] = item.materialId ?? null
@@ -161,6 +161,10 @@ function changeCategory(item: BidItem) {
 
 async function updateMapping(item: BidItem) {
   const materialId = selectedMaterial.value[item.finalBidItemId]
+  if (materialId === '__NEW__') {
+    openCreate(item)
+    return
+  }
   if (!materialId) {
     error.value = '請先選擇標準材料。'
     return
@@ -378,8 +382,8 @@ onMounted(async () => {
           <div class="mb-2 small"><strong>目前標準材料：</strong><span v-if="item.materialName">{{ item.materialName }}</span><span v-else class="text-warning">尚未對應</span></div>
           <div v-if="!item.isIgnored" class="row g-2">
             <div class="col-md-4"><label class="form-label small fw-bold">材料分類</label><select v-model="selectedCategory[item.finalBidItemId]" class="form-select" @change="changeCategory(item)"><option value="">請選擇材料分類</option><option v-for="entry in filterOptions.categories" :key="entry" :value="entry">{{ entry }}</option></select></div>
-            <div class="col-md-5"><label class="form-label small fw-bold">標準材料</label><select v-model="selectedMaterial[item.finalBidItemId]" class="form-select" :disabled="!selectedCategory[item.finalBidItemId]"><option :value="null">請選擇標準材料</option><option v-for="material in materialsFor(item)" :key="material.materialId" :value="material.materialId">{{ material.materialName }} ({{ material.unitName }})</option></select></div>
-            <div class="col-md-3"><label class="form-label small fw-bold">&nbsp;</label><div class="d-flex gap-1"><button class="btn btn-outline-primary flex-grow-1" type="button" :disabled="busyId === item.finalBidItemId" @click="updateMapping(item)">{{ item.mappingStatus === 'Pending' ? '人工對應' : '修改對應' }}</button><button class="btn btn-outline-secondary" type="button" title="新增標準材料" @click="openCreate(item)">＋</button></div></div>
+            <div class="col-md-5"><label class="form-label small fw-bold">標準材料</label><select v-model="selectedMaterial[item.finalBidItemId]" class="form-select" :disabled="!selectedCategory[item.finalBidItemId]"><option :value="null">請選擇標準材料</option><option v-for="material in materialsFor(item)" :key="material.materialId" :value="material.materialId">{{ material.materialName }} ({{ material.unitName }})</option><option value="__NEW__">＋ 新增標準材料</option></select></div>
+            <div class="col-md-3"><label class="form-label small fw-bold">&nbsp;</label><button class="btn btn-outline-primary w-100" type="button" :disabled="busyId === item.finalBidItemId" @click="updateMapping(item)">{{ selectedMaterial[item.finalBidItemId] === '__NEW__' ? '新增標準材料' : item.mappingStatus === 'Pending' ? '人工對應' : '修改對應' }}</button></div>
           </div>
         </div>
       </article>

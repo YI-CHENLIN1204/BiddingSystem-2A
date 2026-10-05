@@ -128,7 +128,7 @@ onMounted(load)
           </div>
         </div>
         <div class="dropdown project-actions">
-          <button class="btn btn-sm btn-light border dropdown-toggle" type="button" data-bs-toggle="dropdown" aria-expanded="false">操作</button>
+          <button class="btn btn-sm btn-light border" type="button" data-bs-toggle="dropdown" aria-expanded="false" aria-label="建案操作">⋯</button>
           <ul class="dropdown-menu dropdown-menu-end">
             <li><RouterLink class="dropdown-item" :to="`/projects/${project.projectId}`">查看建案</RouterLink></li>
             <li><button class="dropdown-item" type="button" @click="openEditor(project)">編輯基本資料</button></li>
@@ -155,7 +155,14 @@ onMounted(load)
             <button type="button" class="btn-close" aria-label="關閉" @click="showEditor = false"></button>
           </div>
           <div class="modal-body">
-            <ProjectFields v-model="form" :options="options" include-name />
+            <ProjectFields
+              v-model="form"
+              :options="options"
+              include-name
+              area-label="總樓地板面積（m²）"
+              floor-label="地上樓層數"
+              basement-floor-label="地下樓層數"
+            />
           </div>
           <div class="modal-footer">
             <button type="button" class="btn btn-secondary" @click="showEditor = false">取消</button>
@@ -176,4 +183,10 @@ onMounted(load)
 }
 .modal-backdrop-custom .modal-dialog { width: min(800px, 100%); margin: auto; }
 .modal-content { max-height: calc(100vh - 3rem); overflow-y: auto; }
+.modal-backdrop-custom :deep(.form-grid) { grid-template-columns: repeat(3, minmax(0, 1fr)); }
+.modal-backdrop-custom :deep(.form-grid .span-2:first-child) { grid-column: 1 / -1; }
+@media (max-width: 767px) {
+  .modal-backdrop-custom :deep(.form-grid) { grid-template-columns: 1fr; }
+  .modal-backdrop-custom :deep(.form-grid .span-2:first-child) { grid-column: auto; }
+}
 </style>
