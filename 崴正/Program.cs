@@ -55,12 +55,18 @@ builder.Services.AddScoped<UnitCategoryService>();
 builder.Services.AddScoped<UnitMasterService>();
 
 
+var connectionString =
+    builder.Configuration.GetConnectionString("DefaultConnection");
+
+if (string.IsNullOrWhiteSpace(connectionString))
+{
+    throw new InvalidOperationException(
+        "請使用 ConnectionStrings__DefaultConnection 環境變數設定資料庫連線字串。"
+    );
+}
+
 builder.Services.AddDbContext<ApplicationDbContext>(options =>
-    options.UseNpgsql(builder.Configuration.GetConnectionString("DefaultConnection")));
-
-// 加入 Cookie 登入驗證
-
-builder.Services.AddAuthorization();
+    options.UseNpgsql(connectionString));
 
 builder.Services.AddEndpointsApiExplorer();
 builder.Services.AddSwaggerGen();
@@ -166,9 +172,6 @@ app.Use(async (context, next) =>
     }
 });
 
-
-// 一定要在 UseAuthorization 前面
-app.UseAuthorization();
 
 app.MapControllers();
 

@@ -13,6 +13,7 @@ ASP.NET Core 後端溝通，後端不包含 Razor Views 或前端靜態資產。
 啟動後端：
 
 ```powershell
+$env:ConnectionStrings__DefaultConnection = "<PostgreSQL 連線字串>"
 dotnet run --project .\崴正\崴正.csproj
 ```
 
@@ -27,12 +28,14 @@ npm run dev
 前端固定使用 `http://127.0.0.1:5174`，後端固定使用
 `http://127.0.0.1:5261`。Vite 會把 `/api` 代理至後端；`strictPort`
 已啟用，因此連接埠被占用時會直接報錯，不會靜默切換到另一個連接埠。
+需要暫時改用其他後端連接埠時，可在啟動前設定
+`VITE_API_PROXY_TARGET`，例如 `http://127.0.0.1:5262`。
 
 ## 環境設定
 
 正式環境請設定前端的 `VITE_API_BASE_URL`，並在後端
-`Cors:AllowedOrigins` 中列出前端來源。資料庫連線字串可用環境變數
-`ConnectionStrings__DefaultConnection` 覆寫。
+`Cors:AllowedOrigins` 中列出前端來源。資料庫連線字串必須使用環境變數
+`ConnectionStrings__DefaultConnection` 提供，不應寫入 `appsettings.json` 或提交至 Git。
 
 可複製 `frontend/.env.example` 為 `frontend/.env.local`。本機透過 Vite
 proxy 開發時維持 `/api` 即可；前後端部署在不同網域時，改成完整的

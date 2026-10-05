@@ -22,7 +22,7 @@ const systemNavigation = navigation.filter((item) => item.section === '系統')
 
 <template>
   <div class="app-shell">
-    <aside class="sidebar" :class="{ open: menuOpen }">
+    <aside id="main-navigation" class="sidebar" :class="{ open: menuOpen }">
       <div class="sidebar-brand"><span class="brand-title">崴正營造</span></div>
       <div class="brand-user">估算系統</div>
 
@@ -55,8 +55,15 @@ const systemNavigation = navigation.filter((item) => item.section === '系統')
 
     <section class="main-wrapper">
       <header class="topbar">
-        <button class="topbar-menu" type="button" @click="menuOpen = !menuOpen">≡</button>
-        <div class="topbar-user"></div>
+        <button
+          class="topbar-menu"
+          type="button"
+          aria-label="開啟或關閉主選單"
+          aria-controls="main-navigation"
+          :aria-expanded="menuOpen"
+          @click="menuOpen = !menuOpen"
+        >≡</button>
+        <div class="topbar-user" aria-hidden="true"></div>
       </header>
 
       <div class="breadcrumb-strip">{{ sectionTitle }} / {{ pageTitle }}</div>

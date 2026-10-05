@@ -1,15 +1,19 @@
 <script setup lang="ts">
 import type { ProjectForm, SystemOptions } from '../types'
 
-defineProps<{
+withDefaults(defineProps<{
   modelValue: ProjectForm
   options: SystemOptions
   includeName?: boolean
   nameLabel?: string
+  namePlaceholder?: string
   areaLabel?: string
   floorLabel?: string
   basementFloorLabel?: string
-}>()
+  validate?: boolean
+}>(), {
+  validate: true,
+})
 
 defineEmits<{ 'update:modelValue': [value: ProjectForm] }>()
 </script>
@@ -20,7 +24,8 @@ defineEmits<{ 'update:modelValue': [value: ProjectForm] }>()
       <span>{{ nameLabel ?? '建案名稱' }}</span>
       <input
         :value="modelValue.projectName"
-        required
+        :placeholder="namePlaceholder"
+        :required="validate"
         @input="$emit('update:modelValue', { ...modelValue, projectName: ($event.target as HTMLInputElement).value })"
       />
     </label>
@@ -28,7 +33,7 @@ defineEmits<{ 'update:modelValue': [value: ProjectForm] }>()
       <span>建案類型</span>
       <select
         :value="modelValue.projectType"
-        required
+        :required="validate"
         @change="$emit('update:modelValue', { ...modelValue, projectType: ($event.target as HTMLSelectElement).value })"
       >
         <option value="">請選擇</option>
@@ -39,7 +44,7 @@ defineEmits<{ 'update:modelValue': [value: ProjectForm] }>()
       <span>結構類型</span>
       <select
         :value="modelValue.structureType"
-        required
+        :required="validate"
         @change="$emit('update:modelValue', { ...modelValue, structureType: ($event.target as HTMLSelectElement).value })"
       >
         <option value="">請選擇</option>
@@ -50,7 +55,7 @@ defineEmits<{ 'update:modelValue': [value: ProjectForm] }>()
       <span>縣市</span>
       <select
         :value="modelValue.city"
-        required
+        :required="validate"
         @change="$emit('update:modelValue', { ...modelValue, city: ($event.target as HTMLSelectElement).value })"
       >
         <option value="">請選擇</option>
@@ -61,10 +66,10 @@ defineEmits<{ 'update:modelValue': [value: ProjectForm] }>()
       <span>{{ areaLabel ?? '總樓地板面積' }}</span>
       <input
         type="number"
-        min="0"
+        :min="validate ? 0.01 : undefined"
         step="0.01"
         :value="modelValue.totalFloorArea ?? ''"
-        required
+        :required="validate"
         @input="$emit('update:modelValue', { ...modelValue, totalFloorArea: Number(($event.target as HTMLInputElement).value) || null })"
       />
     </label>
@@ -72,9 +77,9 @@ defineEmits<{ 'update:modelValue': [value: ProjectForm] }>()
       <span>{{ floorLabel ?? '地上樓層' }}</span>
       <input
         type="number"
-        min="1"
+        :min="validate ? 1 : undefined"
         :value="modelValue.floorCount ?? ''"
-        required
+        :required="validate"
         @input="$emit('update:modelValue', { ...modelValue, floorCount: Number(($event.target as HTMLInputElement).value) || null })"
       />
     </label>
@@ -82,10 +87,10 @@ defineEmits<{ 'update:modelValue': [value: ProjectForm] }>()
       <span>{{ basementFloorLabel ?? '地下樓層' }}</span>
       <input
         type="number"
-        min="0"
+        :min="validate ? 0 : undefined"
         :value="modelValue.basementFloorCount ?? ''"
-        required
-        @input="$emit('update:modelValue', { ...modelValue, basementFloorCount: Number(($event.target as HTMLInputElement).value) })"
+        :required="validate"
+        @input="$emit('update:modelValue', { ...modelValue, basementFloorCount: ($event.target as HTMLInputElement).value === '' ? null : Number(($event.target as HTMLInputElement).value) })"
       />
     </label>
     <label class="field">
@@ -93,7 +98,7 @@ defineEmits<{ 'update:modelValue': [value: ProjectForm] }>()
       <input
         type="month"
         :value="modelValue.projectMonth"
-        required
+        :required="validate"
         @input="$emit('update:modelValue', { ...modelValue, projectMonth: ($event.target as HTMLInputElement).value })"
       />
     </label>

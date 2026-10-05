@@ -34,6 +34,46 @@ button, input, select, textarea { font: inherit; }
 button { cursor: pointer; }
 a { color: inherit; }
 
+/* Keep Bootstrap controls on the same visual tokens used by the legacy Razor UI. */
+.btn-primary,
+.btn-wz-primary {
+  --bs-btn-bg: var(--wz-primary);
+  --bs-btn-border-color: var(--wz-primary);
+  --bs-btn-hover-bg: #2b1abc;
+  --bs-btn-hover-border-color: #2818af;
+  --bs-btn-active-bg: #2818af;
+  --bs-btn-active-border-color: #2517a3;
+  --bs-btn-disabled-bg: var(--wz-primary);
+  --bs-btn-disabled-border-color: var(--wz-primary);
+  background: var(--wz-primary) !important;
+  border-color: var(--wz-primary) !important;
+}
+.btn-outline-primary,
+.btn-wz-outline {
+  --bs-btn-color: var(--wz-primary);
+  --bs-btn-border-color: var(--wz-primary);
+  --bs-btn-hover-bg: var(--wz-primary);
+  --bs-btn-hover-border-color: var(--wz-primary);
+  --bs-btn-active-bg: var(--wz-primary);
+  --bs-btn-active-border-color: var(--wz-primary);
+  --bs-btn-disabled-color: var(--wz-primary);
+  color: var(--wz-primary) !important;
+  border-color: var(--wz-primary) !important;
+}
+.btn-outline-primary:hover,
+.btn-outline-primary:focus-visible,
+.btn-outline-primary:active,
+.btn-wz-outline:hover,
+.btn-wz-outline:focus-visible,
+.btn-wz-outline:active {
+  color: #fff !important;
+}
+.form-control,
+.form-select {
+  border-color: var(--wz-border);
+  border-radius: 6px;
+}
+
 .app-shell { min-height: 100vh; background: var(--wz-bg); }
 .sidebar {
   position: fixed;

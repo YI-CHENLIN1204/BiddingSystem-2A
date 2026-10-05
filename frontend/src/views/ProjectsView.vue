@@ -159,6 +159,7 @@ onMounted(load)
               v-model="form"
               :options="options"
               include-name
+              :validate="false"
               area-label="總樓地板面積（m²）"
               floor-label="地上樓層數"
               basement-floor-label="地下樓層數"
@@ -185,6 +186,21 @@ onMounted(load)
 .modal-content { max-height: calc(100vh - 3rem); overflow-y: auto; }
 .modal-backdrop-custom :deep(.form-grid) { grid-template-columns: repeat(3, minmax(0, 1fr)); }
 .modal-backdrop-custom :deep(.form-grid .span-2:first-child) { grid-column: 1 / -1; }
+.modal-backdrop-custom :deep(.field) { gap: 0; }
+.modal-backdrop-custom :deep(.field > span) {
+  margin-bottom: .5rem;
+  color: inherit;
+  font-size: 1rem;
+  font-weight: 400;
+}
+.modal-backdrop-custom :deep(.field input),
+.modal-backdrop-custom :deep(.field select) {
+  min-height: 38px;
+  padding: .375rem .75rem;
+  border-color: var(--wz-border);
+  border-radius: 6px;
+  line-height: 1.5;
+}
 @media (max-width: 767px) {
   .modal-backdrop-custom :deep(.form-grid) { grid-template-columns: 1fr; }
   .modal-backdrop-custom :deep(.form-grid .span-2:first-child) { grid-column: auto; }

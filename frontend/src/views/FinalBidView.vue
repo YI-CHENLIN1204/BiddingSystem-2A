@@ -251,7 +251,7 @@ watch([status, issueCode, category, unit], resetAndLoad)
     <form class="admin-main-card" @submit.prevent="upload">
       <div class="form-section">
         <div class="form-section-header"><div class="form-section-title">1. 建案基本資料</div><div class="form-section-description">建立本次決標資料所屬的歷史建案條件。</div></div>
-        <div class="form-section-body"><ProjectFields v-model="project" :options="options" include-name name-label="工程專案名稱" /></div>
+        <div class="form-section-body"><ProjectFields v-model="project" :options="options" include-name name-label="工程專案名稱" name-placeholder="例如：住宅新建工程" /></div>
       </div>
       <div class="form-section">
         <div class="form-section-header"><div class="form-section-title">2. 上傳最終決標標單</div><div class="form-section-description">支援 .xlsx、.xls、.xlsm、.xlsb、.csv 格式；解析完成後寫入歷史資料並進行材料對應。</div></div>
@@ -324,7 +324,11 @@ watch([status, issueCode, category, unit], resetAndLoad)
 .form-section-body { padding: 16px; }
 .final-bid-page :deep(.form-grid) { grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 14px; }
 .final-bid-page :deep(.form-grid .span-2:first-child) { grid-column: 1 / -1; }
-.final-bid-page :deep(.field input), .final-bid-page :deep(.field select) { min-height: 38px; border-radius: 6px; }
+.final-bid-page :deep(.field) { min-width: 0; gap: 0; }
+.final-bid-page :deep(.field > span) { display: block; margin-bottom: 6px; color: #3c4b64; font-size: 12px; font-weight: 800; }
+.final-bid-page :deep(.field input), .final-bid-page :deep(.field select) { width: 100%; height: 38px; min-height: 38px; padding: 6px 12px; color: #141d23; background-color: #fff; border: 1px solid #d8dbe0; border-radius: 6px; font-size: 14px; line-height: 1.5; transition: border-color .15s ease, box-shadow .15s ease; }
+.final-bid-page :deep(.field input::placeholder) { color: #9aa5b1; }
+.final-bid-page :deep(.field input:focus), .final-bid-page :deep(.field select:focus) { border-color: #321fdb; box-shadow: 0 0 0 .15rem rgba(50,31,219,.12); outline: 0; }
 .file-input-native { position: absolute; width: 1px; height: 1px; padding: 0; margin: -1px; overflow: hidden; clip: rect(0,0,0,0); white-space: nowrap; border: 0; }
 .file-picker { width: 100%; min-height: 42px; border-radius: 6px; border: 1px solid #d8dbe0; background: #fff; display: flex; align-items: center; overflow: hidden; cursor: pointer; }
 .file-picker-button { align-self: stretch; padding: 0 18px; background: #ebe8ff; color: #321fdb; border-right: 1px solid #d8dbe0; display: inline-flex; align-items: center; font-weight: 800; font-size: 13px; }
