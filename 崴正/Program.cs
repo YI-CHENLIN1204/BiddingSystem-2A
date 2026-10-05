@@ -53,6 +53,11 @@ builder.Services.AddScoped<StandardMaterialService>();
 builder.Services.AddScoped<AuditLogService>();
 builder.Services.AddScoped<UnitCategoryService>();
 builder.Services.AddScoped<UnitMasterService>();
+builder.Services.AddScoped<DetectionCategoryService>();
+builder.Services.AddHttpClient<OneDIntegrationService>(client =>
+{
+    client.Timeout = TimeSpan.FromSeconds(20);
+});
 
 
 var connectionString =
