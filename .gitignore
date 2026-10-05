@@ -364,3 +364,8 @@ FodyWeavers.xsd
 
 
 .data-protection-keys/
+
+# Local environment files may contain database credentials and other secrets.
+.env
+.env.*
+!.env.example
