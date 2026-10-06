@@ -88,6 +88,66 @@ namespace 崴正.Models
             = string.Empty;
     }
 
+    public class GranularityPreviewRequest
+    {
+        public string TargetChapter { get; set; }
+            = string.Empty;
+
+        public string TargetItemName { get; set; }
+            = string.Empty;
+
+        public int MinimumSampleCount { get; set; }
+            = 5;
+
+        public List<GranularityPreviewItem> Items { get; set; }
+            = new();
+    }
+
+    public class GranularityPreviewItem
+    {
+        public int ProjectId { get; set; }
+
+        public string Chapter { get; set; }
+            = string.Empty;
+
+        public string Name { get; set; }
+            = string.Empty;
+
+        public string? Unit { get; set; }
+
+        public decimal? Quantity { get; set; }
+    }
+
+    public class GranularityPreviewResponse
+    {
+        public string TargetItemName { get; set; }
+            = string.Empty;
+
+        public string MajorCategory { get; set; }
+            = string.Empty;
+
+        public string? DetectionCategory { get; set; }
+
+        public int MinimumSampleCount { get; set; }
+
+        public int SpecificationProjectCount { get; set; }
+
+        public int DetectionCategoryProjectCount { get; set; }
+
+        public bool SpecificationHasEnoughSamples { get; set; }
+
+        public bool DetectionCategoryHasEnoughSamples { get; set; }
+
+        public List<int> SpecificationProjectIds { get; set; }
+            = new();
+
+        public List<int> DetectionCategoryProjectIds { get; set; }
+            = new();
+
+        public string Recommendation { get; set; }
+            = string.Empty;
+    }
+
     public class DetectionCategoryPreviewItem
     {
         public string? SourceCategory { get; set; }
