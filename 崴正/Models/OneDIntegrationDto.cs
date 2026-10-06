@@ -1,5 +1,3 @@
-using System.Text.Json.Serialization;
-
 namespace 崴正.Models
 {
     public class OneDApiResponse<T>
@@ -53,14 +51,36 @@ namespace 崴正.Models
     {
         public int TotalItems { get; set; }
 
+        public int MajorCategoryCount { get; set; }
+
         public int ClassifiedItems { get; set; }
 
         public int PendingItems { get; set; }
+
+        public List<MajorCategorySummaryDto> MajorCategories { get; set; }
+            = new();
 
         public List<DetectionCategoryGroupDto> Groups { get; set; }
             = new();
 
         public List<DetectionCategoryPreviewItem> Items { get; set; }
+            = new();
+    }
+
+    public class MajorCategorySummaryDto
+    {
+        public string MajorCategory { get; set; }
+            = string.Empty;
+
+        public int ItemCount { get; set; }
+
+        public int ClassifiedItemCount { get; set; }
+
+        public int PendingItemCount { get; set; }
+
+        public bool HasDetectionRules { get; set; }
+
+        public List<string> DetectionCategories { get; set; }
             = new();
     }
 
@@ -85,66 +105,6 @@ namespace 崴正.Models
             = string.Empty;
 
         public string AggregationMessage { get; set; }
-            = string.Empty;
-    }
-
-    public class GranularityPreviewRequest
-    {
-        public string TargetChapter { get; set; }
-            = string.Empty;
-
-        public string TargetItemName { get; set; }
-            = string.Empty;
-
-        public int MinimumSampleCount { get; set; }
-            = 5;
-
-        public List<GranularityPreviewItem> Items { get; set; }
-            = new();
-    }
-
-    public class GranularityPreviewItem
-    {
-        public int ProjectId { get; set; }
-
-        public string Chapter { get; set; }
-            = string.Empty;
-
-        public string Name { get; set; }
-            = string.Empty;
-
-        public string? Unit { get; set; }
-
-        public decimal? Quantity { get; set; }
-    }
-
-    public class GranularityPreviewResponse
-    {
-        public string TargetItemName { get; set; }
-            = string.Empty;
-
-        public string MajorCategory { get; set; }
-            = string.Empty;
-
-        public string? DetectionCategory { get; set; }
-
-        public int MinimumSampleCount { get; set; }
-
-        public int SpecificationProjectCount { get; set; }
-
-        public int DetectionCategoryProjectCount { get; set; }
-
-        public bool SpecificationHasEnoughSamples { get; set; }
-
-        public bool DetectionCategoryHasEnoughSamples { get; set; }
-
-        public List<int> SpecificationProjectIds { get; set; }
-            = new();
-
-        public List<int> DetectionCategoryProjectIds { get; set; }
-            = new();
-
-        public string Recommendation { get; set; }
             = string.Empty;
     }
 
