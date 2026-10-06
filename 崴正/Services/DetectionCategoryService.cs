@@ -190,6 +190,190 @@ namespace 崴正.Services
             };
         }
 
+        public ServiceResult
+            CompareGranularity(
+                GranularityPreviewRequest request)
+        {
+            if (
+                request == null ||
+                request.Items == null ||
+                request.Items.Count == 0
+            )
+            {
+                return ServiceResult.Validation(
+                    "請至少提供一筆歷史工項"
+                );
+            }
+
+            if (
+                string.IsNullOrWhiteSpace(
+                    request.TargetChapter
+                ) ||
+                string.IsNullOrWhiteSpace(
+                    request.TargetItemName
+                )
+            )
+            {
+                return ServiceResult.Validation(
+                    "請提供目標工程大項與原始工項名稱"
+                );
+            }
+
+            int minimumSampleCount =
+                Math.Max(
+                    1,
+                    request.MinimumSampleCount
+                );
+
+            var target =
+                Classify(
+                    new OneDSavedResultItem
+                    {
+                        Chapter =
+                            request.TargetChapter,
+
+                        Name =
+                            request.TargetItemName
+                    }
+                );
+
+            if (
+                target.ClassificationStatus !=
+                    "Classified" ||
+                string.IsNullOrWhiteSpace(
+                    target.DetectionCategory
+                )
+            )
+            {
+                return ServiceResult.Validation(
+                    "目標工項目前無法歸入可比較的偵錯細項"
+                );
+            }
+
+            string normalizedTargetName =
+                Normalize(
+                    request.TargetItemName
+                );
+
+            var specificationProjectIds =
+                request.Items
+                    .Where(x =>
+                        Normalize(x.Name) ==
+                        normalizedTargetName
+                    )
+                    .Select(x =>
+                        x.ProjectId
+                    )
+                    .Where(x =>
+                        x > 0
+                    )
+                    .Distinct()
+                    .OrderBy(x =>
+                        x
+                    )
+                    .ToList();
+
+            var detectionCategoryProjectIds =
+                request.Items
+                    .Where(x =>
+                    {
+                        var classified =
+                            Classify(
+                                new OneDSavedResultItem
+                                {
+                                    Chapter =
+                                        x.Chapter,
+
+                                    Name =
+                                        x.Name,
+
+                                    Unit =
+                                        x.Unit,
+
+                                    Quantity =
+                                        x.Quantity
+                                }
+                            );
+
+                        return
+                            classified
+                                .ClassificationStatus ==
+                                "Classified" &&
+                            classified
+                                .MajorCategory ==
+                                target.MajorCategory &&
+                            classified
+                                .DetectionCategory ==
+                                target.DetectionCategory;
+                    })
+                    .Select(x =>
+                        x.ProjectId
+                    )
+                    .Where(x =>
+                        x > 0
+                    )
+                    .Distinct()
+                    .OrderBy(x =>
+                        x
+                    )
+                    .ToList();
+
+            bool specificationHasEnoughSamples =
+                specificationProjectIds.Count >=
+                minimumSampleCount;
+
+            bool detectionCategoryHasEnoughSamples =
+                detectionCategoryProjectIds.Count >=
+                minimumSampleCount;
+
+            string recommendation =
+                !specificationHasEnoughSamples &&
+                detectionCategoryHasEnoughSamples
+                    ? $"規格層級僅有 {specificationProjectIds.Count} 個有效建案，低於最低樣本數 {minimumSampleCount}；改以「{target.DetectionCategory}」層級可取得 {detectionCategoryProjectIds.Count} 個建案，較適合作為目前異常偵測基準。"
+                    : specificationHasEnoughSamples
+                        ? $"目前「{request.TargetItemName}」已有 {specificationProjectIds.Count} 個有效建案，可進一步評估是否下切至規格層級。"
+                        : $"規格層級與「{target.DetectionCategory}」層級目前都未達最低樣本數 {minimumSampleCount}，應標示資料不足，不強制判定異常。";
+
+            return ServiceResult.Ok(
+                new GranularityPreviewResponse
+                {
+                    TargetItemName =
+                        request.TargetItemName,
+
+                    MajorCategory =
+                        target.MajorCategory,
+
+                    DetectionCategory =
+                        target.DetectionCategory,
+
+                    MinimumSampleCount =
+                        minimumSampleCount,
+
+                    SpecificationProjectCount =
+                        specificationProjectIds.Count,
+
+                    DetectionCategoryProjectCount =
+                        detectionCategoryProjectIds.Count,
+
+                    SpecificationHasEnoughSamples =
+                        specificationHasEnoughSamples,
+
+                    DetectionCategoryHasEnoughSamples =
+                        detectionCategoryHasEnoughSamples,
+
+                    SpecificationProjectIds =
+                        specificationProjectIds,
+
+                    DetectionCategoryProjectIds =
+                        detectionCategoryProjectIds,
+
+                    Recommendation =
+                        recommendation
+                }
+            );
+        }
+
+
         public DetectionCategoryPreviewItem
             Classify(
                 OneDSavedResultItem item)
