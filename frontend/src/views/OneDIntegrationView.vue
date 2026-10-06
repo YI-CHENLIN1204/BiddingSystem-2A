@@ -27,7 +27,7 @@ interface ProjectCase {
 
 interface TwoAItem extends OneDItem {
   detectionCategory?: string
-  status: 'classified' | 'pending'
+  status: 'classified' | 'pending' | 'excluded'
   note: string
 }
 
@@ -91,7 +91,26 @@ const selectedCase = computed(
 const project = computed(() => selectedCase.value.project)
 const sourceItems = computed(() => selectedCase.value.items)
 
+const estimableChapters = new Set(['結構體工程', '鋼骨鋼構工程'])
+
+const excludedChapterReasons: Record<string, string> = {
+  假設工程: '受施工規劃、工地配置與現場條件影響較大，不納入 2A 自動估算',
+  土方及基礎工程: '受地質、開挖深度與基礎設計影響較大，僅靠建案基本特徵不適合直接估算',
+  防水工程: '受實際防水範圍、節點與設計圖影響較大，不納入 2A 自動估算',
+  門窗工程: '數量與規格直接由設計圖及開口配置決定，不納入 2A 自動估算',
+  景觀工程: '受景觀設計內容影響較大，不納入 2A 自動估算',
+  外部裝修工程: '受立面設計與材料選用影響較大，不納入 2A 自動估算',
+  雜項工程: '工項內容依個案差異大，不建立通用歷史估算基準',
+}
+
 function classifyItem(item: OneDItem): TwoAItem {
+  if (!estimableChapters.has(item.chapter)) {
+    return {
+      ...item,
+      status: 'excluded',
+      note: excludedChapterReasons[item.chapter] ?? '此工程大項目前不納入 2A 自動估算',
+    }
+  }
   if (item.chapter === '結構體工程') {
     if (item.name.includes('續接器') || item.name.includes('套筒') || item.name.includes('接頭')) {
       return {
@@ -163,7 +182,14 @@ const chapterSummary = computed(() => {
   for (const item of sourceItems.value) {
     map.set(item.chapter, (map.get(item.chapter) ?? 0) + 1)
   }
-  return Array.from(map.entries()).map(([chapter, count]) => ({ chapter, count }))
+  return Array.from(map.entries()).map(([chapter, count]) => ({
+    chapter,
+    count,
+    estimable: estimableChapters.has(chapter),
+    reason: estimableChapters.has(chapter)
+      ? '納入 2A：可依歷史案件建立材料用量比較'
+      : excludedChapterReasons[chapter] ?? '目前不納入 2A 自動估算',
+  }))
 })
 
 const categorySummary = computed(() => {
@@ -195,7 +221,13 @@ const classifiedCount = computed(
   () => processedItems.value.filter((item) => item.status === 'classified').length,
 )
 
-const pendingCount = computed(() => processedItems.value.length - classifiedCount.value)
+const pendingCount = computed(
+  () => processedItems.value.filter((item) => item.status === 'pending').length,
+)
+
+const excludedCount = computed(
+  () => processedItems.value.filter((item) => item.status === 'excluded').length,
+)
 
 watch(selectedProjectId, () => {
   state.value = 'idle'
@@ -265,7 +297,9 @@ function formatNumber(value: number | null) {
       <div class="card-header">
         <div>
           <div class="card-title">1D 已完成的工程大項</div>
-          <div class="card-desc">2A 直接承接，不重新判斷工程大項。</div>
+          <div class="card-desc">
+            2A 直接承接大項後先做「是否適合估算」篩選。不是所有 1D 工程大項都要硬做歷史估算。
+          </div>
         </div>
         <button
           class="btn primary"
@@ -278,9 +312,20 @@ function formatNumber(value: number | null) {
       </div>
 
       <div class="chapter-grid">
-        <article v-for="chapter in chapterSummary" :key="chapter.chapter" class="chapter-card">
-          <div class="chapter-name">{{ chapter.chapter }}</div>
+        <article
+          v-for="chapter in chapterSummary"
+          :key="chapter.chapter"
+          class="chapter-card"
+          :class="{ excluded: !chapter.estimable }"
+        >
+          <div class="chapter-top">
+            <div class="chapter-name">{{ chapter.chapter }}</div>
+            <span class="chapter-status" :class="chapter.estimable ? 'included' : 'excluded'">
+              {{ chapter.estimable ? '納入 2A' : '不納入估算' }}
+            </span>
+          </div>
           <div class="chapter-count">{{ chapter.count }} 筆工項</div>
+          <div class="chapter-reason">{{ chapter.reason }}</div>
         </article>
       </div>
     </section>
@@ -300,15 +345,16 @@ function formatNumber(value: number | null) {
           <div class="summary-value">{{ classifiedCount }}</div>
         </article>
         <article class="summary-card">
-          <div class="summary-label">待後續定義</div>
-          <div class="summary-value">{{ pendingCount }}</div>
+          <div class="summary-label">不納入估算</div>
+          <div class="summary-value">{{ excludedCount }}</div>
         </article>
       </section>
 
       <section class="card">
         <div class="card-title">2A 細項彙整結果</div>
         <div class="card-desc">
-          目前先示範結構體工程與鋼骨鋼構工程；其他 1D 大項仍保留，之後再逐步建立細項規則。
+          目前只納入適合以歷史案件建立合理用量基準的結構體工程與鋼骨鋼構工程。
+          門窗、防水、景觀、外部裝修等受設計圖影響較大的工程不強制估算。
         </div>
 
         <div class="result-grid">
@@ -353,7 +399,13 @@ function formatNumber(value: number | null) {
                 <td class="number">{{ formatNumber(item.quantity) }}</td>
                 <td>
                   <span class="status" :class="item.status">
-                    {{ item.status === 'classified' ? '已分類' : '待定義' }}
+                    {{
+                      item.status === 'classified'
+                        ? '納入估算'
+                        : item.status === 'excluded'
+                          ? '不納入估算'
+                          : '待確認'
+                    }}
                   </span>
                 </td>
                 <td class="left note">{{ item.note }}</td>
@@ -398,9 +450,15 @@ function formatNumber(value: number | null) {
 .btn.secondary { background:#e9ecef; color:#343a40; }
 .btn:disabled { opacity:.55; cursor:not-allowed; }
 .chapter-grid { display:grid; grid-template-columns:repeat(auto-fill,minmax(180px,1fr)); gap:10px; margin-top:16px; }
-.chapter-card { border:1px solid #dee2e6; border-left:4px solid #321fdb; border-radius:7px; padding:12px 13px; background:#fff; }
+.chapter-card { border:1px solid #dee2e6; border-left:4px solid #198754; border-radius:7px; padding:12px 13px; background:#fff; }
+.chapter-card.excluded { border-left-color:#adb5bd; background:#f8f9fa; }
+.chapter-top { display:flex; align-items:flex-start; justify-content:space-between; gap:8px; }
 .chapter-name { color:#1f2d3d; font-weight:800; font-size:14px; }
+.chapter-status { display:inline-block; padding:3px 7px; border-radius:999px; font-size:10px; font-weight:800; white-space:nowrap; }
+.chapter-status.included { background:#d1e7dd; color:#0f5132; }
+.chapter-status.excluded { background:#e9ecef; color:#6c757d; }
 .chapter-count { margin-top:5px; color:#6c757d; font-size:11px; }
+.chapter-reason { margin-top:8px; color:#6c757d; font-size:10px; line-height:1.45; }
 .summary-grid { display:grid; grid-template-columns:repeat(4,minmax(0,1fr)); gap:12px; margin-bottom:16px; }
 .summary-card { background:#fff; border:1px solid #d8dbe0; border-radius:8px; padding:15px 17px; }
 .summary-label { color:#6c757d; font-size:12px; }
@@ -424,6 +482,7 @@ td { padding:9px 8px; border-bottom:1px solid #edf0f2; text-align:center; vertic
 .status { display:inline-block; padding:4px 8px; border-radius:5px; font-size:11px; font-weight:800; }
 .status.classified { background:#d1e7dd; color:#0f5132; }
 .status.pending { background:#fff3cd; color:#664d03; }
+.status.excluded { background:#e9ecef; color:#6c757d; }
 .next-step-card { display:flex; align-items:center; justify-content:space-between; gap:18px; background:#f8f9fa; border:1px dashed #adb5bd; border-radius:8px; padding:16px 18px; }
 .next-step-card strong { color:#1f2d3d; font-size:14px; }
 .next-step-card p { margin:4px 0 0; color:#6c757d; font-size:12px; }
