@@ -9,6 +9,15 @@ interface IntegrationStatus {
   message: string
 }
 
+interface MajorCategorySummary {
+  majorCategory: string
+  itemCount: number
+  classifiedItemCount: number
+  pendingItemCount: number
+  hasDetectionRules: boolean
+  detectionCategories: string[]
+}
+
 interface DetectionGroup {
   majorCategory: string
   detectionCategory: string
@@ -37,24 +46,12 @@ interface DetectionPreview {
   oneDProjectId?: number
   sourceItemCount?: number
   totalItems: number
+  majorCategoryCount: number
   classifiedItems: number
   pendingItems: number
+  majorCategories: MajorCategorySummary[]
   groups: DetectionGroup[]
   items: DetectionItem[]
-}
-
-interface GranularityPreview {
-  targetItemName: string
-  majorCategory: string
-  detectionCategory?: string | null
-  minimumSampleCount: number
-  specificationProjectCount: number
-  detectionCategoryProjectCount: number
-  specificationHasEnoughSamples: boolean
-  detectionCategoryHasEnoughSamples: boolean
-  specificationProjectIds: number[]
-  detectionCategoryProjectIds: number[]
-  recommendation: string
 }
 
 const status = ref<IntegrationStatus | null>(null)
@@ -63,9 +60,7 @@ const loadingStatus = ref(false)
 const loadingPreview = ref(false)
 const error = ref('')
 const preview = ref<DetectionPreview | null>(null)
-const granularity = ref<GranularityPreview | null>(null)
 const sourceMode = ref<'demo' | 'oned'>('demo')
-const loadingGranularity = ref(false)
 
 const classifiedRate = computed(() => {
   if (!preview.value?.totalItems) return 0
@@ -80,6 +75,7 @@ function formatNumber(value: number | null | undefined) {
 async function loadStatus() {
   loadingStatus.value = true
   error.value = ''
+
   try {
     status.value = await api<IntegrationStatus>('/one-d/status')
   } catch (caught) {
@@ -106,46 +102,9 @@ async function loadFromOneD() {
       `/one-d/projects/${projectId.value}/detection-preview`,
     )
   } catch (caught) {
-    error.value = caught instanceof Error ? caught.message : '1D 分類結果取得失敗'
+    error.value = caught instanceof Error ? caught.message : '1D 建案分類結果取得失敗'
   } finally {
     loadingPreview.value = false
-  }
-}
-
-async function loadGranularityDemo() {
-  error.value = ''
-  granularity.value = null
-  loadingGranularity.value = true
-
-  const items = [
-    { projectId: 1, chapter: '結構體工程', name: 'SD420W高拉力鋼筋#4以上', unit: 'KG', quantity: 98000 },
-    { projectId: 2, chapter: '結構體工程', name: 'SD420W高拉力鋼筋#4以上', unit: 'KG', quantity: 104000 },
-    { projectId: 3, chapter: '結構體工程', name: 'SD420W高拉力鋼筋#4以上', unit: 'KG', quantity: 112000 },
-    { projectId: 4, chapter: '結構體工程', name: 'SD420W高拉力鋼筋#4以上', unit: 'KG', quantity: 101000 },
-
-    { projectId: 5, chapter: '結構體工程', name: 'SD420W高拉力鋼筋#3以下', unit: 'KG', quantity: 42000 },
-    { projectId: 6, chapter: '結構體工程', name: 'SD280鋼筋', unit: 'KG', quantity: 76000 },
-    { projectId: 7, chapter: '結構體工程', name: '竹節鋼筋', unit: 'KG', quantity: 88000 },
-    { projectId: 8, chapter: '結構體工程', name: '高拉力鋼筋', unit: 'KG', quantity: 93000 },
-    { projectId: 9, chapter: '結構體工程', name: 'SD420W高拉力鋼筋#5', unit: 'KG', quantity: 107000 },
-
-    { projectId: 10, chapter: '結構體工程', name: '預拌混凝土 3500psi', unit: 'M3', quantity: 3300 },
-  ]
-
-  try {
-    granularity.value = await api<GranularityPreview>('/one-d/granularity-preview', {
-      method: 'POST',
-      body: JSON.stringify({
-        targetChapter: '結構體工程',
-        targetItemName: 'SD420W高拉力鋼筋#4以上',
-        minimumSampleCount: 5,
-        items,
-      }),
-    })
-  } catch (caught) {
-    error.value = caught instanceof Error ? caught.message : '粒度比較失敗'
-  } finally {
-    loadingGranularity.value = false
   }
 }
 
@@ -159,17 +118,44 @@ async function loadDemo() {
     items: [
       {
         category: '住宅',
+        chapter: '假設工程',
+        code: 'TMP-001',
+        name: '臨時水電及施工設施',
+        unit: '式',
+        quantity: 1,
+        confidence: 0.97,
+      },
+      {
+        category: '住宅',
+        chapter: '土方及基礎工程',
+        code: 'EAR-001',
+        name: '地下室土方開挖',
+        unit: 'M3',
+        quantity: 8200,
+        confidence: 0.96,
+      },
+      {
+        category: '住宅',
         chapter: '結構體工程',
         code: 'STR-001',
         name: 'SD420W高拉力鋼筋#4以上',
         unit: 'KG',
-        quantity: 125000,
+        quantity: 100000,
         confidence: 1,
       },
       {
         category: '住宅',
         chapter: '結構體工程',
         code: 'STR-002',
+        name: 'SD420W高拉力鋼筋#3以下',
+        unit: 'KG',
+        quantity: 40000,
+        confidence: 0.99,
+      },
+      {
+        category: '住宅',
+        chapter: '結構體工程',
+        code: 'STR-003',
         name: '預拌混凝土 3500psi',
         unit: 'M3',
         quantity: 3200,
@@ -178,11 +164,20 @@ async function loadDemo() {
       {
         category: '住宅',
         chapter: '結構體工程',
-        code: 'STR-003',
+        code: 'STR-004',
         name: '結構體模板',
         unit: 'M2',
         quantity: 26000,
         confidence: 0.96,
+      },
+      {
+        category: '住宅',
+        chapter: '結構體工程',
+        code: 'STR-005',
+        name: 'SD420W鋼筋續接器',
+        unit: '個',
+        quantity: 780,
+        confidence: 0.93,
       },
       {
         category: '住宅',
@@ -195,12 +190,30 @@ async function loadDemo() {
       },
       {
         category: '住宅',
-        chapter: '結構體工程',
-        code: 'STR-004',
-        name: 'SD420W鋼筋續接器',
-        unit: '個',
-        quantity: 780,
-        confidence: 0.93,
+        chapter: '防水工程',
+        code: 'WAT-001',
+        name: '屋頂防水層',
+        unit: 'M2',
+        quantity: 1800,
+        confidence: 0.95,
+      },
+      {
+        category: '住宅',
+        chapter: '門窗工程',
+        code: 'DOR-001',
+        name: '鋁門窗',
+        unit: '樘',
+        quantity: 126,
+        confidence: 0.92,
+      },
+      {
+        category: '住宅',
+        chapter: '景觀工程',
+        code: 'LND-001',
+        name: '景觀植栽',
+        unit: '式',
+        quantity: 1,
+        confidence: 0.91,
       },
     ],
   }
@@ -211,7 +224,7 @@ async function loadDemo() {
       body: JSON.stringify(request),
     })
   } catch (caught) {
-    error.value = caught instanceof Error ? caught.message : '示範資料分析失敗'
+    error.value = caught instanceof Error ? caught.message : '示範建案分析失敗'
   } finally {
     loadingPreview.value = false
   }
@@ -221,34 +234,40 @@ onMounted(loadStatus)
 </script>
 
 <template>
-  <div class="integration-page">
-    <h2 class="page-title">1D / 2A 資料介接驗證</h2>
+  <div class="analysis-page">
+    <h2 class="page-title">建案量價異常分析預覽</h2>
     <div class="page-desc">
-      驗證 2A 可承接 1D 已完成的工程大項分類結果，再進一步整理為鋼筋、混凝土、模板、鋼骨等偵錯細項。
-      本頁目前僅供 POC 驗證，不會修改 1D 資料，也不會寫入正式異常偵測結果。
+      以「一個建案」為分析單位，一次承接 1D 已完成的全部工程大項分類。
+      2A 不重新判斷結構體工程、防水工程、門窗工程等大項，只在各工程大項內建立異常偵測需要的細項分類。
+      目前先完成結構體工程與鋼骨鋼構工程的細項 POC，其餘工程大項仍完整保留並標示待建立規則。
     </div>
 
     <div v-if="error" class="message-box error">{{ error }}</div>
 
-    <section class="integration-card">
+    <section class="analysis-card">
       <div class="card-header-wz">
-        <div class="card-title-wz">1. 1D API 介接狀態</div>
-        <div class="card-desc-wz">2A 只讀取 1D 已儲存的分類結果，不要求 1D 重新跑分類。</div>
+        <div class="card-title-wz">1. 1D 建案資料來源</div>
+        <div class="card-desc-wz">
+          2A 以 Project ID 讀取 1D 已儲存的整個建案分類結果，不重新解析快易新標單，也不重做工程大項分類。
+        </div>
       </div>
+
       <div class="card-body-wz">
         <div class="status-row">
           <span
             class="status-pill"
             :class="status?.configured ? 'status-ok' : 'status-warn'"
           >
-            {{ loadingStatus ? '檢查中' : status?.configured ? '已設定' : '尚未設定' }}
+            {{ loadingStatus ? '檢查中' : status?.configured ? '1D API 已設定' : '1D API 尚未設定' }}
           </span>
+
           <div class="status-text">
             <strong>{{ status?.message ?? '尚未取得狀態' }}</strong>
             <div v-if="status?.sourceEndpoint" class="small-text">
               來源：{{ status.sourceEndpoint }}｜模式：{{ status.mode }}
             </div>
           </div>
+
           <button type="button" class="btn btn-outline-secondary btn-sm" @click="loadStatus">
             重新檢查
           </button>
@@ -256,19 +275,21 @@ onMounted(loadStatus)
       </div>
     </section>
 
-    <section class="integration-card">
+    <section class="analysis-card">
       <div class="card-header-wz">
-        <div class="card-title-wz">2. 執行細項分類預覽</div>
+        <div class="card-title-wz">2. 選擇建案並建立分析預覽</div>
         <div class="card-desc-wz">
-          可先用內建示範資料驗證分類規則；1D API 位址確認後，再輸入 Project ID 直接讀取 1D 結果。
+          正式介接後輸入 1D Project ID 即可取得該建案全部工程大項；目前也可使用內建示範建案展示完整資料流。
         </div>
       </div>
+
       <div class="card-body-wz">
         <div class="action-grid">
           <div class="demo-panel">
-            <div class="panel-title">本地 POC 示範</div>
+            <div class="panel-title">完整建案 POC</div>
             <div class="small-text">
-              包含 SD420W 鋼筋、預拌混凝土、模板、H 型鋼，以及不應直接併入鋼筋重量的鋼筋續接器。
+              示範資料同時包含假設、土方及基礎、結構體、鋼骨鋼構、防水、門窗與景觀等 1D 工程大項，
+              用來確認 2A 是以整個建案為單位，而不是只處理結構體工程。
             </div>
             <button
               type="button"
@@ -276,12 +297,12 @@ onMounted(loadStatus)
               :disabled="loadingPreview"
               @click="loadDemo"
             >
-              {{ loadingPreview && sourceMode === 'demo' ? '分析中' : '載入示範資料' }}
+              {{ loadingPreview && sourceMode === 'demo' ? '建立中' : '載入示範建案' }}
             </button>
           </div>
 
           <div class="oned-panel">
-            <div class="panel-title">直接讀取 1D</div>
+            <div class="panel-title">直接讀取 1D 建案</div>
             <div class="input-row">
               <input
                 v-model.number="projectId"
@@ -296,104 +317,136 @@ onMounted(loadStatus)
                 :disabled="loadingPreview || !status?.configured"
                 @click="loadFromOneD"
               >
-                {{ loadingPreview && sourceMode === 'oned' ? '讀取中' : '取得 1D 結果' }}
+                {{ loadingPreview && sourceMode === 'oned' ? '讀取中' : '取得建案分類結果' }}
               </button>
             </div>
             <div class="small-text">
-              若按鈕無法使用，請先在 Docker 環境設定 ONE_D_API_BASE_URL。
+              1D URL 尚未確認時可先使用左側示範建案；設定 ONE_D_API_BASE_URL 後即可改讀實際資料。
             </div>
           </div>
         </div>
-      </div>
-    </section>
-
-    <section class="integration-card">
-      <div class="card-header-wz">
-        <div class="card-title-wz">3. 偵錯粒度取捨示範</div>
-        <div class="card-desc-wz">
-          以示範歷史案件比較「SD420W 高拉力鋼筋 #4以上」與「鋼筋」層級的有效建案數，
-          用來驗證樣本數不足時是否應提升統計粒度。此區為 POC 示範資料，不代表崴正實際歷史分布。
-        </div>
-      </div>
-      <div class="card-body-wz">
-        <button
-          type="button"
-          class="btn-primary-wz"
-          :disabled="loadingGranularity"
-          @click="loadGranularityDemo"
-        >
-          {{ loadingGranularity ? '計算中' : '執行粒度比較示範' }}
-        </button>
-
-        <template v-if="granularity">
-          <div class="granularity-grid">
-            <article
-              class="granularity-card"
-              :class="granularity.specificationHasEnoughSamples ? 'granularity-ok' : 'granularity-bad'"
-            >
-              <div class="granularity-title">規格層級</div>
-              <div class="granularity-name">{{ granularity.targetItemName }}</div>
-              <div class="granularity-count">{{ granularity.specificationProjectCount }}</div>
-              <div class="granularity-threshold">
-                最低樣本數：{{ granularity.minimumSampleCount }}
-              </div>
-              <div class="granularity-result">
-                {{ granularity.specificationHasEnoughSamples ? '樣本足夠' : '樣本不足' }}
-              </div>
-            </article>
-
-            <div class="granularity-arrow">→</div>
-
-            <article
-              class="granularity-card"
-              :class="granularity.detectionCategoryHasEnoughSamples ? 'granularity-ok' : 'granularity-bad'"
-            >
-              <div class="granularity-title">偵錯細項層級</div>
-              <div class="granularity-name">{{ granularity.detectionCategory ?? '未分類' }}</div>
-              <div class="granularity-count">{{ granularity.detectionCategoryProjectCount }}</div>
-              <div class="granularity-threshold">
-                最低樣本數：{{ granularity.minimumSampleCount }}
-              </div>
-              <div class="granularity-result">
-                {{ granularity.detectionCategoryHasEnoughSamples ? '可建立比較基準' : '仍然不足' }}
-              </div>
-            </article>
-          </div>
-
-          <div class="recommendation-box">
-            <strong>系統建議：</strong>{{ granularity.recommendation }}
-          </div>
-        </template>
       </div>
     </section>
 
     <template v-if="preview">
       <section class="summary-grid">
         <article class="summary-card">
-          <div class="summary-label">來源工項</div>
+          <div class="summary-label">1D 工程大項</div>
+          <div class="summary-value">{{ preview.majorCategoryCount }}</div>
+        </article>
+        <article class="summary-card">
+          <div class="summary-label">建案工項總數</div>
           <div class="summary-value">{{ preview.totalItems }}</div>
         </article>
         <article class="summary-card">
-          <div class="summary-label">已分類</div>
+          <div class="summary-label">2A 已歸類細項</div>
           <div class="summary-value">{{ preview.classifiedItems }}</div>
         </article>
         <article class="summary-card">
-          <div class="summary-label">待確認</div>
-          <div class="summary-value">{{ preview.pendingItems }}</div>
-        </article>
-        <article class="summary-card">
-          <div class="summary-label">分類率</div>
+          <div class="summary-label">目前細項完成率</div>
           <div class="summary-value">{{ classifiedRate }}%</div>
         </article>
       </section>
 
-      <section class="integration-card">
+      <section class="analysis-card">
         <div class="card-header-wz">
-          <div class="card-title-wz">4. 偵錯細項分類結果</div>
+          <div class="card-title-wz">3. 建案工程大項總覽</div>
           <div class="card-desc-wz">
-            保留 1D 工程大項，再由 2A 建立偵錯細項；原始工項仍完整保留供追溯。
+            下列工程大項全部來自 1D。2A 只標示目前已建立哪些偵錯細項規則；尚未建立規則的大項仍保留，不會被忽略或錯誤歸類。
           </div>
         </div>
+
+        <div class="card-body-wz">
+          <div class="major-grid">
+            <article
+              v-for="major in preview.majorCategories"
+              :key="major.majorCategory"
+              class="major-card"
+              :class="major.hasDetectionRules ? 'major-ready' : 'major-pending'"
+            >
+              <div class="major-top">
+                <div>
+                  <div class="major-source">1D 工程大項</div>
+                  <div class="major-name">{{ major.majorCategory }}</div>
+                </div>
+                <span
+                  class="status-pill"
+                  :class="major.hasDetectionRules ? 'status-ok' : 'status-warn'"
+                >
+                  {{ major.hasDetectionRules ? '已有 2A 細項' : '細項規則待建立' }}
+                </span>
+              </div>
+
+              <div class="major-meta">
+                {{ major.itemCount }} 筆工項
+                <span v-if="major.classifiedItemCount">
+                  ｜{{ major.classifiedItemCount }} 筆已歸類細項
+                </span>
+              </div>
+
+              <div v-if="major.detectionCategories.length" class="category-tags">
+                <span
+                  v-for="category in major.detectionCategories"
+                  :key="category"
+                  class="category-tag"
+                >
+                  {{ category }}
+                </span>
+              </div>
+
+              <div v-else class="major-note">
+                目前保留 1D 大項資料，待確認此工程大項適合的數量偵錯細項後再建立規則。
+              </div>
+            </article>
+          </div>
+        </div>
+      </section>
+
+      <section class="analysis-card">
+        <div class="card-header-wz">
+          <div class="card-title-wz">4. 已建立的 2A 偵錯細項</div>
+          <div class="card-desc-wz">
+            工程大項由 1D 提供；下列材料類別才是 2A 目前新增的數量偵錯細項。單位一致時可先安全彙整，不一致時要求先做單位標準化。
+          </div>
+        </div>
+
+        <div class="card-body-wz">
+          <div v-if="preview.groups.length" class="group-grid">
+            <article
+              v-for="group in preview.groups"
+              :key="`${group.majorCategory}-${group.detectionCategory}`"
+              class="group-card"
+            >
+              <div class="group-major">{{ group.majorCategory }}</div>
+              <div class="group-category">{{ group.detectionCategory }}</div>
+              <div class="group-meta">
+                {{ group.itemCount }} 筆原始工項
+                <span v-if="group.units.length">｜原單位：{{ group.units.join('、') }}</span>
+              </div>
+
+              <div class="group-total" v-if="group.aggregationStatus === 'Ready'">
+                彙整數量：{{ formatNumber(group.totalQuantity) }} {{ group.aggregateUnit }}
+              </div>
+              <div class="group-warning" v-else>
+                {{ group.aggregationMessage }}
+              </div>
+            </article>
+          </div>
+
+          <div v-else class="empty-state">
+            此建案目前沒有可套用的 2A 偵錯細項規則。
+          </div>
+        </div>
+      </section>
+
+      <section class="analysis-card">
+        <div class="card-header-wz">
+          <div class="card-title-wz">5. 建案工項追溯明細</div>
+          <div class="card-desc-wz">
+            每一筆都保留 1D 工程大項與原始工項名稱。已建立規則的工項會顯示 2A 偵錯細項；其他大項則清楚標示待建立規則。
+          </div>
+        </div>
+
         <div class="card-body-wz">
           <div class="result-wrapper">
             <table class="result-table">
@@ -404,14 +457,14 @@ onMounted(loadStatus)
                   <th>原始工項</th>
                   <th>單位</th>
                   <th>數量</th>
-                  <th>狀態</th>
-                  <th>分類依據</th>
+                  <th>2A 狀態</th>
+                  <th>說明</th>
                 </tr>
               </thead>
               <tbody>
                 <tr v-for="(item, index) in preview.items" :key="index">
-                  <td>{{ item.majorCategory }}</td>
-                  <td class="material-cell">{{ item.detectionCategory ?? '待確認' }}</td>
+                  <td class="major-cell">{{ item.majorCategory }}</td>
+                  <td class="material-cell">{{ item.detectionCategory ?? '—' }}</td>
                   <td class="material-cell">{{ item.originalItemName }}</td>
                   <td>{{ item.unit ?? '-' }}</td>
                   <td class="number-cell">{{ formatNumber(item.quantity) }}</td>
@@ -420,7 +473,7 @@ onMounted(loadStatus)
                       class="status-pill"
                       :class="item.classificationStatus === 'Classified' ? 'status-ok' : 'status-warn'"
                     >
-                      {{ item.classificationStatus === 'Classified' ? '已分類' : '待確認' }}
+                      {{ item.classificationStatus === 'Classified' ? '細項已建立' : '待建立 / 確認' }}
                     </span>
                   </td>
                   <td class="rule-cell">{{ item.matchedRule }}</td>
@@ -430,45 +483,18 @@ onMounted(loadStatus)
           </div>
         </div>
       </section>
-
-      <section class="integration-card">
-        <div class="card-header-wz">
-          <div class="card-title-wz">5. 分類彙整</div>
-          <div class="card-desc-wz">
-            此階段只確認工項是否能穩定歸入偵錯細項；正式數量彙整仍需接單位換算與樣本數控制。
-          </div>
-        </div>
-        <div class="card-body-wz">
-          <div class="group-grid">
-            <article v-for="group in preview.groups" :key="`${group.majorCategory}-${group.detectionCategory}`" class="group-card">
-              <div class="group-major">{{ group.majorCategory }}</div>
-              <div class="group-category">{{ group.detectionCategory }}</div>
-              <div class="group-meta">
-                {{ group.itemCount }} 筆工項
-                <span v-if="group.units.length">｜原單位：{{ group.units.join('、') }}</span>
-              </div>
-              <div class="group-total" v-if="group.aggregationStatus === 'Ready'">
-                彙整數量：{{ formatNumber(group.totalQuantity) }} {{ group.aggregateUnit }}
-              </div>
-              <div class="group-warning" v-else>
-                {{ group.aggregationMessage }}
-              </div>
-            </article>
-          </div>
-        </div>
-      </section>
     </template>
   </div>
 </template>
 
 <style scoped>
-.integration-page { max-width: 96vw; margin: 0 auto; padding: 20px 0 40px; }
+.analysis-page { max-width: 96vw; margin: 0 auto; padding: 20px 0 40px; }
 .page-title { font-size: 1.55rem; font-weight: 800; color: #1f2d3d; margin-bottom: 5px; }
-.page-desc { font-size: 14px; color: #6c757d; margin-bottom: 18px; line-height: 1.7; }
-.integration-card { background: #fff; border: 1px solid #d8dbe0; border-radius: 8px; box-shadow: 0 3px 12px rgba(20,29,35,.06); margin-bottom: 18px; overflow: hidden; }
+.page-desc { font-size: 14px; color: #6c757d; margin-bottom: 18px; line-height: 1.75; }
+.analysis-card { background: #fff; border: 1px solid #d8dbe0; border-radius: 8px; box-shadow: 0 3px 12px rgba(20,29,35,.06); margin-bottom: 18px; overflow: hidden; }
 .card-header-wz { padding: 13px 17px; background: #f8f9fa; border-bottom: 1px solid #d8dbe0; }
 .card-title-wz { font-size: 15px; font-weight: 800; color: #321fdb; }
-.card-desc-wz { margin-top: 3px; color: #6c757d; font-size: 12px; }
+.card-desc-wz { margin-top: 3px; color: #6c757d; font-size: 12px; line-height: 1.6; }
 .card-body-wz { padding: 18px; }
 .status-row { display: flex; align-items: center; gap: 12px; }
 .status-text { flex: 1; min-width: 0; }
@@ -489,30 +515,35 @@ onMounted(loadStatus)
 .summary-card { background: #fff; border: 1px solid #d8dbe0; border-radius: 8px; padding: 15px 17px; }
 .summary-label { color: #6c757d; font-size: 12px; }
 .summary-value { margin-top: 4px; font-size: 24px; font-weight: 800; color: #1f2d3d; }
-.result-wrapper { overflow-x: auto; border: 1px solid #d8dbe0; border-radius: 7px; }
-.result-table { width: 100%; min-width: 1000px; border-collapse: collapse; margin: 0; background: white; font-size: 13px; }
-.result-table th { padding: 10px 8px; text-align: center; color: white; background: #5b6065; white-space: nowrap; font-weight: 700; }
-.result-table td { padding: 10px 8px; border-bottom: 1px solid #e5e7eb; text-align: center; vertical-align: middle; }
-.material-cell { text-align: left !important; font-weight: 700; }
-.number-cell { text-align: right !important; font-variant-numeric: tabular-nums; }
-.rule-cell { text-align: left !important; color: #495057; }
-.group-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(220px, 1fr)); gap: 12px; }
+.major-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(280px, 1fr)); gap: 12px; }
+.major-card { border: 1px solid #d8dbe0; border-radius: 8px; padding: 15px; background: #fff; }
+.major-ready { border-left: 4px solid #198754; }
+.major-pending { border-left: 4px solid #ffc107; }
+.major-top { display: flex; justify-content: space-between; align-items: flex-start; gap: 10px; }
+.major-source { font-size: 11px; color: #6c757d; }
+.major-name { margin-top: 2px; font-size: 17px; font-weight: 800; color: #1f2d3d; }
+.major-meta { margin-top: 9px; font-size: 12px; color: #6c757d; }
+.category-tags { display: flex; flex-wrap: wrap; gap: 6px; margin-top: 12px; }
+.category-tag { padding: 4px 8px; border-radius: 999px; background: #e7f1ff; color: #084298; font-size: 12px; font-weight: 700; }
+.major-note { margin-top: 12px; font-size: 12px; line-height: 1.55; color: #664d03; background: #fff8df; border-radius: 6px; padding: 8px 10px; }
+.group-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(240px, 1fr)); gap: 12px; }
 .group-card { border: 1px solid #d8dbe0; border-radius: 7px; padding: 14px; background: #fff; }
 .group-major { color: #6c757d; font-size: 12px; }
 .group-category { margin-top: 3px; font-size: 18px; font-weight: 800; color: #1f2d3d; }
 .group-meta { margin-top: 8px; color: #6c757d; font-size: 12px; }
 .group-total { margin-top: 10px; font-size: 13px; font-weight: 800; color: #0f5132; }
 .group-warning { margin-top: 10px; font-size: 12px; line-height: 1.5; color: #664d03; background: #fff3cd; border-radius: 5px; padding: 7px 9px; }
-.granularity-grid { display: grid; grid-template-columns: minmax(0,1fr) 60px minmax(0,1fr); gap: 14px; align-items: center; margin-top: 16px; }
-.granularity-card { border: 2px solid #d8dbe0; border-radius: 9px; padding: 18px; text-align: center; background: #fff; }
-.granularity-ok { border-color: #75b798; background: #f2fbf6; }
-.granularity-bad { border-color: #e0a800; background: #fffaf0; }
-.granularity-title { font-size: 12px; color: #6c757d; font-weight: 700; }
-.granularity-name { margin-top: 5px; min-height: 42px; font-size: 15px; font-weight: 800; color: #1f2d3d; display: flex; align-items: center; justify-content: center; }
-.granularity-count { margin-top: 8px; font-size: 36px; font-weight: 900; color: #321fdb; }
-.granularity-threshold { margin-top: 2px; font-size: 12px; color: #6c757d; }
-.granularity-result { margin-top: 9px; font-size: 13px; font-weight: 800; }
-.granularity-arrow { text-align: center; font-size: 32px; font-weight: 900; color: #6c757d; }
-.recommendation-box { margin-top: 14px; border: 1px solid #b6d4fe; background: #e7f1ff; color: #084298; border-radius: 7px; padding: 12px 14px; font-size: 13px; line-height: 1.7; }
-@media (max-width: 900px) { .action-grid, .summary-grid, .granularity-grid { grid-template-columns: 1fr; } .granularity-arrow { transform: rotate(90deg); } .status-row, .input-row { align-items: stretch; flex-direction: column; } }
+.empty-state { padding: 24px; text-align: center; color: #6c757d; border: 1px dashed #ced4da; border-radius: 7px; }
+.result-wrapper { overflow-x: auto; border: 1px solid #d8dbe0; border-radius: 7px; }
+.result-table { width: 100%; min-width: 1100px; border-collapse: collapse; margin: 0; background: white; font-size: 13px; }
+.result-table th { padding: 10px 8px; text-align: center; color: white; background: #5b6065; white-space: nowrap; font-weight: 700; }
+.result-table td { padding: 10px 8px; border-bottom: 1px solid #e5e7eb; text-align: center; vertical-align: middle; }
+.major-cell { font-weight: 800; color: #1f2d3d; }
+.material-cell { text-align: left !important; font-weight: 700; }
+.number-cell { text-align: right !important; font-variant-numeric: tabular-nums; }
+.rule-cell { text-align: left !important; color: #495057; min-width: 300px; }
+@media (max-width: 900px) {
+  .action-grid, .summary-grid { grid-template-columns: 1fr; }
+  .status-row, .input-row { align-items: stretch; flex-direction: column; }
+}
 </style>
