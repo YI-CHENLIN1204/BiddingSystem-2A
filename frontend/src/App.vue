@@ -13,7 +13,7 @@ const navigation = [
   { to: '/estimation', label: '估算大數據', section: '工程類' },
   { to: '/final-bid', label: '決標回寫', section: '工程類' },
   { to: '/projects', label: '建案管理', section: '工程類' },
-  { to: '/integration-1d', label: '1D / 2A 介接', section: '工程類' },
+  { to: '/project-analysis-preview', label: '建案分析預覽', section: '工程類' },
   { to: '/audit-logs', label: '操作紀錄', section: '系統' },
 ]
 
