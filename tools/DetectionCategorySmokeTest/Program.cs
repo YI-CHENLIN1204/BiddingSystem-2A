@@ -162,6 +162,76 @@ Console.WriteLine(
     "混合單位防呆：PASS"
 );
 
+var granularityResult =
+    service.CompareGranularity(
+        new GranularityPreviewRequest
+        {
+            TargetChapter =
+                "結構體工程",
+
+            TargetItemName =
+                "SD420W高拉力鋼筋#4以上",
+
+            MinimumSampleCount =
+                5,
+
+            Items =
+                new List<GranularityPreviewItem>
+                {
+                    new() { ProjectId = 1, Chapter = "結構體工程", Name = "SD420W高拉力鋼筋#4以上" },
+                    new() { ProjectId = 2, Chapter = "結構體工程", Name = "SD420W高拉力鋼筋#4以上" },
+                    new() { ProjectId = 3, Chapter = "結構體工程", Name = "SD420W高拉力鋼筋#4以上" },
+                    new() { ProjectId = 4, Chapter = "結構體工程", Name = "SD420W高拉力鋼筋#4以上" },
+                    new() { ProjectId = 5, Chapter = "結構體工程", Name = "SD420W高拉力鋼筋#3以下" },
+                    new() { ProjectId = 6, Chapter = "結構體工程", Name = "SD280鋼筋" },
+                    new() { ProjectId = 7, Chapter = "結構體工程", Name = "竹節鋼筋" },
+                    new() { ProjectId = 8, Chapter = "結構體工程", Name = "高拉力鋼筋" },
+                    new() { ProjectId = 9, Chapter = "結構體工程", Name = "SD420W高拉力鋼筋#5" },
+                    new() { ProjectId = 10, Chapter = "結構體工程", Name = "預拌混凝土 3500psi" }
+                }
+        }
+    );
+
+Assert(
+    granularityResult.Success,
+    "粒度比較應成功"
+);
+
+var granularity =
+    granularityResult.Data
+        as GranularityPreviewResponse;
+
+Assert(
+    granularity != null,
+    "粒度比較應回傳結果"
+);
+
+Assert(
+    granularity!.SpecificationProjectCount ==
+        4,
+    "規格層級應只有 4 個有效建案"
+);
+
+Assert(
+    granularity.DetectionCategoryProjectCount ==
+        9,
+    "鋼筋層級應有 9 個有效建案"
+);
+
+Assert(
+    !granularity.SpecificationHasEnoughSamples &&
+    granularity.DetectionCategoryHasEnoughSamples,
+    "應能示範規格層級不足、鋼筋層級足夠的取捨"
+);
+
+Console.WriteLine(
+    $"粒度比較：規格 {granularity.SpecificationProjectCount} 案 / 鋼筋 {granularity.DetectionCategoryProjectCount} 案，最低樣本數 {granularity.MinimumSampleCount}"
+);
+
+Console.WriteLine(
+    "粒度取捨示範：PASS"
+);
+
 return;
 
 static void Assert(
