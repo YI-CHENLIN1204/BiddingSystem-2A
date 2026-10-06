@@ -5,11 +5,10 @@ namespace 崴正.Services
     /// <summary>
     /// 2A 偵錯細項分類器。
     ///
-    /// 1D 已先把工項限縮至工程大項（例如結構體工程、鋼骨鋼構工程），
-    /// 2A 再依異常偵測需求把工程大項內的工項整理成可統計的材料細項。
+    /// 1D 已完成整個建案的工程大項分類；
+    /// 2A 不重做工程大項，而是在各大項內建立異常偵測所需的細項分類。
     ///
-    /// 目前只做「分類預覽」，不寫入資料庫、不改動既有異常偵測流程。
-    /// 等崴正確認細項粒度後，再把規則主檔化並接到正式分析流程。
+    /// 目前此服務仍屬 POC：只做分類與彙整預覽，不寫入正式異常結果。
     /// </summary>
     public class DetectionCategoryService
     {
@@ -73,29 +72,28 @@ namespace 崴正.Services
                     .ToList();
 
             var groups =
+                BuildDetectionGroups(
+                    items
+                );
+
+            var majorCategories =
                 items
-                    .Where(x =>
-                        x.ClassificationStatus ==
-                        "Classified" &&
-                        !string.IsNullOrWhiteSpace(
-                            x.DetectionCategory
-                        )
+                    .GroupBy(x =>
+                        x.MajorCategory
                     )
-                    .GroupBy(x => new
-                    {
-                        x.MajorCategory,
-                        x.DetectionCategory
-                    })
                     .Select(g =>
                     {
-                        var units =
-                            g.Select(x =>
-                                    x.Unit?.Trim()
+                        var detectionCategories =
+                            g.Where(x =>
+                                    x.ClassificationStatus ==
+                                        "Classified" &&
+                                    !string.IsNullOrWhiteSpace(
+                                        x.DetectionCategory
+                                    )
                                 )
-                                .Where(x =>
-                                    !string.IsNullOrWhiteSpace(x)
+                                .Select(x =>
+                                    x.DetectionCategory!
                                 )
-                                .Select(x => x!)
                                 .Distinct(
                                     StringComparer
                                         .OrdinalIgnoreCase
@@ -103,72 +101,45 @@ namespace 崴正.Services
                                 .OrderBy(x => x)
                                 .ToList();
 
-                        var quantities =
-                            g.Where(x =>
-                                    x.Quantity.HasValue
-                                )
-                                .Select(x =>
-                                    x.Quantity!.Value
-                                )
-                                .ToList();
-
-                        bool hasMixedUnits =
-                            units.Count > 1;
-
-                        bool canAggregate =
-                            units.Count == 1 &&
-                            quantities.Count ==
-                            g.Count();
-
-                        return new DetectionCategoryGroupDto
+                        return new MajorCategorySummaryDto
                         {
                             MajorCategory =
-                                g.Key.MajorCategory,
-
-                            DetectionCategory =
-                                g.Key.DetectionCategory!,
+                                g.Key,
 
                             ItemCount =
                                 g.Count(),
 
-                            Units =
-                                units,
+                            ClassifiedItemCount =
+                                g.Count(x =>
+                                    x.ClassificationStatus ==
+                                    "Classified"
+                                ),
 
-                            TotalQuantity =
-                                canAggregate
-                                    ? quantities.Sum()
-                                    : null,
+                            PendingItemCount =
+                                g.Count(x =>
+                                    x.ClassificationStatus !=
+                                    "Classified"
+                                ),
 
-                            AggregateUnit =
-                                canAggregate
-                                    ? units[0]
-                                    : null,
+                            HasDetectionRules =
+                                detectionCategories.Count > 0,
 
-                            AggregationStatus =
-                                canAggregate
-                                    ? "Ready"
-                                    : hasMixedUnits
-                                        ? "NeedsUnitNormalization"
-                                        : "MissingQuantityOrUnit",
-
-                            AggregationMessage =
-                                canAggregate
-                                    ? "同一偵錯細項之工項單位一致，可直接彙整。"
-                                    : hasMixedUnits
-                                        ? "同一偵錯細項出現不同單位，需先依 2A 單位主檔完成標準化後再彙整。"
-                                        : "部分工項缺少數量或單位，暫不納入正式數量彙整。"
+                            DetectionCategories =
+                                detectionCategories
                         };
                     })
                     .OrderBy(x =>
-                        x.MajorCategory)
-                    .ThenBy(x =>
-                        x.DetectionCategory)
+                        x.MajorCategory
+                    )
                     .ToList();
 
             return new DetectionCategoryPreviewResponse
             {
                 TotalItems =
                     items.Count,
+
+                MajorCategoryCount =
+                    majorCategories.Count,
 
                 ClassifiedItems =
                     items.Count(x =>
@@ -182,6 +153,9 @@ namespace 崴正.Services
                         "Classified"
                     ),
 
+                MajorCategories =
+                    majorCategories,
+
                 Groups =
                     groups,
 
@@ -190,189 +164,104 @@ namespace 崴正.Services
             };
         }
 
-        public ServiceResult
-            CompareGranularity(
-                GranularityPreviewRequest request)
+        private static List<DetectionCategoryGroupDto>
+            BuildDetectionGroups(
+                IEnumerable<DetectionCategoryPreviewItem> items)
         {
-            if (
-                request == null ||
-                request.Items == null ||
-                request.Items.Count == 0
-            )
-            {
-                return ServiceResult.Validation(
-                    "請至少提供一筆歷史工項"
-                );
-            }
-
-            if (
-                string.IsNullOrWhiteSpace(
-                    request.TargetChapter
-                ) ||
-                string.IsNullOrWhiteSpace(
-                    request.TargetItemName
+            return items
+                .Where(x =>
+                    x.ClassificationStatus ==
+                    "Classified" &&
+                    !string.IsNullOrWhiteSpace(
+                        x.DetectionCategory
+                    )
                 )
-            )
-            {
-                return ServiceResult.Validation(
-                    "請提供目標工程大項與原始工項名稱"
-                );
-            }
-
-            int minimumSampleCount =
-                Math.Max(
-                    1,
-                    request.MinimumSampleCount
-                );
-
-            var target =
-                Classify(
-                    new OneDSavedResultItem
-                    {
-                        Chapter =
-                            request.TargetChapter,
-
-                        Name =
-                            request.TargetItemName
-                    }
-                );
-
-            if (
-                target.ClassificationStatus !=
-                    "Classified" ||
-                string.IsNullOrWhiteSpace(
-                    target.DetectionCategory
-                )
-            )
-            {
-                return ServiceResult.Validation(
-                    "目標工項目前無法歸入可比較的偵錯細項"
-                );
-            }
-
-            string normalizedTargetName =
-                Normalize(
-                    request.TargetItemName
-                );
-
-            var specificationProjectIds =
-                request.Items
-                    .Where(x =>
-                        Normalize(x.Name) ==
-                        normalizedTargetName
-                    )
-                    .Select(x =>
-                        x.ProjectId
-                    )
-                    .Where(x =>
-                        x > 0
-                    )
-                    .Distinct()
-                    .OrderBy(x =>
-                        x
-                    )
-                    .ToList();
-
-            var detectionCategoryProjectIds =
-                request.Items
-                    .Where(x =>
-                    {
-                        var classified =
-                            Classify(
-                                new OneDSavedResultItem
-                                {
-                                    Chapter =
-                                        x.Chapter,
-
-                                    Name =
-                                        x.Name,
-
-                                    Unit =
-                                        x.Unit,
-
-                                    Quantity =
-                                        x.Quantity
-                                }
-                            );
-
-                        return
-                            classified
-                                .ClassificationStatus ==
-                                "Classified" &&
-                            classified
-                                .MajorCategory ==
-                                target.MajorCategory &&
-                            classified
-                                .DetectionCategory ==
-                                target.DetectionCategory;
-                    })
-                    .Select(x =>
-                        x.ProjectId
-                    )
-                    .Where(x =>
-                        x > 0
-                    )
-                    .Distinct()
-                    .OrderBy(x =>
-                        x
-                    )
-                    .ToList();
-
-            bool specificationHasEnoughSamples =
-                specificationProjectIds.Count >=
-                minimumSampleCount;
-
-            bool detectionCategoryHasEnoughSamples =
-                detectionCategoryProjectIds.Count >=
-                minimumSampleCount;
-
-            string recommendation =
-                !specificationHasEnoughSamples &&
-                detectionCategoryHasEnoughSamples
-                    ? $"規格層級僅有 {specificationProjectIds.Count} 個有效建案，低於最低樣本數 {minimumSampleCount}；改以「{target.DetectionCategory}」層級可取得 {detectionCategoryProjectIds.Count} 個建案，較適合作為目前異常偵測基準。"
-                    : specificationHasEnoughSamples
-                        ? $"目前「{request.TargetItemName}」已有 {specificationProjectIds.Count} 個有效建案，可進一步評估是否下切至規格層級。"
-                        : $"規格層級與「{target.DetectionCategory}」層級目前都未達最低樣本數 {minimumSampleCount}，應標示資料不足，不強制判定異常。";
-
-            return ServiceResult.Ok(
-                new GranularityPreviewResponse
+                .GroupBy(x => new
                 {
-                    TargetItemName =
-                        request.TargetItemName,
+                    x.MajorCategory,
+                    x.DetectionCategory
+                })
+                .Select(g =>
+                {
+                    var units =
+                        g.Select(x =>
+                                x.Unit?.Trim()
+                            )
+                            .Where(x =>
+                                !string.IsNullOrWhiteSpace(x)
+                            )
+                            .Select(x => x!)
+                            .Distinct(
+                                StringComparer
+                                    .OrdinalIgnoreCase
+                            )
+                            .OrderBy(x => x)
+                            .ToList();
 
-                    MajorCategory =
-                        target.MajorCategory,
+                    var quantities =
+                        g.Where(x =>
+                                x.Quantity.HasValue
+                            )
+                            .Select(x =>
+                                x.Quantity!.Value
+                            )
+                            .ToList();
 
-                    DetectionCategory =
-                        target.DetectionCategory,
+                    bool hasMixedUnits =
+                        units.Count > 1;
 
-                    MinimumSampleCount =
-                        minimumSampleCount,
+                    bool canAggregate =
+                        units.Count == 1 &&
+                        quantities.Count ==
+                        g.Count();
 
-                    SpecificationProjectCount =
-                        specificationProjectIds.Count,
+                    return new DetectionCategoryGroupDto
+                    {
+                        MajorCategory =
+                            g.Key.MajorCategory,
 
-                    DetectionCategoryProjectCount =
-                        detectionCategoryProjectIds.Count,
+                        DetectionCategory =
+                            g.Key.DetectionCategory!,
 
-                    SpecificationHasEnoughSamples =
-                        specificationHasEnoughSamples,
+                        ItemCount =
+                            g.Count(),
 
-                    DetectionCategoryHasEnoughSamples =
-                        detectionCategoryHasEnoughSamples,
+                        Units =
+                            units,
 
-                    SpecificationProjectIds =
-                        specificationProjectIds,
+                        TotalQuantity =
+                            canAggregate
+                                ? quantities.Sum()
+                                : null,
 
-                    DetectionCategoryProjectIds =
-                        detectionCategoryProjectIds,
+                        AggregateUnit =
+                            canAggregate
+                                ? units[0]
+                                : null,
 
-                    Recommendation =
-                        recommendation
-                }
-            );
+                        AggregationStatus =
+                            canAggregate
+                                ? "Ready"
+                                : hasMixedUnits
+                                    ? "NeedsUnitNormalization"
+                                    : "MissingQuantityOrUnit",
+
+                        AggregationMessage =
+                            canAggregate
+                                ? "同一偵錯細項之工項單位一致，可直接彙整。"
+                                : hasMixedUnits
+                                    ? "同一偵錯細項出現不同單位，需先依 2A 單位主檔完成標準化後再彙整。"
+                                    : "部分工項缺少數量或單位，暫不納入正式數量彙整。"
+                    };
+                })
+                .OrderBy(x =>
+                    x.MajorCategory
+                )
+                .ThenBy(x =>
+                    x.DetectionCategory
+                )
+                .ToList();
         }
-
 
         public DetectionCategoryPreviewItem
             Classify(
@@ -430,9 +319,8 @@ namespace 崴正.Services
                 );
             }
 
-            // ------------------------------------------
-            // 結構體工程
-            // ------------------------------------------
+            // 1D 已完成「結構體工程」大項分類，
+            // 2A 只在此大項內往下建立偵錯細項。
             if (
                 chapter.Contains(
                     "結構體",
@@ -449,7 +337,7 @@ namespace 崴正.Services
                 {
                     return Pending(
                         result,
-                        "鋼筋相關配件暫不併入鋼筋重量"
+                        "1D 已分類為結構體工程；此工項為鋼筋相關配件，暫不併入鋼筋重量"
                     );
                 }
 
@@ -464,7 +352,7 @@ namespace 崴正.Services
                     return Classified(
                         result,
                         "鋼筋",
-                        $"結構體工程 + 關鍵字「{rebar}」"
+                        $"1D 大項「結構體工程」＋關鍵字「{rebar}」"
                     );
                 }
 
@@ -479,7 +367,7 @@ namespace 崴正.Services
                     return Classified(
                         result,
                         "混凝土",
-                        $"結構體工程 + 關鍵字「{concrete}」"
+                        $"1D 大項「結構體工程」＋關鍵字「{concrete}」"
                     );
                 }
 
@@ -494,19 +382,18 @@ namespace 崴正.Services
                     return Classified(
                         result,
                         "模板",
-                        $"結構體工程 + 關鍵字「{formwork}」"
+                        $"1D 大項「結構體工程」＋關鍵字「{formwork}」"
                     );
                 }
 
                 return Pending(
                     result,
-                    "已限縮為結構體工程，但尚未符合鋼筋、混凝土或模板規則"
+                    "1D 已分類為結構體工程；2A 尚未建立此工項的偵錯細項規則"
                 );
             }
 
-            // ------------------------------------------
-            // 鋼骨鋼構工程
-            // ------------------------------------------
+            // 1D 已完成「鋼骨鋼構工程」大項分類，
+            // 2A 再建立可供數量異常分析的「鋼骨」細項。
             if (
                 chapter.Contains(
                     "鋼骨",
@@ -529,19 +416,21 @@ namespace 崴正.Services
                     return Classified(
                         result,
                         "鋼骨",
-                        $"鋼骨鋼構工程 + 關鍵字「{steel}」"
+                        $"1D 大項「{result.MajorCategory}」＋關鍵字「{steel}」"
                     );
                 }
 
                 return Pending(
                     result,
-                    "已限縮為鋼骨鋼構工程，但尚未符合鋼骨材料規則"
+                    $"1D 已分類為「{result.MajorCategory}」；2A 尚未建立此工項的偵錯細項規則"
                 );
             }
 
+            // 其他工程大項仍完整保留。
+            // 此 POC 不硬把尚未確認的工程內容塞進錯誤材料類別。
             return Pending(
                 result,
-                $"目前尚未建立「{result.MajorCategory}」的 2A 偵錯細項規則"
+                $"1D 已完成大項「{result.MajorCategory}」分類；2A 尚未建立此大項的偵錯細項規則"
             );
         }
 
