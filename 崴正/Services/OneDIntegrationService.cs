@@ -62,7 +62,7 @@ namespace 崴正.Services
 
                 message =
                     IsConfigured
-                        ? "1D API 已設定，可讀取已儲存的工程大項分類結果。"
+                        ? "1D API 已設定，可依 Project ID 讀取整個建案已儲存的工程大項分類結果。"
                         : "尚未設定 1D API。請設定 OneD__BaseUrl 或 Docker 的 ONE_D_API_BASE_URL。"
             };
         }
@@ -236,9 +236,13 @@ namespace 崴正.Services
 
                     preview.TotalItems,
 
+                    preview.MajorCategoryCount,
+
                     preview.ClassifiedItems,
 
                     preview.PendingItems,
+
+                    preview.MajorCategories,
 
                     preview.Groups,
 
