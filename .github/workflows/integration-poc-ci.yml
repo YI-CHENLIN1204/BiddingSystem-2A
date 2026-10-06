@@ -27,7 +27,7 @@ jobs:
       - name: Build backend
         run: dotnet build "./崴正/崴正.csproj" -c Release --no-restore
 
-      - name: Run detection category smoke test
+      - name: Run project-wide detection smoke test
         run: dotnet run --project "./tools/DetectionCategorySmokeTest/DetectionCategorySmokeTest.csproj" -c Release
 
       - name: Setup Node
@@ -51,7 +51,7 @@ jobs:
           DB_CONNECTION_STRING: "Host=example.invalid;Port=5432;Database=postgres;Username=postgres;Password=placeholder;SSL Mode=Require"
           ONE_D_API_BASE_URL: ""
 
-      - name: Run Docker demo smoke test
+      - name: Run Docker project preview smoke test
         shell: bash
         env:
           DB_CONNECTION_STRING: "Host=example.invalid;Port=5432;Database=postgres;Username=postgres;Password=placeholder;SSL Mode=Require"
@@ -82,61 +82,24 @@ jobs:
           curl --fail --silent http://127.0.0.1:8081/api/system/health
           echo
 
-          echo "Detection category demo:"
+          echo "Project-wide detection preview:"
           curl --fail --silent \
             -X POST \
             -H "Content-Type: application/json" \
             -d '{
               "items": [
-                {
-                  "chapter": "結構體工程",
-                  "name": "SD420W高拉力鋼筋#4以上",
-                  "unit": "KG",
-                  "quantity": 100000
-                },
-                {
-                  "chapter": "結構體工程",
-                  "name": "SD420W高拉力鋼筋#3以下",
-                  "unit": "KG",
-                  "quantity": 40000
-                },
-                {
-                  "chapter": "結構體工程",
-                  "name": "預拌混凝土 3500psi",
-                  "unit": "M3",
-                  "quantity": 3200
-                },
-                {
-                  "chapter": "結構體工程",
-                  "name": "SD420W鋼筋續接器",
-                  "unit": "個",
-                  "quantity": 780
-                }
+                {"chapter":"假設工程","name":"臨時水電及施工設施","unit":"式","quantity":1},
+                {"chapter":"土方及基礎工程","name":"地下室土方開挖","unit":"M3","quantity":8200},
+                {"chapter":"結構體工程","name":"SD420W高拉力鋼筋#4以上","unit":"KG","quantity":100000},
+                {"chapter":"結構體工程","name":"SD420W高拉力鋼筋#3以下","unit":"KG","quantity":40000},
+                {"chapter":"結構體工程","name":"預拌混凝土 3500psi","unit":"M3","quantity":3200},
+                {"chapter":"結構體工程","name":"結構體模板","unit":"M2","quantity":26000},
+                {"chapter":"結構體工程","name":"SD420W鋼筋續接器","unit":"個","quantity":780},
+                {"chapter":"鋼骨鋼構工程","name":"H型鋼鋼柱","unit":"T","quantity":850},
+                {"chapter":"防水工程","name":"屋頂防水層","unit":"M2","quantity":1800},
+                {"chapter":"門窗工程","name":"鋁門窗","unit":"樘","quantity":126},
+                {"chapter":"景觀工程","name":"景觀植栽","unit":"式","quantity":1}
               ]
             }' \
             http://127.0.0.1:8081/api/one-d/detection-preview
-          echo
-
-          echo "Granularity tradeoff demo:"
-          curl --fail --silent \
-            -X POST \
-            -H "Content-Type: application/json" \
-            -d '{
-              "targetChapter": "結構體工程",
-              "targetItemName": "SD420W高拉力鋼筋#4以上",
-              "minimumSampleCount": 5,
-              "items": [
-                {"projectId":1,"chapter":"結構體工程","name":"SD420W高拉力鋼筋#4以上"},
-                {"projectId":2,"chapter":"結構體工程","name":"SD420W高拉力鋼筋#4以上"},
-                {"projectId":3,"chapter":"結構體工程","name":"SD420W高拉力鋼筋#4以上"},
-                {"projectId":4,"chapter":"結構體工程","name":"SD420W高拉力鋼筋#4以上"},
-                {"projectId":5,"chapter":"結構體工程","name":"SD420W高拉力鋼筋#3以下"},
-                {"projectId":6,"chapter":"結構體工程","name":"SD280鋼筋"},
-                {"projectId":7,"chapter":"結構體工程","name":"竹節鋼筋"},
-                {"projectId":8,"chapter":"結構體工程","name":"高拉力鋼筋"},
-                {"projectId":9,"chapter":"結構體工程","name":"SD420W高拉力鋼筋#5"},
-                {"projectId":10,"chapter":"結構體工程","name":"預拌混凝土 3500psi"}
-              ]
-            }' \
-            http://127.0.0.1:8081/api/one-d/granularity-preview
           echo
