@@ -119,6 +119,25 @@ namespace 崴正.Controllers
             );
         }
 
+        /// <summary>
+        /// 比較「單一材料規格」與「偵錯細項」可取得的歷史建案樣本數。
+        /// 用於說明為何目前可能需要停在鋼筋、混凝土等材料類別。
+        /// </summary>
+        [HttpPost("granularity-preview")]
+        public IActionResult
+            PreviewGranularity(
+                [FromBody]
+                GranularityPreviewRequest request)
+        {
+            return ToActionResult(
+                _detectionCategoryService
+                    .CompareGranularity(
+                        request
+                    )
+            );
+        }
+
+
         private IActionResult ToActionResult(
             ServiceResult result)
         {
