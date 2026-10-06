@@ -39,7 +39,7 @@ namespace 崴正.Controllers
         }
 
         /// <summary>
-        /// 唯讀取得 1D 已完成並儲存的分類結果。
+        /// 唯讀取得 1D 已完成並儲存的整個建案分類結果。
         /// </summary>
         [HttpGet(
             "projects/{projectId:int}/result"
@@ -62,7 +62,8 @@ namespace 崴正.Controllers
         }
 
         /// <summary>
-        /// 從 1D 工程大項結果繼續做 2A 偵錯細項分類預覽。
+        /// 以建案為單位取得 1D 全部工程大項，
+        /// 再預覽 2A 已建立的偵錯細項分類。
         /// </summary>
         [HttpGet(
             "projects/{projectId:int}/detection-preview"
@@ -85,10 +86,9 @@ namespace 崴正.Controllers
         }
 
         /// <summary>
-        /// 不連線 1D 的本地分類預覽。
-        /// 可先用 Swagger 貼入 1D 項目測試：
-        /// 結構體工程 → 鋼筋 / 混凝土 / 模板，
-        /// 鋼骨鋼構工程 → 鋼骨。
+        /// 不連線 1D 的本地建案分類預覽。
+        /// 測試資料可以同時包含多個 1D 工程大項；
+        /// 2A 只對已建立規則的大項往下做偵錯細項分類。
         /// </summary>
         [HttpPost("detection-preview")]
         public IActionResult
@@ -106,7 +106,7 @@ namespace 崴正.Controllers
                     new
                     {
                         message =
-                            "請至少提供一筆 1D 分類項目"
+                            "請至少提供一筆 1D 建案工項"
                     }
                 );
             }
@@ -118,25 +118,6 @@ namespace 崴正.Controllers
                     )
             );
         }
-
-        /// <summary>
-        /// 比較「單一材料規格」與「偵錯細項」可取得的歷史建案樣本數。
-        /// 用於說明為何目前可能需要停在鋼筋、混凝土等材料類別。
-        /// </summary>
-        [HttpPost("granularity-preview")]
-        public IActionResult
-            PreviewGranularity(
-                [FromBody]
-                GranularityPreviewRequest request)
-        {
-            return ToActionResult(
-                _detectionCategoryService
-                    .CompareGranularity(
-                        request
-                    )
-            );
-        }
-
 
         private IActionResult ToActionResult(
             ServiceResult result)
