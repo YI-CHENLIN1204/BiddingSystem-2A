@@ -83,7 +83,10 @@ jobs:
           echo
 
           echo "Detection category demo:"
-          curl --fail --silent             -X POST             -H "Content-Type: application/json"             -d '{
+          curl --fail --silent \
+            -X POST \
+            -H "Content-Type: application/json" \
+            -d '{
               "items": [
                 {
                   "chapter": "結構體工程",
@@ -110,5 +113,30 @@ jobs:
                   "quantity": 780
                 }
               ]
-            }'             http://127.0.0.1:8081/api/one-d/detection-preview
+            }' \
+            http://127.0.0.1:8081/api/one-d/detection-preview
+          echo
+
+          echo "Granularity tradeoff demo:"
+          curl --fail --silent \
+            -X POST \
+            -H "Content-Type: application/json" \
+            -d '{
+              "targetChapter": "結構體工程",
+              "targetItemName": "SD420W高拉力鋼筋#4以上",
+              "minimumSampleCount": 5,
+              "items": [
+                {"projectId":1,"chapter":"結構體工程","name":"SD420W高拉力鋼筋#4以上"},
+                {"projectId":2,"chapter":"結構體工程","name":"SD420W高拉力鋼筋#4以上"},
+                {"projectId":3,"chapter":"結構體工程","name":"SD420W高拉力鋼筋#4以上"},
+                {"projectId":4,"chapter":"結構體工程","name":"SD420W高拉力鋼筋#4以上"},
+                {"projectId":5,"chapter":"結構體工程","name":"SD420W高拉力鋼筋#3以下"},
+                {"projectId":6,"chapter":"結構體工程","name":"SD280鋼筋"},
+                {"projectId":7,"chapter":"結構體工程","name":"竹節鋼筋"},
+                {"projectId":8,"chapter":"結構體工程","name":"高拉力鋼筋"},
+                {"projectId":9,"chapter":"結構體工程","name":"SD420W高拉力鋼筋#5"},
+                {"projectId":10,"chapter":"結構體工程","name":"預拌混凝土 3500psi"}
+              ]
+            }' \
+            http://127.0.0.1:8081/api/one-d/granularity-preview
           echo
