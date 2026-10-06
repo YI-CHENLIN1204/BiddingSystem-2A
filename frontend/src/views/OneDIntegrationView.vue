@@ -235,20 +235,20 @@ onMounted(loadStatus)
 
 <template>
   <div class="analysis-page">
-    <h2 class="page-title">建案量價異常分析預覽</h2>
+    <h2 class="page-title">1D → 2A 建案資料流 POC</h2>
     <div class="page-desc">
-      以「一個建案」為分析單位，一次承接 1D 已完成的全部工程大項分類。
-      2A 不重新判斷結構體工程、防水工程、門窗工程等大項，只在各工程大項內建立異常偵測需要的細項分類。
-      目前先完成結構體工程與鋼骨鋼構工程的細項 POC，其餘工程大項仍完整保留並標示待建立規則。
+      此頁僅為今天報告用的 POC，可視化 1D 與 2A 的預計資料流，不會寫入正式資料表，也不會改動既有異常偵測流程。
+      POC 以「一個建案」為單位，模擬承接 1D 已完成的全部工程大項分類，再由 2A 往下建立偵錯細項。
+      目前只示範結構體工程與鋼骨鋼構工程的細項，其餘工程大項完整保留。
     </div>
 
     <div v-if="error" class="message-box error">{{ error }}</div>
 
     <section class="analysis-card">
       <div class="card-header-wz">
-        <div class="card-title-wz">1. 1D 建案資料來源</div>
+        <div class="card-title-wz">1. POC：1D 建案資料來源</div>
         <div class="card-desc-wz">
-          2A 以 Project ID 讀取 1D 已儲存的整個建案分類結果，不重新解析快易新標單，也不重做工程大項分類。
+          此 POC 模擬 2A 依 Project ID 取得 1D 已分類的整個建案；目前不會把資料寫進 2A 正式流程。
         </div>
       </div>
 
@@ -277,16 +277,16 @@ onMounted(loadStatus)
 
     <section class="analysis-card">
       <div class="card-header-wz">
-        <div class="card-title-wz">2. 選擇建案並建立分析預覽</div>
+        <div class="card-title-wz">2. POC：載入示範建案</div>
         <div class="card-desc-wz">
-          正式介接後輸入 1D Project ID 即可取得該建案全部工程大項；目前也可使用內建示範建案展示完整資料流。
+          今天展示以內建示範建案為主；右側保留 1D Project ID 讀取能力，僅作為介接可行性驗證。
         </div>
       </div>
 
       <div class="card-body-wz">
         <div class="action-grid">
           <div class="demo-panel">
-            <div class="panel-title">完整建案 POC</div>
+            <div class="panel-title">今天報告用示範建案</div>
             <div class="small-text">
               示範資料同時包含假設、土方及基礎、結構體、鋼骨鋼構、防水、門窗與景觀等 1D 工程大項，
               用來確認 2A 是以整個建案為單位，而不是只處理結構體工程。
@@ -321,7 +321,7 @@ onMounted(loadStatus)
               </button>
             </div>
             <div class="small-text">
-              1D URL 尚未確認時可先使用左側示範建案；設定 ONE_D_API_BASE_URL 後即可改讀實際資料。
+              此功能只用於驗證 1D API 可讀取；今天報告不需要真的連到 1D。
             </div>
           </div>
         </div>
