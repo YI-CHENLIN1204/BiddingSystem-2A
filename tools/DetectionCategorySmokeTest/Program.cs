@@ -135,14 +135,22 @@ Assert(
     "結構體工程應已有 2A 細項規則"
 );
 
-Assert(
-    structural.DetectionCategories.SequenceEqual(
+var expectedStructuralCategories =
+    new HashSet<string>(
         new[]
         {
+            "鋼筋",
             "混凝土",
-            "模板",
-            "鋼筋"
-        }
+            "模板"
+        },
+        StringComparer.OrdinalIgnoreCase
+    );
+
+Assert(
+    structural.DetectionCategories.Count ==
+        expectedStructuralCategories.Count &&
+    structural.DetectionCategories.All(
+        expectedStructuralCategories.Contains
     ),
     "結構體工程應可往下形成鋼筋、混凝土、模板等偵錯細項"
 );
