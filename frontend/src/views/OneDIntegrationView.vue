@@ -43,13 +43,29 @@ interface DetectionPreview {
   items: DetectionItem[]
 }
 
+interface GranularityPreview {
+  targetItemName: string
+  majorCategory: string
+  detectionCategory?: string | null
+  minimumSampleCount: number
+  specificationProjectCount: number
+  detectionCategoryProjectCount: number
+  specificationHasEnoughSamples: boolean
+  detectionCategoryHasEnoughSamples: boolean
+  specificationProjectIds: number[]
+  detectionCategoryProjectIds: number[]
+  recommendation: string
+}
+
 const status = ref<IntegrationStatus | null>(null)
 const projectId = ref<number | null>(null)
 const loadingStatus = ref(false)
 const loadingPreview = ref(false)
 const error = ref('')
 const preview = ref<DetectionPreview | null>(null)
+const granularity = ref<GranularityPreview | null>(null)
 const sourceMode = ref<'demo' | 'oned'>('demo')
+const loadingGranularity = ref(false)
 
 const classifiedRate = computed(() => {
   if (!preview.value?.totalItems) return 0
@@ -93,6 +109,43 @@ async function loadFromOneD() {
     error.value = caught instanceof Error ? caught.message : '1D 分類結果取得失敗'
   } finally {
     loadingPreview.value = false
+  }
+}
+
+async function loadGranularityDemo() {
+  error.value = ''
+  granularity.value = null
+  loadingGranularity.value = true
+
+  const items = [
+    { projectId: 1, chapter: '結構體工程', name: 'SD420W高拉力鋼筋#4以上', unit: 'KG', quantity: 98000 },
+    { projectId: 2, chapter: '結構體工程', name: 'SD420W高拉力鋼筋#4以上', unit: 'KG', quantity: 104000 },
+    { projectId: 3, chapter: '結構體工程', name: 'SD420W高拉力鋼筋#4以上', unit: 'KG', quantity: 112000 },
+    { projectId: 4, chapter: '結構體工程', name: 'SD420W高拉力鋼筋#4以上', unit: 'KG', quantity: 101000 },
+
+    { projectId: 5, chapter: '結構體工程', name: 'SD420W高拉力鋼筋#3以下', unit: 'KG', quantity: 42000 },
+    { projectId: 6, chapter: '結構體工程', name: 'SD280鋼筋', unit: 'KG', quantity: 76000 },
+    { projectId: 7, chapter: '結構體工程', name: '竹節鋼筋', unit: 'KG', quantity: 88000 },
+    { projectId: 8, chapter: '結構體工程', name: '高拉力鋼筋', unit: 'KG', quantity: 93000 },
+    { projectId: 9, chapter: '結構體工程', name: 'SD420W高拉力鋼筋#5', unit: 'KG', quantity: 107000 },
+
+    { projectId: 10, chapter: '結構體工程', name: '預拌混凝土 3500psi', unit: 'M3', quantity: 3300 },
+  ]
+
+  try {
+    granularity.value = await api<GranularityPreview>('/one-d/granularity-preview', {
+      method: 'POST',
+      body: JSON.stringify({
+        targetChapter: '結構體工程',
+        targetItemName: 'SD420W高拉力鋼筋#4以上',
+        minimumSampleCount: 5,
+        items,
+      }),
+    })
+  } catch (caught) {
+    error.value = caught instanceof Error ? caught.message : '粒度比較失敗'
+  } finally {
+    loadingGranularity.value = false
   }
 }
 
@@ -254,6 +307,66 @@ onMounted(loadStatus)
       </div>
     </section>
 
+    <section class="integration-card">
+      <div class="card-header-wz">
+        <div class="card-title-wz">3. 偵錯粒度取捨示範</div>
+        <div class="card-desc-wz">
+          以示範歷史案件比較「SD420W 高拉力鋼筋 #4以上」與「鋼筋」層級的有效建案數，
+          用來驗證樣本數不足時是否應提升統計粒度。此區為 POC 示範資料，不代表崴正實際歷史分布。
+        </div>
+      </div>
+      <div class="card-body-wz">
+        <button
+          type="button"
+          class="btn-primary-wz"
+          :disabled="loadingGranularity"
+          @click="loadGranularityDemo"
+        >
+          {{ loadingGranularity ? '計算中' : '執行粒度比較示範' }}
+        </button>
+
+        <template v-if="granularity">
+          <div class="granularity-grid">
+            <article
+              class="granularity-card"
+              :class="granularity.specificationHasEnoughSamples ? 'granularity-ok' : 'granularity-bad'"
+            >
+              <div class="granularity-title">規格層級</div>
+              <div class="granularity-name">{{ granularity.targetItemName }}</div>
+              <div class="granularity-count">{{ granularity.specificationProjectCount }}</div>
+              <div class="granularity-threshold">
+                最低樣本數：{{ granularity.minimumSampleCount }}
+              </div>
+              <div class="granularity-result">
+                {{ granularity.specificationHasEnoughSamples ? '樣本足夠' : '樣本不足' }}
+              </div>
+            </article>
+
+            <div class="granularity-arrow">→</div>
+
+            <article
+              class="granularity-card"
+              :class="granularity.detectionCategoryHasEnoughSamples ? 'granularity-ok' : 'granularity-bad'"
+            >
+              <div class="granularity-title">偵錯細項層級</div>
+              <div class="granularity-name">{{ granularity.detectionCategory ?? '未分類' }}</div>
+              <div class="granularity-count">{{ granularity.detectionCategoryProjectCount }}</div>
+              <div class="granularity-threshold">
+                最低樣本數：{{ granularity.minimumSampleCount }}
+              </div>
+              <div class="granularity-result">
+                {{ granularity.detectionCategoryHasEnoughSamples ? '可建立比較基準' : '仍然不足' }}
+              </div>
+            </article>
+          </div>
+
+          <div class="recommendation-box">
+            <strong>系統建議：</strong>{{ granularity.recommendation }}
+          </div>
+        </template>
+      </div>
+    </section>
+
     <template v-if="preview">
       <section class="summary-grid">
         <article class="summary-card">
@@ -276,7 +389,7 @@ onMounted(loadStatus)
 
       <section class="integration-card">
         <div class="card-header-wz">
-          <div class="card-title-wz">3. 偵錯細項分類結果</div>
+          <div class="card-title-wz">4. 偵錯細項分類結果</div>
           <div class="card-desc-wz">
             保留 1D 工程大項，再由 2A 建立偵錯細項；原始工項仍完整保留供追溯。
           </div>
@@ -320,7 +433,7 @@ onMounted(loadStatus)
 
       <section class="integration-card">
         <div class="card-header-wz">
-          <div class="card-title-wz">4. 分類彙整</div>
+          <div class="card-title-wz">5. 分類彙整</div>
           <div class="card-desc-wz">
             此階段只確認工項是否能穩定歸入偵錯細項；正式數量彙整仍需接單位換算與樣本數控制。
           </div>
@@ -390,5 +503,16 @@ onMounted(loadStatus)
 .group-meta { margin-top: 8px; color: #6c757d; font-size: 12px; }
 .group-total { margin-top: 10px; font-size: 13px; font-weight: 800; color: #0f5132; }
 .group-warning { margin-top: 10px; font-size: 12px; line-height: 1.5; color: #664d03; background: #fff3cd; border-radius: 5px; padding: 7px 9px; }
-@media (max-width: 900px) { .action-grid, .summary-grid { grid-template-columns: 1fr; } .status-row, .input-row { align-items: stretch; flex-direction: column; } }
+.granularity-grid { display: grid; grid-template-columns: minmax(0,1fr) 60px minmax(0,1fr); gap: 14px; align-items: center; margin-top: 16px; }
+.granularity-card { border: 2px solid #d8dbe0; border-radius: 9px; padding: 18px; text-align: center; background: #fff; }
+.granularity-ok { border-color: #75b798; background: #f2fbf6; }
+.granularity-bad { border-color: #e0a800; background: #fffaf0; }
+.granularity-title { font-size: 12px; color: #6c757d; font-weight: 700; }
+.granularity-name { margin-top: 5px; min-height: 42px; font-size: 15px; font-weight: 800; color: #1f2d3d; display: flex; align-items: center; justify-content: center; }
+.granularity-count { margin-top: 8px; font-size: 36px; font-weight: 900; color: #321fdb; }
+.granularity-threshold { margin-top: 2px; font-size: 12px; color: #6c757d; }
+.granularity-result { margin-top: 9px; font-size: 13px; font-weight: 800; }
+.granularity-arrow { text-align: center; font-size: 32px; font-weight: 900; color: #6c757d; }
+.recommendation-box { margin-top: 14px; border: 1px solid #b6d4fe; background: #e7f1ff; color: #084298; border-radius: 7px; padding: 12px 14px; font-size: 13px; line-height: 1.7; }
+@media (max-width: 900px) { .action-grid, .summary-grid, .granularity-grid { grid-template-columns: 1fr; } .granularity-arrow { transform: rotate(90deg); } .status-row, .input-row { align-items: stretch; flex-direction: column; } }
 </style>
