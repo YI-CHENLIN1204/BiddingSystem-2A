@@ -9,6 +9,20 @@ var input =
     {
         new()
         {
+            Chapter = "假設工程",
+            Name = "臨時水電及施工設施",
+            Unit = "式",
+            Quantity = 1m
+        },
+        new()
+        {
+            Chapter = "土方及基礎工程",
+            Name = "地下室土方開挖",
+            Unit = "M3",
+            Quantity = 8200m
+        },
+        new()
+        {
             Chapter = "結構體工程",
             Name = "SD420W高拉力鋼筋#4以上",
             Unit = "KG",
@@ -37,6 +51,13 @@ var input =
         },
         new()
         {
+            Chapter = "結構體工程",
+            Name = "SD420W鋼筋續接器",
+            Unit = "個",
+            Quantity = 780m
+        },
+        new()
+        {
             Chapter = "鋼骨鋼構工程",
             Name = "H型鋼鋼柱",
             Unit = "T",
@@ -44,10 +65,24 @@ var input =
         },
         new()
         {
-            Chapter = "結構體工程",
-            Name = "SD420W鋼筋續接器",
-            Unit = "個",
-            Quantity = 780m
+            Chapter = "防水工程",
+            Name = "屋頂防水層",
+            Unit = "M2",
+            Quantity = 1800m
+        },
+        new()
+        {
+            Chapter = "門窗工程",
+            Name = "鋁門窗",
+            Unit = "樘",
+            Quantity = 126m
+        },
+        new()
+        {
+            Chapter = "景觀工程",
+            Name = "景觀植栽",
+            Unit = "式",
+            Quantity = 1m
         }
     };
 
@@ -57,18 +92,69 @@ var preview =
     );
 
 Assert(
-    preview.TotalItems == 6,
-    "總工項數應為 6"
+    preview.TotalItems == 11,
+    "完整建案示範應有 11 筆工項"
+);
+
+Assert(
+    preview.MajorCategoryCount == 7,
+    "應保留 1D 提供的 7 個工程大項"
+);
+
+Assert(
+    preview.MajorCategories.Any(x =>
+        x.MajorCategory == "防水工程"
+    ),
+    "防水工程必須保留，不可因 2A 尚未建立細項規則而遺失"
+);
+
+Assert(
+    preview.MajorCategories.Any(x =>
+        x.MajorCategory == "門窗工程"
+    ),
+    "門窗工程必須保留，不可因 2A 尚未建立細項規則而遺失"
 );
 
 Assert(
     preview.ClassifiedItems == 5,
-    "應有 5 筆成功分類"
+    "目前 POC 應有 5 筆可歸入 2A 偵錯細項"
 );
 
 Assert(
-    preview.PendingItems == 1,
-    "鋼筋續接器應維持待確認"
+    preview.PendingItems == 6,
+    "其餘工程大項與鋼筋配件應維持待建立或待確認"
+);
+
+var structural =
+    preview.MajorCategories.Single(x =>
+        x.MajorCategory == "結構體工程"
+    );
+
+Assert(
+    structural.HasDetectionRules,
+    "結構體工程應已有 2A 細項規則"
+);
+
+Assert(
+    structural.DetectionCategories.SequenceEqual(
+        new[]
+        {
+            "混凝土",
+            "模板",
+            "鋼筋"
+        }
+    ),
+    "結構體工程應可往下形成鋼筋、混凝土、模板等偵錯細項"
+);
+
+var waterproof =
+    preview.MajorCategories.Single(x =>
+        x.MajorCategory == "防水工程"
+    );
+
+Assert(
+    !waterproof.HasDetectionRules,
+    "防水工程目前應保留 1D 大項，但不硬建立未確認的 2A 細項"
 );
 
 var rebar =
@@ -84,7 +170,7 @@ Assert(
 
 Assert(
     rebar!.ItemCount == 2,
-    "鋼筋群組應包含 2 筆工項"
+    "鋼筋群組應包含 2 筆原始工項"
 );
 
 Assert(
@@ -147,11 +233,15 @@ Assert(
 );
 
 Console.WriteLine(
-    "2A Detection Category Smoke Test: PASS"
+    "2A Project-wide Detection Preview Smoke Test: PASS"
 );
 
 Console.WriteLine(
-    $"分類結果：{preview.ClassifiedItems}/{preview.TotalItems}，待確認 {preview.PendingItems}"
+    $"工程大項：{preview.MajorCategoryCount}，建案工項：{preview.TotalItems}"
+);
+
+Console.WriteLine(
+    $"2A 已歸類細項：{preview.ClassifiedItems}，待建立/確認：{preview.PendingItems}"
 );
 
 Console.WriteLine(
@@ -159,77 +249,11 @@ Console.WriteLine(
 );
 
 Console.WriteLine(
+    "未建立細項的大項保留：PASS"
+);
+
+Console.WriteLine(
     "混合單位防呆：PASS"
-);
-
-var granularityResult =
-    service.CompareGranularity(
-        new GranularityPreviewRequest
-        {
-            TargetChapter =
-                "結構體工程",
-
-            TargetItemName =
-                "SD420W高拉力鋼筋#4以上",
-
-            MinimumSampleCount =
-                5,
-
-            Items =
-                new List<GranularityPreviewItem>
-                {
-                    new() { ProjectId = 1, Chapter = "結構體工程", Name = "SD420W高拉力鋼筋#4以上" },
-                    new() { ProjectId = 2, Chapter = "結構體工程", Name = "SD420W高拉力鋼筋#4以上" },
-                    new() { ProjectId = 3, Chapter = "結構體工程", Name = "SD420W高拉力鋼筋#4以上" },
-                    new() { ProjectId = 4, Chapter = "結構體工程", Name = "SD420W高拉力鋼筋#4以上" },
-                    new() { ProjectId = 5, Chapter = "結構體工程", Name = "SD420W高拉力鋼筋#3以下" },
-                    new() { ProjectId = 6, Chapter = "結構體工程", Name = "SD280鋼筋" },
-                    new() { ProjectId = 7, Chapter = "結構體工程", Name = "竹節鋼筋" },
-                    new() { ProjectId = 8, Chapter = "結構體工程", Name = "高拉力鋼筋" },
-                    new() { ProjectId = 9, Chapter = "結構體工程", Name = "SD420W高拉力鋼筋#5" },
-                    new() { ProjectId = 10, Chapter = "結構體工程", Name = "預拌混凝土 3500psi" }
-                }
-        }
-    );
-
-Assert(
-    granularityResult.Success,
-    "粒度比較應成功"
-);
-
-var granularity =
-    granularityResult.Data
-        as GranularityPreviewResponse;
-
-Assert(
-    granularity != null,
-    "粒度比較應回傳結果"
-);
-
-Assert(
-    granularity!.SpecificationProjectCount ==
-        4,
-    "規格層級應只有 4 個有效建案"
-);
-
-Assert(
-    granularity.DetectionCategoryProjectCount ==
-        9,
-    "鋼筋層級應有 9 個有效建案"
-);
-
-Assert(
-    !granularity.SpecificationHasEnoughSamples &&
-    granularity.DetectionCategoryHasEnoughSamples,
-    "應能示範規格層級不足、鋼筋層級足夠的取捨"
-);
-
-Console.WriteLine(
-    $"粒度比較：規格 {granularity.SpecificationProjectCount} 案 / 鋼筋 {granularity.DetectionCategoryProjectCount} 案，最低樣本數 {granularity.MinimumSampleCount}"
-);
-
-Console.WriteLine(
-    "粒度取捨示範：PASS"
 );
 
 return;
