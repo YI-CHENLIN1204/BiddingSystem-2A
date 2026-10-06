@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { computed, ref } from 'vue'
+import { computed, ref, watch } from 'vue'
 
 type StepState = 'idle' | 'loaded' | 'processed'
 
@@ -20,6 +20,11 @@ interface OneDItem {
   quantity: number
 }
 
+interface ProjectCase {
+  project: ProjectInfo
+  items: OneDItem[]
+}
+
 interface TwoAItem extends OneDItem {
   detectionCategory?: string
   status: 'classified' | 'pending'
@@ -29,28 +34,62 @@ interface TwoAItem extends OneDItem {
 const state = ref<StepState>('idle')
 const selectedProjectId = ref(101)
 
-const project: ProjectInfo = {
-  id: 101,
-  name: '集合住宅 A（POC）',
-  buildingType: '集合住宅',
-  structureType: 'RC',
-  location: '台中市',
-  totalFloorArea: 18650,
-}
-
-const sourceItems: OneDItem[] = [
-  { chapter: '假設工程', code: 'TMP-001', name: '臨時水電及施工設施', unit: '式', quantity: 1 },
-  { chapter: '土方及基礎工程', code: 'EAR-001', name: '地下室土方開挖', unit: 'M3', quantity: 8200 },
-  { chapter: '結構體工程', code: 'STR-001', name: 'SD420W高拉力鋼筋#4以上', unit: 'KG', quantity: 100000 },
-  { chapter: '結構體工程', code: 'STR-002', name: 'SD420W高拉力鋼筋#3以下', unit: 'KG', quantity: 40000 },
-  { chapter: '結構體工程', code: 'STR-003', name: '預拌混凝土 3500psi', unit: 'M3', quantity: 3200 },
-  { chapter: '結構體工程', code: 'STR-004', name: '結構體模板', unit: 'M2', quantity: 26000 },
-  { chapter: '結構體工程', code: 'STR-005', name: 'SD420W鋼筋續接器', unit: '個', quantity: 780 },
-  { chapter: '鋼骨鋼構工程', code: 'STL-001', name: 'H型鋼鋼柱', unit: 'T', quantity: 850 },
-  { chapter: '防水工程', code: 'WAT-001', name: '屋頂防水層', unit: 'M2', quantity: 1800 },
-  { chapter: '門窗工程', code: 'DOR-001', name: '鋁門窗', unit: '樘', quantity: 126 },
-  { chapter: '景觀工程', code: 'LND-001', name: '景觀植栽', unit: '式', quantity: 1 },
+const projectCases: ProjectCase[] = [
+  {
+    project: {
+      id: 101,
+      name: '集合住宅 A（POC）',
+      buildingType: '集合住宅',
+      structureType: 'RC',
+      location: '台中市',
+      totalFloorArea: 18650,
+    },
+    items: [
+      { chapter: '假設工程', code: 'TMP-001', name: '臨時水電及施工設施', unit: '式', quantity: 1 },
+      { chapter: '土方及基礎工程', code: 'EAR-001', name: '地下室土方開挖', unit: 'M3', quantity: 8200 },
+      { chapter: '結構體工程', code: 'STR-001', name: 'SD420W高拉力鋼筋#4以上', unit: 'KG', quantity: 100000 },
+      { chapter: '結構體工程', code: 'STR-002', name: 'SD420W高拉力鋼筋#3以下', unit: 'KG', quantity: 40000 },
+      { chapter: '結構體工程', code: 'STR-003', name: '預拌混凝土 3500psi', unit: 'M3', quantity: 3200 },
+      { chapter: '結構體工程', code: 'STR-004', name: '結構體模板', unit: 'M2', quantity: 26000 },
+      { chapter: '結構體工程', code: 'STR-005', name: 'SD420W鋼筋續接器', unit: '個', quantity: 780 },
+      { chapter: '鋼骨鋼構工程', code: 'STL-001', name: 'H型鋼鋼柱', unit: 'T', quantity: 850 },
+      { chapter: '防水工程', code: 'WAT-001', name: '屋頂防水層', unit: 'M2', quantity: 1800 },
+      { chapter: '門窗工程', code: 'DOR-001', name: '鋁門窗', unit: '樘', quantity: 126 },
+      { chapter: '景觀工程', code: 'LND-001', name: '景觀植栽', unit: '式', quantity: 1 },
+    ],
+  },
+  {
+    project: {
+      id: 202,
+      name: '廠房 B（POC）',
+      buildingType: '廠房',
+      structureType: '鋼骨造（SS）',
+      location: '台中市',
+      totalFloorArea: 24500,
+    },
+    items: [
+      { chapter: '假設工程', code: 'TMP-F01', name: '臨時水電及施工設施', unit: '式', quantity: 1 },
+      { chapter: '土方及基礎工程', code: 'EAR-F01', name: '廠房基礎土方開挖', unit: 'M3', quantity: 12000 },
+      { chapter: '結構體工程', code: 'STR-F01', name: 'SD420W高拉力鋼筋#4以上', unit: 'KG', quantity: 68000 },
+      { chapter: '結構體工程', code: 'STR-F02', name: '預拌混凝土 4000psi', unit: 'M3', quantity: 4100 },
+      { chapter: '結構體工程', code: 'STR-F03', name: '基礎模板', unit: 'M2', quantity: 9800 },
+      { chapter: '鋼骨鋼構工程', code: 'STL-F01', name: 'H型鋼鋼柱', unit: 'T', quantity: 1800 },
+      { chapter: '鋼骨鋼構工程', code: 'STL-F02', name: 'H型鋼鋼梁', unit: 'T', quantity: 1250 },
+      { chapter: '鋼骨鋼構工程', code: 'STL-F03', name: '鋼構斜撐', unit: 'T', quantity: 260 },
+      { chapter: '防水工程', code: 'WAT-F01', name: '屋頂防水層', unit: 'M2', quantity: 6200 },
+      { chapter: '外部裝修工程', code: 'EXT-F01', name: '彩色鋼板外牆', unit: 'M2', quantity: 7800 },
+      { chapter: '門窗工程', code: 'DOR-F01', name: '廠房鋁門窗', unit: '樘', quantity: 72 },
+      { chapter: '雜項工程', code: 'MSC-F01', name: '廠房安全欄杆', unit: 'M', quantity: 480 },
+    ],
+  },
 ]
+
+const selectedCase = computed(
+  () => projectCases.find((item) => item.project.id === selectedProjectId.value) ?? projectCases[0],
+)
+
+const project = computed(() => selectedCase.value.project)
+const sourceItems = computed(() => selectedCase.value.items)
 
 function classifyItem(item: OneDItem): TwoAItem {
   if (item.chapter === '結構體工程') {
@@ -117,11 +156,11 @@ function classifyItem(item: OneDItem): TwoAItem {
   }
 }
 
-const processedItems = computed(() => sourceItems.map(classifyItem))
+const processedItems = computed(() => sourceItems.value.map(classifyItem))
 
 const chapterSummary = computed(() => {
   const map = new Map<string, number>()
-  for (const item of sourceItems) {
+  for (const item of sourceItems.value) {
     map.set(item.chapter, (map.get(item.chapter) ?? 0) + 1)
   }
   return Array.from(map.entries()).map(([chapter, count]) => ({ chapter, count }))
@@ -158,6 +197,10 @@ const classifiedCount = computed(
 
 const pendingCount = computed(() => processedItems.value.length - classifiedCount.value)
 
+watch(selectedProjectId, () => {
+  state.value = 'idle'
+})
+
 function loadOneDResult() {
   state.value = 'loaded'
 }
@@ -192,7 +235,13 @@ function formatNumber(value: number | null) {
         <div class="field">
           <label>建案</label>
           <select v-model="selectedProjectId" class="form-control">
-            <option :value="101">{{ project.name }}</option>
+            <option
+              v-for="item in projectCases"
+              :key="item.project.id"
+              :value="item.project.id"
+            >
+              {{ item.project.name }}
+            </option>
           </select>
         </div>
         <div class="project-meta">
