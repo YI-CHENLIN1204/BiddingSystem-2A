@@ -108,12 +108,12 @@ namespace 崴正.Services
                         !string.IsNullOrWhiteSpace(
                             x.DetectionCategory
                         ))
-                    .GroupBy(x => new
-                    {
-                        x.MajorCategory,
-                        DetectionCategory =
+                    .GroupBy(x => (
+                        MajorCategory:
+                            x.MajorCategory,
+                        DetectionCategory:
                             x.DetectionCategory!
-                    })
+                    ))
                     .Select(BuildGroup)
                     .OrderBy(x =>
                         x.MajorCategory)
@@ -316,7 +316,10 @@ namespace 崴正.Services
             TwoADetectionGroupDto
             BuildGroup(
                 IGrouping<
-                    dynamic,
+                    (
+                        string MajorCategory,
+                        string DetectionCategory
+                    ),
                     TwoAPreprocessItemDto>
                         group)
         {
