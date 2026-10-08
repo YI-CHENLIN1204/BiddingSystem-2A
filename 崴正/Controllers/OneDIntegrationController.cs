@@ -12,13 +12,22 @@ namespace 崴正.Controllers
             OneDIntegrationService
                 _oneDIntegrationService;
 
+        private readonly
+            TwoAPreprocessService
+                _twoAPreprocessService;
+
 
         public OneDIntegrationController(
             OneDIntegrationService
-                oneDIntegrationService)
+                oneDIntegrationService,
+            TwoAPreprocessService
+                twoAPreprocessService)
         {
             _oneDIntegrationService =
                 oneDIntegrationService;
+
+            _twoAPreprocessService =
+                twoAPreprocessService;
         }
 
 
@@ -37,6 +46,44 @@ namespace 崴正.Controllers
                         ? "1D API 已設定，可進行正式介接測試。"
                         : "1D API 尚未設定；目前不影響既有 2A 功能。"
             });
+        }
+
+
+        [HttpGet(
+            "projects/{projectId:int}/preprocess")]
+        public async Task<IActionResult>
+            GetProjectPreprocess(
+                int projectId,
+                CancellationToken
+                    cancellationToken)
+        {
+            var source =
+                await _oneDIntegrationService
+                    .GetProjectResultAsync(
+                        projectId,
+                        cancellationToken
+                    );
+
+            if (!source.Success)
+            {
+                return StatusCode(
+                    source.StatusCode,
+                    new
+                    {
+                        message =
+                            source.Message
+                    }
+                );
+            }
+
+            var result =
+                _twoAPreprocessService
+                    .Build(
+                        projectId,
+                        source.Data!.Items
+                    );
+
+            return Ok(result);
         }
 
 
