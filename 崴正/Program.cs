@@ -53,6 +53,7 @@ builder.Services.AddScoped<StandardMaterialService>();
 builder.Services.AddScoped<AuditLogService>();
 builder.Services.AddScoped<UnitCategoryService>();
 builder.Services.AddScoped<UnitMasterService>();
+builder.Services.AddScoped<TwoAPreprocessService>();
 
 builder.Services.AddHttpClient<OneDIntegrationService>(
     (serviceProvider, client) =>
