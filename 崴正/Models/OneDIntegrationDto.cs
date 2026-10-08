@@ -55,3 +55,104 @@ namespace 崴正.Models
         public OneDSavedResultData? Data { get; set; }
     }
 }
+
+
+namespace 崴正.Models
+{
+    public class TwoAProjectPreprocessResponse
+    {
+        public int ProjectId { get; set; }
+
+        public int SourceItemCount { get; set; }
+
+        public int MajorCategoryCount { get; set; }
+
+        public int IncludedItemCount { get; set; }
+
+        public int ExcludedItemCount { get; set; }
+
+        public int PendingItemCount { get; set; }
+
+        public List<TwoAMajorCategorySummaryDto>
+            MajorCategories { get; set; }
+                = new();
+
+        public List<TwoADetectionGroupDto>
+            Groups { get; set; }
+                = new();
+
+        public List<TwoAPreprocessItemDto>
+            Items { get; set; }
+                = new();
+    }
+
+
+    public class TwoAMajorCategorySummaryDto
+    {
+        public string MajorCategory { get; set; }
+            = string.Empty;
+
+        public int ItemCount { get; set; }
+
+        public bool IsEstimable { get; set; }
+
+        public string Reason { get; set; }
+            = string.Empty;
+
+        public List<string> DetectionCategories
+        {
+            get;
+            set;
+        } = new();
+    }
+
+
+    public class TwoADetectionGroupDto
+    {
+        public string MajorCategory { get; set; }
+            = string.Empty;
+
+        public string DetectionCategory { get; set; }
+            = string.Empty;
+
+        public int ItemCount { get; set; }
+
+        public List<string> Units { get; set; }
+            = new();
+
+        public string AggregationStatus { get; set; }
+            = string.Empty;
+
+        public decimal? TotalQuantity { get; set; }
+    }
+
+
+    public class TwoAPreprocessItemDto
+    {
+        public string MajorCategory { get; set; }
+            = string.Empty;
+
+        public string? DetectionCategory
+        {
+            get;
+            set;
+        }
+
+        public string? Code { get; set; }
+
+        public string Name { get; set; }
+            = string.Empty;
+
+        public string? Unit { get; set; }
+
+        public decimal? Quantity { get; set; }
+
+        public decimal? Confidence { get; set; }
+
+        public string Status { get; set; }
+            = string.Empty;
+
+        public string Reason { get; set; }
+            = string.Empty;
+    }
+}
