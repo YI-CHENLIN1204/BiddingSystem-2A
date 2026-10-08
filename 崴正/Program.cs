@@ -54,6 +54,30 @@ builder.Services.AddScoped<AuditLogService>();
 builder.Services.AddScoped<UnitCategoryService>();
 builder.Services.AddScoped<UnitMasterService>();
 
+builder.Services.AddHttpClient<OneDIntegrationService>(
+    (serviceProvider, client) =>
+    {
+        var configuration =
+            serviceProvider
+                .GetRequiredService<IConfiguration>();
+
+        var baseUrl =
+            configuration["OneD:BaseUrl"];
+
+        if (Uri.TryCreate(
+                baseUrl,
+                UriKind.Absolute,
+                out var baseUri))
+        {
+            client.BaseAddress =
+                baseUri;
+        }
+
+        client.Timeout =
+            TimeSpan.FromSeconds(20);
+    }
+);
+
 
 var connectionString =
     builder.Configuration.GetConnectionString("DefaultConnection");
