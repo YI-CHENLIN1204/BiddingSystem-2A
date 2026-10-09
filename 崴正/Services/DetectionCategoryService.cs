@@ -194,5 +194,192 @@ namespace 崴正.Services
 
             return ServiceResult.Ok(mappings);
         }
+
+
+        public ServiceResult AssignMaterial(
+            int detectionCategoryId,
+            int materialId,
+            string actionUser)
+        {
+            var category =
+                _context.DetectionCategories
+                    .Include(x => x.UnitMaster)
+                    .FirstOrDefault(x =>
+                        x.DetectionCategoryId ==
+                            detectionCategoryId);
+
+            if (category == null)
+            {
+                return ServiceResult.NotFound(
+                    "找不到指定的偵錯細項");
+            }
+
+            if (!category.IsActive)
+            {
+                return ServiceResult.Validation(
+                    "指定的偵錯細項目前已停用");
+            }
+
+            var material =
+                _context.MaterialMasters
+                    .Include(x => x.UnitMaster)
+                    .FirstOrDefault(x =>
+                        x.MaterialId == materialId);
+
+            if (material == null)
+            {
+                return ServiceResult.NotFound(
+                    "找不到指定的標準材料");
+            }
+
+            if (!material.IsActive)
+            {
+                return ServiceResult.Validation(
+                    "指定的標準材料目前已停用");
+            }
+
+            if (!_unitConversionService.CanConvert(
+                    material.UnitMaster.UnitName,
+                    category.UnitId))
+            {
+                return ServiceResult.Validation(
+                    $"標準材料「{material.MaterialName}」的單位「{material.UnitMaster.UnitName}」無法換算為偵錯細項標準單位「{category.UnitMaster.UnitName}」。");
+            }
+
+            var mapping =
+                _context.DetectionCategoryMaterialMaps
+                    .FirstOrDefault(x =>
+                        x.MaterialId == materialId);
+
+            int? oldDetectionCategoryId =
+                mapping?.DetectionCategoryId;
+
+            if (mapping == null)
+            {
+                mapping =
+                    new DetectionCategoryMaterialMap
+                    {
+                        MaterialId = materialId,
+                        DetectionCategoryId =
+                            detectionCategoryId,
+                        IsActive = true,
+                        CreatedAt = DateTime.UtcNow,
+                        UpdatedAt = DateTime.UtcNow
+                    };
+
+                _context
+                    .DetectionCategoryMaterialMaps
+                    .Add(mapping);
+            }
+            else
+            {
+                mapping.DetectionCategoryId =
+                    detectionCategoryId;
+                mapping.IsActive = true;
+                mapping.UpdatedAt =
+                    DateTime.UtcNow;
+            }
+
+            _auditLogService.AddLog(
+                module: "2A偵錯細項",
+                actionType: "AssignDetectionMaterial",
+                entityType:
+                    "DetectionCategoryMaterialMap",
+                entityId: materialId,
+                description:
+                    $"標準材料「{material.MaterialName}」對應至偵錯細項「{category.DetectionCategoryName}」",
+                actionUser: actionUser,
+                oldValue: new
+                {
+                    detectionCategoryId =
+                        oldDetectionCategoryId
+                },
+                newValue: new
+                {
+                    detectionCategoryId,
+                    materialId,
+                    category =
+                        category.DetectionCategoryName,
+                    standardUnit =
+                        category.UnitMaster.UnitName
+                });
+
+            _context.SaveChanges();
+
+            return ServiceResult.Ok(new
+            {
+                message =
+                    "標準材料偵錯細項對應已更新",
+                detectionCategoryId,
+                materialId
+            });
+        }
+
+
+        public ServiceResult UnassignMaterial(
+            int materialId,
+            string actionUser)
+        {
+            var mapping =
+                _context.DetectionCategoryMaterialMaps
+                    .Include(x => x.Material)
+                    .Include(x => x.DetectionCategory)
+                    .FirstOrDefault(x =>
+                        x.MaterialId == materialId);
+
+            if (mapping == null)
+            {
+                return ServiceResult.NotFound(
+                    "此標準材料尚未建立偵錯細項對應");
+            }
+
+            bool oldIsActive =
+                mapping.IsActive;
+
+            mapping.IsActive = false;
+            mapping.UpdatedAt =
+                DateTime.UtcNow;
+
+            _auditLogService.AddLog(
+                module: "2A偵錯細項",
+                actionType:
+                    "UnassignDetectionMaterial",
+                entityType:
+                    "DetectionCategoryMaterialMap",
+                entityId: materialId,
+                description:
+                    $"取消標準材料「{mapping.Material.MaterialName}」的偵錯細項對應",
+                actionUser: actionUser,
+                oldValue: new
+                {
+                    mapping.DetectionCategoryId,
+                    detectionCategoryName =
+                        mapping.DetectionCategory
+                            .DetectionCategoryName,
+                    isActive = oldIsActive
+                },
+                newValue: new
+                {
+                    isActive = false
+                });
+
+            _context.SaveChanges();
+
+            return ServiceResult.Ok(new
+            {
+                message =
+                    "偵錯細項對應已取消",
+                materialId
+            });
+        }
+
+
+        private static string NormalizeText(
+            string? value)
+        {
+            return string.IsNullOrWhiteSpace(value)
+                ? string.Empty
+                : value.Trim();
+        }
     }
 }
