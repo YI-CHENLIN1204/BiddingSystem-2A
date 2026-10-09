@@ -4,6 +4,19 @@ namespace 崴正.Services
 {
     public class TwoAPreprocessService
     {
+        private readonly UnitConversionService
+            _unitConversionService;
+
+
+        public TwoAPreprocessService(
+            UnitConversionService
+                unitConversionService)
+        {
+            _unitConversionService =
+                unitConversionService;
+        }
+
+
         private static readonly
             Dictionary<string, string>
                 ExcludedChapterReasons =
@@ -46,6 +59,18 @@ namespace 崴正.Services
                         BuildItem
                     )
                     .ToList();
+
+            foreach (var item in
+                items.Where(x =>
+                    x.Status == "Included" &&
+                    !string.IsNullOrWhiteSpace(
+                        x.DetectionCategory
+                    )))
+            {
+                ApplyUnitNormalization(
+                    item
+                );
+            }
 
             var majorCategories =
                 items
@@ -312,7 +337,7 @@ namespace 崴正.Services
         }
 
 
-        private static
+        private
             TwoADetectionGroupDto
             BuildGroup(
                 IGrouping<
@@ -323,7 +348,7 @@ namespace 崴正.Services
                     TwoAPreprocessItemDto>
                         group)
         {
-            var units =
+            var sourceUnits =
                 group
                     .Select(x =>
                         NormalizeUnit(
@@ -336,14 +361,60 @@ namespace 崴正.Services
                         StringComparer
                             .OrdinalIgnoreCase
                     )
+                    .OrderBy(x => x)
                     .ToList();
 
-            bool allHaveQuantity =
-                group.All(x =>
-                    x.Quantity.HasValue);
+            bool missingQuantityOrUnit =
+                group.Any(x =>
+                    !x.Quantity.HasValue ||
+                    string.IsNullOrWhiteSpace(
+                        x.Unit
+                    ));
 
-            bool oneUnit =
-                units.Count == 1;
+            bool normalizationFailed =
+                group.Any(x =>
+                    x.UnitNormalizationStatus ==
+                        "UnitNotConfigured" ||
+                    x.UnitNormalizationStatus ==
+                        "ConversionUnavailable");
+
+            var normalizedUnits =
+                group
+                    .Select(x =>
+                        x.NormalizedUnit)
+                    .Where(x =>
+                        !string.IsNullOrWhiteSpace(
+                            x))
+                    .Select(x => x!)
+                    .Distinct(
+                        StringComparer
+                            .OrdinalIgnoreCase
+                    )
+                    .ToList();
+
+            bool ready =
+                !missingQuantityOrUnit &&
+                !normalizationFailed &&
+                normalizedUnits.Count == 1 &&
+                group.All(x =>
+                    x.NormalizedQuantity
+                        .HasValue);
+
+            bool normalizationApplied =
+                group.Any(x =>
+                    x.UnitConversionFactor
+                        .HasValue &&
+                    x.UnitConversionFactor.Value !=
+                        1m);
+
+            string aggregationStatus =
+                missingQuantityOrUnit
+                    ? "MissingQuantityOrUnit"
+                    : normalizationFailed
+                        ? "UnitNormalizationFailed"
+                        : normalizedUnits.Count != 1
+                            ? "IncompatibleUnits"
+                            : "Ready";
 
             return
                 new TwoADetectionGroupDto
@@ -360,22 +431,75 @@ namespace 崴正.Services
                         group.Count(),
 
                     Units =
-                        units,
+                        sourceUnits,
 
                     AggregationStatus =
-                        !allHaveQuantity
-                            ? "MissingQuantity"
-                            : !oneUnit
-                                ? "NeedsUnitNormalization"
-                                : "Ready",
+                        aggregationStatus,
+
+                    StandardUnit =
+                        ready
+                            ? normalizedUnits[0]
+                            : null,
+
+                    NormalizationApplied =
+                        normalizationApplied,
 
                     TotalQuantity =
-                        allHaveQuantity &&
-                        oneUnit
+                        ready
                             ? group.Sum(x =>
-                                x.Quantity!.Value)
+                                x.NormalizedQuantity!
+                                    .Value)
                             : null
                 };
+        }
+
+
+        private void ApplyUnitNormalization(
+            TwoAPreprocessItemDto item)
+        {
+            if (!item.Quantity.HasValue ||
+                string.IsNullOrWhiteSpace(
+                    item.Unit))
+            {
+                item.UnitNormalizationStatus =
+                    "MissingQuantityOrUnit";
+
+                return;
+            }
+
+            var result =
+                _unitConversionService
+                    .ConvertQuantityToBaseUnit(
+                        item.Quantity.Value,
+                        item.Unit
+                    );
+
+            if (!result.Success)
+            {
+                item.UnitNormalizationStatus =
+                    result.ErrorMessage?
+                        .Contains(
+                            "尚未建立於單位主檔",
+                            StringComparison
+                                .OrdinalIgnoreCase
+                        ) == true
+                        ? "UnitNotConfigured"
+                        : "ConversionUnavailable";
+
+                return;
+            }
+
+            item.NormalizedQuantity =
+                result.Quantity;
+
+            item.NormalizedUnit =
+                result.TargetUnit;
+
+            item.UnitConversionFactor =
+                result.ConversionFactor;
+
+            item.UnitNormalizationStatus =
+                "Ready";
         }
 
 
