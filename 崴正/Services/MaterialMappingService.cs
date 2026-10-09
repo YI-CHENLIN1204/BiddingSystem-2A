@@ -90,11 +90,10 @@ namespace 崴正.Services
                     bidItem.MappingStatus;
 
                 string keyword =
-                    !string.IsNullOrWhiteSpace(
-                        bidItem.ItemName)
-                        ? bidItem.ItemName.Trim()
-                        : bidItem.Spec?.Trim()
-                            ?? string.Empty;
+                    SelectDictionaryKeyword(
+                        bidItem.ItemName,
+                        bidItem.Spec
+                    );
 
                 if (string.IsNullOrWhiteSpace(
                         keyword))
@@ -404,6 +403,63 @@ namespace 崴正.Services
                     materialId;
             }
         }
+
+        private static string
+            SelectDictionaryKeyword(
+                string? itemName,
+                string? spec)
+        {
+            string normalizedItemName =
+                NormalizeText(itemName);
+
+            string normalizedSpec =
+                NormalizeText(spec);
+
+            if (!string.IsNullOrWhiteSpace(
+                    normalizedSpec) &&
+                (
+                    string.IsNullOrWhiteSpace(
+                        normalizedItemName)
+                    ||
+                    LooksLikeItemCode(
+                        normalizedItemName)
+                    ||
+                    normalizedItemName is
+                        "增" or "追加"
+                ))
+            {
+                return normalizedSpec;
+            }
+
+            return !string.IsNullOrWhiteSpace(
+                    normalizedItemName)
+                ? normalizedItemName
+                : normalizedSpec;
+        }
+
+
+        private static bool LooksLikeItemCode(
+            string value)
+        {
+            if (string.IsNullOrWhiteSpace(
+                    value))
+            {
+                return true;
+            }
+
+            bool containsCjk =
+                value.Any(c =>
+                    c >= '\u4e00' &&
+                    c <= '\u9fff');
+
+            if (containsCjk)
+            {
+                return false;
+            }
+
+            return value.Length <= 20;
+        }
+
 
         private static string NormalizeText(
             string? value)
