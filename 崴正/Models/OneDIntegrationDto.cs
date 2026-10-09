@@ -39,15 +39,6 @@ namespace 崴正.Models
 
         public decimal? Quantity { get; set; }
 
-        public decimal? NormalizedQuantity { get; set; }
-
-        public string? NormalizedUnit { get; set; }
-
-        public decimal? UnitConversionFactor { get; set; }
-
-        public string UnitNormalizationStatus { get; set; }
-            = "NotApplicable";
-
         public decimal? Confidence { get; set; }
     }
 
@@ -159,6 +150,15 @@ namespace 崴正.Models
         public string? Unit { get; set; }
 
         public decimal? Quantity { get; set; }
+
+        public decimal? NormalizedQuantity { get; set; }
+
+        public string? NormalizedUnit { get; set; }
+
+        public decimal? UnitConversionFactor { get; set; }
+
+        public string UnitNormalizationStatus { get; set; }
+            = "NotApplicable";
 
         public decimal? Confidence { get; set; }
 
