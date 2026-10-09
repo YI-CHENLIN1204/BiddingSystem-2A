@@ -581,6 +581,18 @@ namespace 崴正.Services
                         x.FinalBidItemId ==
                         bidItem.FinalBidItemId);
 
+            if (!IsInTwoAHistoryScope(
+                    bidItem))
+            {
+                if (history != null)
+                {
+                    history.IsDeleted = true;
+                }
+
+                return
+                    "工程大項不納入 2A 歷史估算";
+            }
+
             bool historyEligible =
                 IsHistoryEligible(
                     bidItem,
@@ -711,6 +723,12 @@ namespace 崴正.Services
             FinalBidItem bidItem,
             string? dataIssueCode)
         {
+            if (!IsInTwoAHistoryScope(
+                    bidItem))
+            {
+                return false;
+            }
+
             if (bidItem.IsIgnored)
             {
                 return false;
@@ -732,6 +750,26 @@ namespace 崴正.Services
                 bidItem.UnitPrice.Value > 0
                 ;
         }
+
+        private static bool
+            IsInTwoAHistoryScope(
+                FinalBidItem bidItem)
+        {
+            string? majorCategory =
+                TwoAScopePolicy
+                    .ResolveMajorCategory(
+                        bidItem.Category1,
+                        bidItem.Category2,
+                        bidItem.Category3
+                    );
+
+            return
+                TwoAScopePolicy
+                    .IsEstimableMajorCategory(
+                        majorCategory
+                    );
+        }
+
 
         private static string NormalizeText(
             string? value)
