@@ -21,6 +21,10 @@ namespace 崴正.Controllers
             ProjectSimilarityService
                 _projectSimilarityService;
 
+        private readonly
+            TwoAQuantityAnalysisService
+                _twoAQuantityAnalysisService;
+
 
         public OneDIntegrationController(
             OneDIntegrationService
@@ -28,7 +32,9 @@ namespace 崴正.Controllers
             TwoAPreprocessService
                 twoAPreprocessService,
             ProjectSimilarityService
-                projectSimilarityService)
+                projectSimilarityService,
+            TwoAQuantityAnalysisService
+                twoAQuantityAnalysisService)
         {
             _oneDIntegrationService =
                 oneDIntegrationService;
@@ -38,6 +44,9 @@ namespace 崴正.Controllers
 
             _projectSimilarityService =
                 projectSimilarityService;
+
+            _twoAQuantityAnalysisService =
+                twoAQuantityAnalysisService;
         }
 
 
@@ -56,6 +65,82 @@ namespace 崴正.Controllers
                         ? "1D API 已設定，可進行正式介接測試。"
                         : "1D API 尚未設定；目前不影響既有 2A 功能。"
             });
+        }
+
+
+        [HttpPost(
+            "projects/{projectId:int}/quantity-analysis")]
+        public async Task<IActionResult>
+            GetQuantityAnalysis(
+                int projectId,
+                [FromBody]
+                TwoAQuantityAnalysisRequest
+                    request,
+                CancellationToken
+                    cancellationToken)
+        {
+            var source =
+                await _oneDIntegrationService
+                    .GetProjectResultAsync(
+                        projectId,
+                        cancellationToken
+                    );
+
+            if (!source.Success)
+            {
+                return StatusCode(
+                    source.StatusCode,
+                    new
+                    {
+                        message =
+                            source.Message
+                    }
+                );
+            }
+
+            var preprocess =
+                _twoAPreprocessService
+                    .Build(
+                        projectId,
+                        source.Data!.Items
+                    );
+
+            var analysis =
+                await _twoAQuantityAnalysisService
+                    .AnalyzeAsync(
+                        projectId,
+                        preprocess,
+                        request
+                    );
+
+            if (!analysis.Success)
+            {
+                return analysis.ErrorType switch
+                {
+                    ServiceErrorType.NotFound =>
+                        NotFound(new
+                        {
+                            message =
+                                analysis.ErrorMessage
+                        }),
+
+                    ServiceErrorType.Conflict =>
+                        Conflict(new
+                        {
+                            message =
+                                analysis.ErrorMessage
+                        }),
+
+                    _ =>
+                        BadRequest(new
+                        {
+                            message =
+                                analysis.ErrorMessage
+                        })
+                };
+            }
+
+            return Ok(analysis.Data);
         }
 
 
