@@ -46,6 +46,137 @@ namespace 崴正.Services
         }
 
 
+        public ServiceResult GetReadiness()
+        {
+            var categories =
+                _context.DetectionCategories
+                    .AsNoTracking()
+                    .Include(x => x.UnitMaster)
+                    .Where(x => x.IsActive)
+                    .OrderBy(x => x.SortOrder)
+                    .ToList();
+
+            var mappings =
+                _context.DetectionCategoryMaterialMaps
+                    .AsNoTracking()
+                    .Where(x => x.IsActive)
+                    .ToList();
+
+            var mappedMaterialIds =
+                mappings
+                    .Select(x => x.MaterialId)
+                    .Distinct()
+                    .ToList();
+
+            var history =
+                _context.HistoricalTransactions
+                    .AsNoTracking()
+                    .Where(x =>
+                        mappedMaterialIds.Contains(
+                            x.MaterialId
+                        ) &&
+                        !x.IsDeleted &&
+                        !x.IsOutlier &&
+                        x.ProjectMasterId.HasValue
+                    )
+                    .Select(x => new
+                    {
+                        x.MaterialId,
+                        ProjectId =
+                            x.ProjectMasterId!.Value
+                    })
+                    .ToList();
+
+            var items =
+                categories
+                    .Select(category =>
+                    {
+                        var categoryMaterialIds =
+                            mappings
+                                .Where(x =>
+                                    x.DetectionCategoryId ==
+                                    category.DetectionCategoryId
+                                )
+                                .Select(x => x.MaterialId)
+                                .Distinct()
+                                .ToList();
+
+                        int historicalTransactionCount =
+                            history.Count(x =>
+                                categoryMaterialIds.Contains(
+                                    x.MaterialId
+                                )
+                            );
+
+                        int historicalProjectCount =
+                            history
+                                .Where(x =>
+                                    categoryMaterialIds.Contains(
+                                        x.MaterialId
+                                    ))
+                                .Select(x => x.ProjectId)
+                                .Distinct()
+                                .Count();
+
+                        bool hasMaterialMapping =
+                            categoryMaterialIds.Count > 0;
+
+                        bool hasHistory =
+                            historicalProjectCount > 0;
+
+                        return new
+                        {
+                            detectionCategoryId =
+                                category.DetectionCategoryId,
+
+                            majorCategoryName =
+                                category.MajorCategoryName,
+
+                            detectionCategoryName =
+                                category.DetectionCategoryName,
+
+                            unitName =
+                                category.UnitMaster.UnitName,
+
+                            mappedMaterialCount =
+                                categoryMaterialIds.Count,
+
+                            historicalTransactionCount,
+
+                            historicalProjectCount,
+
+                            status =
+                                !hasMaterialMapping
+                                    ? "MaterialMappingRequired"
+                                    : !hasHistory
+                                        ? "HistoricalDataRequired"
+                                        : "ReadyForEstimation",
+
+                            message =
+                                !hasMaterialMapping
+                                    ? "尚未對應標準材料。"
+                                    : !hasHistory
+                                        ? "已建立材料對應，但尚無可用歷史交易。"
+                                        : "已具備材料對應與歷史交易，可進行合理範圍估算。"
+                        };
+                    })
+                    .ToList();
+
+            return ServiceResult.Ok(new
+            {
+                categoryCount =
+                    items.Count,
+
+                readyCount =
+                    items.Count(x =>
+                        x.status ==
+                            "ReadyForEstimation"),
+
+                items
+            });
+        }
+
+
         public ServiceResult CreateCategory(
             string majorCategoryName,
             string detectionCategoryName,
