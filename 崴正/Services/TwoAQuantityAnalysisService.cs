@@ -9,15 +9,21 @@ namespace 崴正.Services
         private readonly ApplicationDbContext _context;
         private readonly DetectionCategoryRangeService
             _rangeService;
+        private readonly UnitConversionService
+            _unitConversionService;
 
 
         public TwoAQuantityAnalysisService(
             ApplicationDbContext context,
             DetectionCategoryRangeService
-                rangeService)
+                rangeService,
+            UnitConversionService
+                unitConversionService)
         {
             _context = context;
             _rangeService = rangeService;
+            _unitConversionService =
+                unitConversionService;
         }
 
 
@@ -66,34 +72,8 @@ namespace 崴正.Services
                             group.MajorCategory,
 
                         DetectionCategoryName =
-                            group.DetectionCategory,
-
-                        ObservedQuantity =
-                            group.TotalQuantity,
-
-                        UnitName =
-                            group.StandardUnit
+                            group.DetectionCategory
                     };
-
-                if (group.AggregationStatus !=
-                        "Ready" ||
-                    !group.TotalQuantity.HasValue ||
-                    string.IsNullOrWhiteSpace(
-                        group.StandardUnit))
-                {
-                    item.AnalysisStatus =
-                        "ObservedQuantityUnavailable";
-
-                    item.TrafficLight =
-                        "Gray";
-
-                    item.Message =
-                        $"1D 工項尚未完成可比較的單位標準化：{group.AggregationStatus}。";
-
-                    result.SkippedGroupCount++;
-                    result.Items.Add(item);
-                    continue;
-                }
 
                 var category =
                     configuredCategories
@@ -132,25 +112,113 @@ namespace 崴正.Services
                 item.DetectionCategoryId =
                     category.DetectionCategoryId;
 
-                if (!string.Equals(
-                        group.StandardUnit,
-                        category.UnitMaster.UnitName,
-                        StringComparison
-                            .OrdinalIgnoreCase))
+                item.UnitName =
+                    category.UnitMaster.UnitName;
+
+                var sourceItems =
+                    preprocess.Items
+                        .Where(x =>
+                            x.Status ==
+                                "Included"
+                            &&
+                            string.Equals(
+                                x.MajorCategory,
+                                group.MajorCategory,
+                                StringComparison
+                                    .OrdinalIgnoreCase
+                            )
+                            &&
+                            string.Equals(
+                                x.DetectionCategory,
+                                group.DetectionCategory,
+                                StringComparison
+                                    .OrdinalIgnoreCase
+                            )
+                        )
+                        .ToList();
+
+                if (!sourceItems.Any())
                 {
                     item.AnalysisStatus =
-                        "UnitMismatch";
+                        "ObservedQuantityUnavailable";
 
                     item.TrafficLight =
                         "Gray";
 
                     item.Message =
-                        $"目前建案已標準化為「{group.StandardUnit}」，但偵錯細項標準單位為「{category.UnitMaster.UnitName}」，暫不比較。";
+                        "找不到此偵錯細項可供分析的 1D 工項。";
 
                     result.SkippedGroupCount++;
                     result.Items.Add(item);
                     continue;
                 }
+
+                decimal observedQuantity = 0m;
+                bool conversionFailed = false;
+                string conversionMessage =
+                    string.Empty;
+
+                foreach (var sourceItem
+                    in sourceItems)
+                {
+                    if (!sourceItem.Quantity
+                            .HasValue ||
+                        string.IsNullOrWhiteSpace(
+                            sourceItem.Unit))
+                    {
+                        conversionFailed = true;
+                        conversionMessage =
+                            $"工項「{sourceItem.Name}」缺少數量或單位。";
+                        break;
+                    }
+
+                    var conversion =
+                        _unitConversionService
+                            .Convert(
+                                sourceItem
+                                    .Quantity.Value,
+                                0m,
+                                sourceItem.Unit,
+                                category.UnitId
+                            );
+
+                    if (!conversion.Success)
+                    {
+                        conversionFailed = true;
+                        conversionMessage =
+                            $"工項「{sourceItem.Name}」無法由「{sourceItem.Unit}」換算為「{category.UnitMaster.UnitName}」。";
+                        break;
+                    }
+
+                    observedQuantity +=
+                        conversion.Quantity;
+                }
+
+                if (conversionFailed)
+                {
+                    item.AnalysisStatus =
+                        "ObservedQuantityUnavailable";
+
+                    item.TrafficLight =
+                        "Gray";
+
+                    item.Message =
+                        conversionMessage;
+
+                    result.SkippedGroupCount++;
+                    result.Items.Add(item);
+                    continue;
+                }
+
+                item.ObservedQuantity =
+                    observedQuantity;
+
+                item.ObservedUsagePerArea =
+                    Math.Round(
+                        observedQuantity /
+                        request.Target.TotalFloorArea,
+                        6
+                    );
 
                 var rangeResult =
                     await _rangeService
@@ -187,13 +255,6 @@ namespace 崴正.Services
                 item.Range =
                     range;
 
-                item.ObservedUsagePerArea =
-                    Math.Round(
-                        group.TotalQuantity.Value /
-                        request.Target.TotalFloorArea,
-                        6
-                    );
-
                 if (!range.HasEnoughSamples ||
                     !range.LowerQuantity.HasValue ||
                     !range.UpperQuantity.HasValue)
@@ -212,7 +273,7 @@ namespace 崴正.Services
                     continue;
                 }
 
-                if (group.TotalQuantity.Value <
+                if (observedQuantity <
                     range.LowerQuantity.Value)
                 {
                     item.AnalysisStatus =
@@ -224,7 +285,7 @@ namespace 崴正.Services
                     item.Message =
                         "實際用量低於歷史相似建案合理範圍。";
                 }
-                else if (group.TotalQuantity.Value >
+                else if (observedQuantity >
                     range.UpperQuantity.Value)
                 {
                     item.AnalysisStatus =
