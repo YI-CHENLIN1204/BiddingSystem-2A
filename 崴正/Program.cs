@@ -54,6 +54,7 @@ builder.Services.AddScoped<AuditLogService>();
 builder.Services.AddScoped<UnitCategoryService>();
 builder.Services.AddScoped<UnitMasterService>();
 builder.Services.AddScoped<TwoAPreprocessService>();
+builder.Services.AddScoped<DetectionCategoryService>();
 
 builder.Services.AddHttpClient<OneDIntegrationService>(
     (serviceProvider, client) =>
@@ -204,4 +205,3 @@ app.UseSwagger();
 app.UseSwaggerUI();
 
 app.Run();
-
