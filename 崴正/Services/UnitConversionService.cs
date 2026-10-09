@@ -33,6 +33,9 @@ namespace 崴正.Services
         private Dictionary<int, UnitDefinition>?
             _unitsById;
 
+        private Dictionary<int, UnitDefinition>?
+            _baseUnitsByCategoryId;
+
 
         private sealed class UnitDefinition
         {
@@ -46,6 +49,8 @@ namespace 崴正.Services
             public bool AllowConversion { get; init; }
 
             public decimal? ToBaseFactor { get; init; }
+
+            public bool IsBaseUnit { get; init; }
         }
 
 
@@ -218,6 +223,61 @@ namespace 崴正.Services
         }
 
 
+        public UnitConversionResult
+            ConvertQuantityToBaseUnit(
+                decimal quantity,
+                string? sourceUnit)
+        {
+            EnsureUnitsLoaded();
+
+            string normalizedSource =
+                NormalizeUnit(
+                    sourceUnit
+                );
+
+            if (string.IsNullOrWhiteSpace(
+                    normalizedSource) ||
+                !_unitsByName!.TryGetValue(
+                    normalizedSource,
+                    out var sourceDefinition))
+            {
+                return new UnitConversionResult
+                {
+                    Success = false,
+                    SourceUnit =
+                        sourceUnit ??
+                        string.Empty,
+                    ErrorMessage =
+                        $"單位「{sourceUnit ?? "空白"}」尚未建立於單位主檔。"
+                };
+            }
+
+            if (!_baseUnitsByCategoryId!
+                .TryGetValue(
+                    sourceDefinition
+                        .UnitCategoryId,
+                    out var baseDefinition))
+            {
+                return new UnitConversionResult
+                {
+                    Success = false,
+                    SourceUnit =
+                        sourceUnit ??
+                        string.Empty,
+                    ErrorMessage =
+                        $"單位「{sourceUnit}」所屬類別尚未設定基準單位。"
+                };
+            }
+
+            return Convert(
+                quantity,
+                0m,
+                sourceUnit,
+                baseDefinition.UnitId
+            );
+        }
+
+
         public string GetUnitName(
             int unitId)
         {
@@ -235,7 +295,8 @@ namespace 崴正.Services
         private void EnsureUnitsLoaded()
         {
             if (_unitsByName != null &&
-                _unitsById != null)
+                _unitsById != null &&
+                _baseUnitsByCategoryId != null)
             {
                 return;
             }
@@ -260,7 +321,10 @@ namespace 崴正.Services
                                 .AllowConversion,
 
                         ToBaseFactor =
-                            x.ToBaseFactor
+                            x.ToBaseFactor,
+
+                        IsBaseUnit =
+                            x.IsBaseUnit
                     })
                     .ToList();
 
@@ -279,6 +343,21 @@ namespace 崴正.Services
                         ),
                     StringComparer.OrdinalIgnoreCase
                 );
+
+
+            _baseUnitsByCategoryId =
+                units
+                    .Where(x =>
+                        x.IsBaseUnit)
+                    .GroupBy(x =>
+                        x.UnitCategoryId)
+                    .ToDictionary(
+                        x => x.Key,
+                        x => x
+                            .OrderBy(unit =>
+                                unit.UnitId)
+                            .First()
+                    );
         }
     }
 }
