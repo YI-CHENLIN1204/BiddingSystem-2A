@@ -56,6 +56,7 @@ builder.Services.AddScoped<UnitMasterService>();
 builder.Services.AddScoped<TwoAPreprocessService>();
 builder.Services.AddScoped<DetectionCategoryService>();
 builder.Services.AddScoped<DetectionCategoryRangeService>();
+builder.Services.AddScoped<TwoAQuantityAnalysisService>();
 
 builder.Services.AddHttpClient<OneDIntegrationService>(
     (serviceProvider, client) =>
