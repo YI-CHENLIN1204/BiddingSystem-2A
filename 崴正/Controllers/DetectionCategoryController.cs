@@ -39,6 +39,16 @@ namespace 崴正.Controllers
         }
 
 
+        [HttpGet("readiness")]
+        public IActionResult GetReadiness()
+        {
+            return ToActionResult(
+                _detectionCategoryService
+                    .GetReadiness()
+            );
+        }
+
+
         [HttpGet("mappings")]
         public IActionResult GetMappings(
             [FromQuery]
