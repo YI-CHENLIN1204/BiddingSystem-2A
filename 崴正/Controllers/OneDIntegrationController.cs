@@ -1,4 +1,5 @@
 using Microsoft.AspNetCore.Mvc;
+using 崴正.Models;
 using 崴正.Services;
 
 namespace 崴正.Controllers
@@ -16,18 +17,27 @@ namespace 崴正.Controllers
             TwoAPreprocessService
                 _twoAPreprocessService;
 
+        private readonly
+            ProjectSimilarityService
+                _projectSimilarityService;
+
 
         public OneDIntegrationController(
             OneDIntegrationService
                 oneDIntegrationService,
             TwoAPreprocessService
-                twoAPreprocessService)
+                twoAPreprocessService,
+            ProjectSimilarityService
+                projectSimilarityService)
         {
             _oneDIntegrationService =
                 oneDIntegrationService;
 
             _twoAPreprocessService =
                 twoAPreprocessService;
+
+            _projectSimilarityService =
+                projectSimilarityService;
         }
 
 
@@ -46,6 +56,101 @@ namespace 崴正.Controllers
                         ? "1D API 已設定，可進行正式介接測試。"
                         : "1D API 尚未設定；目前不影響既有 2A 功能。"
             });
+        }
+
+
+        [HttpPost(
+            "projects/{projectId:int}/analysis-preview")]
+        public async Task<IActionResult>
+            GetAnalysisPreview(
+                int projectId,
+                [FromBody]
+                TwoAIntegratedAnalysisPreviewRequest
+                    request,
+                CancellationToken
+                    cancellationToken)
+        {
+            if (request == null ||
+                request.Target == null)
+            {
+                return BadRequest(new
+                {
+                    message =
+                        "請提供 2A 相似建案分析所需的建案條件。"
+                });
+            }
+
+            if (request.TopCount.HasValue &&
+                request.TopCount.Value <= 0)
+            {
+                return BadRequest(new
+                {
+                    message =
+                        "TopCount 必須大於 0。"
+                });
+            }
+
+            var source =
+                await _oneDIntegrationService
+                    .GetProjectResultAsync(
+                        projectId,
+                        cancellationToken
+                    );
+
+            if (!source.Success)
+            {
+                return StatusCode(
+                    source.StatusCode,
+                    new
+                    {
+                        message =
+                            source.Message
+                    }
+                );
+            }
+
+            try
+            {
+                var preprocess =
+                    _twoAPreprocessService
+                        .Build(
+                            projectId,
+                            source.Data!.Items
+                        );
+
+                var similarProjects =
+                    await _projectSimilarityService
+                        .FindSimilarProjectsAsync(
+                            request.Target,
+                            request.TopCount
+                        );
+
+                return Ok(
+                    new
+                    TwoAIntegratedAnalysisPreviewResponse
+                    {
+                        OneDProjectId =
+                            projectId,
+
+                        Target =
+                            request.Target,
+
+                        Preprocess =
+                            preprocess,
+
+                        SimilarProjects =
+                            similarProjects
+                    }
+                );
+            }
+            catch (ArgumentException ex)
+            {
+                return BadRequest(new
+                {
+                    message =
+                        ex.Message
+                });
+            }
         }
 
 
