@@ -256,11 +256,8 @@ namespace 崴正.Data
                         "detection_category_material_map"
                     );
 
-                    entity.HasKey(e => new
-                        {
-                            e.DetectionCategoryId,
-                            e.MaterialId
-                        });
+                    entity.HasKey(e =>
+                        e.MaterialId);
 
                     entity.Property(e =>
                             e.DetectionCategoryId)
@@ -324,10 +321,9 @@ namespace 崴正.Data
                         );
 
                     entity.HasIndex(e =>
-                            e.MaterialId)
-                        .IsUnique()
+                            e.DetectionCategoryId)
                         .HasDatabaseName(
-                            "ux_detection_map_material"
+                            "ix_detection_map_category"
                         );
                 }
             );
