@@ -21,6 +21,8 @@ namespace 崴正.Data
         public DbSet<EstimationSetting> EstimationSettings { get; set; }
         public DbSet<UnitCategory> UnitCategories { get; set; }
         public DbSet<UnitMaster> UnitMasters { get; set; }
+        public DbSet<DetectionCategory> DetectionCategories { get; set; }
+        public DbSet<DetectionCategoryMaterialMap> DetectionCategoryMaterialMaps { get; set; }
 
         protected override void OnModelCreating(ModelBuilder modelBuilder)
         {
@@ -174,6 +176,159 @@ namespace 崴正.Data
                             e.UnitCategoryId)
                         .HasDatabaseName(
                             "ix_unit_master_category");
+                }
+            );
+
+            modelBuilder.Entity<DetectionCategory>(
+                entity =>
+                {
+                    entity.ToTable(
+                        "detection_category"
+                    );
+
+                    entity.HasKey(e =>
+                        e.DetectionCategoryId);
+
+                    entity.Property(e =>
+                            e.DetectionCategoryId)
+                        .HasColumnName(
+                            "detection_category_id"
+                        );
+
+                    entity.Property(e =>
+                            e.MajorCategoryName)
+                        .HasColumnName(
+                            "major_category_name"
+                        );
+
+                    entity.Property(e =>
+                            e.DetectionCategoryName)
+                        .HasColumnName(
+                            "detection_category_name"
+                        );
+
+                    entity.Property(e =>
+                            e.UnitId)
+                        .HasColumnName(
+                            "unit_id"
+                        );
+
+                    entity.Property(e =>
+                            e.IsActive)
+                        .HasColumnName(
+                            "is_active"
+                        );
+
+                    entity.Property(e =>
+                            e.SortOrder)
+                        .HasColumnName(
+                            "sort_order"
+                        );
+
+                    entity.HasOne(e =>
+                            e.UnitMaster)
+                        .WithMany()
+                        .HasForeignKey(e =>
+                            e.UnitId)
+                        .OnDelete(
+                            DeleteBehavior.Restrict
+                        )
+                        .HasConstraintName(
+                            "fk_detection_category_unit"
+                        );
+
+                    entity.HasIndex(e => new
+                        {
+                            e.MajorCategoryName,
+                            e.DetectionCategoryName
+                        })
+                        .IsUnique()
+                        .HasDatabaseName(
+                            "ux_detection_category_name"
+                        );
+                }
+            );
+
+            modelBuilder.Entity<DetectionCategoryMaterialMap>(
+                entity =>
+                {
+                    entity.ToTable(
+                        "detection_category_material_map"
+                    );
+
+                    entity.HasKey(e => new
+                        {
+                            e.DetectionCategoryId,
+                            e.MaterialId
+                        });
+
+                    entity.Property(e =>
+                            e.DetectionCategoryId)
+                        .HasColumnName(
+                            "detection_category_id"
+                        );
+
+                    entity.Property(e =>
+                            e.MaterialId)
+                        .HasColumnName(
+                            "material_id"
+                        );
+
+                    entity.Property(e =>
+                            e.IsActive)
+                        .HasColumnName(
+                            "is_active"
+                        );
+
+                    entity.Property(e =>
+                            e.CreatedAt)
+                        .HasColumnName(
+                            "created_at"
+                        )
+                        .HasColumnType(
+                            "timestamp with time zone"
+                        );
+
+                    entity.Property(e =>
+                            e.UpdatedAt)
+                        .HasColumnName(
+                            "updated_at"
+                        )
+                        .HasColumnType(
+                            "timestamp with time zone"
+                        );
+
+                    entity.HasOne(e =>
+                            e.DetectionCategory)
+                        .WithMany(e =>
+                            e.MaterialMappings)
+                        .HasForeignKey(e =>
+                            e.DetectionCategoryId)
+                        .OnDelete(
+                            DeleteBehavior.Cascade
+                        )
+                        .HasConstraintName(
+                            "fk_detection_map_category"
+                        );
+
+                    entity.HasOne(e =>
+                            e.Material)
+                        .WithMany()
+                        .HasForeignKey(e =>
+                            e.MaterialId)
+                        .OnDelete(
+                            DeleteBehavior.Restrict
+                        )
+                        .HasConstraintName(
+                            "fk_detection_map_material"
+                        );
+
+                    entity.HasIndex(e =>
+                            e.MaterialId)
+                        .IsUnique()
+                        .HasDatabaseName(
+                            "ux_detection_map_material"
+                        );
                 }
             );
 
