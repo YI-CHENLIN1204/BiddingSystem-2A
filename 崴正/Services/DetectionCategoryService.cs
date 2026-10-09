@@ -46,6 +46,115 @@ namespace 崴正.Services
         }
 
 
+        public ServiceResult CreateCategory(
+            string majorCategoryName,
+            string detectionCategoryName,
+            int unitId,
+            string actionUser)
+        {
+            majorCategoryName =
+                NormalizeText(majorCategoryName);
+
+            detectionCategoryName =
+                NormalizeText(detectionCategoryName);
+
+            if (string.IsNullOrWhiteSpace(majorCategoryName))
+            {
+                return ServiceResult.Validation(
+                    "請輸入 1D 工程大項名稱");
+            }
+
+            if (string.IsNullOrWhiteSpace(detectionCategoryName))
+            {
+                return ServiceResult.Validation(
+                    "請輸入 2A 偵錯細項名稱");
+            }
+
+            var unit =
+                _context.UnitMasters
+                    .AsNoTracking()
+                    .FirstOrDefault(x =>
+                        x.UnitId == unitId);
+
+            if (unit == null)
+            {
+                return ServiceResult.Validation(
+                    "找不到指定的標準單位");
+            }
+
+            if (!unit.IsActive)
+            {
+                return ServiceResult.Validation(
+                    "指定的標準單位目前已停用");
+            }
+
+            bool duplicate =
+                _context.DetectionCategories
+                    .Any(x =>
+                        EF.Functions.ILike(
+                            x.MajorCategoryName,
+                            majorCategoryName)
+                        &&
+                        EF.Functions.ILike(
+                            x.DetectionCategoryName,
+                            detectionCategoryName));
+
+            if (duplicate)
+            {
+                return ServiceResult.Conflict(
+                    "相同工程大項與偵錯細項已存在");
+            }
+
+            int nextSortOrder =
+                _context.DetectionCategories
+                    .Select(x => (int?)x.SortOrder)
+                    .Max() ?? 0;
+
+            var category =
+                new DetectionCategory
+                {
+                    MajorCategoryName =
+                        majorCategoryName,
+                    DetectionCategoryName =
+                        detectionCategoryName,
+                    UnitId = unitId,
+                    IsActive = true,
+                    SortOrder = nextSortOrder + 1
+                };
+
+            _context.DetectionCategories.Add(category);
+            _context.SaveChanges();
+
+            _auditLogService.AddLog(
+                module: "2A偵錯細項",
+                actionType: "CreateDetectionCategory",
+                entityType: "DetectionCategory",
+                entityId: category.DetectionCategoryId,
+                description:
+                    $"新增偵錯細項「{majorCategoryName} / {detectionCategoryName}」",
+                actionUser: actionUser,
+                newValue: new
+                {
+                    category.DetectionCategoryId,
+                    category.MajorCategoryName,
+                    category.DetectionCategoryName,
+                    category.UnitId,
+                    unit.UnitName,
+                    category.IsActive,
+                    category.SortOrder
+                });
+
+            _context.SaveChanges();
+
+            return ServiceResult.Ok(new
+            {
+                message = "偵錯細項已建立",
+                detectionCategoryId =
+                    category.DetectionCategoryId
+            });
+        }
+
+
         public ServiceResult GetMappings(
             int? detectionCategoryId = null)
         {
