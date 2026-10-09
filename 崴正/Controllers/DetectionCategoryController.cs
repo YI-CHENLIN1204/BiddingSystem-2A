@@ -1,4 +1,5 @@
 using Microsoft.AspNetCore.Mvc;
+using 崴正.Models;
 using 崴正.Services;
 
 namespace 崴正.Controllers
@@ -11,12 +12,20 @@ namespace 崴正.Controllers
         private readonly DetectionCategoryService
             _detectionCategoryService;
 
+        private readonly DetectionCategoryRangeService
+            _detectionCategoryRangeService;
+
         public DetectionCategoryController(
             DetectionCategoryService
-                detectionCategoryService)
+                detectionCategoryService,
+            DetectionCategoryRangeService
+                detectionCategoryRangeService)
         {
             _detectionCategoryService =
                 detectionCategoryService;
+
+            _detectionCategoryRangeService =
+                detectionCategoryRangeService;
         }
 
 
@@ -88,6 +97,23 @@ namespace 崴正.Controllers
                         actionUser
                     )
             );
+        }
+
+
+        [HttpPost("{detectionCategoryId:int}/range")]
+        public async Task<IActionResult> EstimateRange(
+            int detectionCategoryId,
+            [FromBody]
+            DetectionCategoryRangeRequest request)
+        {
+            var result =
+                await _detectionCategoryRangeService
+                    .EstimateAsync(
+                        detectionCategoryId,
+                        request
+                    );
+
+            return ToActionResult(result);
         }
 
 
