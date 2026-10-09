@@ -550,18 +550,10 @@ namespace 崴正.Services
                 string chapter)
         {
             return
-                chapter.Contains(
-                    "結構體",
-                    StringComparison
-                        .OrdinalIgnoreCase) ||
-                chapter.Contains(
-                    "鋼骨",
-                    StringComparison
-                        .OrdinalIgnoreCase) ||
-                chapter.Contains(
-                    "鋼構",
-                    StringComparison
-                        .OrdinalIgnoreCase);
+                TwoAScopePolicy
+                    .IsEstimableMajorCategory(
+                        chapter
+                    );
         }
 
 
