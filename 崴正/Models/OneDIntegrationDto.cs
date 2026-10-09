@@ -169,3 +169,38 @@ namespace 崴正.Models
             = string.Empty;
     }
 }
+
+
+namespace 崴正.Models
+{
+    public class TwoAIntegratedAnalysisPreviewRequest
+    {
+        public ProjectSimilarityTargetDto Target
+        {
+            get;
+            set;
+        } = new();
+
+        public int? TopCount { get; set; }
+    }
+
+
+    public class TwoAIntegratedAnalysisPreviewResponse
+    {
+        public int OneDProjectId { get; set; }
+
+        public ProjectSimilarityTargetDto Target
+        {
+            get;
+            set;
+        } = new();
+
+        public TwoAProjectPreprocessResponse
+            Preprocess { get; set; }
+                = new();
+
+        public List<ProjectSimilarityDto>
+            SimilarProjects { get; set; }
+                = new();
+    }
+}
