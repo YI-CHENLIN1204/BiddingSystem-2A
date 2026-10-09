@@ -88,6 +88,12 @@ namespace 崴正.Services
                     "指定的標準單位目前已停用");
             }
 
+            if (!unit.IsBaseUnit)
+            {
+                return ServiceResult.Validation(
+                    "偵錯細項必須使用該單位類別的基準單位，避免跨建案彙整時產生單位不一致。");
+            }
+
             bool duplicate =
                 _context.DetectionCategories
                     .Any(x =>
