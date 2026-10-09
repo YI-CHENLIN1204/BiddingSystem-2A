@@ -77,7 +77,9 @@ namespace 崴正.Services
                         ) &&
                         !x.IsDeleted &&
                         !x.IsOutlier &&
-                        x.ProjectMasterId.HasValue
+                        x.ProjectMasterId.HasValue &&
+                        x.ProjectMaster != null &&
+                        !x.ProjectMaster.IsDeleted
                     )
                     .Select(x => new
                     {
