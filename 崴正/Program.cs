@@ -55,6 +55,7 @@ builder.Services.AddScoped<UnitCategoryService>();
 builder.Services.AddScoped<UnitMasterService>();
 builder.Services.AddScoped<TwoAPreprocessService>();
 builder.Services.AddScoped<DetectionCategoryService>();
+builder.Services.AddScoped<DetectionCategoryRangeService>();
 
 builder.Services.AddHttpClient<OneDIntegrationService>(
     (serviceProvider, client) =>
@@ -150,7 +151,8 @@ app.Use(async (context, next) =>
     bool useSharedDbConnection =
         path.StartsWithSegments("/api/range-estimation") ||
         path.StartsWithSegments("/api/bid-anomaly") ||
-        path.StartsWithSegments("/api/Estimation");
+        path.StartsWithSegments("/api/Estimation") ||
+        path.StartsWithSegments("/api/detection-category");
 
     if (!useSharedDbConnection)
     {
