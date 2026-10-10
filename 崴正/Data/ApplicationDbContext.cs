@@ -23,6 +23,10 @@ namespace 崴正.Data
         public DbSet<UnitMaster> UnitMasters { get; set; }
         public DbSet<DetectionCategory> DetectionCategories { get; set; }
         public DbSet<DetectionCategoryMaterialMap> DetectionCategoryMaterialMaps { get; set; }
+        public DbSet<AnalysisCase> AnalysisCases { get; set; }
+        public DbSet<AnalysisBidVersion> AnalysisBidVersions { get; set; }
+        public DbSet<AnalysisBidItem> AnalysisBidItems { get; set; }
+        public DbSet<AnalysisRun> AnalysisRuns { get; set; }
 
         protected override void OnModelCreating(ModelBuilder modelBuilder)
         {
