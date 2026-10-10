@@ -58,6 +58,7 @@ builder.Services.AddScoped<DetectionCategoryService>();
 builder.Services.AddScoped<DetectionCategoryRangeService>();
 builder.Services.AddScoped<TwoAQuantityAnalysisService>();
 builder.Services.AddScoped<MajorCategoryPriceRangeService>();
+builder.Services.AddScoped<AnalysisCaseService>();
 
 builder.Services.AddHttpClient<OneDIntegrationService>(
     (serviceProvider, client) =>
@@ -155,7 +156,8 @@ app.Use(async (context, next) =>
         path.StartsWithSegments("/api/bid-anomaly") ||
         path.StartsWithSegments("/api/Estimation") ||
         path.StartsWithSegments("/api/detection-category") ||
-        path.StartsWithSegments("/api/major-category-price");
+        path.StartsWithSegments("/api/major-category-price") ||
+        path.StartsWithSegments("/api/analysis-cases");
 
     if (!useSharedDbConnection)
     {
