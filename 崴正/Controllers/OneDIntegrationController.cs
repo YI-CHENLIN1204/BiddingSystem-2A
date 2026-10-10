@@ -1,5 +1,4 @@
 using Microsoft.AspNetCore.Mvc;
-using 崴正.Models;
 using 崴正.Services;
 
 namespace 崴正.Controllers
@@ -9,44 +8,16 @@ namespace 崴正.Controllers
     public class OneDIntegrationController
         : ControllerBase
     {
-        private readonly
-            OneDIntegrationService
-                _oneDIntegrationService;
-
-        private readonly
-            TwoAPreprocessService
-                _twoAPreprocessService;
-
-        private readonly
-            ProjectSimilarityService
-                _projectSimilarityService;
-
-        private readonly
-            TwoAQuantityAnalysisService
-                _twoAQuantityAnalysisService;
+        private readonly OneDIntegrationService
+            _oneDIntegrationService;
 
 
         public OneDIntegrationController(
             OneDIntegrationService
-                oneDIntegrationService,
-            TwoAPreprocessService
-                twoAPreprocessService,
-            ProjectSimilarityService
-                projectSimilarityService,
-            TwoAQuantityAnalysisService
-                twoAQuantityAnalysisService)
+                oneDIntegrationService)
         {
             _oneDIntegrationService =
                 oneDIntegrationService;
-
-            _twoAPreprocessService =
-                twoAPreprocessService;
-
-            _projectSimilarityService =
-                projectSimilarityService;
-
-            _twoAQuantityAnalysisService =
-                twoAQuantityAnalysisService;
         }
 
 
@@ -56,241 +27,30 @@ namespace 崴正.Controllers
             return Ok(new
             {
                 configured =
-                    _oneDIntegrationService
-                        .IsConfigured,
+                    _oneDIntegrationService.IsConfigured,
 
                 message =
-                    _oneDIntegrationService
-                        .IsConfigured
-                        ? "1D API 已設定，可進行正式介接測試。"
-                        : "1D API 尚未設定；目前不影響既有 2A 功能。"
+                    _oneDIntegrationService.IsConfigured
+                        ? "1D API 已設定。正式 2A 流程會先把 1D 結果匯入 AnalysisCase 快照，再從快照反覆偵錯。"
+                        : "1D API 尚未設定；2A 仍可使用自行上傳方式建立待偵錯案件。"
             });
         }
 
 
-        [HttpPost(
-            "projects/{projectId:int}/quantity-analysis")]
-        public async Task<IActionResult>
-            GetQuantityAnalysis(
-                int projectId,
-                [FromBody]
-                TwoAQuantityAnalysisRequest
-                    request,
-                CancellationToken
-                    cancellationToken)
-        {
-            var source =
-                await _oneDIntegrationService
-                    .GetProjectResultAsync(
-                        projectId,
-                        cancellationToken
-                    );
-
-            if (!source.Success)
-            {
-                return StatusCode(
-                    source.StatusCode,
-                    new
-                    {
-                        message =
-                            source.Message
-                    }
-                );
-            }
-
-            var preprocess =
-                _twoAPreprocessService
-                    .Build(
-                        projectId,
-                        source.Data!.Items
-                    );
-
-            var analysis =
-                await _twoAQuantityAnalysisService
-                    .AnalyzeAsync(
-                        projectId,
-                        preprocess,
-                        request
-                    );
-
-            if (!analysis.Success)
-            {
-                return analysis.ErrorType switch
-                {
-                    ServiceErrorType.NotFound =>
-                        NotFound(new
-                        {
-                            message =
-                                analysis.ErrorMessage
-                        }),
-
-                    ServiceErrorType.Conflict =>
-                        Conflict(new
-                        {
-                            message =
-                                analysis.ErrorMessage
-                        }),
-
-                    _ =>
-                        BadRequest(new
-                        {
-                            message =
-                                analysis.ErrorMessage
-                        })
-                };
-            }
-
-            return Ok(analysis.Data);
-        }
-
-
-        [HttpPost(
-            "projects/{projectId:int}/analysis-preview")]
-        public async Task<IActionResult>
-            GetAnalysisPreview(
-                int projectId,
-                [FromBody]
-                TwoAIntegratedAnalysisPreviewRequest
-                    request,
-                CancellationToken
-                    cancellationToken)
-        {
-            if (request == null ||
-                request.Target == null)
-            {
-                return BadRequest(new
-                {
-                    message =
-                        "請提供 2A 相似建案分析所需的建案條件。"
-                });
-            }
-
-            if (request.TopCount.HasValue &&
-                request.TopCount.Value <= 0)
-            {
-                return BadRequest(new
-                {
-                    message =
-                        "TopCount 必須大於 0。"
-                });
-            }
-
-            var source =
-                await _oneDIntegrationService
-                    .GetProjectResultAsync(
-                        projectId,
-                        cancellationToken
-                    );
-
-            if (!source.Success)
-            {
-                return StatusCode(
-                    source.StatusCode,
-                    new
-                    {
-                        message =
-                            source.Message
-                    }
-                );
-            }
-
-            try
-            {
-                var preprocess =
-                    _twoAPreprocessService
-                        .Build(
-                            projectId,
-                            source.Data!.Items
-                        );
-
-                var similarProjects =
-                    await _projectSimilarityService
-                        .FindSimilarProjectsAsync(
-                            request.Target,
-                            request.TopCount
-                        );
-
-                return Ok(
-                    new
-                    TwoAIntegratedAnalysisPreviewResponse
-                    {
-                        OneDProjectId =
-                            projectId,
-
-                        Target =
-                            request.Target,
-
-                        Preprocess =
-                            preprocess,
-
-                        SimilarProjects =
-                            similarProjects
-                    }
-                );
-            }
-            catch (ArgumentException ex)
-            {
-                return BadRequest(new
-                {
-                    message =
-                        ex.Message
-                });
-            }
-        }
-
-
-        [HttpGet(
-            "projects/{projectId:int}/preprocess")]
-        public async Task<IActionResult>
-            GetProjectPreprocess(
-                int projectId,
-                CancellationToken
-                    cancellationToken)
-        {
-            var source =
-                await _oneDIntegrationService
-                    .GetProjectResultAsync(
-                        projectId,
-                        cancellationToken
-                    );
-
-            if (!source.Success)
-            {
-                return StatusCode(
-                    source.StatusCode,
-                    new
-                    {
-                        message =
-                            source.Message
-                    }
-                );
-            }
-
-            var result =
-                _twoAPreprocessService
-                    .Build(
-                        projectId,
-                        source.Data!.Items
-                    );
-
-            return Ok(result);
-        }
-
-
-        [HttpGet(
-            "projects/{projectId:int}/result")]
-        public async Task<IActionResult>
-            GetProjectResult(
-                int projectId,
-                CancellationToken
-                    cancellationToken)
+        // 僅供介接檢查 / 預覽。
+        // 正式偵錯流程不可直接依賴這支 API，
+        // 必須先透過 /api/analysis-cases/from-1d/{projectId}
+        // 建立 2A 自己的版本快照。
+        [HttpGet("projects/{projectId:int}/result")]
+        public async Task<IActionResult> GetProjectResult(
+            int projectId,
+            CancellationToken cancellationToken)
         {
             var result =
                 await _oneDIntegrationService
                     .GetProjectResultAsync(
                         projectId,
-                        cancellationToken
-                    );
+                        cancellationToken);
 
             if (!result.Success)
             {
@@ -300,21 +60,17 @@ namespace 崴正.Controllers
                     {
                         message =
                             result.Message
-                    }
-                );
+                    });
             }
 
             return Ok(new
             {
-                source =
-                    "1D",
-
+                source = "1D",
+                snapshotRequired = true,
                 projectId =
                     result.Data!.ProjectId,
-
                 count =
                     result.Data.Count,
-
                 items =
                     result.Data.Items
             });
