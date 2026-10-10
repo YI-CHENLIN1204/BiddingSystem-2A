@@ -8,6 +8,7 @@ const pageTitle = computed(() => String(route.meta.title ?? '系統'))
 const sectionTitle = computed(() => route.name === 'audit-logs' ? '系統' : '工程類')
 
 const navigation = [
+  { to: '/analysis-cases', label: '待偵錯案件', section: '工程類' },
   { to: '/', label: '異常偵測', section: '工程類' },
   { to: '/settings', label: '參數管理', section: '工程類' },
   { to: '/estimation', label: '估算大數據', section: '工程類' },
