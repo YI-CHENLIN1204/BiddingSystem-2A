@@ -37,6 +37,41 @@ namespace 崴正.Services
                 );
 
 
+        public static IReadOnlyCollection<string>
+            GetKnownMajorCategories()
+        {
+            return KnownMajorCategories
+                .OrderBy(x => x)
+                .ToArray();
+        }
+
+
+        public static IReadOnlyCollection<string>
+            GetEstimableMajorCategories()
+        {
+            return EstimableMajorCategories
+                .OrderBy(x => x)
+                .ToArray();
+        }
+
+
+        public static bool
+            IsKnownMajorCategory(
+                string? majorCategory)
+        {
+            if (string.IsNullOrWhiteSpace(
+                    majorCategory))
+            {
+                return false;
+            }
+
+            return KnownMajorCategories
+                .Contains(
+                    majorCategory.Trim()
+                );
+        }
+
+
         public static bool
             IsEstimableMajorCategory(
                 string? majorCategory)
