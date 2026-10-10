@@ -21,6 +21,66 @@ namespace 崴正.Controllers
         }
 
 
+        [HttpGet("policy")]
+        public IActionResult GetCurrentPolicy()
+        {
+            return Ok(new
+            {
+                provisional = true,
+
+                targetSources = new[]
+                {
+                    "OneD",
+                    "Upload"
+                },
+
+                oneDUsage =
+                    "1D 僅作為待偵錯案件的初始資料來源；匯入後建立 2A 快照，後續偵錯不需重新呼叫 1D。",
+
+                selfUpload = new
+                {
+                    enabled = true,
+                    mode = "StructuredOnly",
+                    requirement =
+                        "直接上傳暫定只接受已具 1D 同層級工程大項分類的結構化標單，不接受尚未分類的原始文件。",
+                    requiredForQuantity = new[]
+                    {
+                        "工程大項",
+                        "工項名稱或規格",
+                        "單位",
+                        "數量"
+                    },
+                    priceFields =
+                        "大項價格異常另需單價或金額；沒有價格時仍可建立案件，但不能執行價格異常。"
+                },
+
+                hierarchy = new
+                {
+                    majorCategory =
+                        "1D 工程章節，例如：結構體工程、鋼骨鋼構工程。",
+                    detectionCategory =
+                        "2A 數量偵錯細項，例如：鋼筋、混凝土、模板、鋼骨。"
+                },
+
+                quantityEstimation = new
+                {
+                    estimableMajorCategories =
+                        TwoAScopePolicy
+                            .GetEstimableMajorCategories(),
+                    rule =
+                        "僅對目前可由歷史建案建立合理材料用量基準的大項進行細項數量異常；其他大項保留資料但不強制估算。"
+                },
+
+                knownMajorCategories =
+                    TwoAScopePolicy
+                        .GetKnownMajorCategories(),
+
+                historyRule =
+                    "AnalysisCase / AnalysisBidVersion 永遠不直接寫入 HistoricalTransaction。只有正式已決標最終標單才進入歷史基準資料。"
+            });
+        }
+
+
         [HttpGet]
         public async Task<IActionResult> GetCases()
         {
