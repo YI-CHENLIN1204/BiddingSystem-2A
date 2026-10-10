@@ -132,6 +132,16 @@ namespace 崴正.Services
                 return parsed.Result!;
             }
 
+            var structureValidation =
+                ValidateUploadStructure(
+                    parsed.Rows!
+                );
+
+            if (structureValidation != null)
+            {
+                return structureValidation;
+            }
+
             using var transaction =
                 await _context.Database.BeginTransactionAsync(
                     cancellationToken);
@@ -293,6 +303,16 @@ namespace 崴正.Services
             if (!parsed.Success)
             {
                 return parsed.Result!;
+            }
+
+            var structureValidation =
+                ValidateUploadStructure(
+                    parsed.Rows!
+                );
+
+            if (structureValidation != null)
+            {
+                return structureValidation;
             }
 
             using var transaction =
@@ -887,6 +907,100 @@ namespace 崴正.Services
             }
 
             return version;
+        }
+
+
+        private static ServiceResult?
+            ValidateUploadStructure(
+                IReadOnlyCollection<TenderImportRowDto>
+                    rows)
+        {
+            var detailRows =
+                rows
+                    .Where(IsAnalysisDetailRow)
+                    .ToList();
+
+            if (!detailRows.Any())
+            {
+                return ServiceResult.Validation(
+                    "直接上傳的待偵錯標單沒有可分析的工程明細。暫定規格要求至少包含工項、單位與數量或價格資料。"
+                );
+            }
+
+            var uncategorizedRows =
+                detailRows
+                    .Where(row =>
+                        TwoAScopePolicy.ResolveMajorCategory(
+                            row.Category1,
+                            row.Category2,
+                            row.Category3
+                        ) == null)
+                    .ToList();
+
+            if (uncategorizedRows.Any())
+            {
+                string examples =
+                    string.Join(
+                        "、",
+                        uncategorizedRows
+                            .Take(5)
+                            .Select(row =>
+                                !string.IsNullOrWhiteSpace(
+                                    row.ItemName)
+                                    ? row.ItemName.Trim()
+                                    : !string.IsNullOrWhiteSpace(
+                                        row.Spec)
+                                        ? row.Spec.Trim()
+                                        : $"第 {row.RowNumber} 列"
+                            )
+                    );
+
+                return ServiceResult.Validation(
+                    $"直接上傳目前暫定只接受已具工程大項分類的結構化標單，不接受尚未分類的原始文件。共有 {uncategorizedRows.Count} 筆工程明細找不到 1D 同層級工程大項，例如：{examples}。"
+                );
+            }
+
+            bool hasQuantityData =
+                detailRows.Any(row =>
+                    row.Qty.HasValue &&
+                    row.Qty.Value > 0 &&
+                    !string.IsNullOrWhiteSpace(
+                        row.Unit
+                    ));
+
+            if (!hasQuantityData)
+            {
+                return ServiceResult.Validation(
+                    "直接上傳的標單沒有可供細項數量異常分析的「單位 + 數量」資料。"
+                );
+            }
+
+            return null;
+        }
+
+
+        private static bool IsAnalysisDetailRow(
+            TenderImportRowDto row)
+        {
+            bool hasBusinessValue =
+                row.Qty.HasValue ||
+                row.UnitPrice.HasValue ||
+                row.Amount.HasValue ||
+                !string.IsNullOrWhiteSpace(
+                    row.Unit
+                );
+
+            bool hasDescription =
+                !string.IsNullOrWhiteSpace(
+                    row.ItemName
+                ) ||
+                !string.IsNullOrWhiteSpace(
+                    row.Spec
+                );
+
+            return
+                hasBusinessValue &&
+                hasDescription;
         }
 
 
