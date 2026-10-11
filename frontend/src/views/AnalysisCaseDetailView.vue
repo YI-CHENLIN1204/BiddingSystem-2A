@@ -143,6 +143,18 @@ interface OneDStatus {
   message: string
 }
 
+interface AnalysisPolicy {
+  quantityEstimation: {
+    estimableMajorCategories: string[]
+    detectionCategories: string[]
+    rule: string
+  }
+  priceEstimation: {
+    majorCategories: string[]
+    rule: string
+  }
+}
+
 interface AnalysisRunDetail {
   analysisRunId: number
   analysisBidVersionId: number
@@ -169,6 +181,7 @@ const tab = ref<'items' | 'analysis' | 'runs'>('items')
 const showAddVersion = ref(false)
 const versionSource = ref<'OneD' | 'Upload'>('Upload')
 const oneDStatus = ref<OneDStatus>({ configured: false, message: '1D API 尚未設定' })
+const policy = ref<AnalysisPolicy | null>(null)
 const oneDProjectId = ref<number | null>(null)
 const versionFile = ref<File | null>(null)
 const versionFileInput = ref<HTMLInputElement | null>(null)
@@ -185,11 +198,16 @@ const currentVersion = computed(() =>
 )
 
 const majorCategories = computed(() => {
+  const allowed = new Set(
+    policy.value?.priceEstimation.majorCategories ?? ['結構體工程'],
+  )
+
   const values = new Set(
     (versionDetail.value?.items ?? [])
       .map(x => x.majorCategory?.trim())
-      .filter((x): x is string => Boolean(x)),
+      .filter((x): x is string => Boolean(x) && allowed.has(x)),
   )
+
   return [...values].sort((a, b) => a.localeCompare(b, 'zh-Hant'))
 })
 
@@ -228,14 +246,16 @@ async function loadCase() {
   loading.value = true
   error.value = ''
   try {
-    const [caseResult, runResult, oneDResult] = await Promise.all([
+    const [caseResult, runResult, oneDResult, policyResult] = await Promise.all([
       api<CaseDetail>(`/analysis-cases/${caseId}`),
       api<RunSummary[]>(`/analysis-cases/${caseId}/runs`),
       api<OneDStatus>('/one-d/status'),
+      api<AnalysisPolicy>('/analysis-cases/policy'),
     ])
     detail.value = caseResult
     runs.value = runResult
     oneDStatus.value = oneDResult
+    policy.value = policyResult
 
     const preferred = selectedVersionId.value
       ?? caseResult.case.currentVersionId
@@ -483,7 +503,10 @@ onMounted(loadCase)
         <div class="card-body analysis-actions">
           <div>
             <strong>對這個版本執行偵錯</strong>
-            <div class="text-muted small mt-1">分析只讀取此版本快照，不會重新呼叫 1D，也不會寫入歷史基準。</div>
+            <div class="text-muted small mt-1">
+              分析只讀取此版本快照，不會重新呼叫 1D，也不會寫入歷史基準。
+              目前暫定：鋼筋、混凝土做細項數量偵錯；結構體工程做大項估算與價格異常。
+            </div>
           </div>
 
           <div class="action-controls">
@@ -492,14 +515,14 @@ onMounted(loadCase)
               <input v-model.number="topCount" type="number" min="1" class="form-control" placeholder="系統預設" />
             </label>
             <button class="btn btn-primary" type="button" :disabled="analyzing" @click="runQuantity">
-              {{ analyzing ? '分析中...' : '細項數量異常' }}
+              {{ analyzing ? '分析中...' : '鋼筋／混凝土數量偵錯' }}
             </button>
             <select v-model="selectedMajorCategory" class="form-select" :disabled="!majorCategories.length">
-              <option value="">選擇工程大項</option>
+              <option value="">選擇估算大項</option>
               <option v-for="category in majorCategories" :key="category" :value="category">{{ category }}</option>
             </select>
             <button class="btn btn-outline-primary" type="button" :disabled="analyzing || !selectedMajorCategory" @click="runPrice">
-              大項價格異常
+              結構體工程估算／價格異常
             </button>
           </div>
         </div>
@@ -560,7 +583,7 @@ onMounted(loadCase)
         <template v-if="quantityResult">
           <div class="card-header">
             <div>
-              <h3>細項數量異常</h3>
+              <h3>細項數量偵錯：鋼筋／混凝土</h3>
               <div class="text-muted small mt-1">
                 可分析 {{ quantityResult.result.analyzedGroupCount }} 組 ・
                 樣本不足 {{ quantityResult.result.insufficientDataCount }} 組 ・
@@ -634,7 +657,7 @@ onMounted(loadCase)
               <tr v-for="run in runs" :key="run.analysisRunId">
                 <td>#{{ run.analysisRunId }}</td>
                 <td>V{{ run.versionNo }}</td>
-                <td>{{ run.runType === 'Quantity' ? '細項數量異常' : run.runType.replace('MajorPrice:', '大項價格：') }}</td>
+                <td>{{ run.runType === 'Quantity' ? '鋼筋／混凝土數量偵錯' : run.runType.replace('MajorPrice:', '大項估算／價格：') }}</td>
                 <td>{{ run.status }}</td>
                 <td>{{ formatDate(run.createdAt) }}</td>
                 <td>
