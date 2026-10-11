@@ -10,7 +10,6 @@ namespace 崴正.Models
         public string ProjectName { get; set; } = string.Empty;
 
         public decimal? TotalFloorArea { get; set; }
-        public string? FloorRange { get; set; }
         public int? FloorCount { get; set; }
         
         public int? BasementFloorCount { get; set; }
