@@ -211,11 +211,6 @@ namespace 崴正.Services
                 DateTime now =
                     DateTime.UtcNow;
 
-                string floorRange =
-                    request.BasementFloorCount.Value > 0
-                        ? $"B{request.BasementFloorCount.Value}~{request.FloorCount.Value}F"
-                        : $"1~{request.FloorCount.Value}F";
-
                 var project =
                     new ProjectMaster
                     {
@@ -239,9 +234,6 @@ namespace 崴正.Services
 
                         BasementFloorCount =
                             request.BasementFloorCount.Value,
-
-                        FloorRange =
-                            floorRange,
 
                         StartDate =
                             new DateTime(
