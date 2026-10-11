@@ -28,6 +28,27 @@ interface OneDStatus {
   message: string
 }
 
+interface ReadinessItem {
+  detectionCategoryId: number
+  majorCategoryName: string
+  detectionCategoryName: string
+  unitName: string
+  mappedMaterialCount: number
+  historicalTransactionCount: number
+  historicalProjectCount: number
+  minimumSampleCount: number
+  missingProjectCount: number
+  status: string
+  message: string
+}
+
+interface ReadinessResponse {
+  categoryCount: number
+  minimumSampleCount: number
+  readyCount: number
+  items: ReadinessItem[]
+}
+
 interface PolicyResponse {
   provisional: boolean
   oneDUsage: string
@@ -42,6 +63,7 @@ interface PolicyResponse {
 const { options, error: optionsError } = useSystemOptions()
 const cases = ref<AnalysisCaseSummary[]>([])
 const policy = ref<PolicyResponse | null>(null)
+const readiness = ref<ReadinessResponse | null>(null)
 const oneDStatus = ref<OneDStatus>({ configured: false, message: '1D API 尚未設定' })
 const loading = ref(false)
 const saving = ref(false)
@@ -115,14 +137,16 @@ async function load() {
   loading.value = true
   error.value = ''
   try {
-    const [caseResult, policyResult, oneDResult] = await Promise.all([
+    const [caseResult, policyResult, oneDResult, readinessResult] = await Promise.all([
       api<AnalysisCaseSummary[]>('/analysis-cases'),
       api<PolicyResponse>('/analysis-cases/policy'),
       api<OneDStatus>('/one-d/status'),
+      api<ReadinessResponse>('/detection-category/readiness'),
     ])
     cases.value = caseResult
     policy.value = policyResult
     oneDStatus.value = oneDResult
+    readiness.value = readinessResult
   } catch (caught) {
     error.value = caught instanceof Error ? caught.message : '無法載入待偵錯案件'
   } finally {
@@ -211,6 +235,39 @@ onMounted(load)
       <strong>目前依暫定流程實作：</strong>
       2A 可獨立用「自行上傳」運作；有連接 1D 的產學環境則會額外開放「從 1D 匯入」。
       偵錯範圍先以「鋼筋、混凝土」作為細項數量偵錯單位，並以「結構體工程」作為大項估算／價格異常單位。
+    </section>
+
+    <section v-if="readiness" class="history-readiness card">
+      <div class="card-header readiness-head">
+        <div>
+          <h3>歷史基準狀態</h3>
+          <div class="text-muted small mt-1">
+            細項數量偵錯至少需要 {{ readiness.minimumSampleCount }} 個有效歷史建案。
+            目前只追蹤鋼筋與混凝土。
+          </div>
+        </div>
+        <RouterLink to="/projects" class="btn btn-sm btn-outline-primary">前往建案管理</RouterLink>
+      </div>
+      <div class="readiness-grid">
+        <div v-for="item in readiness.items" :key="item.detectionCategoryId" class="readiness-item">
+          <div class="readiness-title">
+            <strong>{{ item.detectionCategoryName }}</strong>
+            <span>{{ item.unitName }}</span>
+          </div>
+          <div class="readiness-count">
+            <strong>{{ item.historicalProjectCount }}</strong>
+            <span>/ {{ item.minimumSampleCount }} 案</span>
+          </div>
+          <div class="readiness-bar">
+            <span
+              :style="{ width: Math.min(100, (item.historicalProjectCount / item.minimumSampleCount) * 100) + '%' }"
+            ></span>
+          </div>
+          <div class="small" :class="item.status === 'ReadyForEstimation' ? 'text-success' : 'text-muted'">
+            {{ item.message }}
+          </div>
+        </div>
+      </div>
     </section>
 
     <section class="stat-grid">
@@ -373,8 +430,25 @@ onMounted(load)
 .modal-content { max-height: calc(100vh - 3rem); overflow-y: auto; }
 .modal-backdrop-custom :deep(.form-grid) { grid-template-columns: repeat(4, minmax(0, 1fr)); }
 .modal-backdrop-custom :deep(.form-grid .span-2:first-child) { grid-column: span 2; }
+.history-readiness { overflow: hidden; }
+.readiness-head { display: flex; justify-content: space-between; align-items: center; gap: 12px; }
+.readiness-head h3 { margin: 0; font-size: 16px; }
+.readiness-grid { display: grid; grid-template-columns: repeat(2, 1fr); gap: 0; }
+.readiness-item { padding: 18px; border-right: 1px solid #edf0f4; }
+.readiness-item:last-child { border-right: 0; }
+.readiness-title { display: flex; align-items: baseline; justify-content: space-between; gap: 12px; }
+.readiness-title span { color: var(--muted); font-size: 12px; }
+.readiness-count { display: flex; align-items: baseline; gap: 6px; margin-top: 12px; }
+.readiness-count strong { font-size: 24px; }
+.readiness-count span { color: var(--muted); font-size: 13px; }
+.readiness-bar { height: 7px; margin: 10px 0; overflow: hidden; background: #edf0f4; border-radius: 999px; }
+.readiness-bar span { display: block; height: 100%; background: var(--wz-primary); border-radius: inherit; }
+
 @media (max-width: 1050px) {
   .case-grid { grid-template-columns: 1fr; }
+  .readiness-grid { grid-template-columns: 1fr; }
+  .readiness-item { border-right: 0; border-bottom: 1px solid #edf0f4; }
+  .readiness-item:last-child { border-bottom: 0; }
   .case-meta { grid-template-columns: 1fr 1fr; }
   .modal-backdrop-custom :deep(.form-grid) { grid-template-columns: repeat(2, minmax(0, 1fr)); }
 }
