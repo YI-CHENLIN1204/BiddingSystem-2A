@@ -11,7 +11,7 @@ namespace 崴正.Models
 
     public class TwoAQuantityAnalysisResultDto
     {
-        public int OneDProjectId { get; set; }
+        public int AnalysisCaseId { get; set; }
 
         public int TotalGroupCount { get; set; }
 
