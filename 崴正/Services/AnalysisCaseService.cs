@@ -738,6 +738,65 @@ namespace 崴正.Services
         }
 
 
+        public async Task<ServiceResult> GetRunAsync(
+            int analysisCaseId,
+            long analysisRunId)
+        {
+            var run =
+                await _context.AnalysisRuns
+                    .AsNoTracking()
+                    .Include(x => x.AnalysisBidVersion)
+                    .FirstOrDefaultAsync(x =>
+                        x.AnalysisRunId == analysisRunId &&
+                        x.AnalysisBidVersion.AnalysisCaseId ==
+                            analysisCaseId);
+
+            if (run == null)
+            {
+                return ServiceResult.NotFound(
+                    "找不到指定的偵錯紀錄");
+            }
+
+            JsonElement result;
+
+            try
+            {
+                result =
+                    JsonSerializer.Deserialize<JsonElement>(
+                        run.ResultJson);
+            }
+            catch (JsonException)
+            {
+                result =
+                    JsonSerializer.SerializeToElement(
+                        new
+                        {
+                            message =
+                                "此偵錯紀錄的結果資料格式無法解析"
+                        });
+            }
+
+            return ServiceResult.Ok(
+                new AnalysisRunDetailDto
+                {
+                    AnalysisRunId =
+                        run.AnalysisRunId,
+                    AnalysisBidVersionId =
+                        run.AnalysisBidVersionId,
+                    VersionNo =
+                        run.AnalysisBidVersion.VersionNo,
+                    RunType =
+                        run.RunType,
+                    Status =
+                        run.Status,
+                    CreatedAt =
+                        run.CreatedAt,
+                    Result =
+                        result
+                });
+        }
+
+
         private static ServiceResult? ValidateMetadata(
             AnalysisCaseMetadataRequest metadata)
         {
