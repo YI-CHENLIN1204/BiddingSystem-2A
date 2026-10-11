@@ -30,8 +30,16 @@ namespace 崴正.Controllers
 
                 targetSources = new[]
                 {
-                    "OneD",
-                    "Upload"
+                    "Upload",
+                    "OneD"
+                },
+
+                sourcePolicy = new
+                {
+                    standaloneFirst = true,
+                    oneDOptional = true,
+                    rule =
+                        "2A 必須可在沒有 1D 的環境獨立運作；若有設定 1D API，才額外開放 1D 匯入入口。"
                 },
 
                 oneDUsage =
