@@ -23,6 +23,11 @@ interface AnalysisCaseSummary {
   updatedAt: string
 }
 
+interface OneDStatus {
+  configured: boolean
+  message: string
+}
+
 interface PolicyResponse {
   provisional: boolean
   oneDUsage: string
@@ -37,12 +42,13 @@ interface PolicyResponse {
 const { options, error: optionsError } = useSystemOptions()
 const cases = ref<AnalysisCaseSummary[]>([])
 const policy = ref<PolicyResponse | null>(null)
+const oneDStatus = ref<OneDStatus>({ configured: false, message: '1D API 尚未設定' })
 const loading = ref(false)
 const saving = ref(false)
 const error = ref('')
 const message = ref('')
 const showCreate = ref(false)
-const sourceType = ref<'OneD' | 'Upload'>('OneD')
+const sourceType = ref<'OneD' | 'Upload'>('Upload')
 const oneDProjectId = ref<number | null>(null)
 const uploadFile = ref<File | null>(null)
 const fileInput = ref<HTMLInputElement | null>(null)
@@ -63,7 +69,7 @@ function emptyForm(): ProjectForm {
 }
 
 function resetCreate() {
-  sourceType.value = 'OneD'
+  sourceType.value = oneDStatus.value.configured ? 'OneD' : 'Upload'
   oneDProjectId.value = null
   uploadFile.value = null
   note.value = ''
@@ -109,12 +115,14 @@ async function load() {
   loading.value = true
   error.value = ''
   try {
-    const [caseResult, policyResult] = await Promise.all([
+    const [caseResult, policyResult, oneDResult] = await Promise.all([
       api<AnalysisCaseSummary[]>('/analysis-cases'),
       api<PolicyResponse>('/analysis-cases/policy'),
+      api<OneDStatus>('/one-d/status'),
     ])
     cases.value = caseResult
     policy.value = policyResult
+    oneDStatus.value = oneDResult
   } catch (caught) {
     error.value = caught instanceof Error ? caught.message : '無法載入待偵錯案件'
   } finally {
@@ -133,6 +141,9 @@ async function createCase() {
     const projectDate = `${value.projectMonth}-01`
 
     if (sourceType.value === 'OneD') {
+      if (!oneDStatus.value.configured) {
+        throw new Error('目前環境未設定 1D API，請改用自行上傳建立待偵錯案件')
+      }
       if (!oneDProjectId.value || oneDProjectId.value <= 0) {
         throw new Error('請輸入有效的 1D ProjectId')
       }
@@ -198,7 +209,7 @@ onMounted(load)
 
     <section v-if="policy?.provisional" class="notice info">
       <strong>目前依暫定流程實作：</strong>
-      1D 與自行上傳皆可建立待偵錯案件；自行上傳暫時只接受已具有工程大項分類的結構化標單。廠商確認後可再調整規則。
+      2A 可獨立用「自行上傳」運作；有連接 1D 的產學環境則會額外開放「從 1D 匯入」。自行上傳暫時只接受已具有工程大項分類的結構化標單。
     </section>
 
     <section class="stat-grid">
@@ -210,7 +221,7 @@ onMounted(load)
 
     <div v-if="loading" class="card p-4 text-muted">載入待偵錯案件中...</div>
     <div v-else-if="!cases.length" class="card empty-state">
-      尚未建立待偵錯案件。可以從 1D 匯入，或依暫定規格直接上傳結構化標單。
+      尚未建立待偵錯案件。{{ oneDStatus.configured ? '可從 1D 匯入，或直接上傳結構化標單。' : '目前未連接 1D，請直接上傳結構化標單建立案件。' }}
     </div>
 
     <section v-else class="case-grid">
@@ -262,20 +273,22 @@ onMounted(load)
               <button
                 type="button"
                 class="source-option"
-                :class="{ active: sourceType === 'OneD' }"
-                @click="sourceType = 'OneD'"
-              >
-                <strong>從 1D 匯入</strong>
-                <span>讀取一次 1D 已確認結果，存成 2A 自己的版本快照。</span>
-              </button>
-              <button
-                type="button"
-                class="source-option"
                 :class="{ active: sourceType === 'Upload' }"
                 @click="sourceType = 'Upload'"
               >
                 <strong>自行上傳</strong>
-                <span>暫定只接受已具有工程大項分類的結構化標單。</span>
+                <span>2A 可獨立使用。專題環境沒有 1D 時，直接從這裡建立待偵錯案件。</span>
+              </button>
+              <button
+                type="button"
+                class="source-option"
+                :class="{ active: sourceType === 'OneD', unavailable: !oneDStatus.configured }"
+                :disabled="!oneDStatus.configured"
+                @click="oneDStatus.configured && (sourceType = 'OneD')"
+              >
+                <strong>從 1D 匯入</strong>
+                <span v-if="oneDStatus.configured">產學整合環境使用；讀取一次 1D 結果後存成 2A 快照。</span>
+                <span v-else>目前環境未連接 1D；不影響 2A 自行上傳與偵錯。</span>
               </button>
             </div>
 
@@ -352,6 +365,7 @@ onMounted(load)
 .source-option { display: grid; gap: 5px; padding: 16px; text-align: left; color: #34425d; background: #fff; border: 1px solid var(--border); border-radius: 8px; }
 .source-option span { color: var(--muted); font-size: 13px; line-height: 1.5; }
 .source-option.active { color: var(--wz-primary); border-color: var(--wz-primary); background: var(--blue-soft); }
+.source-option.unavailable, .source-option:disabled { opacity: .55; cursor: not-allowed; background: #f7f8fa; }
 .source-fields { display: grid; grid-template-columns: minmax(260px, .6fr) 1fr; gap: 16px; align-items: end; }
 .modal-backdrop-custom { position: fixed; inset: 0; z-index: 1080; display: grid; place-items: center; padding: 1.5rem; overflow-y: auto; background: rgba(0,0,0,.5); }
 .modal-backdrop-custom .modal-dialog { width: min(1050px, 100%); margin: auto; }
