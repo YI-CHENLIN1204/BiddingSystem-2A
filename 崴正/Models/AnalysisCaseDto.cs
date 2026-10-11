@@ -112,4 +112,16 @@ namespace 崴正.Models
         public string Status { get; set; } = string.Empty;
         public DateTime CreatedAt { get; set; }
     }
+
+
+    public class AnalysisRunDetailDto
+    {
+        public long AnalysisRunId { get; set; }
+        public long AnalysisBidVersionId { get; set; }
+        public int VersionNo { get; set; }
+        public string RunType { get; set; } = string.Empty;
+        public string Status { get; set; } = string.Empty;
+        public DateTime CreatedAt { get; set; }
+        public System.Text.Json.JsonElement Result { get; set; }
+    }
 }
