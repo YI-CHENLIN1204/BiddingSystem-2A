@@ -29,6 +29,18 @@ namespace 崴正.Services
 
         // 目前暫定的「大項估算 / 價格異常」單位。
         private static readonly HashSet<string>
+            QuantityHistoryMaterialNames =
+                new(
+                    new[]
+                    {
+                        "鋼筋",
+                        "混凝土"
+                    },
+                    StringComparer.OrdinalIgnoreCase
+                );
+
+
+        private static readonly HashSet<string>
             PriceEstimationMajorCategories =
                 new(
                     new[]
@@ -162,6 +174,23 @@ namespace 崴正.Services
             return QuantityDetectionCategories
                 .Contains(
                     detectionCategory.Trim()
+                );
+        }
+
+
+        public static bool
+            IsQuantityHistoryMaterial(
+                string? materialName)
+        {
+            if (string.IsNullOrWhiteSpace(
+                    materialName))
+            {
+                return false;
+            }
+
+            return QuantityHistoryMaterialNames
+                .Contains(
+                    materialName.Trim()
                 );
         }
 
