@@ -50,6 +50,22 @@ namespace 崴正.Services
                     "請提供工程大項名稱");
             }
 
+            if (!TwoAScopePolicy
+                .IsPriceEstimationMajorCategory(
+                    majorCategory))
+            {
+                string supported =
+                    string.Join(
+                        "、",
+                        TwoAScopePolicy
+                            .GetPriceEstimationMajorCategories()
+                    );
+
+                return ServiceResult.Validation(
+                    $"目前大項估算暫定只支援：{supported}。"
+                );
+            }
+
             if (request.Target.TotalFloorArea <= 0)
             {
                 return ServiceResult.Validation(
