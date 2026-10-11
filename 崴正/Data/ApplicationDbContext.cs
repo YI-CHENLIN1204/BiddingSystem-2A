@@ -63,8 +63,6 @@ namespace 崴正.Data
 
                 entity.Property(e => e.TotalFloorArea).HasColumnName("total_floor_area");
 
-                entity.Property(e => e.FloorRange).HasColumnName("floor_range");
-
                 entity.Property(e => e.FloorCount).HasColumnName("floor_count");
 
                 entity.Property(e => e.BasementFloorCount).HasColumnName("basement_floor_count");
