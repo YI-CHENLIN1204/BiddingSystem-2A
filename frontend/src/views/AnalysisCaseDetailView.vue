@@ -97,7 +97,7 @@ interface QuantityAnalysisItem {
 }
 
 interface QuantityAnalysis {
-  oneDProjectId: number
+  analysisCaseId: number
   totalGroupCount: number
   analyzedGroupCount: number
   insufficientDataCount: number
@@ -138,6 +138,11 @@ interface PriceRunResponse {
   result: PriceAnalysis
 }
 
+interface OneDStatus {
+  configured: boolean
+  message: string
+}
+
 const route = useRoute()
 const caseId = Number(route.params.id)
 const detail = ref<CaseDetail | null>(null)
@@ -153,6 +158,7 @@ const tab = ref<'items' | 'analysis' | 'runs'>('items')
 
 const showAddVersion = ref(false)
 const versionSource = ref<'OneD' | 'Upload'>('Upload')
+const oneDStatus = ref<OneDStatus>({ configured: false, message: '1D API 尚未設定' })
 const oneDProjectId = ref<number | null>(null)
 const versionFile = ref<File | null>(null)
 const versionFileInput = ref<HTMLInputElement | null>(null)
@@ -212,12 +218,14 @@ async function loadCase() {
   loading.value = true
   error.value = ''
   try {
-    const [caseResult, runResult] = await Promise.all([
+    const [caseResult, runResult, oneDResult] = await Promise.all([
       api<CaseDetail>(`/analysis-cases/${caseId}`),
       api<RunSummary[]>(`/analysis-cases/${caseId}/runs`),
+      api<OneDStatus>('/one-d/status'),
     ])
     detail.value = caseResult
     runs.value = runResult
+    oneDStatus.value = oneDResult
 
     const preferred = selectedVersionId.value
       ?? caseResult.case.currentVersionId
@@ -271,6 +279,9 @@ async function addVersion() {
   message.value = ''
   try {
     if (versionSource.value === 'OneD') {
+      if (!oneDStatus.value.configured) {
+        throw new Error('目前環境未設定 1D API，請改用上傳新版標單')
+      }
       if (!oneDProjectId.value || oneDProjectId.value <= 0) {
         throw new Error('請輸入有效的 1D ProjectId')
       }
@@ -601,11 +612,18 @@ onMounted(loadCase)
             <div class="source-choice mb-4">
               <button type="button" class="source-option" :class="{ active: versionSource === 'Upload' }" @click="versionSource = 'Upload'">
                 <strong>上傳新版標單</strong>
-                <span>適合廠商修改數量或價格後再次送估。</span>
+                <span>2A 獨立流程；適合同一案件修改數量或價格後再次送估。</span>
               </button>
-              <button type="button" class="source-option" :class="{ active: versionSource === 'OneD' }" @click="versionSource = 'OneD'">
+              <button
+                type="button"
+                class="source-option"
+                :class="{ active: versionSource === 'OneD', unavailable: !oneDStatus.configured }"
+                :disabled="!oneDStatus.configured"
+                @click="oneDStatus.configured && (versionSource = 'OneD')"
+              >
                 <strong>重新從 1D 匯入</strong>
-                <span>只有真的需要取得 1D 最新結果時才使用。</span>
+                <span v-if="oneDStatus.configured">產學整合環境才使用；只有需要取得 1D 最新結果時才重新匯入。</span>
+                <span v-else>目前環境未連接 1D，請直接上傳新版標單。</span>
               </button>
             </div>
 
@@ -665,6 +683,7 @@ onMounted(loadCase)
 .source-option { display: grid; gap: 5px; padding: 16px; text-align: left; color: #34425d; background: #fff; border: 1px solid var(--border); border-radius: 8px; }
 .source-option span { color: var(--muted); font-size: 13px; line-height: 1.5; }
 .source-option.active { color: var(--wz-primary); border-color: var(--wz-primary); background: var(--blue-soft); }
+.source-option.unavailable, .source-option:disabled { opacity: .55; cursor: not-allowed; background: #f7f8fa; }
 .modal-backdrop-custom { position: fixed; inset: 0; z-index: 1080; display: grid; place-items: center; padding: 1.5rem; background: rgba(0,0,0,.5); }
 .modal-backdrop-custom .modal-dialog { width: min(760px, 100%); margin: auto; }
 @media (max-width: 1100px) {
