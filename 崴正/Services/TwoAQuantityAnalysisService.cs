@@ -28,7 +28,7 @@ namespace 崴正.Services
 
 
         public async Task<ServiceResult> AnalyzeAsync(
-            int oneDProjectId,
+            int analysisCaseId,
             TwoAProjectPreprocessResponse preprocess,
             TwoAQuantityAnalysisRequest request)
         {
@@ -55,8 +55,8 @@ namespace 崴正.Services
             var result =
                 new TwoAQuantityAnalysisResultDto
                 {
-                    OneDProjectId =
-                        oneDProjectId,
+                    AnalysisCaseId =
+                        analysisCaseId,
 
                     TotalGroupCount =
                         preprocess.Groups.Count
@@ -146,7 +146,7 @@ namespace 崴正.Services
                         "Gray";
 
                     item.Message =
-                        "找不到此偵錯細項可供分析的 1D 工項。";
+                        "找不到此偵錯細項可供分析的待偵錯工項。";
 
                     result.SkippedGroupCount++;
                     result.Items.Add(item);
