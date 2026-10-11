@@ -62,6 +62,20 @@ namespace 崴正.Services
                     .Where(x => x.IsActive)
                     .ToList();
 
+            int minimumSampleCount =
+                _context.EstimationSettings
+                    .AsNoTracking()
+                    .Where(x =>
+                        x.SettingsId == 1)
+                    .Select(x =>
+                        x.MinimumSampleCount)
+                    .FirstOrDefault();
+
+            if (minimumSampleCount <= 0)
+            {
+                minimumSampleCount = 5;
+            }
+
             var mappedMaterialIds =
                 mappings
                     .Select(x => x.MaterialId)
@@ -123,8 +137,9 @@ namespace 崴正.Services
                         bool hasMaterialMapping =
                             categoryMaterialIds.Count > 0;
 
-                        bool hasHistory =
-                            historicalProjectCount > 0;
+                        bool hasEnoughHistory =
+                            historicalProjectCount >=
+                            minimumSampleCount;
 
                         return new
                         {
@@ -147,19 +162,32 @@ namespace 崴正.Services
 
                             historicalProjectCount,
 
+                            minimumSampleCount,
+
+                            missingProjectCount =
+                                Math.Max(
+                                    0,
+                                    minimumSampleCount -
+                                    historicalProjectCount
+                                ),
+
                             status =
                                 !hasMaterialMapping
                                     ? "MaterialMappingRequired"
-                                    : !hasHistory
+                                    : historicalProjectCount == 0
                                         ? "HistoricalDataRequired"
-                                        : "ReadyForEstimation",
+                                        : !hasEnoughHistory
+                                            ? "InsufficientHistoricalProjects"
+                                            : "ReadyForEstimation",
 
                             message =
                                 !hasMaterialMapping
                                     ? "尚未對應標準材料。"
-                                    : !hasHistory
-                                        ? "已建立材料對應，但尚無可用歷史交易。"
-                                        : "已具備材料對應與歷史交易，可進行合理範圍估算。"
+                                    : historicalProjectCount == 0
+                                        ? $"已建立材料對應，但尚無可用歷史建案；至少需要 {minimumSampleCount} 案。"
+                                        : !hasEnoughHistory
+                                            ? $"目前只有 {historicalProjectCount} 個有效歷史建案，至少需要 {minimumSampleCount} 案，尚差 {minimumSampleCount - historicalProjectCount} 案。"
+                                            : $"已有 {historicalProjectCount} 個有效歷史建案，已達最低樣本數 {minimumSampleCount}。"
                         };
                     })
                     .ToList();
@@ -168,6 +196,8 @@ namespace 崴正.Services
             {
                 categoryCount =
                     items.Count,
+
+                minimumSampleCount,
 
                 readyCount =
                     items.Count(x =>
