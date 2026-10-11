@@ -141,6 +141,22 @@ namespace 崴正.Controllers
         }
 
 
+        [HttpGet(
+            "{analysisCaseId:int}/runs/{analysisRunId:long}")]
+        public async Task<IActionResult> GetRun(
+            int analysisCaseId,
+            long analysisRunId)
+        {
+            return ToActionResult(
+                await _analysisCaseService
+                    .GetRunAsync(
+                        analysisCaseId,
+                        analysisRunId
+                    )
+            );
+        }
+
+
         [HttpPost("from-1d/{oneDProjectId:int}")]
         public async Task<IActionResult> CreateFromOneD(
             int oneDProjectId,
