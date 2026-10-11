@@ -590,7 +590,7 @@ namespace 崴正.Services
                 }
 
                 return
-                    "工程大項不納入 2A 歷史估算";
+                    "此工程大項或材料不納入目前 2A 數量歷史基準";
             }
 
             bool historyEligible =
@@ -719,7 +719,7 @@ namespace 崴正.Services
                 "更新歷史交易";
         }
 
-        private static bool IsHistoryEligible(
+        private bool IsHistoryEligible(
             FinalBidItem bidItem,
             string? dataIssueCode)
         {
@@ -751,7 +751,7 @@ namespace 崴正.Services
                 ;
         }
 
-        private static bool
+        private bool
             IsInTwoAHistoryScope(
                 FinalBidItem bidItem)
         {
@@ -763,11 +763,40 @@ namespace 崴正.Services
                         bidItem.Category3
                     );
 
-            return
-                TwoAScopePolicy
-                    .IsEstimableMajorCategory(
-                        majorCategory
-                    );
+            if (!TwoAScopePolicy
+                .IsQuantityEstimableMajorCategory(
+                    majorCategory
+                ))
+            {
+                return false;
+            }
+
+            if (!bidItem.MaterialId.HasValue)
+            {
+                return false;
+            }
+
+            string? materialName =
+                bidItem.Material?.MaterialName;
+
+            if (string.IsNullOrWhiteSpace(
+                    materialName))
+            {
+                materialName =
+                    _context.MaterialMasters
+                        .AsNoTracking()
+                        .Where(x =>
+                            x.MaterialId ==
+                            bidItem.MaterialId.Value)
+                        .Select(x =>
+                            x.MaterialName)
+                        .FirstOrDefault();
+            }
+
+            return TwoAScopePolicy
+                .IsQuantityHistoryMaterial(
+                    materialName
+                );
         }
 
 
