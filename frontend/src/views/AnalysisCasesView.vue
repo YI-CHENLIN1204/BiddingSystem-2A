@@ -209,7 +209,8 @@ onMounted(load)
 
     <section v-if="policy?.provisional" class="notice info">
       <strong>目前依暫定流程實作：</strong>
-      2A 可獨立用「自行上傳」運作；有連接 1D 的產學環境則會額外開放「從 1D 匯入」。自行上傳暫時只接受已具有工程大項分類的結構化標單。
+      2A 可獨立用「自行上傳」運作；有連接 1D 的產學環境則會額外開放「從 1D 匯入」。
+      偵錯範圍先以「鋼筋、混凝土」作為細項數量偵錯單位，並以「結構體工程」作為大項估算／價格異常單位。
     </section>
 
     <section class="stat-grid">
