@@ -313,7 +313,6 @@ namespace 崴正.Services
                 project.TotalFloorArea,
                 project.FloorCount,
                 project.BasementFloorCount,
-                project.FloorRange,
                 project.StartDate,
                 project.IsDeleted
             };
@@ -338,14 +337,6 @@ namespace 崴正.Services
 
             project.BasementFloorCount =
                 request.BasementFloorCount;
-
-            project.FloorRange =
-                BuildFloorRange(
-                    request.FloorCount!.Value,
-                    request
-                        .BasementFloorCount!
-                        .Value
-                );
 
             project.StartDate =
                 projectDate;
@@ -385,7 +376,6 @@ namespace 崴正.Services
                         project.TotalFloorArea,
                         project.FloorCount,
                         project.BasementFloorCount,
-                        project.FloorRange,
                         project.StartDate,
                         project.IsDeleted
                     }
@@ -825,13 +815,5 @@ namespace 崴正.Services
         }
 
 
-        private static string BuildFloorRange(
-            int floorCount,
-            int basementFloorCount)
-        {
-            return basementFloorCount > 0
-                ? $"B{basementFloorCount}~{floorCount}F"
-                : $"1~{floorCount}F";
-        }
     }
 }
