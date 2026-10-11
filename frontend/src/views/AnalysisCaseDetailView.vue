@@ -143,6 +143,16 @@ interface OneDStatus {
   message: string
 }
 
+interface AnalysisRunDetail {
+  analysisRunId: number
+  analysisBidVersionId: number
+  versionNo: number
+  runType: string
+  status: string
+  createdAt: string
+  result: QuantityAnalysis | PriceAnalysis
+}
+
 const route = useRoute()
 const caseId = Number(route.params.id)
 const detail = ref<CaseDetail | null>(null)
@@ -338,6 +348,42 @@ async function runQuantity() {
     analyzing.value = false
   }
 }
+
+async function viewRun(run: RunSummary) {
+  error.value = ''
+  try {
+    const saved = await api<AnalysisRunDetail>(
+      `/analysis-cases/${caseId}/runs/${run.analysisRunId}`,
+    )
+
+    selectedVersionId.value = saved.analysisBidVersionId
+    await selectVersion(saved.analysisBidVersionId)
+
+    if (saved.runType === 'Quantity') {
+      quantityResult.value = {
+        analysisRunId: saved.analysisRunId,
+        analysisCaseId: caseId,
+        analysisBidVersionId: saved.analysisBidVersionId,
+        versionNo: saved.versionNo,
+        sourceType: versionDetail.value?.version.sourceType ?? '',
+        result: saved.result as QuantityAnalysis,
+      }
+      priceResult.value = null
+    } else if (saved.runType.startsWith('MajorPrice:')) {
+      priceResult.value = {
+        analysisRunId: saved.analysisRunId,
+        result: saved.result as PriceAnalysis,
+      }
+      quantityResult.value = null
+    }
+
+    tab.value = 'analysis'
+    message.value = `已開啟歷史偵錯 Run #${saved.analysisRunId}（V${saved.versionNo}）。`
+  } catch (caught) {
+    error.value = caught instanceof Error ? caught.message : '無法讀取歷史偵錯結果'
+  }
+}
+
 
 async function runPrice() {
   if (!selectedVersionId.value) return
@@ -583,7 +629,7 @@ onMounted(loadCase)
         <div v-if="!runs.length" class="empty-state">這個案件尚未執行過偵錯。</div>
         <div v-else class="table-wrap">
           <table>
-            <thead><tr><th>Run</th><th>版本</th><th>分析類型</th><th>狀態</th><th>執行時間</th></tr></thead>
+            <thead><tr><th>Run</th><th>版本</th><th>分析類型</th><th>狀態</th><th>執行時間</th><th>操作</th></tr></thead>
             <tbody>
               <tr v-for="run in runs" :key="run.analysisRunId">
                 <td>#{{ run.analysisRunId }}</td>
@@ -591,6 +637,11 @@ onMounted(loadCase)
                 <td>{{ run.runType === 'Quantity' ? '細項數量異常' : run.runType.replace('MajorPrice:', '大項價格：') }}</td>
                 <td>{{ run.status }}</td>
                 <td>{{ formatDate(run.createdAt) }}</td>
+                <td>
+                  <button class="btn btn-sm btn-outline-primary" type="button" @click="viewRun(run)">
+                    查看結果
+                  </button>
+                </td>
               </tr>
             </tbody>
           </table>
