@@ -65,18 +65,30 @@ namespace 崴正.Controllers
                 hierarchy = new
                 {
                     majorCategory =
-                        "1D 工程章節，例如：結構體工程、鋼骨鋼構工程。",
+                        "目前大項估算單位暫定為「結構體工程」。",
                     detectionCategory =
-                        "2A 數量偵錯細項，例如：鋼筋、混凝土、模板、鋼骨。"
+                        "目前細項數量偵錯單位暫定為「鋼筋、混凝土」。"
                 },
 
                 quantityEstimation = new
                 {
                     estimableMajorCategories =
                         TwoAScopePolicy
-                            .GetEstimableMajorCategories(),
+                            .GetQuantityEstimableMajorCategories(),
+                    detectionCategories =
+                        TwoAScopePolicy
+                            .GetQuantityDetectionCategories(),
                     rule =
-                        "僅對目前可由歷史建案建立合理材料用量基準的大項進行細項數量異常；其他大項保留資料但不強制估算。"
+                        "目前只在結構體工程下，將鋼筋與混凝土作為數量偵錯細項；其他工項保留原始資料但暫不進入本階段數量判定。"
+                },
+
+                priceEstimation = new
+                {
+                    majorCategories =
+                        TwoAScopePolicy
+                            .GetPriceEstimationMajorCategories(),
+                    rule =
+                        "目前大項價格合理範圍與每坪單價估算先以結構體工程為單位。"
                 },
 
                 knownMajorCategories =
