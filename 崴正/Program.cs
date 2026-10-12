@@ -42,11 +42,7 @@ builder.Services.AddScoped<FinalBidImportService>();
 builder.Services.AddScoped<FinalBidQueryService>();
 builder.Services.AddScoped<UnitConversionService>();
 builder.Services.AddScoped<EstimationSettingsService>();
-builder.Services.AddScoped<RangeEstimationService>();
 builder.Services.AddScoped<ProjectManagementService>();
-builder.Services.AddScoped<EstimationTargetService>();
-builder.Services.AddScoped<BatchEstimationService>();
-builder.Services.AddScoped<CoreMaterialService>();
 builder.Services.AddScoped<MaterialCategoryService>();
 builder.Services.AddScoped<StandardMaterialService>();
 builder.Services.AddScoped<AuditLogService>();
@@ -151,7 +147,6 @@ app.Use(async (context, next) =>
         context.Request.Path;
 
     bool useSharedDbConnection =
-        path.StartsWithSegments("/api/range-estimation") ||
         path.StartsWithSegments("/api/Estimation") ||
         path.StartsWithSegments("/api/detection-category") ||
         path.StartsWithSegments("/api/major-category-price") ||
