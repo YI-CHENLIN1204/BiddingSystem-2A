@@ -18,6 +18,19 @@ interface MappingSummary {
   totalCount: number; autoCount: number; manualCount: number; pendingCount: number
   invalidQuantityCount: number; invalidUnitPriceCount: number; unitMismatchCount: number; ignoredCount: number
 }
+interface ImportReport {
+  projectId: number
+  message?: string
+  totalCount: number
+  recognizedMajorCategoryCount: number
+  unclassifiedMajorCategoryCount: number
+  structuralItemCount: number
+  structuralPricedItemCount: number
+  structuralAmount: number
+  historyInsertCount: number
+  rebarHistoryInsertCount: number
+  concreteHistoryInsertCount: number
+}
 interface PolicyResponse { knownMajorCategories: string[] }
 interface FilterOptions { categories: string[]; units: string[] }
 interface MasterOption { categoryId?: number; categoryName?: string; unitId?: number; unitName?: string; isActive: boolean }
@@ -36,6 +49,7 @@ const error = ref('')
 const message = ref('')
 const projectId = ref<number | null>(null)
 const summary = ref<MappingSummary | null>(null)
+const importReport = ref<ImportReport | null>(null)
 const items = ref<BidItem[]>([])
 const materialOptions = ref<MaterialOption[]>([])
 const filters = ref<FilterOptions>({ categories: [], units: [] })
@@ -90,8 +104,9 @@ async function upload() {
   form.append('excelFile', file.value)
   Object.entries(project.value).forEach(([key, value]) => form.append(key, value == null ? '' : String(value)))
   try {
-    const result = await apiForm<{ projectId: number; message?: string }>('/Estimation/upload-final-bid', form)
+    const result = await apiForm<ImportReport>('/Estimation/upload-final-bid', form)
     projectId.value = Number(result.projectId)
+    importReport.value = result
     message.value = result.message ?? '決標資料已成功回寫。'
     file.value = null
     fileInputKey.value++
@@ -288,6 +303,26 @@ watch([status, majorCategoryFilter, issueCode, category, unit], resetAndLoad)
     </form>
 
     <div v-if="summary" class="mt-4">
+      <div v-if="importReport" class="card mb-3 import-report">
+        <div class="card-body">
+          <div class="d-flex justify-content-between align-items-start gap-3 flex-wrap mb-3">
+            <div>
+              <h4 class="mb-1">2A 匯入資格檢查</h4>
+              <div class="text-muted small">解析完成後立即檢查工程大項辨識、結構體價格與鋼筋／混凝土數量歷史。</div>
+            </div>
+            <RouterLink :to="`/projects/${importReport.projectId}`" class="btn btn-sm btn-outline-primary">查看建案完整摘要</RouterLink>
+          </div>
+          <div class="row g-2">
+            <div class="col-md-2"><div class="stat-box"><div class="text-muted fw-bold">工程大項辨識</div><div class="stat-num">{{ importReport.recognizedMajorCategoryCount }}</div><small>/ {{ importReport.totalCount }} 筆</small></div></div>
+            <div class="col-md-2"><div class="stat-box" :class="{ 'tone-warning': importReport.unclassifiedMajorCategoryCount > 0 }"><div class="text-muted fw-bold">未辨識大項</div><div class="stat-num">{{ importReport.unclassifiedMajorCategoryCount }}</div><small>可人工校正</small></div></div>
+            <div class="col-md-2"><div class="stat-box"><div class="text-muted fw-bold">結構體工項</div><div class="stat-num">{{ importReport.structuralItemCount }}</div><small>{{ importReport.structuralPricedItemCount }} 筆可計價</small></div></div>
+            <div class="col-md-2"><div class="stat-box"><div class="text-muted fw-bold">結構體總價</div><div class="stat-num report-amount">{{ formatNumber(importReport.structuralAmount) }}</div><small>價格歷史候選</small></div></div>
+            <div class="col-md-2"><div class="stat-box"><div class="text-muted fw-bold">鋼筋歷史</div><div class="stat-num">{{ importReport.rebarHistoryInsertCount }}</div><small>筆有效交易</small></div></div>
+            <div class="col-md-2"><div class="stat-box"><div class="text-muted fw-bold">混凝土歷史</div><div class="stat-num">{{ importReport.concreteHistoryInsertCount }}</div><small>筆有效交易</small></div></div>
+          </div>
+        </div>
+      </div>
+
       <div class="alert alert-success shadow-sm result-summary">
         <h4 class="alert-heading fw-bold mb-2">建案材料對應摘要</h4>
         <div class="text-muted small mb-3">統計依目前資料庫狀態即時更新</div>
@@ -363,7 +398,7 @@ watch([status, majorCategoryFilter, issueCode, category, unit], resetAndLoad)
 .upload-footer { display: flex; justify-content: space-between; align-items: center; gap: 16px; margin-top: 14px; }
 .upload-hint { color: #6c757d; font-size: 12px; }
 .btn-wz-primary { background: #321fdb; color: #fff; border-radius: 6px; padding: 9px 20px; font-weight: 800; border: 0; }
-.result-summary { background: #fff; border-left: 5px solid #321fdb; }
+.import-report { border-left: 5px solid #198754; }.report-amount{font-size:1.2rem!important;line-height:2.2rem}.result-summary { background: #fff; border-left: 5px solid #321fdb; }
 .result-summary .alert-heading { color: #321fdb; }
 .stat-box { height: 100%; background: #f8f9fa; border: 1px solid #dee2e6; border-radius: 6px; padding: 14px; text-align: center; }
 .stat-num { font-size: 2rem; font-weight: 900; }
