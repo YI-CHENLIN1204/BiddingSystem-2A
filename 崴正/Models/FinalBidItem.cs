@@ -20,6 +20,8 @@ namespace 崴正.Models
 
         public string? Category3 { get; set; }
 
+        public string? MajorCategoryOverride { get; set; }
+
         public string ItemName { get; set; } = string.Empty;
 
         public string? Spec { get; set; }
