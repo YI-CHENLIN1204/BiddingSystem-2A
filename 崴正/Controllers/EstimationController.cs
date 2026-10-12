@@ -214,6 +214,27 @@ namespace 崴正.Controllers
             return ToActionResult(result);
         }
 
+        [HttpPost("update-major-category")]
+        public IActionResult UpdateMajorCategory(
+            [FromForm] long finalBidItemId,
+            [FromForm] string? majorCategory)
+        {
+            string actionUser =
+                User?.Identity?.Name
+                ?? "Estimator_Staff";
+
+            var result =
+                _finalBidService
+                    .UpdateMajorCategoryOverride(
+                        finalBidItemId,
+                        majorCategory,
+                        actionUser
+                    );
+
+            return ToActionResult(result);
+        }
+
+
         [HttpPost("update-bid-item-data")]
         public IActionResult UpdateBidItemData(
             [FromForm] long finalBidItemId,
