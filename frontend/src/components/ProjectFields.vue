@@ -8,6 +8,7 @@ withDefaults(defineProps<{
   nameLabel?: string
   namePlaceholder?: string
   areaLabel?: string
+  siteAreaLabel?: string
   floorLabel?: string
   basementFloorLabel?: string
   validate?: boolean
@@ -71,6 +72,17 @@ defineEmits<{ 'update:modelValue': [value: ProjectForm] }>()
         :value="modelValue.totalFloorArea ?? ''"
         :required="validate"
         @input="$emit('update:modelValue', { ...modelValue, totalFloorArea: Number(($event.target as HTMLInputElement).value) || null })"
+      />
+    </label>
+    <label class="field">
+      <span>{{ siteAreaLabel ?? '基地面積' }}</span>
+      <input
+        type="number"
+        :min="validate ? 0.01 : undefined"
+        step="0.01"
+        :value="modelValue.siteArea ?? ''"
+        :required="validate"
+        @input="$emit('update:modelValue', { ...modelValue, siteArea: Number(($event.target as HTMLInputElement).value) || null })"
       />
     </label>
     <label class="field">
