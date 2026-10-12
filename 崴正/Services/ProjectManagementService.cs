@@ -1090,6 +1090,47 @@ namespace 崴正.Services
                 );
             }
 
+            var publishBlockingIssues =
+                new List<string>();
+
+            if (unclassifiedItemCount > 0)
+            {
+                publishBlockingIssues.Add(
+                    $"未辨識工程大項 {unclassifiedItemCount} 筆"
+                );
+            }
+
+            int structuralUnpricedItemCount =
+                structuralItems.Count -
+                structuralPricedItemCount;
+
+            if (structuralUnpricedItemCount > 0)
+            {
+                publishBlockingIssues.Add(
+                    $"結構體無有效價格 {structuralUnpricedItemCount} 筆"
+                );
+            }
+
+            int quantityBlockedItemCount =
+                Math.Max(
+                    0,
+                    rebarSourceItemCount -
+                    rebarCandidateItemCount
+                ) +
+                Math.Max(
+                    0,
+                    concreteSourceItemCount -
+                    concreteCandidateItemCount
+                );
+
+            if (quantityBlockedItemCount > 0)
+            {
+                publishBlockingIssues.Add(
+                    $"鋼筋／混凝土數量或單位不符合 {quantityBlockedItemCount} 筆"
+                );
+            }
+
+
             var history =
                 await (
                     from h in
@@ -1202,6 +1243,19 @@ namespace 崴正.Services
                     })
                     .ToListAsync();
 
+            var reviewEntities =
+                await _context.FinalBidItems
+                    .Include(x =>
+                        x.Material)
+                    .Include(x =>
+                        x.ProjectMaster)
+                    .Where(x =>
+                        x.ProjectMasterId ==
+                            projectId &&
+                        !x.IsIgnored
+                    )
+                    .ToListAsync();
+
             var structuralItems =
                 sourceItems
                     .Where(x =>
@@ -1253,6 +1307,52 @@ namespace 崴正.Services
                         "混凝土",
                         StringComparison.OrdinalIgnoreCase
                     ));
+
+            int rebarCandidateItemCount =
+                reviewEntities.Count(x =>
+                    string.Equals(
+                        TwoAScopePolicy
+                            .ResolveEffectiveMajorCategory(
+                                x.MajorCategoryOverride,
+                                x.Category1,
+                                x.Category2,
+                                x.Category3
+                            ),
+                        "結構體工程",
+                        StringComparison.OrdinalIgnoreCase
+                    ) &&
+                    string.Equals(
+                        x.Material?.MaterialName,
+                        "鋼筋",
+                        StringComparison.OrdinalIgnoreCase
+                    ) &&
+                    _finalBidService
+                        .CanBecomeHistoricalTransaction(
+                            x
+                        ));
+
+            int concreteCandidateItemCount =
+                reviewEntities.Count(x =>
+                    string.Equals(
+                        TwoAScopePolicy
+                            .ResolveEffectiveMajorCategory(
+                                x.MajorCategoryOverride,
+                                x.Category1,
+                                x.Category2,
+                                x.Category3
+                            ),
+                        "結構體工程",
+                        StringComparison.OrdinalIgnoreCase
+                    ) &&
+                    string.Equals(
+                        x.Material?.MaterialName,
+                        "混凝土",
+                        StringComparison.OrdinalIgnoreCase
+                    ) &&
+                    _finalBidService
+                        .CanBecomeHistoricalTransaction(
+                            x
+                        ));
 
 
             decimal structuralAmount =
@@ -1398,8 +1498,7 @@ namespace 崴正.Services
                         structuralPricedItemCount,
 
                     StructuralUnpricedItemCount =
-                        structuralItems.Count -
-                        structuralPricedItemCount,
+                        structuralUnpricedItemCount,
 
                     UnclassifiedItemCount =
                         unclassifiedItemCount,
@@ -1413,22 +1512,34 @@ namespace 崴正.Services
                     RebarSourceItemCount =
                         rebarSourceItemCount,
 
+                    RebarCandidateItemCount =
+                        rebarCandidateItemCount,
+
                     RebarExcludedItemCount =
                         Math.Max(
                             0,
                             rebarSourceItemCount -
-                            (rebar?.TransactionCount ?? 0)
+                            rebarCandidateItemCount
                         ),
 
                     ConcreteSourceItemCount =
                         concreteSourceItemCount,
 
+                    ConcreteCandidateItemCount =
+                        concreteCandidateItemCount,
+
                     ConcreteExcludedItemCount =
                         Math.Max(
                             0,
                             concreteSourceItemCount -
-                            (concrete?.TransactionCount ?? 0)
+                            concreteCandidateItemCount
                         ),
+
+                    PublishReady =
+                        publishBlockingIssues.Count == 0,
+
+                    PublishBlockingIssues =
+                        publishBlockingIssues,
 
                     StructuralAmount =
                         Math.Round(
