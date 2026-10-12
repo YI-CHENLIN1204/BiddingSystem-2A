@@ -1,0 +1,274 @@
+# 2A Current Architecture
+
+> Updated: 2026-10-12  
+> Development branch: `feature/1d-api-integration`
+
+This document records the current production direction of 2A. It is intentionally separate from the older POC branch and from legacy generic material-estimation experiments.
+
+## 1. Current product scope
+
+2A currently has two analysis levels:
+
+- **Major-category estimation / price anomaly:** `結構體工程`
+- **Detail quantity anomaly detection:** `鋼筋`, `混凝土`
+
+Current hierarchy:
+
+```text
+結構體工程
+├─ 鋼筋      -> quantity anomaly detection
+└─ 混凝土    -> quantity anomaly detection
+```
+
+Other structural items remain traceable in the final bid and may contribute to the total structural-work amount, but do not enter the current rebar/concrete quantity history baseline.
+
+## 2. Target data and historical data are separate
+
+### Target Pipeline
+
+Used for projects that are currently being estimated or repeatedly checked.
+
+```text
+Upload ───────────────┐
+                     ├─> AnalysisCase
+Optional 1D import ──┘      │
+                            ├─ V1
+                            ├─ V2
+                            └─ V3
+                                 │
+                                 └─ AnalysisRun
+```
+
+Tables:
+
+- `analysis_case`
+- `analysis_bid_version`
+- `analysis_bid_item`
+- `analysis_run`
+
+A target case NEVER writes directly to `historical_transaction`.
+
+### History Pipeline
+
+Used only for finalized official bids that are allowed to become model baselines.
+
+```text
+Final bid
+  -> ProjectMaster
+  -> FinalBidItem
+       ├─ structural-work price history stays in FinalBidItem
+       └─ rebar/concrete quantity history -> HistoricalTransaction
+```
+
+Tables:
+
+- `project_master`
+- `final_bid_item`
+- `historical_transaction`
+
+## 3. 1D is optional
+
+2A must remain fully usable without 1D.
+
+### Standalone / school-project environment
+
+```text
+Upload structured target bid
+-> AnalysisCase snapshot
+-> repeated versions
+-> quantity / price anomaly analysis
+```
+
+### Industry integration environment
+
+If `OneD:BaseUrl` is configured:
+
+```text
+1D result
+-> one-time import
+-> AnalysisCase snapshot
+-> all later analysis runs inside 2A
+```
+
+1D is an optional target-data source, not a historical-data source and not a runtime dependency for every analysis run.
+
+## 4. Direct upload provisional rule
+
+Until the vendor confirms the final interface contract, direct target upload is restricted to structured files that can provide:
+
+- major category
+- item name and/or specification
+- unit
+- quantity
+
+For major-category price analysis, the target also needs unit price and/or amount.
+
+Unclassified raw files are not silently sent to 1D and are not automatically guessed by 2A.
+
+## 5. Historical quantity eligibility
+
+A final-bid item enters `historical_transaction` only when all current conditions are satisfied:
+
+- item is not ignored
+- item is mapped to a standard material
+- major category resolves to `結構體工程`
+- material is `鋼筋` or `混凝土`
+- quantity is positive
+- source unit can be converted to the standard unit
+
+Unit price is NOT required for quantity history.
+
+`historical_transaction` is quantity-only. Price remains in `final_bid_item`.
+
+## 6. Historical price baseline
+
+Major-category price estimation currently supports only:
+
+- `結構體工程`
+
+For each historical project:
+
+1. sum valid structural-work line amounts
+2. fall back to `Qty * UnitPrice` when Amount is unavailable
+3. divide by project floor area in ping
+4. rank / weight similar projects
+5. apply time decay
+6. calculate weighted P15 / P50 / P85
+
+If the valid reference-project count is below `MinimumSampleCount`, the system reports insufficient data instead of forcing an anomaly result.
+
+## 7. Similar-project features
+
+Current similarity inputs:
+
+- project type
+- structure type
+- city
+- total floor area
+- **site area**
+- ground-floor count
+- basement-floor count
+- project year
+
+Site area is now a first-class feature in:
+
+- `project_master.site_area`
+- `analysis_case.site_area`
+- target forms
+- final-bid import metadata
+- structural estimation input
+- similarity scoring
+- settings UI
+
+Current configurable weights include:
+
+- structure weight
+- floor-area weight
+- site-area weight
+- floor weight
+- city weight
+- year weight
+
+Site area also has its own difference-cutoff ratio.
+
+## 8. Current readiness rules
+
+Default minimum sample count: **5 projects**.
+
+Quantity readiness is tracked independently for:
+
+- rebar
+- concrete
+
+Price readiness is tracked independently for:
+
+- structural work
+
+The dashboard displays how many valid historical projects exist for each baseline and how many are still missing.
+
+## 9. Main APIs
+
+### Target cases
+
+- `GET /api/analysis-cases`
+- `GET /api/analysis-cases/{id}`
+- `GET /api/analysis-cases/{id}/versions/{versionId}`
+- `GET /api/analysis-cases/{id}/runs`
+- `GET /api/analysis-cases/{id}/runs/{runId}`
+- `POST /api/analysis-cases/from-upload`
+- `POST /api/analysis-cases/from-1d/{oneDProjectId}`
+- `POST /api/analysis-cases/{id}/versions/upload`
+- `POST /api/analysis-cases/{id}/versions/from-1d/{oneDProjectId}`
+- `POST /api/analysis-cases/{id}/versions/{versionId}/quantity-analysis`
+- `POST /api/analysis-cases/{id}/versions/{versionId}/major-price-analysis`
+
+### Readiness
+
+- `GET /api/detection-category/readiness`
+- `GET /api/major-category-price/readiness`
+
+### Historical projects
+
+- `GET /api/projects`
+- `GET /api/projects/{projectId}`
+- `GET /api/projects/{projectId}/historical-data`
+- `GET /api/projects/{projectId}/2a-summary`
+
+### Structural estimation
+
+- `POST /api/major-category-price/range`
+
+## 10. Removed legacy architecture
+
+The old generic material-estimation stack has been removed because it conflicts with the current scope.
+
+Removed:
+
+- `RangeEstimationService`
+- `BatchEstimationService`
+- `CoreMaterialService`
+- `EstimationTargetService`
+- `RangeEstimationController`
+- legacy range/core-material DTOs
+- `quantity_rule_base` model and database table
+- core-material settings UI
+- legacy one-off `/api/bid-anomaly` flow
+
+The formal target-analysis entry is now the versioned `AnalysisCase` workflow.
+
+## 11. Current database state
+
+The development database has been hard-cleaned.
+
+No fake historical projects are seeded.
+
+Expected current data state:
+
+- `project_master`: 0 rows until real finalized bids are imported
+- `historical_transaction`: 0 rows until real rebar/concrete history is created
+- `analysis_case`: 0 rows until a real target test is created
+
+Current detection master:
+
+- `結構體工程 / 鋼筋 / kg`
+- `結構體工程 / 混凝土 / 立方公尺`
+
+The standard material `鋼筋續接器` is retained only to prevent it from being incorrectly merged into rebar weight history.
+
+## 12. Still awaiting vendor confirmation
+
+The implementation currently follows provisional assumptions for:
+
+1. whether direct upload must remain in the industry version
+2. exact schema accepted by direct upload
+3. final major/detail granularity
+4. exact 1D-to-2A operational workflow
+5. which categories should be excluded from quantity estimation and whether those categories may still use major-category price analysis
+
+The current architecture allows these rules to be adjusted without redesigning the Target/History separation.
+
+## 13. Current limitation
+
+There are currently no official historical projects in the cleaned development database.
+
+Therefore P15 / P50 / P85 cannot yet produce meaningful real-world ranges. The system must continue returning insufficient-data status until official finalized bids are imported and mapped.
