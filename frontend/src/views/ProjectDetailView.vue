@@ -39,6 +39,9 @@ interface MaterialOption {
 
 interface ProjectTwoASummary {
   projectId: number
+  historyStatus: string
+  historyApprovedAt?: string | null
+  historyApprovedBy?: string | null
   majorCategory: string
   structuralItemCount: number
   structuralPricedItemCount: number
@@ -102,6 +105,7 @@ const pageSize = ref(50)
 const totalCount = ref(0)
 const loading = ref(false)
 const busyId = ref<number | null>(null)
+const publishingHistory = ref(false)
 const error = ref('')
 const message = ref('')
 const openMenuId = ref<number | null>(null)
@@ -189,6 +193,44 @@ async function loadHistory() {
 
 async function loadTwoASummary() {
   twoASummary.value = await api<ProjectTwoASummary>(`/projects/${projectId}/2a-summary`)
+}
+
+async function publishHistory() {
+  if (!project.value) return
+  if (!window.confirm(
+    '確認將此建案納入 2A 歷史基準嗎？\n\n系統會依目前工程大項、材料對應、數量與單位建立鋼筋／混凝土歷史交易，並讓本案參與後續相似建案與結構體價格估算。'
+  )) return
+
+  publishingHistory.value = true
+  error.value = ''
+  try {
+    await api(`/projects/${projectId}/publish-history`, { method: 'POST' })
+    await Promise.all([loadProject(), loadHistory(), loadTwoASummary(), loadBidItems()])
+    message.value = '此建案已確認並納入 2A 歷史基準。'
+  } catch (caught) {
+    error.value = caught instanceof Error ? caught.message : '發布歷史基準失敗'
+  } finally {
+    publishingHistory.value = false
+  }
+}
+
+async function reopenHistoryReview() {
+  if (!project.value) return
+  if (!window.confirm(
+    '確定重新開啟審核嗎？\n\n此建案會暫時退出 2A 模型，既有數量歷史交易會停用，修正完成後可再次發布。'
+  )) return
+
+  publishingHistory.value = true
+  error.value = ''
+  try {
+    await api(`/projects/${projectId}/reopen-history-review`, { method: 'POST' })
+    await Promise.all([loadProject(), loadHistory(), loadTwoASummary(), loadBidItems()])
+    message.value = '已重新開啟歷史基準審核。'
+  } catch (caught) {
+    error.value = caught instanceof Error ? caught.message : '重新開啟審核失敗'
+  } finally {
+    publishingHistory.value = false
+  }
 }
 
 async function reloadRelated(messageText?: string) {
@@ -371,15 +413,42 @@ onMounted(async () => {
         <div>
           <div class="d-flex align-items-center gap-2 flex-wrap">
             <h3 class="mb-1">{{ project.projectName }}</h3>
-            <span class="badge" :class="project.hasFinalBid ? 'bg-success' : 'bg-secondary'">
+            <span class="badge" :class="project.hasFinalBid ? 'bg-secondary' : 'bg-light text-dark border'">
               {{ project.hasFinalBid ? '已有決標資料' : '尚無決標資料' }}
+            </span>
+            <span
+              v-if="project.hasFinalBid"
+              class="badge"
+              :class="project.historyStatus === 'Approved' ? 'bg-success' : 'bg-warning text-dark'"
+            >
+              {{ project.historyStatus === 'Approved' ? '已納入 2A 模型' : '待歷史基準審核' }}
             </span>
           </div>
           <div class="text-muted">{{ project.projectType }} ・ {{ project.structureType }} ・ {{ project.city }} ・ {{ formatMonth(project.startDate) }}</div>
         </div>
-        <div class="text-end small text-muted">
-          決標工項 {{ project.finalBidItemCount ?? 0 }} 筆<br />
-          有效歷史交易 {{ project.historicalTransactionCount ?? 0 }} 筆
+        <div class="text-end">
+          <div class="small text-muted mb-2">
+            決標工項 {{ project.finalBidItemCount ?? 0 }} 筆<br />
+            有效歷史交易 {{ project.historicalTransactionCount ?? 0 }} 筆
+          </div>
+          <button
+            v-if="project.hasFinalBid && project.historyStatus !== 'Approved'"
+            class="btn btn-sm btn-success"
+            type="button"
+            :disabled="publishingHistory"
+            @click="publishHistory"
+          >
+            {{ publishingHistory ? '處理中...' : '確認並納入 2A 歷史基準' }}
+          </button>
+          <button
+            v-else-if="project.hasFinalBid"
+            class="btn btn-sm btn-outline-warning"
+            type="button"
+            :disabled="publishingHistory"
+            @click="reopenHistoryReview"
+          >
+            {{ publishingHistory ? '處理中...' : '重新開啟審核' }}
+          </button>
         </div>
       </div>
     </div>
@@ -414,6 +483,18 @@ onMounted(async () => {
             </div>
           </div>
           <span class="badge bg-light text-dark border">{{ twoASummary.majorCategory }}</span>
+        </div>
+
+        <div
+          class="baseline-status"
+          :class="twoASummary.historyStatus === 'Approved' ? 'approved' : 'draft'"
+        >
+          <strong>{{ twoASummary.historyStatus === 'Approved' ? '已發布歷史基準' : '目前為審核中' }}</strong>
+          <span>
+            {{ twoASummary.historyStatus === 'Approved'
+              ? '此建案會參與相似建案篩選、結構體價格估算與鋼筋／混凝土數量基準。'
+              : '目前顯示的是候選資料；在人工確認發布前，不會影響任何 2A 合理區間或異常判定。' }}
+          </span>
         </div>
 
         <div class="baseline-grid">
@@ -511,8 +592,8 @@ onMounted(async () => {
             <h5 class="mb-1">{{ item.itemName }}</h5>
             <div class="d-flex align-items-center gap-1 flex-wrap justify-content-end">
               <span v-if="item.effectiveMajorCategory" class="badge bg-info text-dark">{{ item.effectiveMajorCategory }}</span>
-              <span v-if="item.contributesStructuralPrice" class="badge bg-success">結構體價格基準</span>
-              <span v-if="item.contributesQuantityHistory" class="badge bg-success">{{ item.quantityHistoryCategory }}數量基準</span>
+              <span v-if="item.contributesStructuralPrice" class="badge bg-success">{{ project?.historyStatus === 'Approved' ? '結構體價格基準' : '結構體價格候選' }}</span>
+              <span v-if="item.contributesQuantityHistory" class="badge bg-success">{{ item.quantityHistoryCategory }}{{ project?.historyStatus === 'Approved' ? '數量基準' : '數量候選' }}</span>
               <span v-if="!item.contributesStructuralPrice && !item.contributesQuantityHistory" class="badge bg-light text-dark border">不納入目前 2A 基準</span>
               <span v-if="item.majorCategoryOverride" class="badge bg-primary">人工大項</span>
               <span class="badge" :class="mappingBadge(item).className">{{ mappingBadge(item).label }}</span>
@@ -615,5 +696,5 @@ onMounted(async () => {
 .item-menu .dropdown-menu { position: absolute; top: 100%; right: 0; left: auto; z-index: 20; }
 .modal-backdrop-custom { position: fixed; inset: 0; z-index: 1080; display: grid; place-items: center; padding: 1.5rem; background: rgba(0,0,0,.5); }
 .modal-backdrop-custom .modal-dialog { width: min(500px, 100%); margin: auto; }
-.basic-stack{display:grid;gap:16px}.baseline-card{overflow:hidden}.baseline-header{display:flex;align-items:flex-start;justify-content:space-between;gap:16px;padding:16px 18px;background:#f8f9fa;border-bottom:1px solid #e3e5e8}.baseline-header h5{margin:0 0 4px;font-size:15px;font-weight:800;color:#321fdb}.baseline-grid{display:grid;grid-template-columns:repeat(4,1fr)}.baseline-cell{padding:18px;border-right:1px solid #edf0f4}.baseline-cell:last-child{border-right:0}.baseline-cell>span{display:block;color:#6c757d;font-size:12px}.baseline-cell>strong{display:block;margin-top:7px;font-size:20px;font-variant-numeric:tabular-nums}.baseline-cell>small{display:block;margin-top:6px;font-size:11px}.qualification-grid{display:grid;grid-template-columns:repeat(3,1fr);border-top:1px solid #edf0f4}.qualification-grid>div{padding:14px 18px;border-right:1px solid #edf0f4;border-bottom:1px solid #edf0f4}.qualification-grid>div:nth-child(3n){border-right:0}.qualification-grid>div:nth-last-child(-n+3){border-bottom:0}.qualification-grid span,.qualification-grid small{display:block}.qualification-grid span{color:#6c757d;font-size:11px}.qualification-grid strong{display:block;margin:5px 0;font-size:18px}.qualification-grid small{color:#6c757d;font-size:10px;line-height:1.4}.baseline-foot{display:flex;justify-content:space-between;gap:18px;padding:11px 18px;background:#fbfcfd;border-top:1px solid #edf0f4;color:#6c757d;font-size:11px}@media(max-width:1000px){.qualification-grid{grid-template-columns:repeat(2,1fr)}.qualification-grid>div{border-right:1px solid #edf0f4!important;border-bottom:1px solid #edf0f4!important}.qualification-grid>div:nth-child(2n){border-right:0!important}.qualification-grid>div:nth-last-child(-n+2){border-bottom:0!important}.baseline-grid{grid-template-columns:repeat(2,1fr)}.baseline-cell:nth-child(2){border-right:0}.baseline-cell:nth-child(-n+2){border-bottom:1px solid #edf0f4}.baseline-foot{flex-direction:column}}@media(max-width:600px){.qualification-grid{grid-template-columns:1fr}.qualification-grid>div{border-right:0!important;border-bottom:1px solid #edf0f4!important}.qualification-grid>div:last-child{border-bottom:0!important}.baseline-grid{grid-template-columns:1fr}.baseline-cell{border-right:0;border-bottom:1px solid #edf0f4}.baseline-cell:last-child{border-bottom:0}}
+.basic-stack{display:grid;gap:16px}.baseline-card{overflow:hidden}.baseline-status{display:flex;gap:10px;align-items:center;padding:11px 18px;border-bottom:1px solid #edf0f4;font-size:12px}.baseline-status span{color:#5f6b7a}.baseline-status.approved{background:#eefaf4;color:#176e50}.baseline-status.draft{background:#fff8e3;color:#8a6511}.baseline-header{display:flex;align-items:flex-start;justify-content:space-between;gap:16px;padding:16px 18px;background:#f8f9fa;border-bottom:1px solid #e3e5e8}.baseline-header h5{margin:0 0 4px;font-size:15px;font-weight:800;color:#321fdb}.baseline-grid{display:grid;grid-template-columns:repeat(4,1fr)}.baseline-cell{padding:18px;border-right:1px solid #edf0f4}.baseline-cell:last-child{border-right:0}.baseline-cell>span{display:block;color:#6c757d;font-size:12px}.baseline-cell>strong{display:block;margin-top:7px;font-size:20px;font-variant-numeric:tabular-nums}.baseline-cell>small{display:block;margin-top:6px;font-size:11px}.qualification-grid{display:grid;grid-template-columns:repeat(3,1fr);border-top:1px solid #edf0f4}.qualification-grid>div{padding:14px 18px;border-right:1px solid #edf0f4;border-bottom:1px solid #edf0f4}.qualification-grid>div:nth-child(3n){border-right:0}.qualification-grid>div:nth-last-child(-n+3){border-bottom:0}.qualification-grid span,.qualification-grid small{display:block}.qualification-grid span{color:#6c757d;font-size:11px}.qualification-grid strong{display:block;margin:5px 0;font-size:18px}.qualification-grid small{color:#6c757d;font-size:10px;line-height:1.4}.baseline-foot{display:flex;justify-content:space-between;gap:18px;padding:11px 18px;background:#fbfcfd;border-top:1px solid #edf0f4;color:#6c757d;font-size:11px}@media(max-width:1000px){.qualification-grid{grid-template-columns:repeat(2,1fr)}.qualification-grid>div{border-right:1px solid #edf0f4!important;border-bottom:1px solid #edf0f4!important}.qualification-grid>div:nth-child(2n){border-right:0!important}.qualification-grid>div:nth-last-child(-n+2){border-bottom:0!important}.baseline-grid{grid-template-columns:repeat(2,1fr)}.baseline-cell:nth-child(2){border-right:0}.baseline-cell:nth-child(-n+2){border-bottom:1px solid #edf0f4}.baseline-foot{flex-direction:column}}@media(max-width:600px){.qualification-grid{grid-template-columns:1fr}.qualification-grid>div{border-right:0!important;border-bottom:1px solid #edf0f4!important}.qualification-grid>div:last-child{border-bottom:0!important}.baseline-grid{grid-template-columns:1fr}.baseline-cell{border-right:0;border-bottom:1px solid #edf0f4}.baseline-cell:last-child{border-bottom:0}}
 </style>
