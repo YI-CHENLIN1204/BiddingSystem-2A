@@ -1,6 +1,7 @@
 <script setup lang="ts">
 import { onMounted, ref } from 'vue'
 import ProjectFields from '../components/ProjectFields.vue'
+import WorkbookSheetPicker from '../components/WorkbookSheetPicker.vue'
 import { api, apiForm } from '../services/api'
 import { useSystemOptions } from '../composables/useSystemOptions'
 import type { ProjectForm } from '../types'
@@ -74,6 +75,8 @@ const showCreate = ref(false)
 const sourceType = ref<'OneD' | 'Upload'>('Upload')
 const oneDProjectId = ref<number | null>(null)
 const uploadFile = ref<File | null>(null)
+const includedSheets = ref<string[]>([])
+const workbookReady = ref(false)
 const fileInput = ref<HTMLInputElement | null>(null)
 const note = ref('')
 const form = ref<ProjectForm>(emptyForm())
@@ -96,6 +99,8 @@ function resetCreate() {
   sourceType.value = oneDStatus.value.configured ? 'OneD' : 'Upload'
   oneDProjectId.value = null
   uploadFile.value = null
+  includedSheets.value = []
+  workbookReady.value = false
   note.value = ''
   form.value = emptyForm()
   if (fileInput.value) fileInput.value.value = ''
@@ -108,6 +113,8 @@ function openCreate() {
 }
 
 function selectFile(event: Event) {
+  includedSheets.value = []
+  workbookReady.value = false
   uploadFile.value = (event.target as HTMLInputElement).files?.[0] ?? null
 }
 
@@ -194,8 +201,12 @@ async function createCase() {
         throw new Error('請選擇待偵錯標單')
       }
 
+      if (!workbookReady.value || !includedSheets.value.length) {
+        throw new Error('請先預覽並選擇本案要匯入的工程明細工作表')
+      }
       const data = new FormData()
       data.append('excelFile', uploadFile.value)
+      data.append('includedSheetNames', JSON.stringify(includedSheets.value))
       data.append('caseName', value.projectName.trim())
       data.append('projectType', value.projectType)
       data.append('structureType', value.structureType)
@@ -388,6 +399,7 @@ onMounted(load)
                   @change="selectFile"
                 />
               </label>
+              <WorkbookSheetPicker :file="uploadFile" v-model="includedSheets" @update:ready="workbookReady = $event" />
               <div class="notice info mb-0">
                 暫定要求：標單解析後須具有工程大項、工項名稱或規格、單位與數量。若沒有工程大項分類，系統目前會拒絕建檔而不是自行猜測。
               </div>
