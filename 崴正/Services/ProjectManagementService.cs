@@ -723,6 +723,251 @@ namespace 崴正.Services
         }
 
 
+        public async Task<ServiceResult>
+            GetTwoASummaryAsync(
+                int projectId)
+        {
+            var project =
+                await _context.ProjectMasters
+                    .AsNoTracking()
+                    .FirstOrDefaultAsync(x =>
+                        x.ProjectId == projectId &&
+                        !x.IsDeleted
+                    );
+
+            if (project == null)
+            {
+                return ServiceResult.NotFound(
+                    "找不到指定建案"
+                );
+            }
+
+            var sourceItems =
+                await _context.FinalBidItems
+                    .AsNoTracking()
+                    .Where(x =>
+                        x.ProjectMasterId ==
+                            projectId &&
+                        !x.IsIgnored
+                    )
+                    .Select(x => new
+                    {
+                        x.Category1,
+                        x.Category2,
+                        x.Category3,
+                        x.Qty,
+                        x.UnitPrice,
+                        x.Amount,
+                        MaterialName =
+                            x.Material != null
+                                ? x.Material.MaterialName
+                                : null
+                    })
+                    .ToListAsync();
+
+            var structuralItems =
+                sourceItems
+                    .Where(x =>
+                        string.Equals(
+                            TwoAScopePolicy
+                                .ResolveMajorCategory(
+                                    x.Category1,
+                                    x.Category2,
+                                    x.Category3
+                                ),
+                            "結構體工程",
+                            StringComparison
+                                .OrdinalIgnoreCase
+                        ))
+                    .ToList();
+
+            decimal structuralAmount =
+                0m;
+
+            int structuralPricedItemCount =
+                0;
+
+            foreach (var item in structuralItems)
+            {
+                decimal? amount =
+                    item.Amount.HasValue &&
+                    item.Amount.Value > 0
+                        ? item.Amount.Value
+                        : item.Qty.HasValue &&
+                          item.Qty.Value > 0 &&
+                          item.UnitPrice.HasValue &&
+                          item.UnitPrice.Value > 0
+                            ? item.Qty.Value *
+                              item.UnitPrice.Value
+                            : null;
+
+                if (!amount.HasValue)
+                {
+                    continue;
+                }
+
+                structuralAmount +=
+                    amount.Value;
+
+                structuralPricedItemCount++;
+            }
+
+            var history =
+                await (
+                    from h in
+                        _context.HistoricalTransactions
+                            .AsNoTracking()
+
+                    join m in
+                        _context.MaterialMasters
+                            .AsNoTracking()
+
+                    on h.MaterialId
+                    equals m.MaterialId
+
+                    where
+                        h.ProjectMasterId ==
+                            projectId &&
+                        !h.IsDeleted &&
+                        !h.IsOutlier &&
+                        (
+                            m.MaterialName ==
+                                "鋼筋" ||
+                            m.MaterialName ==
+                                "混凝土"
+                        )
+
+                    group h by m.MaterialName
+                    into g
+
+                    select new
+                    {
+                        MaterialName =
+                            g.Key,
+
+                        TransactionCount =
+                            g.Count(),
+
+                        Quantity =
+                            g.Sum(x =>
+                                x.ActualQuantity)
+                    }
+                )
+                .ToListAsync();
+
+            var rebar =
+                history.FirstOrDefault(x =>
+                    x.MaterialName == "鋼筋");
+
+            var concrete =
+                history.FirstOrDefault(x =>
+                    x.MaterialName == "混凝土");
+
+            decimal? structuralPricePerPing =
+                null;
+
+            if (
+                structuralAmount > 0 &&
+                project.TotalFloorArea.HasValue &&
+                project.TotalFloorArea.Value > 0
+            )
+            {
+                decimal floorAreaPing =
+                    project.TotalFloorArea.Value /
+                    3.305785m;
+
+                if (floorAreaPing > 0)
+                {
+                    structuralPricePerPing =
+                        Math.Round(
+                            structuralAmount /
+                            floorAreaPing,
+                            2
+                        );
+                }
+            }
+
+            int otherStructuralItemCount =
+                structuralItems.Count(x =>
+                    !string.Equals(
+                        x.MaterialName,
+                        "鋼筋",
+                        StringComparison
+                            .OrdinalIgnoreCase
+                    ) &&
+                    !string.Equals(
+                        x.MaterialName,
+                        "混凝土",
+                        StringComparison
+                            .OrdinalIgnoreCase
+                    ));
+
+            return ServiceResult.Ok(
+                new ProjectTwoASummaryDto
+                {
+                    ProjectId =
+                        project.ProjectId,
+
+                    StructuralItemCount =
+                        structuralItems.Count,
+
+                    StructuralPricedItemCount =
+                        structuralPricedItemCount,
+
+                    StructuralAmount =
+                        Math.Round(
+                            structuralAmount,
+                            2
+                        ),
+
+                    StructuralPricePerPing =
+                        structuralPricePerPing,
+
+                    RebarQuantity =
+                        rebar == null
+                            ? null
+                            : Math.Round(
+                                rebar.Quantity,
+                                4
+                            ),
+
+                    RebarTransactionCount =
+                        rebar?.TransactionCount
+                        ?? 0,
+
+                    ContributesRebarHistory =
+                        rebar != null &&
+                        rebar.Quantity > 0,
+
+                    ConcreteQuantity =
+                        concrete == null
+                            ? null
+                            : Math.Round(
+                                concrete.Quantity,
+                                4
+                            ),
+
+                    ConcreteTransactionCount =
+                        concrete
+                            ?.TransactionCount
+                        ?? 0,
+
+                    ContributesConcreteHistory =
+                        concrete != null &&
+                        concrete.Quantity > 0,
+
+                    OtherStructuralItemCount =
+                        otherStructuralItemCount,
+
+                    Message =
+                        structuralItems.Count == 0
+                            ? "此最終標單尚未辨識到結構體工程工項。"
+                            : "此摘要顯示本建案實際提供給 2A 的結構體工程價格基準，以及鋼筋、混凝土數量歷史基準。"
+                }
+            );
+        }
+
+
         private static ServiceResult?
             ValidateRequest(
                 ProjectSaveRequest request,
