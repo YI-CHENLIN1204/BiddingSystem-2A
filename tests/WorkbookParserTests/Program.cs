@@ -65,4 +65,48 @@ bool rejected = false;
 try { parser.Parse(new MemoryStream(content), "test.xlsx", new[] { "不存在的工作表" }); }
 catch (InvalidDataException) { rejected = true; }
 Check(rejected, "無效工作表選擇必須拒絕");
+// 唯讀候選量檢查：與實際歷史發布或相似案件偵錯完全隔離。
+var inspection = TenderImportInspectionService.Build(new[]
+{
+    new 崴正.Models.TenderImportRowDto {
+        SheetName = "建築工程-預算單", RowNumber = 70,
+        Category1 = "結構體工程", ItemName = "SD280 鋼筋",
+        Unit = "T", Qty = 501m
+    },
+    new 崴正.Models.TenderImportRowDto {
+        SheetName = "建築工程-預算單", RowNumber = 71,
+        Category1 = "結構體工程", ItemName = "鋼筋續接器",
+        Unit = "個", Qty = 120m
+    },
+    new 崴正.Models.TenderImportRowDto {
+        SheetName = "建築工程-預算單", RowNumber = 72,
+        Category1 = "結構體工程", ItemName = "預拌混凝土 2000 PSI",
+        Unit = "M3", Qty = 214m, UnitPrice = null
+    },
+    new 崴正.Models.TenderImportRowDto {
+        SheetName = "建築工程-預算單", RowNumber = 73,
+        Category1 = "結構體工程", ItemName = "預拌混凝土 3000 PSI",
+        Unit = "坪", Qty = 9m
+    },
+    new 崴正.Models.TenderImportRowDto {
+        SheetName = "建築工程-預算單", RowNumber = 74,
+        Category1 = "結構體工程", ItemName = "SD420W 鋼筋",
+        Unit = "T", Qty = null
+    }
+});
+Check(inspection.TotalRows == 5, "預匯入保留來源五筆候選明細");
+Check(inspection.Rows[0].RowNumber == 70, "預匯入保留 Excel 原始列號");
+Check(inspection.QuantitySummaries.Single(x => x.CandidateType == "Rebar").CandidateQuantity == 501000m,
+    "預匯入鋼筋噸數安全轉換為 kg");
+Check(inspection.Rows[1].CandidateType == "Excluded" && inspection.Rows[1].StandardQuantity == null,
+    "鋼筋續接器不得計入鋼筋重量");
+Check(inspection.QuantitySummaries.Single(x => x.CandidateType == "Concrete").CandidateQuantity == 214m,
+    "混凝土以 m³ 計，無單價不妨礙純數量預檢");
+Check(inspection.Rows[3].StandardQuantity == null && inspection.Rows[3].Warnings.Length > 0,
+    "未知混凝土單位不得自動轉換");
+Check(inspection.Rows[4].StandardQuantity == null && inspection.Rows[4].Warnings.Length > 0,
+    "空白鋼筋數量不允許推測填入");
+Check(inspection.Notice.Contains("尚未驗證決標真實性"),
+    "預匯入明示候選合計不等於異常判定或歷史基準");
+
 Console.WriteLine("WorkbookParserTests: all checks passed.");
