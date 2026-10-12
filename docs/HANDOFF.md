@@ -10,11 +10,12 @@ Do **not** redesign the system from the old generic material-estimation architec
 
 Read these files first:
 
-1. `README.md`
-2. `docs/2A_CURRENT_ARCHITECTURE.md`
-3. `docs/DECISIONS.md`
-4. `docs/LOCAL_TEST_GUIDE.md`
-5. `docs/WORKLOG.md`
+1. `docs/NEXT_CHAT_HANDOFF.md`
+2. `README.md`
+3. `docs/2A_CURRENT_ARCHITECTURE.md`
+4. `docs/DECISIONS.md`
+5. `docs/LOCAL_TEST_GUIDE.md`
+6. `docs/WORKLOG.md`
 
 The current formal direction is:
 
