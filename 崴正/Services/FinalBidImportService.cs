@@ -763,6 +763,19 @@ namespace 崴正.Services
 
                     historyInsertCount,
 
+                    recognizedMajorCategoryCount,
+                    unclassifiedMajorCategoryCount,
+                    structuralItemCount =
+                        structuralItems.Count,
+                    structuralPricedItemCount,
+                    structuralAmount =
+                        Math.Round(
+                            structuralAmount,
+                            2
+                        ),
+                    rebarHistoryInsertCount,
+                    concreteHistoryInsertCount,
+
                     invalidQuantityCount,
 
                     invalidUnitPriceCount,
