@@ -12,6 +12,7 @@ interface AnalysisCaseSummary {
   structureType: string
   city: string
   totalFloorArea: number
+  siteArea: number
   floorCount: number
   basementFloorCount: number
   projectDate: string
@@ -84,6 +85,7 @@ function emptyForm(): ProjectForm {
     structureType: '',
     city: '',
     totalFloorArea: null,
+    siteArea: null,
     floorCount: null,
     basementFloorCount: 0,
     projectMonth: '',
@@ -128,6 +130,7 @@ function validateCommon() {
   if (!value.structureType) throw new Error('請選擇結構類型')
   if (!value.city) throw new Error('請選擇縣市')
   if (!value.totalFloorArea || value.totalFloorArea <= 0) throw new Error('請輸入有效的總樓地板面積')
+  if (!value.siteArea || value.siteArea <= 0) throw new Error('請輸入有效的基地面積')
   if (!value.floorCount || value.floorCount <= 0) throw new Error('請輸入有效的地上樓層')
   if (value.basementFloorCount == null || value.basementFloorCount < 0) throw new Error('請輸入有效的地下樓層')
   if (!value.projectMonth) throw new Error('請選擇建案年月')
@@ -180,6 +183,7 @@ async function createCase() {
           structureType: value.structureType,
           city: value.city,
           totalFloorArea: value.totalFloorArea,
+          siteArea: value.siteArea,
           floorCount: value.floorCount,
           basementFloorCount: value.basementFloorCount,
           projectDate,
@@ -197,6 +201,7 @@ async function createCase() {
       data.append('structureType', value.structureType)
       data.append('city', value.city)
       data.append('totalFloorArea', String(value.totalFloorArea))
+      data.append('siteArea', String(value.siteArea))
       data.append('floorCount', String(value.floorCount))
       data.append('basementFloorCount', String(value.basementFloorCount))
       data.append('projectDate', projectDate)
@@ -303,6 +308,7 @@ onMounted(load)
 
         <div class="case-meta">
           <div><span>總樓地板面積</span><strong>{{ formatNumber(item.totalFloorArea) }} m²</strong></div>
+          <div><span>基地面積</span><strong>{{ formatNumber(item.siteArea) }} m²</strong></div>
           <div><span>樓層</span><strong>{{ item.floorCount }}F / B{{ item.basementFloorCount }}</strong></div>
           <div><span>建案日期</span><strong>{{ formatDate(item.projectDate) }}</strong></div>
           <div><span>版本</span><strong>{{ item.versionCount }} 版</strong></div>
@@ -411,7 +417,7 @@ onMounted(load)
 .case-card:hover { transform: translateY(-1px); border-color: #aeb7c5; }
 .case-card-head { display: flex; justify-content: space-between; align-items: flex-start; gap: 16px; }
 .case-card h3 { margin: 0 0 6px; font-size: 18px; }
-.case-meta { display: grid; grid-template-columns: repeat(4, 1fr); gap: 12px; margin-top: 20px; }
+.case-meta { display: grid; grid-template-columns: repeat(5, 1fr); gap: 12px; margin-top: 20px; }
 .case-meta div { min-width: 0; }
 .case-meta span { display: block; color: var(--muted); font-size: 12px; }
 .case-meta strong { display: block; margin-top: 4px; font-size: 14px; }
