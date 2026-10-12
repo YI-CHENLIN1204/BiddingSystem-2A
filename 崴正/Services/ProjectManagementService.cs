@@ -9,13 +9,16 @@ namespace 崴正.Services
     {
         private readonly ApplicationDbContext _context;
         private readonly AuditLogService _auditLogService;
+        private readonly FinalBidService _finalBidService;
 
         public ProjectManagementService(
             ApplicationDbContext context,
-            AuditLogService auditLogService)
+            AuditLogService auditLogService,
+            FinalBidService finalBidService)
         {
             _context = context;
             _auditLogService = auditLogService;
+            _finalBidService = finalBidService;
         }
 
 
@@ -168,7 +171,16 @@ namespace 崴正.Services
                             finalBidItemCount,
 
                         HistoricalTransactionCount =
-                            historicalCount
+                            historicalCount,
+
+                        HistoryStatus =
+                            project.HistoryStatus,
+
+                        HistoryApprovedAt =
+                            project.HistoryApprovedAt,
+
+                        HistoryApprovedBy =
+                            project.HistoryApprovedBy
                     };
                 })
                 .ToList();
@@ -233,6 +245,9 @@ namespace 崴正.Services
                     TotalFloorArea =
                         project.TotalFloorArea,
 
+                    SiteArea =
+                        project.SiteArea,
+
                     FloorCount =
                         project.FloorCount,
 
@@ -249,7 +264,16 @@ namespace 崴正.Services
                         finalBidItemCount,
 
                     HistoricalTransactionCount =
-                        historyCount
+                        historyCount,
+
+                    HistoryStatus =
+                        project.HistoryStatus,
+
+                    HistoryApprovedAt =
+                        project.HistoryApprovedAt,
+
+                    HistoryApprovedBy =
+                        project.HistoryApprovedBy
                 }
             );
         }
@@ -396,6 +420,318 @@ namespace 崴正.Services
                 message =
                     "建案資料已更新"
             });
+        }
+
+
+        public async Task<ServiceResult>
+            PublishHistoryAsync(
+                int projectId,
+                string? actionUser)
+        {
+            using var transaction =
+                await _context.Database
+                    .BeginTransactionAsync();
+
+            try
+            {
+                var project =
+                    await _context.ProjectMasters
+                        .FirstOrDefaultAsync(x =>
+                            x.ProjectId ==
+                                projectId &&
+                            !x.IsDeleted
+                        );
+
+                if (project == null)
+                {
+                    return ServiceResult.NotFound(
+                        "找不到指定建案"
+                    );
+                }
+
+                if (string.Equals(
+                        project.HistoryStatus,
+                        "Approved",
+                        StringComparison.OrdinalIgnoreCase))
+                {
+                    return ServiceResult.Conflict(
+                        "此建案已經納入 2A 歷史基準"
+                    );
+                }
+
+                var items =
+                    await _context.FinalBidItems
+                        .Include(x =>
+                            x.Material)
+                        .Include(x =>
+                            x.ProjectMaster)
+                        .Where(x =>
+                            x.ProjectMasterId ==
+                                projectId)
+                        .ToListAsync();
+
+                if (!items.Any())
+                {
+                    return ServiceResult.Validation(
+                        "此建案沒有可審核的最終標單工項"
+                    );
+                }
+
+                string approvedBy =
+                    string.IsNullOrWhiteSpace(
+                        actionUser)
+                        ? "System"
+                        : actionUser.Trim();
+
+                project.HistoryStatus =
+                    "Approved";
+
+                project.HistoryApprovedAt =
+                    DateTime.UtcNow;
+
+                project.HistoryApprovedBy =
+                    approvedBy;
+
+                int eligibleCandidateCount =
+                    items.Count(x =>
+                        _finalBidService
+                            .CanBecomeHistoricalTransaction(
+                                x
+                            ));
+
+                int createdOrUpdatedCount = 0;
+
+                foreach (var item in items)
+                {
+                    string action =
+                        _finalBidService
+                            .SyncHistoricalTransaction(
+                                item
+                            );
+
+                    if (action ==
+                            "建立歷史交易" ||
+                        action ==
+                            "更新歷史交易")
+                    {
+                        createdOrUpdatedCount++;
+                    }
+                }
+
+                _auditLogService.AddLog(
+                    module:
+                        "歷史基準",
+
+                    actionType:
+                        "PublishHistoryBaseline",
+
+                    entityType:
+                        "ProjectMaster",
+
+                    entityId:
+                        project.ProjectId,
+
+                    description:
+                        $"確認建案「{project.ProjectName}」並納入 2A 歷史基準",
+
+                    actionUser:
+                        approvedBy,
+
+                    projectId:
+                        project.ProjectId,
+
+                    oldValue:
+                        new
+                        {
+                            historyStatus =
+                                "Draft"
+                        },
+
+                    newValue:
+                        new
+                        {
+                            project.HistoryStatus,
+                            project.HistoryApprovedAt,
+                            project.HistoryApprovedBy,
+                            eligibleCandidateCount,
+                            createdOrUpdatedCount
+                        }
+                );
+
+                await _context.SaveChangesAsync();
+                await transaction.CommitAsync();
+
+                int activeHistoryCount =
+                    await _context
+                        .HistoricalTransactions
+                        .AsNoTracking()
+                        .CountAsync(x =>
+                            x.ProjectMasterId ==
+                                projectId &&
+                            !x.IsDeleted
+                        );
+
+                return ServiceResult.Ok(
+                    new
+                    {
+                        message =
+                            "已確認並納入 2A 歷史基準",
+
+                        projectId =
+                            project.ProjectId,
+
+                        historyStatus =
+                            project.HistoryStatus,
+
+                        historyApprovedAt =
+                            project.HistoryApprovedAt,
+
+                        historyApprovedBy =
+                            project.HistoryApprovedBy,
+
+                        eligibleCandidateCount,
+
+                        activeHistoryCount
+                    }
+                );
+            }
+            catch
+            {
+                await transaction.RollbackAsync();
+                throw;
+            }
+        }
+
+
+        public async Task<ServiceResult>
+            ReopenHistoryReviewAsync(
+                int projectId,
+                string? actionUser)
+        {
+            using var transaction =
+                await _context.Database
+                    .BeginTransactionAsync();
+
+            try
+            {
+                var project =
+                    await _context.ProjectMasters
+                        .FirstOrDefaultAsync(x =>
+                            x.ProjectId ==
+                                projectId &&
+                            !x.IsDeleted
+                        );
+
+                if (project == null)
+                {
+                    return ServiceResult.NotFound(
+                        "找不到指定建案"
+                    );
+                }
+
+                if (!string.Equals(
+                        project.HistoryStatus,
+                        "Approved",
+                        StringComparison.OrdinalIgnoreCase))
+                {
+                    return ServiceResult.Conflict(
+                        "此建案目前不是已發布的歷史基準"
+                    );
+                }
+
+                var histories =
+                    await _context
+                        .HistoricalTransactions
+                        .Where(x =>
+                            x.ProjectMasterId ==
+                                projectId &&
+                            !x.IsDeleted
+                        )
+                        .ToListAsync();
+
+                foreach (var history in histories)
+                {
+                    history.IsDeleted =
+                        true;
+                }
+
+                var oldValue = new
+                {
+                    project.HistoryStatus,
+                    project.HistoryApprovedAt,
+                    project.HistoryApprovedBy,
+                    activeHistoricalTransactionCount =
+                        histories.Count
+                };
+
+                project.HistoryStatus =
+                    "Draft";
+
+                project.HistoryApprovedAt =
+                    null;
+
+                project.HistoryApprovedBy =
+                    null;
+
+                _auditLogService.AddLog(
+                    module:
+                        "歷史基準",
+
+                    actionType:
+                        "ReopenHistoryReview",
+
+                    entityType:
+                        "ProjectMaster",
+
+                    entityId:
+                        project.ProjectId,
+
+                    description:
+                        $"重新開啟建案「{project.ProjectName}」的歷史基準審核",
+
+                    actionUser:
+                        actionUser ?? "System",
+
+                    projectId:
+                        project.ProjectId,
+
+                    oldValue:
+                        oldValue,
+
+                    newValue:
+                        new
+                        {
+                            project.HistoryStatus,
+                            disabledHistoricalTransactionCount =
+                                histories.Count
+                        }
+                );
+
+                await _context.SaveChangesAsync();
+                await transaction.CommitAsync();
+
+                return ServiceResult.Ok(
+                    new
+                    {
+                        message =
+                            "已重新開啟審核；此建案暫時不參與 2A 模型",
+
+                        projectId =
+                            project.ProjectId,
+
+                        historyStatus =
+                            project.HistoryStatus,
+
+                        disabledHistoricalTransactionCount =
+                            histories.Count
+                    }
+                );
+            }
+            catch
+            {
+                await transaction.RollbackAsync();
+                throw;
+            }
         }
 
 
@@ -951,6 +1287,15 @@ namespace 崴正.Services
                     ProjectId =
                         project.ProjectId,
 
+                    HistoryStatus =
+                        project.HistoryStatus,
+
+                    HistoryApprovedAt =
+                        project.HistoryApprovedAt,
+
+                    HistoryApprovedBy =
+                        project.HistoryApprovedBy,
+
                     StructuralItemCount =
                         structuralItems.Count,
 
@@ -1038,7 +1383,12 @@ namespace 崴正.Services
                     Message =
                         structuralItems.Count == 0
                             ? "此最終標單尚未辨識到結構體工程工項。"
-                            : "此摘要顯示本建案實際提供給 2A 的結構體工程價格基準，以及鋼筋、混凝土數量歷史基準。"
+                            : string.Equals(
+                                project.HistoryStatus,
+                                "Approved",
+                                StringComparison.OrdinalIgnoreCase)
+                                ? "此建案已人工確認並納入 2A 歷史基準。"
+                                : "此建案目前仍在審核階段；下列資料僅為候選基準，尚未參與 2A 模型。"
                 }
             );
         }
