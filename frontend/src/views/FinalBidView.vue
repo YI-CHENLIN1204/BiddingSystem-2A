@@ -19,20 +19,23 @@ interface MappingSummary {
   totalCount: number; autoCount: number; manualCount: number; pendingCount: number
   invalidQuantityCount: number; invalidUnitPriceCount: number; unitMismatchCount: number; ignoredCount: number
 }
-interface ImportReport {
+interface ProjectTwoASummary {
   projectId: number
-  message?: string
-  totalCount: number
-  recognizedMajorCategoryCount: number
-  unclassifiedMajorCategoryCount: number
+  historyStatus: string
   structuralItemCount: number
   structuralPricedItemCount: number
+  structuralUnpricedItemCount: number
+  unclassifiedItemCount: number
+  manualMajorCategoryCount: number
   structuralAmount: number
-  historyInsertCount: number
-  historyStatus: string
-  historyCandidateCount: number
-  rebarHistoryCandidateCount: number
-  concreteHistoryCandidateCount: number
+  rebarSourceItemCount: number
+  rebarCandidateItemCount: number
+  rebarExcludedItemCount: number
+  concreteSourceItemCount: number
+  concreteCandidateItemCount: number
+  concreteExcludedItemCount: number
+  publishReady: boolean
+  publishBlockingIssues: string[]
 }
 interface PolicyResponse { knownMajorCategories: string[] }
 interface FilterOptions { categories: string[]; units: string[] }
@@ -52,7 +55,8 @@ const error = ref('')
 const message = ref('')
 const projectId = ref<number | null>(null)
 const summary = ref<MappingSummary | null>(null)
-const importReport = ref<ImportReport | null>(null)
+const twoASummary = ref<ProjectTwoASummary | null>(null)
+const publishingHistory = ref(false)
 const items = ref<BidItem[]>([])
 const materialOptions = ref<MaterialOption[]>([])
 const filters = ref<FilterOptions>({ categories: [], units: [] })
@@ -107,14 +111,13 @@ async function upload() {
   form.append('excelFile', file.value)
   Object.entries(project.value).forEach(([key, value]) => form.append(key, value == null ? '' : String(value)))
   try {
-    const result = await apiForm<ImportReport>('/Estimation/upload-final-bid', form)
+    const result = await apiForm<{ projectId: number; message?: string }>('/Estimation/upload-final-bid', form)
     projectId.value = Number(result.projectId)
-    importReport.value = result
     message.value = result.message ?? '決標資料已成功回寫。'
     file.value = null
     fileInputKey.value++
     await loadMappingResources()
-    await Promise.all([loadSummary(), loadItems(1)])
+    await Promise.all([loadSummary(), loadTwoASummary(), loadItems(1)])
   } catch (caught) {
     error.value = caught instanceof Error ? caught.message : '決標資料回寫失敗'
   } finally {
@@ -139,6 +142,11 @@ async function loadMappingResources() {
 async function loadSummary() {
   if (!projectId.value) return
   summary.value = await api<MappingSummary>(`/Estimation/mapping-summary${queryString({ projectId: projectId.value })}`)
+}
+
+async function loadTwoASummary() {
+  if (!projectId.value) return
+  twoASummary.value = await api<ProjectTwoASummary>(`/projects/${projectId.value}/2a-summary`)
 }
 
 async function loadItems(targetPage = page.value) {
@@ -169,8 +177,27 @@ async function loadItems(targetPage = page.value) {
 }
 
 async function refreshMappings(text?: string) {
-  await Promise.all([loadSummary(), loadItems()])
+  await Promise.all([loadSummary(), loadTwoASummary(), loadItems()])
   if (text) message.value = text
+}
+
+async function publishHistory() {
+  if (!projectId.value || !twoASummary.value?.publishReady) return
+  if (!window.confirm(
+    '確認將此建案納入 2A 歷史基準嗎？\n\n發布後，本案會開始參與相似建案、結構體價格與鋼筋／混凝土數量模型。'
+  )) return
+
+  publishingHistory.value = true
+  error.value = ''
+  try {
+    await api(`/projects/${projectId.value}/publish-history`, { method: 'POST' })
+    await Promise.all([loadSummary(), loadTwoASummary(), loadItems()])
+    message.value = '此建案已確認並納入 2A 歷史基準。'
+  } catch (caught) {
+    error.value = caught instanceof Error ? caught.message : '發布歷史基準失敗'
+  } finally {
+    publishingHistory.value = false
+  }
 }
 
 function changeCategory(item: BidItem) {
@@ -306,25 +333,48 @@ watch([status, majorCategoryFilter, issueCode, category, unit], resetAndLoad)
     </form>
 
     <div v-if="summary" class="mt-4">
-      <div v-if="importReport" class="card mb-3 import-report">
+      <div v-if="twoASummary && summary" class="card mb-3 import-report">
         <div class="card-body">
           <div class="d-flex justify-content-between align-items-start gap-3 flex-wrap mb-3">
             <div>
-              <h4 class="mb-1">2A 匯入資格檢查</h4>
-              <div class="text-muted small">解析完成後先建立候選基準；人工審查完成並發布前，不會寫入正式 2A 歷史模型。</div>
+              <h4 class="mb-1">2A 歷史基準審核</h4>
+              <div class="text-muted small">此區會隨工程大項、材料與標單資料修正即時更新；發布前不會影響模型。</div>
             </div>
-            <RouterLink :to="`/projects/${importReport.projectId}`" class="btn btn-sm btn-outline-primary">查看建案完整摘要</RouterLink>
+            <div class="d-flex gap-2">
+              <RouterLink v-if="projectId" :to="`/projects/${projectId}`" class="btn btn-sm btn-outline-primary">查看建案完整摘要</RouterLink>
+              <button
+                v-if="twoASummary.historyStatus !== 'Approved'"
+                class="btn btn-sm btn-success"
+                type="button"
+                :disabled="!twoASummary.publishReady || publishingHistory"
+                @click="publishHistory"
+              >
+                {{ publishingHistory ? '發布中...' : '確認並納入 2A 歷史基準' }}
+              </button>
+              <span v-else class="badge bg-success align-self-center">已納入 2A 模型</span>
+            </div>
           </div>
           <div class="row g-2">
-            <div class="col-md-2"><div class="stat-box"><div class="text-muted fw-bold">工程大項辨識</div><div class="stat-num">{{ importReport.recognizedMajorCategoryCount }}</div><small>/ {{ importReport.totalCount }} 筆</small></div></div>
-            <div class="col-md-2"><div class="stat-box" :class="{ 'tone-warning': importReport.unclassifiedMajorCategoryCount > 0 }"><div class="text-muted fw-bold">未辨識大項</div><div class="stat-num">{{ importReport.unclassifiedMajorCategoryCount }}</div><small>可人工校正</small></div></div>
-            <div class="col-md-2"><div class="stat-box"><div class="text-muted fw-bold">結構體工項</div><div class="stat-num">{{ importReport.structuralItemCount }}</div><small>{{ importReport.structuralPricedItemCount }} 筆可計價</small></div></div>
-            <div class="col-md-2"><div class="stat-box"><div class="text-muted fw-bold">結構體總價</div><div class="stat-num report-amount">{{ formatNumber(importReport.structuralAmount) }}</div><small>價格歷史候選</small></div></div>
-            <div class="col-md-2"><div class="stat-box"><div class="text-muted fw-bold">鋼筋候選</div><div class="stat-num">{{ importReport.rebarHistoryCandidateCount }}</div><small>待人工確認</small></div></div>
-            <div class="col-md-2"><div class="stat-box"><div class="text-muted fw-bold">混凝土候選</div><div class="stat-num">{{ importReport.concreteHistoryCandidateCount }}</div><small>待人工確認</small></div></div>
+            <div class="col-md-2"><div class="stat-box"><div class="text-muted fw-bold">工程大項辨識</div><div class="stat-num">{{ summary.totalCount - twoASummary.unclassifiedItemCount }}</div><small>/ {{ summary.totalCount }} 筆</small></div></div>
+            <div class="col-md-2"><div class="stat-box" :class="{ 'tone-warning': twoASummary.unclassifiedItemCount > 0 }"><div class="text-muted fw-bold">未辨識大項</div><div class="stat-num">{{ twoASummary.unclassifiedItemCount }}</div><small>需校正或忽略</small></div></div>
+            <div class="col-md-2"><div class="stat-box" :class="{ 'tone-warning': twoASummary.structuralUnpricedItemCount > 0 }"><div class="text-muted fw-bold">結構體工項</div><div class="stat-num">{{ twoASummary.structuralItemCount }}</div><small>{{ twoASummary.structuralPricedItemCount }} 筆可計價</small></div></div>
+            <div class="col-md-2"><div class="stat-box"><div class="text-muted fw-bold">結構體總價</div><div class="stat-num report-amount">{{ formatNumber(twoASummary.structuralAmount) }}</div><small>價格基準候選</small></div></div>
+            <div class="col-md-2"><div class="stat-box"><div class="text-muted fw-bold">鋼筋候選</div><div class="stat-num">{{ twoASummary.rebarCandidateItemCount }}</div><small>/ {{ twoASummary.rebarSourceItemCount }} 筆</small></div></div>
+            <div class="col-md-2"><div class="stat-box"><div class="text-muted fw-bold">混凝土候選</div><div class="stat-num">{{ twoASummary.concreteCandidateItemCount }}</div><small>/ {{ twoASummary.concreteSourceItemCount }} 筆</small></div></div>
           </div>
-          <div class="alert alert-warning mt-3 mb-0 py-2 small">
-            <strong>尚未發布：</strong>請先處理未辨識工程大項、材料對應與單位問題；確認完成後，到建案頁按「確認並納入 2A 歷史基準」。
+          <div
+            class="alert mt-3 mb-0 py-2 small"
+            :class="twoASummary.historyStatus === 'Approved' || twoASummary.publishReady ? 'alert-success' : 'alert-warning'"
+          >
+            <template v-if="twoASummary.historyStatus === 'Approved'">
+              <strong>已發布：</strong>此建案目前會參與 2A 模型。
+            </template>
+            <template v-else-if="twoASummary.publishReady">
+              <strong>可發布：</strong>目前沒有阻擋歷史基準發布的資料問題。
+            </template>
+            <template v-else>
+              <strong>尚不能發布：</strong>{{ twoASummary.publishBlockingIssues.join('、') }}。
+            </template>
           </div>
         </div>
       </div>
