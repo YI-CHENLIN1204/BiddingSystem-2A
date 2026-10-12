@@ -386,6 +386,7 @@ namespace 崴正.Services
                         StructureType = x.StructureType,
                         City = x.City,
                         TotalFloorArea = x.TotalFloorArea,
+                        SiteArea = x.SiteArea,
                         FloorCount = x.FloorCount,
                         BasementFloorCount = x.BasementFloorCount,
                         ProjectDate = x.ProjectDate,
@@ -442,6 +443,7 @@ namespace 崴正.Services
                         StructureType = analysisCase.StructureType,
                         City = analysisCase.City,
                         TotalFloorArea = analysisCase.TotalFloorArea,
+                        SiteArea = analysisCase.SiteArea,
                         FloorCount = analysisCase.FloorCount,
                         BasementFloorCount = analysisCase.BasementFloorCount,
                         ProjectDate = analysisCase.ProjectDate,
@@ -493,6 +495,7 @@ namespace 崴正.Services
                         StructureType = caseEntity.StructureType,
                         City = caseEntity.City,
                         TotalFloorArea = caseEntity.TotalFloorArea,
+                        SiteArea = caseEntity.SiteArea,
                         FloorCount = caseEntity.FloorCount,
                         BasementFloorCount = caseEntity.BasementFloorCount,
                         ProjectDate = caseEntity.ProjectDate,
@@ -830,6 +833,11 @@ namespace 崴正.Services
                 return ServiceResult.Validation("總樓地板面積必須大於 0");
             }
 
+            if (metadata.SiteArea <= 0)
+            {
+                return ServiceResult.Validation("基地面積必須大於 0");
+            }
+
             if (metadata.FloorCount <= 0)
             {
                 return ServiceResult.Validation("地上樓層必須大於 0");
@@ -861,6 +869,7 @@ namespace 崴正.Services
                 StructureType = metadata.StructureType.Trim(),
                 City = metadata.City.Trim(),
                 TotalFloorArea = metadata.TotalFloorArea,
+                SiteArea = metadata.SiteArea,
                 FloorCount = metadata.FloorCount,
                 BasementFloorCount = metadata.BasementFloorCount,
                 ProjectDate = metadata.ProjectDate.Date,
@@ -1233,6 +1242,7 @@ namespace 崴正.Services
                 StructureType = analysisCase.StructureType,
                 City = analysisCase.City,
                 TotalFloorArea = analysisCase.TotalFloorArea,
+                SiteArea = analysisCase.SiteArea,
                 FloorCount = analysisCase.FloorCount,
                 BasementFloorCount =
                     analysisCase.BasementFloorCount,
