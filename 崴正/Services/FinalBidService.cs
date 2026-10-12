@@ -134,8 +134,7 @@ namespace 崴正.Services
 
                 string historyAction =
                     SyncHistoricalTransaction(
-                        bidItem,
-                        dataIssue.Code
+                        bidItem
                     );
 
                 _auditLogService.AddLog(
@@ -196,8 +195,7 @@ namespace 崴正.Services
 
                 bool historyEligible =
                     IsHistoryEligible(
-                        bidItem,
-                        dataIssue.Code
+                        bidItem
                     );
 
 
@@ -387,8 +385,7 @@ namespace 崴正.Services
 
                 string historyAction =
                     SyncHistoricalTransaction(
-                        bidItem,
-                        dataIssue.Code
+                        bidItem
                     );
 
                 _auditLogService.AddLog(
@@ -511,12 +508,10 @@ namespace 崴正.Services
 
         public HistoricalTransaction?
             BuildHistoricalTransactionForNewImport(
-                FinalBidItem bidItem,
-                string? dataIssueCode)
+                FinalBidItem bidItem)
         {
             if (!IsHistoryEligible(
-                    bidItem,
-                    dataIssueCode))
+                    bidItem))
             {
                 return null;
             }
@@ -532,7 +527,7 @@ namespace 崴正.Services
             var conversion =
                 _unitConversionService.Convert(
                     bidItem.Qty!.Value,
-                    bidItem.UnitPrice!.Value,
+                    0m,
                     bidItem.Unit,
                     material.UnitId
                 );
@@ -549,9 +544,6 @@ namespace 崴正.Services
 
                 ActualQuantity =
                     conversion.Quantity,
-
-                UnitPrice =
-                    conversion.UnitPrice,
 
                 TransactionDate =
                     bidItem.ProjectMaster.StartDate
@@ -572,8 +564,7 @@ namespace 崴正.Services
         }
 
         public string SyncHistoricalTransaction(
-            FinalBidItem bidItem,
-            string? dataIssueCode)
+            FinalBidItem bidItem)
         {
             var history =
                 _context.HistoricalTransactions
@@ -595,8 +586,7 @@ namespace 崴正.Services
 
             bool historyEligible =
                 IsHistoryEligible(
-                    bidItem,
-                    dataIssueCode
+                    bidItem
                 );
 
             if (!historyEligible)
@@ -640,7 +630,7 @@ namespace 崴正.Services
             var conversion =
                 _unitConversionService.Convert(
                     bidItem.Qty!.Value,
-                    bidItem.UnitPrice!.Value,
+                    0m,
                     bidItem.Unit,
                     material.UnitId
                 );
@@ -667,9 +657,6 @@ namespace 崴正.Services
 
                         ActualQuantity =
                             conversion.Quantity,
-
-                        UnitPrice =
-                            conversion.UnitPrice,
 
                         TransactionDate =
                             bidItem.ProjectMaster.StartDate
@@ -702,9 +689,6 @@ namespace 崴正.Services
             history.ActualQuantity =
                 conversion.Quantity;
 
-            history.UnitPrice =
-                conversion.UnitPrice;
-
             history.TransactionDate =
                 bidItem.ProjectMaster.StartDate
                 ?? history.TransactionDate;
@@ -720,8 +704,7 @@ namespace 崴正.Services
         }
 
         private bool IsHistoryEligible(
-            FinalBidItem bidItem,
-            string? dataIssueCode)
+            FinalBidItem bidItem)
         {
             if (!IsInTwoAHistoryScope(
                     bidItem))
@@ -743,12 +726,8 @@ namespace 崴正.Services
 
             return
                 mappingCompleted &&
-                dataIssueCode == null &&
                 bidItem.Qty.HasValue &&
-                bidItem.Qty.Value > 0 &&
-                bidItem.UnitPrice.HasValue &&
-                bidItem.UnitPrice.Value > 0
-                ;
+                bidItem.Qty.Value > 0;
         }
 
         private bool
