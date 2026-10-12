@@ -7,6 +7,18 @@ ASP.NET Core 後端溝通，後端不包含 Razor Views 或前端靜態資產。
 
 - `frontend/`：Vue 3、TypeScript、Vite 單頁應用程式
 - `崴正/`：ASP.NET Core Web API、EF Core 與 PostgreSQL
+- `database/`：目前正式資料庫調整 SQL
+- `docs/2A_CURRENT_ARCHITECTURE.md`：2A 現行架構、資料流、分析範圍與待確認事項
+
+## 目前 2A 分析範圍
+
+- 大項估算／價格異常：**結構體工程**
+- 細項數量偵錯：**鋼筋、混凝土**
+- 待偵錯案件使用 `AnalysisCase / Version / Run` 保存過程資料
+- 已定案最終標單使用獨立 History Pipeline 建立歷史基準
+- 1D 是選配的待偵錯資料來源；沒有 1D 時 2A 仍可自行上傳並獨立運作
+
+詳細設計與目前限制請以 `docs/2A_CURRENT_ARCHITECTURE.md` 為準。
 
 ## 本機開發
 
