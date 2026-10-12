@@ -5,7 +5,6 @@ export interface SystemOptions {
   structureTypes: string[]
   cities: string[]
   materials: MaterialOption[]
-  coreMaterials: CoreMaterial[]
 }
 
 export interface MaterialOption {
@@ -15,13 +14,6 @@ export interface MaterialOption {
   category?: string
 }
 
-export interface CoreMaterial extends MaterialOption {
-  projectType?: string
-  structureType?: string
-  isCoreEstimation: boolean
-  validProjectCount?: number
-  historyRowCount?: number
-}
 
 export interface ProjectSummary {
   projectId: number
