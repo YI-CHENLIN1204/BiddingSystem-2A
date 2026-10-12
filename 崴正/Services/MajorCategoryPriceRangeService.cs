@@ -41,6 +41,7 @@ namespace 崴正.Services
                     .AsNoTracking()
                     .Where(x =>
                         !x.IsDeleted &&
+                        x.HistoryStatus == "Approved" &&
                         !string.IsNullOrWhiteSpace(
                             x.ProjectType) &&
                         !string.IsNullOrWhiteSpace(
