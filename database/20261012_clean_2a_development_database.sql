@@ -9,7 +9,6 @@ TRUNCATE TABLE
     historical_transaction,
     final_bid_item,
     project_master,
-    quantity_rule_base,
     detection_category_material_map,
     detection_category,
     item_dictionary,
@@ -51,17 +50,6 @@ ALTER TABLE historical_transaction
     DROP COLUMN IF EXISTS source_fingerprint,
     DROP COLUMN IF EXISTS imported_at,
     DROP COLUMN IF EXISTS source_file_name;
-
--- quantity_rule_base：舊版時間權重/損耗率欄位已不再由目前程式使用。
-ALTER TABLE quantity_rule_base
-    DROP COLUMN IF EXISTS loss_rate,
-    DROP COLUMN IF EXISTS short_term_days,
-    DROP COLUMN IF EXISTS long_term_days,
-    DROP COLUMN IF EXISTS short_term_weight,
-    DROP COLUMN IF EXISTS long_term_weight,
-    DROP COLUMN IF EXISTS effective_date,
-    DROP COLUMN IF EXISTS is_active,
-    DROP COLUMN IF EXISTS created_by;
 
 -- 乾淨單位主檔：目前 2A 核心只需要重量、體積，
 -- 另外保留「其他」給鋼筋續接器等不可換算工項。
@@ -302,17 +290,6 @@ INSERT INTO item_dictionary (keyword, material_id)
 SELECT '預拌混凝土', material_id FROM material_master WHERE material_name = '混凝土';
 INSERT INTO item_dictionary (keyword, material_id)
 SELECT '混凝土', material_id FROM material_master WHERE material_name = '混凝土';
-
--- 舊估算頁仍使用核心材料表，保留最小必要設定。
-INSERT INTO quantity_rule_base (
-    material_id,
-    project_type,
-    structure_type,
-    is_core_estimation
-)
-SELECT material_id, NULL, NULL, true
-FROM material_master
-WHERE material_name IN ('鋼筋', '混凝土');
 
 -- 模型參數保留目前使用中的設定。
 INSERT INTO estimation_settings (
