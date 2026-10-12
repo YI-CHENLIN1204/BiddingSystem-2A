@@ -736,7 +736,8 @@ namespace 崴正.Services
         {
             string? majorCategory =
                 TwoAScopePolicy
-                    .ResolveMajorCategory(
+                    .ResolveEffectiveMajorCategory(
+                        bidItem.MajorCategoryOverride,
                         bidItem.Category1,
                         bidItem.Category2,
                         bidItem.Category3
@@ -776,6 +777,157 @@ namespace 崴正.Services
                 .IsQuantityHistoryMaterial(
                     materialName
                 );
+        }
+
+
+        public ServiceResult
+            UpdateMajorCategoryOverride(
+                long finalBidItemId,
+                string? majorCategory,
+                string actionUser)
+        {
+            string? normalized =
+                string.IsNullOrWhiteSpace(
+                    majorCategory)
+                    ? null
+                    : majorCategory.Trim();
+
+            if (normalized != null &&
+                !TwoAScopePolicy
+                    .IsKnownMajorCategory(
+                        normalized))
+            {
+                return ServiceResult.Validation(
+                    "不支援的工程大項"
+                );
+            }
+
+            using var transaction =
+                _context.Database
+                    .BeginTransaction();
+
+            try
+            {
+                var bidItem =
+                    _context.FinalBidItems
+                        .Include(x =>
+                            x.Material)
+                        .Include(x =>
+                            x.ProjectMaster)
+                        .FirstOrDefault(x =>
+                            x.FinalBidItemId ==
+                                finalBidItemId);
+
+                if (bidItem == null)
+                {
+                    return ServiceResult.NotFound(
+                        "找不到此工項"
+                    );
+                }
+
+                string? oldEffective =
+                    TwoAScopePolicy
+                        .ResolveEffectiveMajorCategory(
+                            bidItem.MajorCategoryOverride,
+                            bidItem.Category1,
+                            bidItem.Category2,
+                            bidItem.Category3
+                        );
+
+                var oldValue = new
+                {
+                    majorCategoryOverride =
+                        bidItem.MajorCategoryOverride,
+
+                    effectiveMajorCategory =
+                        oldEffective
+                };
+
+                bidItem.MajorCategoryOverride =
+                    normalized;
+
+                bidItem.UpdatedAt =
+                    DateTime.UtcNow;
+
+                string historyAction =
+                    SyncHistoricalTransaction(
+                        bidItem
+                    );
+
+                string? effective =
+                    TwoAScopePolicy
+                        .ResolveEffectiveMajorCategory(
+                            bidItem.MajorCategoryOverride,
+                            bidItem.Category1,
+                            bidItem.Category2,
+                            bidItem.Category3
+                        );
+
+                _auditLogService.AddLog(
+                    module:
+                        "決標工項",
+
+                    actionType:
+                        "UpdateMajorCategory",
+
+                    entityType:
+                        "FinalBidItem",
+
+                    entityId:
+                        bidItem.FinalBidItemId,
+
+                    description:
+                        $"更新決標工項「{bidItem.ItemName}」工程大項",
+
+                    actionUser:
+                        actionUser,
+
+                    projectId:
+                        bidItem.ProjectMasterId,
+
+                    oldValue:
+                        oldValue,
+
+                    newValue:
+                        new
+                        {
+                            majorCategoryOverride =
+                                bidItem.MajorCategoryOverride,
+
+                            effectiveMajorCategory =
+                                effective,
+
+                            historyAction
+                        }
+                );
+
+                _context.SaveChanges();
+                transaction.Commit();
+
+                return ServiceResult.Ok(
+                    new
+                    {
+                        message =
+                            "工程大項已更新",
+
+                        finalBidItemId =
+                            bidItem.FinalBidItemId,
+
+                        majorCategoryOverride =
+                            bidItem.MajorCategoryOverride,
+
+                        effectiveMajorCategory =
+                            effective,
+
+                        historyAction
+                    }
+                );
+            }
+            catch
+            {
+                transaction.Rollback();
+                throw;
+            }
         }
 
 
