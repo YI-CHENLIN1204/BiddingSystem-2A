@@ -11,6 +11,9 @@ interface BidItem {
   category3?: string | null
   majorCategoryOverride?: string | null
   effectiveMajorCategory?: string | null
+  contributesStructuralPrice?: boolean
+  contributesQuantityHistory?: boolean
+  quantityHistoryCategory?: string | null
   itemName: string
   spec?: string | null
   unit?: string | null
@@ -508,6 +511,9 @@ onMounted(async () => {
             <h5 class="mb-1">{{ item.itemName }}</h5>
             <div class="d-flex align-items-center gap-1 flex-wrap justify-content-end">
               <span v-if="item.effectiveMajorCategory" class="badge bg-info text-dark">{{ item.effectiveMajorCategory }}</span>
+              <span v-if="item.contributesStructuralPrice" class="badge bg-success">結構體價格基準</span>
+              <span v-if="item.contributesQuantityHistory" class="badge bg-success">{{ item.quantityHistoryCategory }}數量基準</span>
+              <span v-if="!item.contributesStructuralPrice && !item.contributesQuantityHistory" class="badge bg-light text-dark border">不納入目前 2A 基準</span>
               <span v-if="item.majorCategoryOverride" class="badge bg-primary">人工大項</span>
               <span class="badge" :class="mappingBadge(item).className">{{ mappingBadge(item).label }}</span>
               <span v-if="item.invalidQuantity" class="badge bg-danger">數量無效</span>
