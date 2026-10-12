@@ -7,6 +7,55 @@ namespace 崴正.Controllers;
 [Route("api/tender-import")]
 public class TenderImportController : ControllerBase
 {
+    // 預匯入數量檢視：只解析明確勾選的工作表，不建立建案或歷史交易。
+    [HttpPost("inspect")]
+    [RequestSizeLimit(100 * 1024 * 1024)]
+    public async Task<IActionResult> Inspect(
+        IFormFile excelFile,
+        [FromForm] string? includedSheetNames,
+        CancellationToken cancellationToken)
+    {
+        if (excelFile == null || excelFile.Length == 0)
+            return BadRequest(new { message = "請選擇有效的標單檔案" });
+
+        List<string>? names;
+        try
+        {
+            names = System.Text.Json.JsonSerializer.Deserialize<List<string>>(
+                includedSheetNames ?? "null");
+        }
+        catch (System.Text.Json.JsonException)
+        {
+            return BadRequest(new { message = "工作表選擇格式錯誤" });
+        }
+
+        if (names == null || names.Count == 0 ||
+            names.Any(string.IsNullOrWhiteSpace) ||
+            names.Count != names.Distinct(StringComparer.OrdinalIgnoreCase).Count())
+            return BadRequest(new { message = "請明確選擇至少一張有效工作表" });
+
+        try
+        {
+            using var stream = new MemoryStream();
+            await excelFile.CopyToAsync(stream, cancellationToken);
+            stream.Position = 0;
+            var parser = new TenderExcelParser();
+            var rows = parser.Parse(stream, excelFile.FileName, names);
+            if (rows.Count == 0)
+                return BadRequest(new { message = "選取的工作表沒有可檢查的候選明細" });
+            if (rows.Count > 5000)
+                return BadRequest(new { message = "候選明細超過 5000 筆，請縮小工作表選擇範圍" });
+
+            return Ok(TenderImportInspectionService.Build(rows));
+        }
+        catch (Exception ex) when (
+            ex is InvalidDataException || ex is ArgumentException ||
+            ex is NotSupportedException || ex is IOException)
+        {
+            return BadRequest(new { message = "檢查標單失敗：" + ex.Message });
+        }
+    }
+
     [HttpPost("preview")]
     [RequestSizeLimit(100 * 1024 * 1024)]
     public async Task<IActionResult> Preview(IFormFile excelFile, CancellationToken cancellationToken)
