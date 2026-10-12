@@ -1,6 +1,7 @@
 <script setup lang="ts">
 import { computed, ref, watch } from 'vue'
 import ProjectFields from '../components/ProjectFields.vue'
+import WorkbookSheetPicker from '../components/WorkbookSheetPicker.vue'
 import { useSystemOptions } from '../composables/useSystemOptions'
 import { api, apiForm, queryString } from '../services/api'
 import type { ProjectForm } from '../types'
@@ -47,6 +48,8 @@ const project = ref<ProjectForm>({
   floorCount: null, basementFloorCount: 0, projectMonth: '',
 })
 const file = ref<File | null>(null)
+const includedSheets = ref<string[]>([])
+const workbookReady = ref(false)
 const fileInputKey = ref(0)
 const uploading = ref(false)
 const loadingMappings = ref(false)
@@ -82,6 +85,8 @@ let searchTimer: number | undefined
 const totalPages = computed(() => Math.max(1, Math.ceil(totalCount.value / pageSize)))
 
 function selectFile(event: Event) {
+  includedSheets.value = []
+  workbookReady.value = false
   file.value = (event.target as HTMLInputElement).files?.[0] ?? null
 }
 
@@ -104,17 +109,23 @@ function badge(item: BidItem) {
 
 async function upload() {
   if (!file.value) { error.value = '請選擇 Excel 檔案。'; return }
+  if (!workbookReady.value || !includedSheets.value.length) {
+    error.value = '請先完成工作表預覽，並勾選要匯入的工程明細。'; return
+  }
   uploading.value = true
   error.value = ''
   message.value = ''
   const form = new FormData()
   form.append('excelFile', file.value)
+  form.append('includedSheetNames', JSON.stringify(includedSheets.value))
   Object.entries(project.value).forEach(([key, value]) => form.append(key, value == null ? '' : String(value)))
   try {
     const result = await apiForm<{ projectId: number; message?: string }>('/Estimation/upload-final-bid', form)
     projectId.value = Number(result.projectId)
     message.value = result.message ?? '決標資料已成功回寫。'
     file.value = null
+    includedSheets.value = []
+    workbookReady.value = false
     fileInputKey.value++
     await loadMappingResources()
     await Promise.all([loadSummary(), loadTwoASummary(), loadItems(1)])
@@ -327,7 +338,8 @@ watch([status, majorCategoryFilter, issueCode, category, unit], resetAndLoad)
         <div class="form-section-body">
           <input :key="fileInputKey" id="finalBidFile" class="file-input-native" type="file" accept=".xlsx,.xls,.xlsm,.xlsb,.csv" required @change="selectFile" />
           <label for="finalBidFile" class="file-picker"><span class="file-picker-button">選擇 Excel 檔案</span><span class="file-picker-name" :class="{ 'has-file': file }">{{ file?.name ?? '尚未選擇檔案' }}</span></label>
-          <div class="upload-footer"><div class="upload-hint">請確認建案基本資料與標單檔案後再執行回寫。</div><button class="btn-wz-primary" type="submit" :disabled="uploading">{{ uploading ? '系統正在解析並建立草稿，請稍候...' : '匯入並建立審核草稿' }}</button></div>
+          <WorkbookSheetPicker :file="file" v-model="includedSheets" @update:ready="workbookReady = $event" />
+          <div class="upload-footer"><div class="upload-hint">請確認建案基本資料與標單檔案後再執行回寫。</div><button class="btn-wz-primary" type="submit" :disabled="uploading || !workbookReady || !includedSheets.length">{{ uploading ? '系統正在解析並建立草稿，請稍候...' : '匯入並建立審核草稿' }}</button></div>
         </div>
       </div>
     </form>
