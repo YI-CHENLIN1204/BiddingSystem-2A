@@ -76,6 +76,8 @@ namespace 崴正.Services
                     project.City) ||
                 !project.TotalFloorArea.HasValue ||
                 project.TotalFloorArea.Value <= 0 ||
+                !project.SiteArea.HasValue ||
+                project.SiteArea.Value <= 0 ||
                 !project.FloorCount.HasValue ||
                 project.FloorCount.Value <= 0 ||
                 !project.BasementFloorCount.HasValue ||
@@ -114,6 +116,9 @@ namespace 崴正.Services
 
                             TotalFloorArea =
                                 project.TotalFloorArea.Value,
+
+                            SiteArea =
+                                project.SiteArea.Value,
 
                             FloorCount =
                                 project.FloorCount.Value,
@@ -181,6 +186,14 @@ namespace 崴正.Services
                 );
             }
 
+            if (!request.SiteArea.HasValue ||
+                request.SiteArea.Value <= 0)
+            {
+                return ServiceResult.Validation(
+                    "基地面積必須大於 0"
+                );
+            }
+
             if (!request.FloorCount.HasValue ||
                 request.FloorCount.Value <= 0)
             {
@@ -244,6 +257,9 @@ namespace 崴正.Services
 
                             TotalFloorArea =
                                 request.TotalFloorArea.Value,
+
+                            SiteArea =
+                                request.SiteArea.Value,
 
                             FloorCount =
                                 request.FloorCount.Value,
