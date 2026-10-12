@@ -532,8 +532,7 @@ namespace 崴正.Services
                 var history =
                     _finalBidService
                         .BuildHistoricalTransactionForNewImport(
-                            bidItem,
-                            bidItem.DataIssueCode
+                            bidItem
                         );
 
                 if (history == null)
