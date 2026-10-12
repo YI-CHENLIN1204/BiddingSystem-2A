@@ -14,6 +14,8 @@ namespace 崴正.Models
 
         public decimal? TotalFloorArea { get; set; }
 
+        public decimal? SiteArea { get; set; }
+
         public int? FloorCount { get; set; }
         public int? BasementFloorCount { get; set; }
 
