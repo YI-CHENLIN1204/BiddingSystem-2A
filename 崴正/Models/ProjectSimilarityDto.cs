@@ -27,6 +27,8 @@ namespace 崴正.Models
 
         public double AreaScore { get; set; }
 
+        public double SiteAreaScore { get; set; }
+
         public double FloorScore { get; set; }
 
         public double YearScore { get; set; }
