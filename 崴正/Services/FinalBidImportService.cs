@@ -133,6 +133,14 @@ namespace 崴正.Services
                 );
             }
 
+            if (!request.SiteArea.HasValue ||
+                request.SiteArea.Value <= 0)
+            {
+                return ServiceResult.Validation(
+                    "請輸入正確的基地面積"
+                );
+            }
+
             if (!request.FloorCount.HasValue ||
                 request.FloorCount.Value <= 0)
             {
@@ -228,6 +236,9 @@ namespace 崴正.Services
 
                         TotalFloorArea =
                             request.TotalFloorArea,
+
+                        SiteArea =
+                            request.SiteArea,
 
                         FloorCount =
                             request.FloorCount.Value,
@@ -635,6 +646,9 @@ namespace 崴正.Services
 
                     totalFloorArea =
                         project.TotalFloorArea,
+
+                    siteArea =
+                        project.SiteArea,
 
                     floorCount =
                         project.FloorCount,
