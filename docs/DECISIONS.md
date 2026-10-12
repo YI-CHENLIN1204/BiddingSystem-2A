@@ -184,3 +184,18 @@ Price analysis additionally requires amount or unit price.
 
 **Reason:**  
 Do not silently guess arbitrary raw files while the interface contract is still unresolved.
+
+---
+## D-015 — Both 2A upload routes require worksheet review
+
+**Decision:** Both standalone target uploads (including V1/V2/V3) and historical finalized-bid imports use the same worksheet-selection and row-parsing safeguards.
+
+- A multi-sheet workbook must have an explicit list of included worksheets. No list means reject, rather than silently import everything.
+- The UI previews parsed row counts and sample names for every worksheet. No worksheet is automatically selected for a multi-sheet workbook.
+- Unselected sheets remain outside the imported snapshot. Each imported row retains the source worksheet and row number.
+- Numeric fields must come from positively identified quantity / unit-price / amount columns. **Never** guess from the last three numbers on a row or overwrite values with vendor comparison columns.
+- Summary, explanatory and no-value rows must not become engineering detail rows.
+- Target-version imports still do not write historical truth. Historical imports still start as Draft and require human review + explicit Publish History.
+- A worksheet titled “預算單” or containing “自估” values is **not** proof that prices were finalized. Reviewers must confirm commercial finality before approving a historical baseline.
+
+**Reason:** Real supplier quotation / comparison workbooks can contain unrelated projects, duplicate valuations and multiple suppliers. Importing all worksheets or guessing numeric columns can corrupt both target estimates and approved history.
