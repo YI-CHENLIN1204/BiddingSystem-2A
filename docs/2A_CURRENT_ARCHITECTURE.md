@@ -188,7 +188,9 @@ Price readiness is tracked independently for:
 
 The dashboard displays how many valid historical projects exist for each baseline and how many are still missing.
 
-Each historical-project detail page also shows qualification diagnostics for the imported final bid:
+Each historical-project detail page also shows qualification diagnostics for the imported final bid. The final-bid review list additionally marks each row as `結構體價格基準`, `鋼筋／混凝土數量基準`, or `不納入目前 2A 基準`, so reviewers can see the model impact of each correction immediately.
+
+Qualification diagnostics include:
 
 - rows with no recognized engineering major
 - rows manually corrected to a major category
