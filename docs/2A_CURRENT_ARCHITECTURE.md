@@ -129,7 +129,31 @@ Unit price is NOT required for quantity history.
 
 `historical_transaction` is quantity-only. Price remains in `final_bid_item`.
 
-## 6. Historical price baseline
+## 6. Historical review and immutability
+
+Imported finalized bids first enter a `Draft` history-review state.
+
+```text
+Final bid import
+-> Draft
+-> review major category / mapping / quantity / unit / price
+-> Publish history baseline
+-> Approved
+```
+
+When a project is `Approved`, its history inputs are locked:
+
+- project similarity metadata cannot be edited
+- major-category overrides cannot be edited
+- material mappings cannot be edited
+- quantity / unit / unit price cannot be edited
+- ignore / unignore cannot be changed
+
+To correct an approved baseline, the user must explicitly use **Reopen history review**. Reopening temporarily disables the project's active quantity-history rows and returns the project to `Draft`; after corrections, it must pass review and be published again.
+
+This prevents a verified historical baseline from silently changing after approval.
+
+## 7. Historical price baseline
 
 Major-category price estimation currently supports only approved historical projects and only:
 
@@ -146,7 +170,7 @@ For each historical project:
 
 If the valid reference-project count is below `MinimumSampleCount`, the system reports insufficient data instead of forcing an anomaly result.
 
-## 7. Similar-project features
+## 8. Similar-project features
 
 Current similarity inputs:
 
@@ -180,7 +204,7 @@ Current configurable weights include:
 
 Site area also has its own difference-cutoff ratio.
 
-## 8. Current readiness rules
+## 9. Current readiness rules
 
 Default minimum sample count: **5 projects**.
 
@@ -206,7 +230,7 @@ Qualification diagnostics include:
 - rebar source rows that did or did not form quantity-history transactions
 - concrete source rows that did or did not form quantity-history transactions
 
-## 9. Main APIs
+## 10. Main APIs
 
 ### Target cases
 
@@ -247,7 +271,7 @@ Qualification diagnostics include:
 
 - `POST /api/major-category-price/range`
 
-## 10. Removed legacy architecture
+## 11. Removed legacy architecture
 
 The old generic material-estimation stack has been removed because it conflicts with the current scope.
 
@@ -265,7 +289,7 @@ Removed:
 
 The formal target-analysis entry is now the versioned `AnalysisCase` workflow.
 
-## 11. Current database state
+## 12. Current database state
 
 The development database has been hard-cleaned.
 
@@ -286,7 +310,7 @@ Current detection master:
 
 The standard material `鋼筋續接器` is retained only to prevent it from being incorrectly merged into rebar weight history.
 
-## 12. Still awaiting vendor confirmation
+## 13. Still awaiting vendor confirmation
 
 The implementation currently follows provisional assumptions for:
 
@@ -298,7 +322,7 @@ The implementation currently follows provisional assumptions for:
 
 The current architecture allows these rules to be adjusted without redesigning the Target/History separation.
 
-## 13. Current limitation
+## 14. Current limitation
 
 There are currently no official historical projects in the cleaned development database.
 
