@@ -2,6 +2,7 @@
 import { computed, onMounted, ref } from 'vue'
 import { useRoute } from 'vue-router'
 import { api, apiForm } from '../services/api'
+import WorkbookSheetPicker from '../components/WorkbookSheetPicker.vue'
 
 interface CaseSummary {
   analysisCaseId: number
@@ -185,6 +186,8 @@ const oneDStatus = ref<OneDStatus>({ configured: false, message: '1D API 尚未�
 const policy = ref<AnalysisPolicy | null>(null)
 const oneDProjectId = ref<number | null>(null)
 const versionFile = ref<File | null>(null)
+const includedSheets = ref<string[]>([])
+const workbookReady = ref(false)
 const versionFileInput = ref<HTMLInputElement | null>(null)
 const versionNote = ref('')
 const versionSaving = ref(false)
@@ -295,12 +298,16 @@ function openAddVersion() {
   versionSource.value = 'Upload'
   oneDProjectId.value = null
   versionFile.value = null
+  includedSheets.value = []
+  workbookReady.value = false
   versionNote.value = ''
   if (versionFileInput.value) versionFileInput.value.value = ''
   showAddVersion.value = true
 }
 
 function selectVersionFile(event: Event) {
+  includedSheets.value = []
+  workbookReady.value = false
   versionFile.value = (event.target as HTMLInputElement).files?.[0] ?? null
 }
 
@@ -327,8 +334,10 @@ async function addVersion() {
       selectedVersionId.value = created.analysisBidVersionId
     } else {
       if (!versionFile.value) throw new Error('請選擇新版待偵錯標單')
+      if (!workbookReady.value || !includedSheets.value.length) throw new Error('請預覽並選擇要匯入的工程明細工作表')
       const form = new FormData()
       form.append('excelFile', versionFile.value)
+      form.append('includedSheetNames', JSON.stringify(includedSheets.value))
       form.append('note', versionNote.value.trim())
       const created = await apiForm<{ analysisBidVersionId: number }>(
         `/analysis-cases/${caseId}/versions/upload`,
@@ -707,6 +716,7 @@ onMounted(loadCase)
               <span>新版待偵錯標單</span>
               <input ref="versionFileInput" type="file" accept=".xlsx,.xls,.xlsm,.xlsb,.csv" required @change="selectVersionFile" />
             </label>
+            <WorkbookSheetPicker v-if="versionSource === 'Upload'" :file="versionFile" v-model="includedSheets" @update:ready="workbookReady = $event" />
             <label v-else class="field">
               <span>1D ProjectId</span>
               <input v-model.number="oneDProjectId" type="number" min="1" required placeholder="輸入 1D ProjectId" />
