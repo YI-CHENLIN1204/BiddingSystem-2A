@@ -65,6 +65,14 @@ namespace 崴正.Services
                     );
                 }
 
+                if (IsProjectHistoryApproved(
+                        bidItem))
+                {
+                    return ServiceResult.Conflict(
+                        "此建案已納入 2A 歷史基準。若要修改工項，請先重新開啟歷史基準審核。"
+                    );
+                }
+
                 var oldValue = new
                 {
                     itemName =
@@ -247,6 +255,8 @@ namespace 崴正.Services
             try
             {
                 var bidItem = _context.FinalBidItems
+                    .Include(x =>
+                        x.ProjectMaster)
                     .FirstOrDefault(x =>
                         x.FinalBidItemId ==
                         finalBidItemId);
@@ -255,6 +265,14 @@ namespace 崴正.Services
                 {
                     return ServiceResult.NotFound(
                         "找不到此工項"
+                    );
+                }
+
+                if (IsProjectHistoryApproved(
+                        bidItem))
+                {
+                    return ServiceResult.Conflict(
+                        "此建案已納入 2A 歷史基準。若要修改工項，請先重新開啟歷史基準審核。"
                     );
                 }
 
@@ -351,6 +369,14 @@ namespace 崴正.Services
                 {
                     return ServiceResult.NotFound(
                         "找不到此工項"
+                    );
+                }
+
+                if (IsProjectHistoryApproved(
+                        bidItem))
+                {
+                    return ServiceResult.Conflict(
+                        "此建案已納入 2A 歷史基準。若要修改工項，請先重新開啟歷史基準審核。"
                     );
                 }
 
