@@ -52,15 +52,20 @@ A target case NEVER writes directly to `historical_transaction`.
 
 ### History Pipeline
 
-Used only for finalized official bids that are allowed to become model baselines.
+Used only for finalized official bids that are candidates to become model baselines.
 
 ```text
 Final bid
-  -> ProjectMaster
+  -> ProjectMaster (Draft)
   -> FinalBidItem
-       ├─ structural-work price history stays in FinalBidItem
-       └─ rebar/concrete quantity history -> HistoricalTransaction
+  -> engineering-major / material / unit review
+  -> explicit "Publish History" approval
+  -> ProjectMaster (Approved)
+       ├─ structural-work price baseline stays in FinalBidItem
+       └─ rebar/concrete quantity baseline -> HistoricalTransaction
 ```
+
+An imported final bid is therefore not automatically trusted by the model. It must be reviewed and explicitly published first. Reopening review temporarily removes the project from similarity/price baselines and marks its quantity-history transactions inactive.
 
 Tables:
 
@@ -109,7 +114,7 @@ Unclassified raw files are not silently sent to 1D and are not automatically gue
 
 ## 5. Historical quantity eligibility
 
-A final-bid item enters `historical_transaction` only when all current conditions are satisfied:
+A final-bid item enters `historical_transaction` only after its project is `Approved` and all current row-level conditions are satisfied:
 
 - item is not ignored
 - item is mapped to a standard material
@@ -124,7 +129,7 @@ Unit price is NOT required for quantity history.
 
 ## 6. Historical price baseline
 
-Major-category price estimation currently supports only:
+Major-category price estimation currently supports only approved historical projects and only:
 
 - `結構體工程`
 
@@ -229,6 +234,8 @@ Qualification diagnostics include:
 ### Historical projects
 
 - `GET /api/projects`
+- `POST /api/projects/{projectId}/publish-history`
+- `POST /api/projects/{projectId}/reopen-history-review`
 - `GET /api/projects/{projectId}`
 - `GET /api/projects/{projectId}/historical-data`
 - `GET /api/projects/{projectId}/2a-summary`
@@ -258,6 +265,8 @@ The formal target-analysis entry is now the versioned `AnalysisCase` workflow.
 ## 11. Current database state
 
 The development database has been hard-cleaned.
+
+Historical projects now use `project_master.history_status` with `Draft` / `Approved`. Only `Approved` projects can participate in the similarity model or structural-price baseline.
 
 No fake historical projects are seeded.
 
