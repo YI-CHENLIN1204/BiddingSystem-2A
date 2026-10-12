@@ -29,8 +29,10 @@ interface ImportReport {
   structuralPricedItemCount: number
   structuralAmount: number
   historyInsertCount: number
-  rebarHistoryInsertCount: number
-  concreteHistoryInsertCount: number
+  historyStatus: string
+  historyCandidateCount: number
+  rebarHistoryCandidateCount: number
+  concreteHistoryCandidateCount: number
 }
 interface PolicyResponse { knownMajorCategories: string[] }
 interface FilterOptions { categories: string[]; units: string[] }
@@ -309,7 +311,7 @@ watch([status, majorCategoryFilter, issueCode, category, unit], resetAndLoad)
           <div class="d-flex justify-content-between align-items-start gap-3 flex-wrap mb-3">
             <div>
               <h4 class="mb-1">2A 匯入資格檢查</h4>
-              <div class="text-muted small">解析完成後立即檢查工程大項辨識、結構體價格與鋼筋／混凝土數量歷史。</div>
+              <div class="text-muted small">解析完成後先建立候選基準；人工審查完成並發布前，不會寫入正式 2A 歷史模型。</div>
             </div>
             <RouterLink :to="`/projects/${importReport.projectId}`" class="btn btn-sm btn-outline-primary">查看建案完整摘要</RouterLink>
           </div>
@@ -318,8 +320,11 @@ watch([status, majorCategoryFilter, issueCode, category, unit], resetAndLoad)
             <div class="col-md-2"><div class="stat-box" :class="{ 'tone-warning': importReport.unclassifiedMajorCategoryCount > 0 }"><div class="text-muted fw-bold">未辨識大項</div><div class="stat-num">{{ importReport.unclassifiedMajorCategoryCount }}</div><small>可人工校正</small></div></div>
             <div class="col-md-2"><div class="stat-box"><div class="text-muted fw-bold">結構體工項</div><div class="stat-num">{{ importReport.structuralItemCount }}</div><small>{{ importReport.structuralPricedItemCount }} 筆可計價</small></div></div>
             <div class="col-md-2"><div class="stat-box"><div class="text-muted fw-bold">結構體總價</div><div class="stat-num report-amount">{{ formatNumber(importReport.structuralAmount) }}</div><small>價格歷史候選</small></div></div>
-            <div class="col-md-2"><div class="stat-box"><div class="text-muted fw-bold">鋼筋歷史</div><div class="stat-num">{{ importReport.rebarHistoryInsertCount }}</div><small>筆有效交易</small></div></div>
-            <div class="col-md-2"><div class="stat-box"><div class="text-muted fw-bold">混凝土歷史</div><div class="stat-num">{{ importReport.concreteHistoryInsertCount }}</div><small>筆有效交易</small></div></div>
+            <div class="col-md-2"><div class="stat-box"><div class="text-muted fw-bold">鋼筋候選</div><div class="stat-num">{{ importReport.rebarHistoryCandidateCount }}</div><small>待人工確認</small></div></div>
+            <div class="col-md-2"><div class="stat-box"><div class="text-muted fw-bold">混凝土候選</div><div class="stat-num">{{ importReport.concreteHistoryCandidateCount }}</div><small>待人工確認</small></div></div>
+          </div>
+          <div class="alert alert-warning mt-3 mb-0 py-2 small">
+            <strong>尚未發布：</strong>請先處理未辨識工程大項、材料對應與單位問題；確認完成後，到建案頁按「確認並納入 2A 歷史基準」。
           </div>
         </div>
       </div>
@@ -357,7 +362,7 @@ watch([status, majorCategoryFilter, issueCode, category, unit], resetAndLoad)
         <div v-if="loadingMappings" class="card p-4 text-muted">載入材料對應資料中...</div>
         <div v-else-if="!items.length" class="card p-4 text-muted">沒有符合條件的工項</div>
         <article v-for="item in items" v-else :key="item.finalBidItemId" class="card mb-3 mapping-card"><div class="card-body">
-          <div class="d-flex justify-content-between align-items-start gap-3 mb-2"><h5 class="mb-1">{{ item.itemName }}</h5><div class="d-flex gap-1 flex-wrap justify-content-end"><span v-if="item.effectiveMajorCategory" class="badge bg-info text-dark">{{ item.effectiveMajorCategory }}</span><span v-if="item.contributesStructuralPrice" class="badge bg-success">結構體價格基準</span><span v-if="item.contributesQuantityHistory" class="badge bg-success">{{ item.quantityHistoryCategory }}數量基準</span><span v-if="!item.contributesStructuralPrice && !item.contributesQuantityHistory" class="badge bg-light text-dark border">不納入目前 2A 基準</span><span v-if="item.majorCategoryOverride" class="badge bg-primary">人工大項</span><span class="badge" :class="badge(item).css">{{ badge(item).label }}</span><span v-if="item.invalidQuantity" class="badge bg-danger">數量無效</span><span v-if="item.invalidUnitPrice" class="badge bg-danger">單價無效</span><span v-if="item.unitMismatch" class="badge bg-danger">單位不符</span></div></div>
+          <div class="d-flex justify-content-between align-items-start gap-3 mb-2"><h5 class="mb-1">{{ item.itemName }}</h5><div class="d-flex gap-1 flex-wrap justify-content-end"><span v-if="item.effectiveMajorCategory" class="badge bg-info text-dark">{{ item.effectiveMajorCategory }}</span><span v-if="item.contributesStructuralPrice" class="badge bg-success">結構體價格候選</span><span v-if="item.contributesQuantityHistory" class="badge bg-success">{{ item.quantityHistoryCategory }}數量候選</span><span v-if="!item.contributesStructuralPrice && !item.contributesQuantityHistory" class="badge bg-light text-dark border">不納入目前 2A 基準</span><span v-if="item.majorCategoryOverride" class="badge bg-primary">人工大項</span><span class="badge" :class="badge(item).css">{{ badge(item).label }}</span><span v-if="item.invalidQuantity" class="badge bg-danger">數量無效</span><span v-if="item.invalidUnitPrice" class="badge bg-danger">單價無效</span><span v-if="item.unitMismatch" class="badge bg-danger">單位不符</span></div></div>
           <div class="text-muted small mb-2">單位：{{ item.unit || '無' }} ｜ 數量：{{ formatNumber(item.qty, 4) }} ｜ 單價：{{ formatNumber(item.unitPrice) }}</div>
           <div class="text-muted small mb-3">原始分類：{{ [item.category1, item.category2, item.category3].filter(Boolean).join(' → ') || '未辨識' }}</div>
           <div v-if="!item.isIgnored" class="row g-2 mb-3"><div class="col-md-6"><label class="form-label small fw-bold">工程大項</label><select class="form-select" :value="item.majorCategoryOverride ?? ''" :disabled="busyId === item.finalBidItemId" @change="updateMajorCategory(item, $event)"><option value="">使用原始分類（{{ item.effectiveMajorCategory || '未辨識' }}）</option><option v-for="entry in majorCategories" :key="entry" :value="entry">{{ entry }}</option></select></div><div class="col-md-6 d-flex align-items-end"><div class="small text-muted">人工指定只影響 2A 判定，原始 Category1 / 2 / 3 不會被覆蓋。</div></div></div>
