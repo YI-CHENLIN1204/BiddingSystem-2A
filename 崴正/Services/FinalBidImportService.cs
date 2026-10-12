@@ -669,6 +669,9 @@ namespace 崴正.Services
                             sourceFileName =
                                 project.SourceFileName,
 
+                            includedSheetNames = request.IncludedSheetNames ??
+                                rows.Select(x => x.SheetName).Distinct().ToArray(),
+
                             totalCount =
                                 rows.Count,
 
