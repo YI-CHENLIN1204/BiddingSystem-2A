@@ -138,3 +138,11 @@ Continue development on:
 `feature/1d-api-integration`
 
 Do not merge `main` unless the user explicitly asks.
+
+## 2026-10-13 pre-import inspection continuation
+
+Read-only quantity preview is now part of the same workbook sheet picker for both target uploads and finalized history import. The API is `POST /api/tender-import/inspect` and requires selected worksheet names. It returns all parsed candidate rows with original line/source and conservative rebar/concrete candidate quantities and warnings; it does not persist or publish anything.
+
+The next hands-on test should open `http://localhost:8081/final-bid`, choose `最終標單.xls`, select only `建築工程-預算單`, and click **檢查選取工作表的全部候選明細**. Inspect steel and concrete filters against source lines before creating any Draft. In the historical budget/quotation workbook, financial finality and project metadata remain unconfirmed, so it must not be published as Approved.
+
+Never interpret candidate quantity totals as P15/P50/P85 anomaly results or insert fake history to make the model ready.
