@@ -29,6 +29,9 @@ export interface ProjectSummary {
   hasFinalBid?: boolean
   finalBidItemCount?: number
   historicalTransactionCount?: number
+  historyStatus?: string
+  historyApprovedAt?: string | null
+  historyApprovedBy?: string | null
 }
 
 export interface ProjectForm {
