@@ -90,6 +90,7 @@ const selectedCategory = ref<Record<number, string>>({})
 const selectedMaterial = ref<Record<number, number | '__NEW__' | null>>({})
 const search = ref('')
 const status = ref('All')
+const majorCategoryFilter = ref('All')
 const category = ref('All')
 const unit = ref('All')
 const issueCode = ref('All')
@@ -155,7 +156,7 @@ async function loadBidItems() {
   try {
     const result = await api<PageResult<BidItem>>(`/Estimation/mapping-items${queryString({
       projectId, status: status.value, search: search.value.trim(), issueCode: issueCode.value,
-      category: category.value, unit: unit.value, page: page.value, pageSize: pageSize.value,
+      majorCategory: majorCategoryFilter.value, category: category.value, unit: unit.value, page: page.value, pageSize: pageSize.value,
     })}`)
     totalCount.value = result.totalCount
     bidItems.value = result.items
@@ -337,7 +338,7 @@ watch(search, () => {
   window.clearTimeout(searchTimer)
   searchTimer = window.setTimeout(resetAndLoad, 300)
 })
-watch([status, category, unit, issueCode, pageSize], resetAndLoad)
+watch([status, majorCategoryFilter, category, unit, issueCode, pageSize], resetAndLoad)
 
 onMounted(async () => {
   if (!Number.isInteger(projectId) || projectId <= 0) {
@@ -488,9 +489,10 @@ onMounted(async () => {
         <div class="row g-2">
           <div class="col-lg-4"><input v-model="search" type="search" class="form-control" placeholder="搜尋工項名稱或標準材料" /></div>
           <div class="col-md-2"><select v-model="status" class="form-select"><option value="All">全部對應狀態</option><option value="Pending">未對應</option><option value="Auto">自動對應</option><option value="Manual">人工對應</option><option value="Ignored">已忽略</option></select></div>
-          <div class="col-md-2"><select v-model="category" class="form-select"><option value="All">全部材料分類</option><option v-for="item in filterOptions.categories" :key="item" :value="item">{{ item }}</option></select></div>
-          <div class="col-md-2"><select v-model="unit" class="form-select"><option value="All">全部單位</option><option v-for="item in filterOptions.units" :key="item" :value="item">{{ item }}</option></select></div>
-          <div class="col-md-2"><select v-model="issueCode" class="form-select"><option value="All">全部資料狀態</option><option value="INVALID_QUANTITY">數量無效</option><option value="INVALID_UNIT_PRICE">單價無效</option><option value="UNIT_MISMATCH">單位不符</option></select></div>
+          <div class="col-md-3"><select v-model="majorCategoryFilter" class="form-select"><option value="All">全部工程大項</option><option value="Unclassified">未辨識工程大項</option><option v-for="item in majorCategories" :key="item" :value="item">{{ item }}</option></select></div>
+          <div class="col-md-3"><select v-model="category" class="form-select"><option value="All">全部材料分類</option><option v-for="item in filterOptions.categories" :key="item" :value="item">{{ item }}</option></select></div>
+          <div class="col-md-3"><select v-model="unit" class="form-select"><option value="All">全部單位</option><option v-for="item in filterOptions.units" :key="item" :value="item">{{ item }}</option></select></div>
+          <div class="col-md-3"><select v-model="issueCode" class="form-select"><option value="All">全部資料狀態</option><option value="INVALID_QUANTITY">數量無效</option><option value="INVALID_UNIT_PRICE">單價無效</option><option value="UNIT_MISMATCH">單位不符</option></select></div>
         </div>
         <div class="d-flex justify-content-between align-items-center mt-3">
           <div class="text-muted small">共 {{ totalCount }} 筆</div>
