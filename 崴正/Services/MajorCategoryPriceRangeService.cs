@@ -74,23 +74,35 @@ namespace 崴正.Services
                     .Where(x =>
                         projectIds.Contains(
                             x.ProjectMasterId) &&
-                        !x.IsIgnored &&
-                        (
-                            x.Category1 ==
-                                "結構體工程" ||
-                            x.Category2 ==
-                                "結構體工程" ||
-                            x.Category3 ==
-                                "結構體工程"
-                        ))
+                        !x.IsIgnored)
                     .Select(x => new
                     {
                         x.ProjectMasterId,
+                        x.Category1,
+                        x.Category2,
+                        x.Category3,
+                        x.MajorCategoryOverride,
                         x.Amount,
                         x.Qty,
                         x.UnitPrice
                     })
                     .ToListAsync();
+
+            rows =
+                rows
+                    .Where(x =>
+                        string.Equals(
+                            TwoAScopePolicy
+                                .ResolveEffectiveMajorCategory(
+                                    x.MajorCategoryOverride,
+                                    x.Category1,
+                                    x.Category2,
+                                    x.Category3
+                                ),
+                            "結構體工程",
+                            StringComparison.OrdinalIgnoreCase
+                        ))
+                    .ToList();
 
             var amountByProject =
                 rows
@@ -282,24 +294,36 @@ namespace 崴正.Services
                             x.ProjectMasterId
                         ) &&
                         !x.IsIgnored &&
-                        !x.ProjectMaster.IsDeleted &&
-                        (
-                            x.Category1 ==
-                                majorCategory ||
-                            x.Category2 ==
-                                majorCategory ||
-                            x.Category3 ==
-                                majorCategory
-                        )
+                        !x.ProjectMaster.IsDeleted
                     )
                     .Select(x => new
                     {
                         x.ProjectMasterId,
+                        x.Category1,
+                        x.Category2,
+                        x.Category3,
+                        x.MajorCategoryOverride,
                         x.Amount,
                         x.Qty,
                         x.UnitPrice
                     })
                     .ToListAsync();
+
+            rows =
+                rows
+                    .Where(x =>
+                        string.Equals(
+                            TwoAScopePolicy
+                                .ResolveEffectiveMajorCategory(
+                                    x.MajorCategoryOverride,
+                                    x.Category1,
+                                    x.Category2,
+                                    x.Category3
+                                ),
+                            majorCategory,
+                            StringComparison.OrdinalIgnoreCase
+                        ))
+                    .ToList();
 
             var amountByProject =
                 rows
