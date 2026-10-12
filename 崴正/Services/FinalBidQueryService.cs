@@ -257,6 +257,18 @@ namespace 崴正.Services
                     itemCode =
                         x.ItemCode,
 
+                    category1 =
+                        x.Category1,
+
+                    category2 =
+                        x.Category2,
+
+                    category3 =
+                        x.Category3,
+
+                    majorCategoryOverride =
+                        x.MajorCategoryOverride,
+
                     itemName =
                         x.ItemName,
 
@@ -331,6 +343,20 @@ namespace 崴正.Services
                     x.sheetName,
                     x.rowNumber,
                     x.itemCode,
+                    x.category1,
+                    x.category2,
+                    x.category3,
+                    x.majorCategoryOverride,
+
+                    effectiveMajorCategory =
+                        TwoAScopePolicy
+                            .ResolveEffectiveMajorCategory(
+                                x.majorCategoryOverride,
+                                x.category1,
+                                x.category2,
+                                x.category3
+                            ),
+
                     x.itemName,
                     x.spec,
                     x.unit,
