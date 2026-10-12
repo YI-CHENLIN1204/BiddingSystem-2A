@@ -375,25 +375,6 @@ namespace 崴正.Services
             );
         }
 
-        public Task<List<ProjectSimilarityDto>>
-            GetScoredCandidateProjectsAsync(
-                ResolvedEstimationTarget target)
-        {
-            if (
-                target.SourceMode ==
-                    EstimationTargetMode.HistoricalProject &&
-                target.HistoricalProjectId.HasValue
-            )
-            {
-                return GetScoredCandidateProjectsAsync(
-                    target.HistoricalProjectId.Value
-                );
-            }
-
-            return GetScoredCandidateProjectsAsync(
-                target.SimilarityTarget
-            );
-        }
 
 
         // ==========================================
