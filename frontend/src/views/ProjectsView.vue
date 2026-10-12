@@ -20,7 +20,7 @@ let searchTimer: number | undefined
 function emptyForm(): ProjectForm {
   return {
     projectName: '', projectType: '', structureType: '', city: '',
-    totalFloorArea: null, floorCount: null, basementFloorCount: 0, projectMonth: '',
+    totalFloorArea: null, siteArea: null, floorCount: null, basementFloorCount: 0, projectMonth: '',
   }
 }
 
@@ -36,6 +36,7 @@ function openEditor(project: ProjectSummary) {
     structureType: project.structureType ?? '',
     city: project.city ?? '',
     totalFloorArea: project.totalFloorArea ?? null,
+    siteArea: project.siteArea ?? null,
     floorCount: project.floorCount ?? null,
     basementFloorCount: project.basementFloorCount ?? 0,
     projectMonth: project.startDate?.slice(0, 7) ?? '',
@@ -141,6 +142,7 @@ onMounted(load)
       <hr />
       <div class="row g-3 small">
         <div class="col-md-3"><div class="text-muted">總樓地板面積</div><strong>{{ project.totalFloorArea ?? '未設定' }} m²</strong></div>
+        <div class="col-md-3"><div class="text-muted">基地面積</div><strong>{{ project.siteArea ?? '未設定' }} m²</strong></div>
         <div class="col-md-3"><div class="text-muted">地上 / 地下樓層</div><strong>{{ project.floorCount ?? '-' }} / {{ project.basementFloorCount ?? '-' }}</strong></div>
         <div class="col-md-3"><div class="text-muted">決標工項</div><strong>{{ project.finalBidItemCount ?? 0 }}</strong></div>
         <div class="col-md-3"><div class="text-muted">有效歷史交易</div><strong>{{ project.historicalTransactionCount ?? 0 }}</strong></div>
