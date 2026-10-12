@@ -30,6 +30,7 @@ export interface ProjectSummary {
   structureType?: string
   city?: string
   totalFloorArea?: number
+  siteArea?: number
   floorCount?: number
   basementFloorCount?: number
   startDate?: string
@@ -44,6 +45,7 @@ export interface ProjectForm {
   structureType: string
   city: string
   totalFloorArea: number | null
+  siteArea: number | null
   floorCount: number | null
   basementFloorCount: number | null
   projectMonth: string
