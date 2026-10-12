@@ -55,7 +55,6 @@ interface HistoryItem {
   unitName: string
   transactionCount: number
   totalQuantity: number
-  averageUnitPrice: number
 }
 
 interface FilterOptions { categories: string[]; units: string[] }
@@ -473,8 +472,8 @@ onMounted(async () => {
       <div v-if="!historyItems.length" class="p-4 text-muted">目前沒有可供模型使用的歷史資料</div>
       <div v-else class="table-responsive">
         <table class="table table-hover mb-0">
-          <thead><tr><th>材料分類</th><th>標準材料</th><th>工項筆數</th><th>標準化總用量</th><th>平均單價</th></tr></thead>
-          <tbody><tr v-for="item in historyItems" :key="item.materialId"><td>{{ item.category }}</td><td>{{ item.materialName }}</td><td>{{ item.transactionCount }}</td><td>{{ formatNumber(item.totalQuantity, 4) }} {{ item.unitName }}</td><td>{{ formatNumber(item.averageUnitPrice) }} 元/{{ item.unitName }}</td></tr></tbody>
+          <thead><tr><th>材料分類</th><th>偵錯材料</th><th>來源工項筆數</th><th>標準化歷史總量</th></tr></thead>
+          <tbody><tr v-for="item in historyItems" :key="item.materialId"><td>{{ item.category }}</td><td>{{ item.materialName }}</td><td>{{ item.transactionCount }}</td><td>{{ formatNumber(item.totalQuantity, 4) }} {{ item.unitName }}</td></tr></tbody>
         </table>
       </div>
     </section>
