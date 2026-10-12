@@ -29,6 +29,25 @@ interface MaterialOption {
   unitName: string
 }
 
+interface ProjectTwoASummary {
+  projectId: number
+  majorCategory: string
+  structuralItemCount: number
+  structuralPricedItemCount: number
+  structuralAmount: number
+  structuralPricePerPing?: number | null
+  rebarQuantity?: number | null
+  rebarUnit: string
+  rebarTransactionCount: number
+  contributesRebarHistory: boolean
+  concreteQuantity?: number | null
+  concreteUnit: string
+  concreteTransactionCount: number
+  contributesConcreteHistory: boolean
+  otherStructuralItemCount: number
+  message: string
+}
+
 interface HistoryItem {
   materialId: number
   materialName: string
@@ -49,6 +68,7 @@ const project = ref<ProjectSummary | null>(null)
 const tab = ref<'basic' | 'bid' | 'history'>('basic')
 const bidItems = ref<BidItem[]>([])
 const historyItems = ref<HistoryItem[]>([])
+const twoASummary = ref<ProjectTwoASummary | null>(null)
 const materialOptions = ref<MaterialOption[]>([])
 const filterOptions = ref<FilterOptions>({ categories: [], units: [] })
 const masterOptions = ref<{ categories: MasterOption[]; units: MasterOption[] }>({ categories: [], units: [] })
@@ -147,8 +167,12 @@ async function loadHistory() {
   historyItems.value = result.items
 }
 
+async function loadTwoASummary() {
+  twoASummary.value = await api<ProjectTwoASummary>(`/projects/${projectId}/2a-summary`)
+}
+
 async function reloadRelated(messageText?: string) {
-  await Promise.all([loadBidItems(), loadHistory(), loadProject()])
+  await Promise.all([loadBidItems(), loadHistory(), loadProject(), loadTwoASummary()])
   if (messageText) message.value = messageText
 }
 
@@ -288,7 +312,7 @@ onMounted(async () => {
     return
   }
   try {
-    await Promise.all([loadProject(), loadFilterOptions(), loadHistory()])
+    await Promise.all([loadProject(), loadFilterOptions(), loadHistory(), loadTwoASummary()])
     await loadBidItems()
   } catch (caught) {
     error.value = caught instanceof Error ? caught.message : '無法載入建案資料'
@@ -329,16 +353,66 @@ onMounted(async () => {
       <li class="nav-item"><button class="nav-link" :class="{ active: tab === 'history' }" @click="tab = 'history'">模型歷史資料</button></li>
     </ul>
 
-    <section v-if="tab === 'basic' && project" class="card p-4">
-      <div class="row g-4">
-        <div class="col-md-3"><div class="text-muted small">建案名稱</div><strong>{{ project.projectName }}</strong></div>
-        <div class="col-md-3"><div class="text-muted small">建案類型</div><strong>{{ project.projectType || '未設定' }}</strong></div>
-        <div class="col-md-3"><div class="text-muted small">結構類型</div><strong>{{ project.structureType || '未設定' }}</strong></div>
-        <div class="col-md-3"><div class="text-muted small">縣市</div><strong>{{ project.city || '未設定' }}</strong></div>
-        <div class="col-md-3"><div class="text-muted small">總樓地板面積</div><strong>{{ formatNumber(project.totalFloorArea) }} m²</strong></div>
-        <div class="col-md-3"><div class="text-muted small">地上樓層</div><strong>{{ project.floorCount ?? '未設定' }}</strong></div>
-        <div class="col-md-3"><div class="text-muted small">地下樓層</div><strong>{{ project.basementFloorCount ?? '未設定' }}</strong></div>
-        <div class="col-md-3"><div class="text-muted small">建案年月</div><strong>{{ formatMonth(project.startDate) }}</strong></div>
+    <section v-if="tab === 'basic' && project" class="basic-stack">
+      <div class="card p-4">
+        <div class="row g-4">
+          <div class="col-md-3"><div class="text-muted small">建案名稱</div><strong>{{ project.projectName }}</strong></div>
+          <div class="col-md-3"><div class="text-muted small">建案類型</div><strong>{{ project.projectType || '未設定' }}</strong></div>
+          <div class="col-md-3"><div class="text-muted small">結構類型</div><strong>{{ project.structureType || '未設定' }}</strong></div>
+          <div class="col-md-3"><div class="text-muted small">縣市</div><strong>{{ project.city || '未設定' }}</strong></div>
+          <div class="col-md-3"><div class="text-muted small">總樓地板面積</div><strong>{{ formatNumber(project.totalFloorArea) }} m²</strong></div>
+          <div class="col-md-3"><div class="text-muted small">地上樓層</div><strong>{{ project.floorCount ?? '未設定' }}</strong></div>
+          <div class="col-md-3"><div class="text-muted small">地下樓層</div><strong>{{ project.basementFloorCount ?? '未設定' }}</strong></div>
+          <div class="col-md-3"><div class="text-muted small">建案年月</div><strong>{{ formatMonth(project.startDate) }}</strong></div>
+        </div>
+      </div>
+
+      <div v-if="twoASummary" class="card baseline-card">
+        <div class="baseline-header">
+          <div>
+            <h5>2A 歷史基準摘要</h5>
+            <div class="text-muted small">
+              本建案定案後，實際能提供給 2A 的「結構體工程價格」與「鋼筋／混凝土數量」資料。
+            </div>
+          </div>
+          <span class="badge bg-light text-dark border">{{ twoASummary.majorCategory }}</span>
+        </div>
+
+        <div class="baseline-grid">
+          <div class="baseline-cell">
+            <span>結構體工程總價</span>
+            <strong>{{ formatNumber(twoASummary.structuralAmount) }}</strong>
+            <small>
+              {{ twoASummary.structuralPricedItemCount }} / {{ twoASummary.structuralItemCount }} 筆可計價
+            </small>
+          </div>
+          <div class="baseline-cell">
+            <span>結構體工程每坪單價</span>
+            <strong>{{ formatNumber(twoASummary.structuralPricePerPing) }}</strong>
+            <small>作為大項價格歷史基準</small>
+          </div>
+          <div class="baseline-cell">
+            <span>鋼筋歷史總量</span>
+            <strong>{{ formatNumber(twoASummary.rebarQuantity, 4) }} {{ twoASummary.rebarUnit }}</strong>
+            <small :class="twoASummary.contributesRebarHistory ? 'text-success' : 'text-muted'">
+              {{ twoASummary.contributesRebarHistory ? '已貢獻 ' + twoASummary.rebarTransactionCount + ' 筆歷史交易' : '尚未形成有效歷史資料' }}
+            </small>
+          </div>
+          <div class="baseline-cell">
+            <span>混凝土歷史總量</span>
+            <strong>{{ formatNumber(twoASummary.concreteQuantity, 4) }} {{ twoASummary.concreteUnit }}</strong>
+            <small :class="twoASummary.contributesConcreteHistory ? 'text-success' : 'text-muted'">
+              {{ twoASummary.contributesConcreteHistory ? '已貢獻 ' + twoASummary.concreteTransactionCount + ' 筆歷史交易' : '尚未形成有效歷史資料' }}
+            </small>
+          </div>
+        </div>
+
+        <div class="baseline-foot">
+          <span>{{ twoASummary.message }}</span>
+          <span v-if="twoASummary.otherStructuralItemCount > 0">
+            另有 {{ twoASummary.otherStructuralItemCount }} 筆結構體工項保留於最終標單，但不作為鋼筋／混凝土數量基準。
+          </span>
+        </div>
       </div>
     </section>
 
@@ -442,4 +516,5 @@ onMounted(async () => {
 .item-menu .dropdown-menu { position: absolute; top: 100%; right: 0; left: auto; z-index: 20; }
 .modal-backdrop-custom { position: fixed; inset: 0; z-index: 1080; display: grid; place-items: center; padding: 1.5rem; background: rgba(0,0,0,.5); }
 .modal-backdrop-custom .modal-dialog { width: min(500px, 100%); margin: auto; }
+.basic-stack{display:grid;gap:16px}.baseline-card{overflow:hidden}.baseline-header{display:flex;align-items:flex-start;justify-content:space-between;gap:16px;padding:16px 18px;background:#f8f9fa;border-bottom:1px solid #e3e5e8}.baseline-header h5{margin:0 0 4px;font-size:15px;font-weight:800;color:#321fdb}.baseline-grid{display:grid;grid-template-columns:repeat(4,1fr)}.baseline-cell{padding:18px;border-right:1px solid #edf0f4}.baseline-cell:last-child{border-right:0}.baseline-cell>span{display:block;color:#6c757d;font-size:12px}.baseline-cell>strong{display:block;margin-top:7px;font-size:20px;font-variant-numeric:tabular-nums}.baseline-cell>small{display:block;margin-top:6px;font-size:11px}.baseline-foot{display:flex;justify-content:space-between;gap:18px;padding:11px 18px;background:#fbfcfd;border-top:1px solid #edf0f4;color:#6c757d;font-size:11px}@media(max-width:1000px){.baseline-grid{grid-template-columns:repeat(2,1fr)}.baseline-cell:nth-child(2){border-right:0}.baseline-cell:nth-child(-n+2){border-bottom:1px solid #edf0f4}.baseline-foot{flex-direction:column}}@media(max-width:600px){.baseline-grid{grid-template-columns:1fr}.baseline-cell{border-right:0;border-bottom:1px solid #edf0f4}.baseline-cell:last-child{border-bottom:0}}
 </style>
