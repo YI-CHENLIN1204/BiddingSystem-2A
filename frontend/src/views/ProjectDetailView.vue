@@ -360,6 +360,7 @@ onMounted(async () => {
           <div class="col-md-3"><div class="text-muted small">結構類型</div><strong>{{ project.structureType || '未設定' }}</strong></div>
           <div class="col-md-3"><div class="text-muted small">縣市</div><strong>{{ project.city || '未設定' }}</strong></div>
           <div class="col-md-3"><div class="text-muted small">總樓地板面積</div><strong>{{ formatNumber(project.totalFloorArea) }} m²</strong></div>
+          <div class="col-md-3"><div class="text-muted small">基地面積</div><strong>{{ formatNumber(project.siteArea) }} m²</strong></div>
           <div class="col-md-3"><div class="text-muted small">地上樓層</div><strong>{{ project.floorCount ?? '未設定' }}</strong></div>
           <div class="col-md-3"><div class="text-muted small">地下樓層</div><strong>{{ project.basementFloorCount ?? '未設定' }}</strong></div>
           <div class="col-md-3"><div class="text-muted small">建案年月</div><strong>{{ formatMonth(project.startDate) }}</strong></div>
