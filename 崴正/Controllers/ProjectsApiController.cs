@@ -35,6 +35,26 @@ public class ProjectsApiController : ControllerBase
             request,
             User.Identity?.Name ?? "System"));
 
+    [HttpPost("{projectId:int}/publish-history")]
+    public async Task<IActionResult> PublishHistory(
+        int projectId) =>
+        ToActionResult(
+            await _service.PublishHistoryAsync(
+                projectId,
+                User.Identity?.Name ?? "System"
+            )
+        );
+
+    [HttpPost("{projectId:int}/reopen-history-review")]
+    public async Task<IActionResult> ReopenHistoryReview(
+        int projectId) =>
+        ToActionResult(
+            await _service.ReopenHistoryReviewAsync(
+                projectId,
+                User.Identity?.Name ?? "System"
+            )
+        );
+
     [HttpDelete("{projectId:int}")]
     public async Task<IActionResult> Delete(int projectId) =>
         ToActionResult(await _service.DeleteProjectAsync(
