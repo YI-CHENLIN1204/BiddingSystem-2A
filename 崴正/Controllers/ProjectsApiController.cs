@@ -53,6 +53,15 @@ public class ProjectsApiController : ControllerBase
             page,
             pageSize));
 
+    [HttpGet("{projectId:int}/2a-summary")]
+    public async Task<IActionResult> TwoASummary(
+        int projectId) =>
+        ToActionResult(
+            await _service.GetTwoASummaryAsync(
+                projectId
+            )
+        );
+
     [HttpGet("{projectId:int}/historical-data")]
     public async Task<IActionResult> HistoricalData(int projectId) =>
         ToActionResult(await _service.GetHistoricalDataAsync(projectId));
