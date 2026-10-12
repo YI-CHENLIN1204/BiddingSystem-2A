@@ -411,8 +411,6 @@ namespace 崴正.Data
 
                 entity.Property(e => e.ActualQuantity).HasColumnName("actual_quantity");
 
-                entity.Property(e => e.UnitPrice).HasColumnName("unit_price");
-
                 entity.Property(e => e.TransactionDate).HasColumnName("transaction_date").HasColumnType("date");
 
                 entity.Property(e => e.IsDeleted).HasColumnName("is_deleted");
