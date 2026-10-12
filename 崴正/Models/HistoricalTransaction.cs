@@ -10,8 +10,6 @@ namespace 崴正.Models
 
         public decimal ActualQuantity { get; set; }
 
-        public decimal UnitPrice { get; set; }
-
         public DateTime TransactionDate { get; set; }
 
         public bool IsDeleted { get; set; }
