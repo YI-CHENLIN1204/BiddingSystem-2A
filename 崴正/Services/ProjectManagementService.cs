@@ -759,6 +759,7 @@ namespace 崴正.Services
                         x.Category1,
                         x.Category2,
                         x.Category3,
+                        x.MajorCategoryOverride,
                         x.Qty,
                         x.UnitPrice,
                         x.Amount,
@@ -774,7 +775,8 @@ namespace 崴正.Services
                     .Where(x =>
                         string.Equals(
                             TwoAScopePolicy
-                                .ResolveMajorCategory(
+                                .ResolveEffectiveMajorCategory(
+                                    x.MajorCategoryOverride,
                                     x.Category1,
                                     x.Category2,
                                     x.Category3
