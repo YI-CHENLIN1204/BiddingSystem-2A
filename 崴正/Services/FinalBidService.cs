@@ -885,6 +885,14 @@ namespace 崴正.Services
                     );
                 }
 
+                if (IsProjectHistoryApproved(
+                        bidItem))
+                {
+                    return ServiceResult.Conflict(
+                        "此建案已納入 2A 歷史基準。若要修改工程大項，請先重新開啟歷史基準審核。"
+                    );
+                }
+
                 string? oldEffective =
                     TwoAScopePolicy
                         .ResolveEffectiveMajorCategory(
