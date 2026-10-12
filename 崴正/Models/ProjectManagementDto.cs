@@ -42,6 +42,22 @@ namespace 崴正.Models
 
         public int StructuralPricedItemCount { get; set; }
 
+        public int StructuralUnpricedItemCount { get; set; }
+
+        public int UnclassifiedItemCount { get; set; }
+
+        public int ManualMajorCategoryCount { get; set; }
+
+        public int StructuralUnmappedItemCount { get; set; }
+
+        public int RebarSourceItemCount { get; set; }
+
+        public int RebarExcludedItemCount { get; set; }
+
+        public int ConcreteSourceItemCount { get; set; }
+
+        public int ConcreteExcludedItemCount { get; set; }
+
         public decimal StructuralAmount { get; set; }
 
         public decimal? StructuralPricePerPing { get; set; }
