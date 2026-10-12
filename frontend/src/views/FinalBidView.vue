@@ -312,7 +312,7 @@ watch([status, majorCategoryFilter, issueCode, category, unit], resetAndLoad)
 <template>
   <div class="final-bid-page mt-4">
     <h2 class="page-title">決標單歷史回寫</h2>
-    <div class="page-description">將已完成決標的標單匯入歷史資料庫，供後續工程用量估算與標單異常分析使用。</div>
+    <div class="page-description">將已完成決標的最終標單匯入審核區；完成工程大項、材料與單位檢查並人工發布後，才會進入 2A 歷史模型。</div>
 
     <div v-if="optionsError || error" class="alert alert-danger">{{ optionsError || error }}</div>
     <div v-if="message" class="alert alert-success alert-dismissible">{{ message }}<button type="button" class="btn-close" @click="message = ''"></button></div>
@@ -323,11 +323,11 @@ watch([status, majorCategoryFilter, issueCode, category, unit], resetAndLoad)
         <div class="form-section-body"><ProjectFields v-model="project" :options="options" include-name name-label="工程專案名稱" name-placeholder="例如：住宅新建工程" /></div>
       </div>
       <div class="form-section">
-        <div class="form-section-header"><div class="form-section-title">2. 上傳最終決標標單</div><div class="form-section-description">支援 .xlsx、.xls、.xlsm、.xlsb、.csv 格式；解析完成後寫入歷史資料並進行材料對應。</div></div>
+        <div class="form-section-header"><div class="form-section-title">2. 上傳最終決標標單</div><div class="form-section-description">支援 .xlsx、.xls、.xlsm、.xlsb、.csv 格式；解析後先建立審核草稿與材料對應，不會立即影響模型。</div></div>
         <div class="form-section-body">
           <input :key="fileInputKey" id="finalBidFile" class="file-input-native" type="file" accept=".xlsx,.xls,.xlsm,.xlsb,.csv" required @change="selectFile" />
           <label for="finalBidFile" class="file-picker"><span class="file-picker-button">選擇 Excel 檔案</span><span class="file-picker-name" :class="{ 'has-file': file }">{{ file?.name ?? '尚未選擇檔案' }}</span></label>
-          <div class="upload-footer"><div class="upload-hint">請確認建案基本資料與標單檔案後再執行回寫。</div><button class="btn-wz-primary" type="submit" :disabled="uploading">{{ uploading ? '系統正在解析並同步，請稍候...' : '解析並回寫歷史資料' }}</button></div>
+          <div class="upload-footer"><div class="upload-hint">請確認建案基本資料與標單檔案後再執行回寫。</div><button class="btn-wz-primary" type="submit" :disabled="uploading">{{ uploading ? '系統正在解析並建立草稿，請稍候...' : '匯入並建立審核草稿' }}</button></div>
         </div>
       </div>
     </form>
