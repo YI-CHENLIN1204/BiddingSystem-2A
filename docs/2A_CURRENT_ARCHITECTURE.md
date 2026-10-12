@@ -22,6 +22,8 @@ Current hierarchy:
 
 Other structural items remain traceable in the final bid and may contribute to the total structural-work amount, but do not enter the current rebar/concrete quantity history baseline.
 
+For finalized historical bids, the original Category1 / Category2 / Category3 values are preserved. If the parser cannot identify the correct engineering major, reviewers can set a separate `major_category_override`. This correction changes 2A eligibility and price grouping without destroying the source hierarchy.
+
 ## 2. Target data and historical data are separate
 
 ### Target Pipeline
@@ -186,6 +188,15 @@ Price readiness is tracked independently for:
 
 The dashboard displays how many valid historical projects exist for each baseline and how many are still missing.
 
+Each historical-project detail page also shows qualification diagnostics for the imported final bid:
+
+- rows with no recognized engineering major
+- rows manually corrected to a major category
+- structural rows with no standard-material mapping
+- structural rows without usable price data
+- rebar source rows that did or did not form quantity-history transactions
+- concrete source rows that did or did not form quantity-history transactions
+
 ## 9. Main APIs
 
 ### Target cases
@@ -206,6 +217,12 @@ The dashboard displays how many valid historical projects exist for each baselin
 
 - `GET /api/detection-category/readiness`
 - `GET /api/major-category-price/readiness`
+
+### Final-bid review
+
+- `GET /api/Estimation/mapping-items` supports effective-major-category filtering, including unclassified rows
+- `POST /api/Estimation/update-major-category` sets or clears the reviewed major-category override
+- major-category changes immediately resynchronize quantity-history eligibility and are recorded in the audit log
 
 ### Historical projects
 
