@@ -29,6 +29,46 @@ namespace 崴正.Models
     }
 
 
+    public class ProjectTwoASummaryDto
+    {
+        public int ProjectId { get; set; }
+
+        public string MajorCategory { get; set; } =
+            "結構體工程";
+
+        public int StructuralItemCount { get; set; }
+
+        public int StructuralPricedItemCount { get; set; }
+
+        public decimal StructuralAmount { get; set; }
+
+        public decimal? StructuralPricePerPing { get; set; }
+
+        public decimal? RebarQuantity { get; set; }
+
+        public string RebarUnit { get; set; } =
+            "kg";
+
+        public int RebarTransactionCount { get; set; }
+
+        public bool ContributesRebarHistory { get; set; }
+
+        public decimal? ConcreteQuantity { get; set; }
+
+        public string ConcreteUnit { get; set; } =
+            "立方公尺";
+
+        public int ConcreteTransactionCount { get; set; }
+
+        public bool ContributesConcreteHistory { get; set; }
+
+        public int OtherStructuralItemCount { get; set; }
+
+        public string Message { get; set; } =
+            string.Empty;
+    }
+
+
     public class ProjectSaveRequest
     {
         public string ProjectName { get; set; } =
