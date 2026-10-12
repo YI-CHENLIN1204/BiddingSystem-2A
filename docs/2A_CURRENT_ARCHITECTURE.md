@@ -67,6 +67,8 @@ Final bid
 
 An imported final bid is therefore not automatically trusted by the model. It must be reviewed and explicitly published first. Reopening review temporarily removes the project from similarity/price baselines and marks its quantity-history transactions inactive.
 
+The review page continuously recalculates publication readiness. Publishing is blocked while any non-ignored row has an unrecognized engineering major, while any structural-work row lacks usable price data, or while a row already mapped as rebar/concrete still has invalid quantity/unit data. This prevents partially reviewed imports from silently entering the model.
+
 Tables:
 
 - `project_master`
@@ -229,7 +231,8 @@ Qualification diagnostics include:
 
 - `GET /api/Estimation/mapping-items` supports effective-major-category filtering, including unclassified rows
 - `POST /api/Estimation/update-major-category` sets or clears the reviewed major-category override
-- major-category changes immediately resynchronize quantity-history eligibility and are recorded in the audit log
+- major-category changes immediately refresh candidate eligibility and are recorded in the audit log
+- the final-bid review page shows live publish blockers and can publish the project directly once the review is ready
 
 ### Historical projects
 
