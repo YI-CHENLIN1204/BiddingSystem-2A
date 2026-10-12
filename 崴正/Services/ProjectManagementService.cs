@@ -311,6 +311,16 @@ namespace 崴正.Services
                 );
             }
 
+            if (string.Equals(
+                    project.HistoryStatus,
+                    "Approved",
+                    StringComparison.OrdinalIgnoreCase))
+            {
+                return ServiceResult.Conflict(
+                    "此建案已納入 2A 歷史基準。若要修改建案條件，請先重新開啟歷史基準審核。"
+                );
+            }
+
             string projectName =
                 request.ProjectName.Trim();
 
