@@ -704,7 +704,7 @@ namespace 崴正.Services
                 return ServiceResult.Ok(new
                 {
                     message =
-                        "決標標單回寫成功",
+                        "決標標單已匯入，請完成工程大項與材料審查後再發布為 2A 歷史基準。",
 
                     projectId =
                         project.ProjectId,
@@ -766,8 +766,6 @@ namespace 崴正.Services
                             structuralAmount,
                             2
                         ),
-                    rebarHistoryInsertCount,
-                    concreteHistoryInsertCount,
 
                     invalidQuantityCount,
 
