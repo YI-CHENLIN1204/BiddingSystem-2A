@@ -9,7 +9,7 @@ const sectionTitle = computed(() => route.name === 'audit-logs' ? '系統' : '�
 
 const navigation = [
   { to: '/analysis-cases', label: '待偵錯案件', section: '工程類' },
-  { to: '/', label: '異常偵測', section: '工程類' },
+  { to: '/', label: '系統總覽', section: '工程類' },
   { to: '/settings', label: '參數管理', section: '工程類' },
   { to: '/estimation', label: '結構體工程估算', section: '工程類' },
   { to: '/final-bid', label: '決標回寫', section: '工程類' },
