@@ -763,6 +763,7 @@ namespace 崴正.Services
                         x.Qty,
                         x.UnitPrice,
                         x.Amount,
+                        x.MaterialId,
                         MaterialName =
                             x.Material != null
                                 ? x.Material.MaterialName
@@ -786,6 +787,42 @@ namespace 崴正.Services
                                 .OrdinalIgnoreCase
                         ))
                     .ToList();
+
+            int unclassifiedItemCount =
+                sourceItems.Count(x =>
+                    TwoAScopePolicy
+                        .ResolveEffectiveMajorCategory(
+                            x.MajorCategoryOverride,
+                            x.Category1,
+                            x.Category2,
+                            x.Category3
+                        ) == null);
+
+            int manualMajorCategoryCount =
+                sourceItems.Count(x =>
+                    !string.IsNullOrWhiteSpace(
+                        x.MajorCategoryOverride));
+
+            int structuralUnmappedItemCount =
+                structuralItems.Count(x =>
+                    !x.MaterialId.HasValue);
+
+            int rebarSourceItemCount =
+                structuralItems.Count(x =>
+                    string.Equals(
+                        x.MaterialName,
+                        "鋼筋",
+                        StringComparison.OrdinalIgnoreCase
+                    ));
+
+            int concreteSourceItemCount =
+                structuralItems.Count(x =>
+                    string.Equals(
+                        x.MaterialName,
+                        "混凝土",
+                        StringComparison.OrdinalIgnoreCase
+                    ));
+
 
             decimal structuralAmount =
                 0m;
@@ -919,6 +956,39 @@ namespace 崴正.Services
 
                     StructuralPricedItemCount =
                         structuralPricedItemCount,
+
+                    StructuralUnpricedItemCount =
+                        structuralItems.Count -
+                        structuralPricedItemCount,
+
+                    UnclassifiedItemCount =
+                        unclassifiedItemCount,
+
+                    ManualMajorCategoryCount =
+                        manualMajorCategoryCount,
+
+                    StructuralUnmappedItemCount =
+                        structuralUnmappedItemCount,
+
+                    RebarSourceItemCount =
+                        rebarSourceItemCount,
+
+                    RebarExcludedItemCount =
+                        Math.Max(
+                            0,
+                            rebarSourceItemCount -
+                            (rebar?.TransactionCount ?? 0)
+                        ),
+
+                    ConcreteSourceItemCount =
+                        concreteSourceItemCount,
+
+                    ConcreteExcludedItemCount =
+                        Math.Max(
+                            0,
+                            concreteSourceItemCount -
+                            (concrete?.TransactionCount ?? 0)
+                        ),
 
                     StructuralAmount =
                         Math.Round(
