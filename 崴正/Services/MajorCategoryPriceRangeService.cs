@@ -29,6 +29,139 @@ namespace 崴正.Services
         }
 
 
+        public async Task<ServiceResult>
+            GetReadinessAsync()
+        {
+            var settings =
+                await _settingsService
+                    .GetCurrentAsync();
+
+            var projects =
+                await _context.ProjectMasters
+                    .AsNoTracking()
+                    .Where(x =>
+                        !x.IsDeleted &&
+                        !string.IsNullOrWhiteSpace(
+                            x.ProjectType) &&
+                        !string.IsNullOrWhiteSpace(
+                            x.StructureType) &&
+                        !string.IsNullOrWhiteSpace(
+                            x.City) &&
+                        x.TotalFloorArea.HasValue &&
+                        x.TotalFloorArea.Value > 0 &&
+                        x.SiteArea.HasValue &&
+                        x.SiteArea.Value > 0 &&
+                        x.FloorCount.HasValue &&
+                        x.FloorCount.Value > 0 &&
+                        x.BasementFloorCount.HasValue &&
+                        x.BasementFloorCount.Value >= 0 &&
+                        x.StartDate.HasValue)
+                    .Select(x => new
+                    {
+                        x.ProjectId,
+                        x.ProjectName
+                    })
+                    .ToListAsync();
+
+            var projectIds =
+                projects
+                    .Select(x => x.ProjectId)
+                    .ToList();
+
+            var rows =
+                await _context.FinalBidItems
+                    .AsNoTracking()
+                    .Where(x =>
+                        projectIds.Contains(
+                            x.ProjectMasterId) &&
+                        !x.IsIgnored &&
+                        (
+                            x.Category1 ==
+                                "結構體工程" ||
+                            x.Category2 ==
+                                "結構體工程" ||
+                            x.Category3 ==
+                                "結構體工程"
+                        ))
+                    .Select(x => new
+                    {
+                        x.ProjectMasterId,
+                        x.Amount,
+                        x.Qty,
+                        x.UnitPrice
+                    })
+                    .ToListAsync();
+
+            var amountByProject =
+                rows
+                    .GroupBy(x =>
+                        x.ProjectMasterId)
+                    .Select(group => new
+                    {
+                        ProjectId =
+                            group.Key,
+
+                        Amount =
+                            group.Sum(x =>
+                                ResolveLineAmount(
+                                    x.Amount,
+                                    x.Qty,
+                                    x.UnitPrice
+                                ))
+                    })
+                    .Where(x =>
+                        x.Amount > 0)
+                    .ToList();
+
+            int availableProjectCount =
+                amountByProject.Count;
+
+            int minimumSampleCount =
+                settings.MinimumSampleCount;
+
+            int missingProjectCount =
+                Math.Max(
+                    0,
+                    minimumSampleCount -
+                    availableProjectCount
+                );
+
+            bool ready =
+                availableProjectCount >=
+                minimumSampleCount;
+
+            return ServiceResult.Ok(
+                new
+                {
+                    majorCategory =
+                        "結構體工程",
+
+                    eligibleMetadataProjectCount =
+                        projects.Count,
+
+                    availableProjectCount,
+
+                    minimumSampleCount,
+
+                    missingProjectCount,
+
+                    status =
+                        ready
+                            ? "ReadyForEstimation"
+                            : availableProjectCount == 0
+                                ? "HistoricalDataRequired"
+                                : "InsufficientHistoricalProjects",
+
+                    message =
+                        ready
+                            ? $"已有 {availableProjectCount} 個具完整條件與結構體價格的歷史建案，可進行大項估算。"
+                            : availableProjectCount == 0
+                                ? $"尚無可用的結構體工程價格歷史建案，至少需要 {minimumSampleCount} 案。"
+                                : $"目前只有 {availableProjectCount} 個結構體工程價格歷史建案，至少需要 {minimumSampleCount} 案，尚差 {missingProjectCount} 案。"
+                });
+        }
+
+
         public async Task<ServiceResult> EstimateAsync(
             MajorCategoryPriceRangeRequest request)
         {
