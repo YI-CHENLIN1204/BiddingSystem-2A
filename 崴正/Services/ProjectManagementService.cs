@@ -149,6 +149,9 @@ namespace 崴正.Services
                         TotalFloorArea =
                             project.TotalFloorArea,
 
+                        SiteArea =
+                            project.SiteArea,
+
                         FloorCount =
                             project.FloorCount,
 
@@ -311,6 +314,7 @@ namespace 崴正.Services
                 project.StructureType,
                 project.City,
                 project.TotalFloorArea,
+                project.SiteArea,
                 project.FloorCount,
                 project.BasementFloorCount,
                 project.StartDate,
@@ -331,6 +335,9 @@ namespace 崴正.Services
 
             project.TotalFloorArea =
                 request.TotalFloorArea;
+
+            project.SiteArea =
+                request.SiteArea;
 
             project.FloorCount =
                 request.FloorCount;
@@ -374,6 +381,7 @@ namespace 崴正.Services
                         project.StructureType,
                         project.City,
                         project.TotalFloorArea,
+                        project.SiteArea,
                         project.FloorCount,
                         project.BasementFloorCount,
                         project.StartDate,
@@ -1014,6 +1022,14 @@ namespace 崴正.Services
             {
                 return ServiceResult.Validation(
                     "總樓地板面積必須大於 0"
+                );
+            }
+
+            if (!request.SiteArea.HasValue ||
+                request.SiteArea.Value <= 0)
+            {
+                return ServiceResult.Validation(
+                    "基地面積必須大於 0"
                 );
             }
 
