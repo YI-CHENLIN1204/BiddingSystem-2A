@@ -50,9 +50,13 @@ interface ProjectTwoASummary {
   manualMajorCategoryCount: number
   structuralUnmappedItemCount: number
   rebarSourceItemCount: number
+  rebarCandidateItemCount: number
   rebarExcludedItemCount: number
   concreteSourceItemCount: number
+  concreteCandidateItemCount: number
   concreteExcludedItemCount: number
+  publishReady: boolean
+  publishBlockingIssues: string[]
   structuralAmount: number
   structuralPricePerPing?: number | null
   rebarQuantity?: number | null
@@ -435,7 +439,7 @@ onMounted(async () => {
             v-if="project.hasFinalBid && project.historyStatus !== 'Approved'"
             class="btn btn-sm btn-success"
             type="button"
-            :disabled="publishingHistory"
+            :disabled="publishingHistory || (twoASummary != null && !twoASummary.publishReady)"
             @click="publishHistory"
           >
             {{ publishingHistory ? '處理中...' : '確認並納入 2A 歷史基準' }}
@@ -487,13 +491,23 @@ onMounted(async () => {
 
         <div
           class="baseline-status"
-          :class="twoASummary.historyStatus === 'Approved' ? 'approved' : 'draft'"
+          :class="twoASummary.historyStatus === 'Approved' ? 'approved' : twoASummary.publishReady ? 'ready' : 'draft'"
         >
-          <strong>{{ twoASummary.historyStatus === 'Approved' ? '已發布歷史基準' : '目前為審核中' }}</strong>
-          <span>
+          <strong>
             {{ twoASummary.historyStatus === 'Approved'
-              ? '此建案會參與相似建案篩選、結構體價格估算與鋼筋／混凝土數量基準。'
-              : '目前顯示的是候選資料；在人工確認發布前，不會影響任何 2A 合理區間或異常判定。' }}
+              ? '已發布歷史基準'
+              : twoASummary.publishReady
+                ? '審核資料已符合發布條件'
+                : '目前為審核中' }}
+          </strong>
+          <span v-if="twoASummary.historyStatus === 'Approved'">
+            此建案會參與相似建案篩選、結構體價格估算與鋼筋／混凝土數量基準。
+          </span>
+          <span v-else-if="twoASummary.publishReady">
+            工程大項、結構體價格與鋼筋／混凝土候選資料目前沒有阻擋問題，可人工確認後發布。
+          </span>
+          <span v-else>
+            發布前還需要處理：{{ twoASummary.publishBlockingIssues.join('、') }}。
           </span>
         </div>
 
@@ -549,13 +563,13 @@ onMounted(async () => {
           </div>
           <div>
             <span>鋼筋數量資格</span>
-            <strong>{{ twoASummary.rebarSourceItemCount - twoASummary.rebarExcludedItemCount }} / {{ twoASummary.rebarSourceItemCount }}</strong>
-            <small>{{ twoASummary.rebarExcludedItemCount }} 筆未形成有效歷史交易。</small>
+            <strong>{{ twoASummary.rebarCandidateItemCount }} / {{ twoASummary.rebarSourceItemCount }}</strong>
+            <small>{{ twoASummary.rebarExcludedItemCount }} 筆因數量／單位等條件未通過候選資格。</small>
           </div>
           <div>
             <span>混凝土數量資格</span>
-            <strong>{{ twoASummary.concreteSourceItemCount - twoASummary.concreteExcludedItemCount }} / {{ twoASummary.concreteSourceItemCount }}</strong>
-            <small>{{ twoASummary.concreteExcludedItemCount }} 筆未形成有效歷史交易。</small>
+            <strong>{{ twoASummary.concreteCandidateItemCount }} / {{ twoASummary.concreteSourceItemCount }}</strong>
+            <small>{{ twoASummary.concreteExcludedItemCount }} 筆因數量／單位等條件未通過候選資格。</small>
           </div>
         </div>
 
@@ -696,5 +710,5 @@ onMounted(async () => {
 .item-menu .dropdown-menu { position: absolute; top: 100%; right: 0; left: auto; z-index: 20; }
 .modal-backdrop-custom { position: fixed; inset: 0; z-index: 1080; display: grid; place-items: center; padding: 1.5rem; background: rgba(0,0,0,.5); }
 .modal-backdrop-custom .modal-dialog { width: min(500px, 100%); margin: auto; }
-.basic-stack{display:grid;gap:16px}.baseline-card{overflow:hidden}.baseline-status{display:flex;gap:10px;align-items:center;padding:11px 18px;border-bottom:1px solid #edf0f4;font-size:12px}.baseline-status span{color:#5f6b7a}.baseline-status.approved{background:#eefaf4;color:#176e50}.baseline-status.draft{background:#fff8e3;color:#8a6511}.baseline-header{display:flex;align-items:flex-start;justify-content:space-between;gap:16px;padding:16px 18px;background:#f8f9fa;border-bottom:1px solid #e3e5e8}.baseline-header h5{margin:0 0 4px;font-size:15px;font-weight:800;color:#321fdb}.baseline-grid{display:grid;grid-template-columns:repeat(4,1fr)}.baseline-cell{padding:18px;border-right:1px solid #edf0f4}.baseline-cell:last-child{border-right:0}.baseline-cell>span{display:block;color:#6c757d;font-size:12px}.baseline-cell>strong{display:block;margin-top:7px;font-size:20px;font-variant-numeric:tabular-nums}.baseline-cell>small{display:block;margin-top:6px;font-size:11px}.qualification-grid{display:grid;grid-template-columns:repeat(3,1fr);border-top:1px solid #edf0f4}.qualification-grid>div{padding:14px 18px;border-right:1px solid #edf0f4;border-bottom:1px solid #edf0f4}.qualification-grid>div:nth-child(3n){border-right:0}.qualification-grid>div:nth-last-child(-n+3){border-bottom:0}.qualification-grid span,.qualification-grid small{display:block}.qualification-grid span{color:#6c757d;font-size:11px}.qualification-grid strong{display:block;margin:5px 0;font-size:18px}.qualification-grid small{color:#6c757d;font-size:10px;line-height:1.4}.baseline-foot{display:flex;justify-content:space-between;gap:18px;padding:11px 18px;background:#fbfcfd;border-top:1px solid #edf0f4;color:#6c757d;font-size:11px}@media(max-width:1000px){.qualification-grid{grid-template-columns:repeat(2,1fr)}.qualification-grid>div{border-right:1px solid #edf0f4!important;border-bottom:1px solid #edf0f4!important}.qualification-grid>div:nth-child(2n){border-right:0!important}.qualification-grid>div:nth-last-child(-n+2){border-bottom:0!important}.baseline-grid{grid-template-columns:repeat(2,1fr)}.baseline-cell:nth-child(2){border-right:0}.baseline-cell:nth-child(-n+2){border-bottom:1px solid #edf0f4}.baseline-foot{flex-direction:column}}@media(max-width:600px){.qualification-grid{grid-template-columns:1fr}.qualification-grid>div{border-right:0!important;border-bottom:1px solid #edf0f4!important}.qualification-grid>div:last-child{border-bottom:0!important}.baseline-grid{grid-template-columns:1fr}.baseline-cell{border-right:0;border-bottom:1px solid #edf0f4}.baseline-cell:last-child{border-bottom:0}}
+.basic-stack{display:grid;gap:16px}.baseline-card{overflow:hidden}.baseline-status{display:flex;gap:10px;align-items:center;padding:11px 18px;border-bottom:1px solid #edf0f4;font-size:12px}.baseline-status span{color:#5f6b7a}.baseline-status.approved,.baseline-status.ready{background:#eefaf4;color:#176e50}.baseline-status.draft{background:#fff8e3;color:#8a6511}.baseline-header{display:flex;align-items:flex-start;justify-content:space-between;gap:16px;padding:16px 18px;background:#f8f9fa;border-bottom:1px solid #e3e5e8}.baseline-header h5{margin:0 0 4px;font-size:15px;font-weight:800;color:#321fdb}.baseline-grid{display:grid;grid-template-columns:repeat(4,1fr)}.baseline-cell{padding:18px;border-right:1px solid #edf0f4}.baseline-cell:last-child{border-right:0}.baseline-cell>span{display:block;color:#6c757d;font-size:12px}.baseline-cell>strong{display:block;margin-top:7px;font-size:20px;font-variant-numeric:tabular-nums}.baseline-cell>small{display:block;margin-top:6px;font-size:11px}.qualification-grid{display:grid;grid-template-columns:repeat(3,1fr);border-top:1px solid #edf0f4}.qualification-grid>div{padding:14px 18px;border-right:1px solid #edf0f4;border-bottom:1px solid #edf0f4}.qualification-grid>div:nth-child(3n){border-right:0}.qualification-grid>div:nth-last-child(-n+3){border-bottom:0}.qualification-grid span,.qualification-grid small{display:block}.qualification-grid span{color:#6c757d;font-size:11px}.qualification-grid strong{display:block;margin:5px 0;font-size:18px}.qualification-grid small{color:#6c757d;font-size:10px;line-height:1.4}.baseline-foot{display:flex;justify-content:space-between;gap:18px;padding:11px 18px;background:#fbfcfd;border-top:1px solid #edf0f4;color:#6c757d;font-size:11px}@media(max-width:1000px){.qualification-grid{grid-template-columns:repeat(2,1fr)}.qualification-grid>div{border-right:1px solid #edf0f4!important;border-bottom:1px solid #edf0f4!important}.qualification-grid>div:nth-child(2n){border-right:0!important}.qualification-grid>div:nth-last-child(-n+2){border-bottom:0!important}.baseline-grid{grid-template-columns:repeat(2,1fr)}.baseline-cell:nth-child(2){border-right:0}.baseline-cell:nth-child(-n+2){border-bottom:1px solid #edf0f4}.baseline-foot{flex-direction:column}}@media(max-width:600px){.qualification-grid{grid-template-columns:1fr}.qualification-grid>div{border-right:0!important;border-bottom:1px solid #edf0f4!important}.qualification-grid>div:last-child{border-bottom:0!important}.baseline-grid{grid-template-columns:1fr}.baseline-cell{border-right:0;border-bottom:1px solid #edf0f4}.baseline-cell:last-child{border-bottom:0}}
 </style>
