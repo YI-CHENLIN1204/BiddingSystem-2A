@@ -193,13 +193,20 @@ namespace 崴正.Services
             var parser =
                 new TenderExcelParser();
 
-            var rows =
-                parser.Parse(
-                    new MemoryStream(
-                        request.ExcelBytes
-                    ),
-                    request.FileName
-                );
+            List<TenderImportRowDto> rows;
+            try
+            {
+                rows = parser.Parse(
+                    new MemoryStream(request.ExcelBytes),
+                    request.FileName,
+                    request.IncludedSheetNames);
+            }
+            catch (Exception ex) when (ex is InvalidDataException ||
+                                      ex is ArgumentException ||
+                                      ex is NotSupportedException)
+            {
+                return ServiceResult.Validation("匯入檢查失敗：" + ex.Message);
+            }
 
 
 
