@@ -699,11 +699,7 @@ namespace 崴正.Services
 
                         totalQuantity =
                             g.Sum(x =>
-                                x.ActualQuantity),
-
-                        averageUnitPrice =
-                            g.Average(x =>
-                                x.UnitPrice)
+                                x.ActualQuantity)
                     }
                 )
                 .OrderBy(x =>
