@@ -477,6 +477,101 @@ namespace 崴正.Services
                     );
                 }
 
+                var reviewItems =
+                    items
+                        .Where(x =>
+                            !x.IsIgnored)
+                        .ToList();
+
+                int unclassifiedItemCount =
+                    reviewItems.Count(x =>
+                        TwoAScopePolicy
+                            .ResolveEffectiveMajorCategory(
+                                x.MajorCategoryOverride,
+                                x.Category1,
+                                x.Category2,
+                                x.Category3
+                            ) == null);
+
+                var structuralReviewItems =
+                    reviewItems
+                        .Where(x =>
+                            string.Equals(
+                                TwoAScopePolicy
+                                    .ResolveEffectiveMajorCategory(
+                                        x.MajorCategoryOverride,
+                                        x.Category1,
+                                        x.Category2,
+                                        x.Category3
+                                    ),
+                                "結構體工程",
+                                StringComparison.OrdinalIgnoreCase
+                            ))
+                        .ToList();
+
+                int structuralUnpricedItemCount =
+                    structuralReviewItems.Count(x =>
+                        !(
+                            x.Amount.HasValue &&
+                            x.Amount.Value > 0
+                        ) &&
+                        !(
+                            x.Qty.HasValue &&
+                            x.Qty.Value > 0 &&
+                            x.UnitPrice.HasValue &&
+                            x.UnitPrice.Value > 0
+                        ));
+
+                int invalidQuantityBaselineCount =
+                    structuralReviewItems.Count(x =>
+                        TwoAScopePolicy
+                            .IsQuantityHistoryMaterial(
+                                x.Material?.MaterialName
+                            ) &&
+                        !_finalBidService
+                            .CanBecomeHistoricalTransaction(
+                                x
+                            ));
+
+                if (unclassifiedItemCount > 0 ||
+                    structuralUnpricedItemCount > 0 ||
+                    invalidQuantityBaselineCount > 0)
+                {
+                    var blockers =
+                        new List<string>();
+
+                    if (unclassifiedItemCount > 0)
+                    {
+                        blockers.Add(
+                            $"未辨識工程大項 {unclassifiedItemCount} 筆"
+                        );
+                    }
+
+                    if (structuralUnpricedItemCount > 0)
+                    {
+                        blockers.Add(
+                            $"結構體無有效價格 {structuralUnpricedItemCount} 筆"
+                        );
+                    }
+
+                    if (invalidQuantityBaselineCount > 0)
+                    {
+                        blockers.Add(
+                            $"鋼筋／混凝土數量或單位不符合 {invalidQuantityBaselineCount} 筆"
+                        );
+                    }
+
+                    return ServiceResult.Validation(
+                        "尚不能發布歷史基準：" +
+                        string.Join(
+                            "、",
+                            blockers
+                        ) +
+                        "。請先修正資料，或明確忽略不應參與模型的工項。"
+                    );
+                }
+
+
                 string approvedBy =
                     string.IsNullOrWhiteSpace(
                         actionUser)
