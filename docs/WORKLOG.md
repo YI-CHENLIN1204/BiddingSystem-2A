@@ -130,3 +130,16 @@ Next focus:
 6. verify 2A project summary
 7. accumulate enough real history for P15 / P50 / P85
 8. create real target case and compare V1 / V2 analysis
+
+
+## 2026-10-12 — Next-chat operation handoff added
+
+Added:
+
+- `docs/NEXT_CHAT_HANDOFF.md`
+- explicit local-operation readiness gate
+- exact pull / Docker rebuild commands
+- first real finalized-bid validation sequence
+- explicit instruction to tell the user when the local system is ready for actual operation
+
+The next phase is hands-on validation with real finalized bid data, not architecture redesign.
