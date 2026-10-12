@@ -63,6 +63,16 @@ namespace 崴正.Services
                     );
                 }
 
+                if (string.Equals(
+                        bidItem.ProjectMaster.HistoryStatus,
+                        "Approved",
+                        StringComparison.OrdinalIgnoreCase))
+                {
+                    return ServiceResult.Conflict(
+                        "此建案已納入 2A 歷史基準。若要修改材料對應，請先重新開啟歷史基準審核。"
+                    );
+                }
+
                 var material =
                     _context.MaterialMasters
                         .FirstOrDefault(x =>
