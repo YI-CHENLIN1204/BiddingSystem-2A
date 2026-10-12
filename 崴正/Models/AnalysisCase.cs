@@ -25,6 +25,9 @@ namespace 崴正.Models
         [Column("total_floor_area")]
         public decimal TotalFloorArea { get; set; }
 
+        [Column("site_area")]
+        public decimal SiteArea { get; set; }
+
         [Column("floor_count")]
         public int FloorCount { get; set; }
 
