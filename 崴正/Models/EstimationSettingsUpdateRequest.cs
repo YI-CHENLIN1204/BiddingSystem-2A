@@ -22,6 +22,8 @@ namespace 崴正.Models
 
         public decimal AreaWeight { get; set; }
 
+        public decimal SiteAreaWeight { get; set; }
+
         public decimal FloorWeight { get; set; }
 
         public decimal YearWeight { get; set; }
@@ -29,6 +31,8 @@ namespace 崴正.Models
         public decimal CityWeight { get; set; }
 
         public decimal AreaDifferenceCutoffRatio { get; set; }
+
+        public decimal SiteAreaDifferenceCutoffRatio { get; set; }
 
         public decimal GroundFloorPenaltyRatio { get; set; }
 
