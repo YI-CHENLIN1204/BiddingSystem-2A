@@ -6,7 +6,9 @@ import { api, apiForm, queryString } from '../services/api'
 import type { ProjectForm } from '../types'
 
 interface BidItem {
-  finalBidItemId: number; itemName: string; spec?: string | null; unit?: string | null
+  finalBidItemId: number; category1?: string | null; category2?: string | null; category3?: string | null
+  majorCategoryOverride?: string | null; effectiveMajorCategory?: string | null
+  itemName: string; spec?: string | null; unit?: string | null
   qty?: number | null; unitPrice?: number | null; materialId?: number | null
   materialName?: string | null; materialCategory?: string | null; mappingStatus: string
   isIgnored: boolean; invalidQuantity?: boolean; invalidUnitPrice?: boolean; unitMismatch?: boolean
@@ -16,6 +18,7 @@ interface MappingSummary {
   totalCount: number; autoCount: number; manualCount: number; pendingCount: number
   invalidQuantityCount: number; invalidUnitPriceCount: number; unitMismatchCount: number; ignoredCount: number
 }
+interface PolicyResponse { knownMajorCategories: string[] }
 interface FilterOptions { categories: string[]; units: string[] }
 interface MasterOption { categoryId?: number; categoryName?: string; unitId?: number; unitName?: string; isActive: boolean }
 
@@ -37,7 +40,9 @@ const items = ref<BidItem[]>([])
 const materialOptions = ref<MaterialOption[]>([])
 const filters = ref<FilterOptions>({ categories: [], units: [] })
 const masterOptions = ref<{ categories: MasterOption[]; units: MasterOption[] }>({ categories: [], units: [] })
+const majorCategories = ref<string[]>([])
 const status = ref('Pending')
+const majorCategoryFilter = ref('All')
 const issueCode = ref('All')
 const category = ref('All')
 const unit = ref('All')
@@ -101,14 +106,16 @@ async function upload() {
 
 async function loadMappingResources() {
   if (!projectId.value) return
-  const [materials, filterData, masters] = await Promise.all([
+  const [materials, filterData, masters, policy] = await Promise.all([
     api<MaterialOption[]>('/Estimation/material-options'),
     api<FilterOptions>(`/Estimation/mapping-filter-options${queryString({ projectId: projectId.value })}`),
     api<{ categories: MasterOption[]; units: MasterOption[] }>('/standard-material/filter-options'),
+    api<PolicyResponse>('/analysis-cases/policy'),
   ])
   materialOptions.value = materials
   filters.value = filterData
   masterOptions.value = masters
+  majorCategories.value = policy.knownMajorCategories
 }
 
 async function loadSummary() {
@@ -124,7 +131,7 @@ async function loadItems(targetPage = page.value) {
   try {
     const result = await api<{ totalCount: number; items: BidItem[] }>(`/Estimation/mapping-items${queryString({
       projectId: projectId.value, status: status.value, issueCode: issueCode.value,
-      category: category.value, unit: unit.value, search: search.value.trim(), page: page.value, pageSize,
+      majorCategory: majorCategoryFilter.value, category: category.value, unit: unit.value, search: search.value.trim(), page: page.value, pageSize,
     })}`)
     totalCount.value = result.totalCount
     items.value = result.items
@@ -151,6 +158,23 @@ async function refreshMappings(text?: string) {
 function changeCategory(item: BidItem) {
   if (!materialsFor(item).some(x => x.materialId === selectedMaterial.value[item.finalBidItemId])) {
     selectedMaterial.value[item.finalBidItemId] = null
+  }
+}
+
+async function updateMajorCategory(item: BidItem, event: Event) {
+  const value = (event.target as HTMLSelectElement).value
+  busyId.value = item.finalBidItemId
+  error.value = ''
+  try {
+    const form = new FormData()
+    form.append('finalBidItemId', String(item.finalBidItemId))
+    form.append('majorCategory', value)
+    await apiForm('/Estimation/update-major-category', form)
+    await refreshMappings(value ? '工程大項已人工確認。' : '已恢復使用標單原始分類。')
+  } catch (caught) {
+    error.value = caught instanceof Error ? caught.message : '工程大項更新失敗'
+  } finally {
+    busyId.value = null
   }
 }
 
@@ -237,7 +261,7 @@ async function createMaterial() {
 
 function resetAndLoad() { page.value = 1; loadItems(1) }
 watch(search, () => { window.clearTimeout(searchTimer); searchTimer = window.setTimeout(resetAndLoad, 300) })
-watch([status, issueCode, category, unit], resetAndLoad)
+watch([status, majorCategoryFilter, issueCode, category, unit], resetAndLoad)
 </script>
 
 <template>
@@ -286,7 +310,7 @@ watch([status, issueCode, category, unit], resetAndLoad)
       </div>
 
       <div class="mt-4">
-        <div class="d-flex justify-content-between align-items-center mb-3"><div><h4 class="mb-1">標單材料對應</h4><div class="text-muted small">可查詢尚未對應、自動對應及人工對應的所有工項</div></div><div class="text-muted small">共 {{ totalCount }} 筆</div></div>
+        <div class="d-flex justify-content-between align-items-center mb-3"><div><h4 class="mb-1">標單審查與材料對應</h4><div class="text-muted small">先確認工程大項，再檢查鋼筋／混凝土材料與單位；原始分類永遠保留。</div></div><div class="d-flex align-items-center gap-3"><RouterLink v-if="projectId" :to="`/projects/${projectId}`" class="btn btn-sm btn-outline-primary">查看 2A 歷史基準摘要</RouterLink><div class="text-muted small">共 {{ totalCount }} 筆</div></div></div>
         <div class="card mb-3"><div class="card-body"><div class="mb-3"><input v-model="search" class="form-control" placeholder="搜尋工項名稱、規格、標準材料或建案名稱" /></div><div class="row g-2">
           <div class="col-md-3"><label class="form-label small fw-bold">對應狀態</label><select v-model="status" class="form-select"><option value="Pending">未對應</option><option value="Auto">自動對應</option><option value="Manual">手動對應</option><option value="Ignored">已忽略</option><option value="All">全部</option></select></div>
           <div class="col-md-3"><label class="form-label small fw-bold">待處理原因</label><select v-model="issueCode" class="form-select"><option value="All">全部</option><option value="INVALID_QUANTITY">數量無效</option><option value="INVALID_UNIT_PRICE">單價無效</option><option value="UNIT_MISMATCH">單位不符</option></select></div>
@@ -297,8 +321,10 @@ watch([status, issueCode, category, unit], resetAndLoad)
         <div v-if="loadingMappings" class="card p-4 text-muted">載入材料對應資料中...</div>
         <div v-else-if="!items.length" class="card p-4 text-muted">沒有符合條件的工項</div>
         <article v-for="item in items" v-else :key="item.finalBidItemId" class="card mb-3 mapping-card"><div class="card-body">
-          <div class="d-flex justify-content-between align-items-start gap-3 mb-2"><h5 class="mb-1">{{ item.itemName }}</h5><div class="d-flex gap-1 flex-wrap justify-content-end"><span class="badge" :class="badge(item).css">{{ badge(item).label }}</span><span v-if="item.invalidQuantity" class="badge bg-danger">數量無效</span><span v-if="item.invalidUnitPrice" class="badge bg-danger">單價無效</span><span v-if="item.unitMismatch" class="badge bg-danger">單位不符</span></div></div>
-          <div class="text-muted small mb-3">單位：{{ item.unit || '無' }} ｜ 數量：{{ formatNumber(item.qty, 4) }} ｜ 單價：{{ formatNumber(item.unitPrice) }}</div>
+          <div class="d-flex justify-content-between align-items-start gap-3 mb-2"><h5 class="mb-1">{{ item.itemName }}</h5><div class="d-flex gap-1 flex-wrap justify-content-end"><span v-if="item.effectiveMajorCategory" class="badge bg-info text-dark">{{ item.effectiveMajorCategory }}</span><span v-if="item.majorCategoryOverride" class="badge bg-primary">人工大項</span><span class="badge" :class="badge(item).css">{{ badge(item).label }}</span><span v-if="item.invalidQuantity" class="badge bg-danger">數量無效</span><span v-if="item.invalidUnitPrice" class="badge bg-danger">單價無效</span><span v-if="item.unitMismatch" class="badge bg-danger">單位不符</span></div></div>
+          <div class="text-muted small mb-2">單位：{{ item.unit || '無' }} ｜ 數量：{{ formatNumber(item.qty, 4) }} ｜ 單價：{{ formatNumber(item.unitPrice) }}</div>
+          <div class="text-muted small mb-3">原始分類：{{ [item.category1, item.category2, item.category3].filter(Boolean).join(' → ') || '未辨識' }}</div>
+          <div v-if="!item.isIgnored" class="row g-2 mb-3"><div class="col-md-6"><label class="form-label small fw-bold">工程大項</label><select class="form-select" :value="item.majorCategoryOverride ?? ''" :disabled="busyId === item.finalBidItemId" @change="updateMajorCategory(item, $event)"><option value="">使用原始分類（{{ item.effectiveMajorCategory || '未辨識' }}）</option><option v-for="entry in majorCategories" :key="entry" :value="entry">{{ entry }}</option></select></div><div class="col-md-6 d-flex align-items-end"><div class="small text-muted">人工指定只影響 2A 判定，原始 Category1 / 2 / 3 不會被覆蓋。</div></div></div>
           <div class="d-flex justify-content-between align-items-center gap-2 mb-2 flex-wrap"><div class="small"><strong>目前標準材料：</strong><span v-if="item.materialName">{{ item.materialName }}</span><span v-else class="text-warning">尚未對應</span></div><div class="d-flex gap-2"><button class="btn btn-sm btn-outline-secondary" type="button" @click="openEdit(item)">修正標單資料</button><button v-if="!item.isIgnored" class="btn btn-sm btn-outline-danger" type="button" @click="ignore(item)">忽略</button></div></div>
           <div v-if="!item.isIgnored" class="row g-2"><div class="col-md-4"><label class="form-label small fw-bold">材料分類</label><select v-model="selectedCategory[item.finalBidItemId]" class="form-select" @change="changeCategory(item)"><option value="">請選擇材料分類</option><option v-for="entry in filters.categories" :key="entry" :value="entry">{{ entry }}</option></select></div><div class="col-md-5"><label class="form-label small fw-bold">標準材料</label><select v-model="selectedMaterial[item.finalBidItemId]" class="form-select" :disabled="!selectedCategory[item.finalBidItemId]"><option :value="null">請選擇標準材料</option><option v-for="material in materialsFor(item)" :key="material.materialId" :value="material.materialId">{{ material.materialName }} ({{ material.unitName }})</option><option value="__NEW__">＋ 新增標準材料</option></select></div><div class="col-md-3"><label class="form-label small fw-bold">&nbsp;</label><button class="btn btn-outline-primary w-100" type="button" :disabled="busyId === item.finalBidItemId" @click="updateMapping(item)">{{ selectedMaterial[item.finalBidItemId] === '__NEW__' ? '新增標準材料' : item.mappingStatus === 'Pending' ? '人工對應' : '修改對應' }}</button></div></div>
         </div></article>
