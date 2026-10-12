@@ -83,6 +83,12 @@ namespace 崴正.Data
                 entity.Property(e => e.SourceFileHash).HasColumnName("source_file_hash");
 
                 entity.Property(e => e.ImportedAt).HasColumnName("imported_at").HasColumnType("timestamp with time zone");
+
+                entity.Property(e => e.HistoryStatus).HasColumnName("history_status");
+
+                entity.Property(e => e.HistoryApprovedAt).HasColumnName("history_approved_at").HasColumnType("timestamp with time zone");
+
+                entity.Property(e => e.HistoryApprovedBy).HasColumnName("history_approved_by");
             });
 
             modelBuilder.Entity<UnitCategory>(
