@@ -22,6 +22,23 @@ namespace 崴正.Controllers
         }
 
 
+        [HttpGet("readiness")]
+        public async Task<IActionResult> Readiness()
+        {
+            var result =
+                await _majorCategoryPriceRangeService
+                    .GetReadinessAsync();
+
+            return result.Success
+                ? Ok(result.Data)
+                : BadRequest(new
+                {
+                    message =
+                        result.ErrorMessage
+                });
+        }
+
+
         [HttpPost("range")]
         public async Task<IActionResult> EstimateRange(
             [FromBody]
