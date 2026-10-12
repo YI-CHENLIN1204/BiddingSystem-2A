@@ -10,7 +10,7 @@ namespace 崴正.Services
 {
     public class TenderExcelParser
     {
-        public List<TenderImportRowDto> Parse(Stream excelStream, string fileName)
+        public List<TenderImportRowDto> Parse(Stream excelStream, string fileName, IReadOnlyCollection<string>? includedSheetNames = null)
         {
             string extension =
                     Path.GetExtension(fileName)
@@ -37,7 +37,8 @@ namespace 崴正.Services
                     var rows =
                         Parse(
                             convertedStream,
-                            convertedFileName
+                            convertedFileName,
+                            includedSheetNames
                         );
 
                     // 保留使用者真正上傳的原始檔名
@@ -66,8 +67,19 @@ namespace 崴正.Services
 
             using var workbook = new XLWorkbook(excelStream);
 
+            var worksheetNames = workbook.Worksheets.Select(x => x.Name).ToList();
+            if (includedSheetNames == null && worksheetNames.Count > 1)
+                throw new InvalidDataException("此檔案包含多個工作表，請先預覽並明確選擇要匯入的工作表。");
+            if (includedSheetNames != null &&
+                (includedSheetNames.Count == 0 ||
+                 includedSheetNames.Any(x => !worksheetNames.Contains(x, StringComparer.OrdinalIgnoreCase))))
+                throw new InvalidDataException("工作表選擇無效，請重新預覽並至少選擇一張有效的工作表。");
+
             foreach (var ws in workbook.Worksheets)
             {
+                if (includedSheetNames != null &&
+                    !includedSheetNames.Contains(ws.Name, StringComparer.OrdinalIgnoreCase))
+                    continue;
 
                 
                 // 跳過總表，因為總表通常是分類彙總，不是實際明細
@@ -91,6 +103,7 @@ namespace 崴正.Services
                 int qtyCol = -1;       // 數量
                 int priceCol = -1;     // 單價
                 int amountCol = -1;    // 複價 / 金額
+                bool headerDetected = false;
 
                 for (int row = 1; row <= lastRow; row++)
                 {
@@ -114,6 +127,7 @@ namespace 崴正.Services
                     // 如果這列是表頭，就辨識欄位位置
                     if (IsHeaderRow(values))
                     {
+                        headerDetected = true;
                    
 
                         DetectColumns(
@@ -187,28 +201,9 @@ namespace 崴正.Services
                     price = TryGetDecimal(values, priceCol);
                     amount = TryGetDecimal(values, amountCol);
 
-                    // 如果沒有成功辨識欄位，才使用原本的「最後三個數字」判斷
-                    if (qty == null)
-                    {
-                        var numericValues = values
-                            .Select(v => v.Replace(",", "").Trim())
-                            .Where(v => decimal.TryParse(v, out _))
-                            .Select(v => decimal.Parse(v))
-                            .ToList();
-
-                        // 一般標單最後三個數字通常是：數量 / 單價 / 複價
-                        if (numericValues.Count >= 3)
-                        {
-                            qty = numericValues[^3];
-                            price = numericValues[^2];
-                            amount = numericValues[^1];
-                        }
-                        else if (numericValues.Count == 2)
-                        {
-                            qty = numericValues[^2];
-                            price = numericValues[^1];
-                        }
-                    }
+                    // 不再猜測「最後三個數字」。右側欄位可能是其他廠商報價。
+                    if (!headerDetected || (qtyCol < 0 && priceCol < 0 && amountCol < 0))
+                        continue;
 
                     string itemName = GetCell(values, itemNameCol);
                     string spec = GetCell(values, specCol);
@@ -219,6 +214,10 @@ namespace 崴正.Services
                     
                         continue;
                     }
+
+                    // 無工程量或價格的說明／分類列不寫入明細。
+                    if (!qty.HasValue && !price.HasValue && !amount.HasValue)
+                        continue;
 
                     // 只有「沒有數量、沒有單價、沒有複價」的列，才可能是分類列或說明列。
                     // 如果有任何數量或金額資訊，就保留進結果表，交給 Controller 判斷。
@@ -255,6 +254,21 @@ namespace 崴正.Services
             }
 
             return result;
+        }
+
+        public List<string> GetSheetNames(Stream sourceStream, string fileName)
+        {
+            string extension = Path.GetExtension(fileName).ToLowerInvariant();
+            if (extension == ".xls" || extension == ".xlsb" || extension == ".csv")
+            {
+                using var converted = ConvertToXlsx(sourceStream, extension);
+                return GetSheetNames(converted, Path.ChangeExtension(fileName, ".xlsx"));
+            }
+            if (extension != ".xlsx" && extension != ".xlsm")
+                throw new InvalidDataException("不支援的標單格式");
+            if (sourceStream.CanSeek) sourceStream.Position = 0;
+            using var workbook = new XLWorkbook(sourceStream);
+            return workbook.Worksheets.Select(x => x.Name).ToList();
         }
 
         private static MemoryStream ConvertToXlsx(
@@ -570,35 +584,42 @@ namespace 崴正.Services
 
         private static bool IsHeaderRow(List<string> values)
         {
-            string rowText = string.Join("", values)
-                .Replace(" ", "")
-                .Replace("　", "")
-                .Replace("\r", "")
-                .Replace("\n", "")
-                .Trim();
-
-            bool hasItemCode = rowText.Contains("項次");
-            bool hasItemName =
-                rowText.Contains("項目名稱") ||
-                rowText.Contains("名稱與說明") ||
-                rowText.Contains("項目及說明");
-            bool hasSpec = rowText.Contains("規格");
-            bool hasUnit = rowText.Contains("單位");
-            bool hasQty = rowText.Contains("數量");
-            bool hasPrice = rowText.Contains("單價");
-
-            int hitCount = 0;
-
-            if (hasItemCode) hitCount++;
-            if (hasItemName) hitCount++;
-            if (hasSpec) hitCount++;
-            if (hasUnit) hitCount++;
-            if (hasQty) hitCount++;
-            if (hasPrice) hitCount++;
-
-            // 必須同時命中多個欄位名稱，才判定為真正表頭列
-            return hitCount >= 4;
+            var cells = values.Select(NormalizeText).ToList();
+            bool hasName = cells.Any(x => x.Contains("項目名稱") || x.Contains("項目及說明")
+                || x.Contains("名稱與說明") || x.Contains("工項名稱") || x.Contains("工作項目")
+                || x.Contains("工程項目") || x.Contains("品名") || x.Contains("工料名稱"));
+            bool hasQty = cells.Any(IsQuantityHeader);
+            bool hasUnit = cells.Any(x => x == "單位" || x == "計量單位");
+            bool hasPrice = cells.Any(x => IsUnitPriceHeader(x) || IsAmountHeader(x));
+            bool hasCode = cells.Any(x => x == "項次" || x == "編號" || x == "序號");
+            return hasName && (hasQty || hasPrice) && (hasUnit || hasCode || (hasQty && hasPrice));
         }
+
+        private static bool IsQuoteHeader(string text) =>
+            text.Contains("廠商") || text.Contains("詢價") ||
+            text.Contains("比價") || text.Contains("報價") ||
+            text.Contains("優惠") || text.Contains("議價");
+
+        private static bool IsQuantityHeader(string text) =>
+            !IsQuoteHeader(text) && (
+                text == "數量" || text == "工程數量" ||
+                text == "自估數量" || text == "原數量" ||
+                text == "合約數量" || text == "決標數量" ||
+                text == "核定數量" || text == "計價數量");
+
+        private static bool IsUnitPriceHeader(string text) =>
+            !IsQuoteHeader(text) && (
+                text == "單價" || text == "自估單價" ||
+                text == "決標單價" || text == "合約單價" ||
+                text == "核定單價" || text == "單價(元)" ||
+                text == "單價（元）");
+
+        private static bool IsAmountHeader(string text) =>
+            !IsQuoteHeader(text) && (
+                text == "複價" || text == "自估複價" ||
+                text == "決標複價" || text == "合約複價" ||
+                text == "金額" || text == "總價" ||
+                text == "工程金額");
 
         private static void DetectColumns(
             List<string> values,
@@ -610,82 +631,31 @@ namespace 崴正.Services
             ref int priceCol,
             ref int amountCol)
         {
+            // 同名欄位取左側第一欄；右側廠商欄不能覆蓋主標單的基準價格。
+            itemCodeCol = -1;
+            itemNameCol = -1;
+            specCol = -1;
+            unitCol = -1;
+            qtyCol = -1;
+            priceCol = -1;
+            amountCol = -1;
             for (int i = 0; i < values.Count; i++)
             {
                 string text = NormalizeText(values[i]);
-
-                if (string.IsNullOrWhiteSpace(text))
-                    continue;
-
-                /*
-                 * 項次 / 項目編號欄
-                 * 注意：
-                 * 「項目及說明」不是項次欄，所以不能只用 Contains("項目")
-                 */
-                if (text == "項次" ||
-                    text == "項目" ||
-                    text == "編號" ||
-                    text == "序號")
-                {
+                if (string.IsNullOrWhiteSpace(text)) continue;
+                if (itemCodeCol < 0 && (text == "項次" || text == "項目" || text == "編號" || text == "序號"))
                     itemCodeCol = i;
-                    continue;
-                }
-
-                /*
-                 * 項目名稱欄
-                 * 你的測試資料是「名稱與說明」
-                 * 總表常見是「項目及說明」
-                 */
-                if (text.Contains("名稱與說明") ||
-                    text.Contains("項目及說明") ||
-                    text.Contains("品名") ||
-                    text.Contains("工項名稱") ||
-                    text.Contains("項目名稱") ||
-                    text == "名稱")
-                {
+                if (itemNameCol < 0 && (text.Contains("名稱與說明") || text.Contains("項目及說明") ||
+                    text.Contains("品名") || text.Contains("工項名稱") || text.Contains("項目名稱") ||
+                    text.Contains("工作項目") || text.Contains("工程項目") || text.Contains("工料名稱") || text == "名稱"))
                     itemNameCol = i;
-                    continue;
-                }
-
-                /*
-                 * 規格欄
-                 * 注意：
-                 * 不要把「名稱與說明」當成規格
-                 */
-                if (text.Contains("規格") ||
-                    text.Contains("工料編號") ||
-                    text.Contains("材料編號"))
-                {
+                if (specCol < 0 && (text.Contains("規格") || text.Contains("工料編號") || text.Contains("材料編號")))
                     specCol = i;
-                    continue;
-                }
-
-                if (text == "單位")
-                {
+                if (unitCol < 0 && (text == "單位" || text == "計量單位"))
                     unitCol = i;
-                    continue;
-                }
-
-                if (text == "數量" ||
-                    text == "工程數量")
-                {
-                    qtyCol = i;
-                    continue;
-                }
-
-                if (text == "單價")
-                {
-                    priceCol = i;
-                    continue;
-                }
-
-                if (text == "複價" ||
-                    text == "金額" ||
-                    text == "總價")
-                {
-                    amountCol = i;
-                    continue;
-                }
+                if (qtyCol < 0 && IsQuantityHeader(text)) qtyCol = i;
+                if (priceCol < 0 && IsUnitPriceHeader(text)) priceCol = i;
+                if (amountCol < 0 && IsAmountHeader(text)) amountCol = i;
             }
         }
 
