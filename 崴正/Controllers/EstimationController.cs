@@ -1,5 +1,6 @@
 using Microsoft.AspNetCore.Mvc;
 using System.IO;
+using System.Text.Json;
 using 崴正.Services;
 
 namespace 崴正.Controllers
@@ -37,7 +38,8 @@ namespace 崴正.Controllers
             [FromForm] decimal? siteArea,
             [FromForm] int? floorCount,
             [FromForm] int? basementFloorCount,
-            [FromForm] string projectMonth)
+            [FromForm] string projectMonth,
+            [FromForm] string? includedSheetNames = null)
         {
             if (excelFile == null ||
                 excelFile.Length == 0)
@@ -47,6 +49,19 @@ namespace 崴正.Controllers
                     message =
                         "請先選擇 Excel 檔案"
                 });
+            }
+
+            IReadOnlyCollection<string>? selectedSheets = null;
+            if (includedSheetNames != null)
+            {
+                try
+                {
+                    selectedSheets = JsonSerializer.Deserialize<List<string>>(includedSheetNames);
+                }
+                catch (JsonException)
+                {
+                    return BadRequest(new { message = "工作表選擇格式錯誤" });
+                }
             }
 
             using var buffer =
@@ -64,6 +79,9 @@ namespace 崴正.Controllers
 
                     FileName =
                         excelFile.FileName,
+
+                    IncludedSheetNames =
+                        selectedSheets,
 
                     ProjectName =
                         projectName,
