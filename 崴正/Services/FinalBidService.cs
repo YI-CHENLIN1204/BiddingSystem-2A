@@ -572,6 +572,18 @@ namespace 崴正.Services
                         x.FinalBidItemId ==
                         bidItem.FinalBidItemId);
 
+            if (!IsProjectHistoryApproved(
+                    bidItem))
+            {
+                if (history != null)
+                {
+                    history.IsDeleted = true;
+                }
+
+                return
+                    "歷史基準尚未人工確認，暫不納入模型";
+            }
+
             if (!IsInTwoAHistoryScope(
                     bidItem))
             {
@@ -703,7 +715,58 @@ namespace 崴正.Services
                 "更新歷史交易";
         }
 
+        public bool CanBecomeHistoricalTransaction(
+            FinalBidItem bidItem)
+        {
+            if (!IsHistoryCandidate(
+                    bidItem))
+            {
+                return false;
+            }
+
+            MaterialMaster? material =
+                bidItem.Material;
+
+            if (material == null &&
+                bidItem.MaterialId.HasValue)
+            {
+                material =
+                    _context.MaterialMasters
+                        .AsNoTracking()
+                        .FirstOrDefault(x =>
+                            x.MaterialId ==
+                            bidItem.MaterialId.Value);
+            }
+
+            if (material == null)
+            {
+                return false;
+            }
+
+            var conversion =
+                _unitConversionService.Convert(
+                    bidItem.Qty!.Value,
+                    0m,
+                    bidItem.Unit,
+                    material.UnitId
+                );
+
+            return conversion.Success;
+        }
+
         private bool IsHistoryEligible(
+            FinalBidItem bidItem)
+        {
+            return
+                IsProjectHistoryApproved(
+                    bidItem
+                ) &&
+                IsHistoryCandidate(
+                    bidItem
+                );
+        }
+
+        private bool IsHistoryCandidate(
             FinalBidItem bidItem)
         {
             if (!IsInTwoAHistoryScope(
@@ -728,6 +791,34 @@ namespace 崴正.Services
                 mappingCompleted &&
                 bidItem.Qty.HasValue &&
                 bidItem.Qty.Value > 0;
+        }
+
+        private bool IsProjectHistoryApproved(
+            FinalBidItem bidItem)
+        {
+            string? historyStatus =
+                bidItem.ProjectMaster?
+                    .HistoryStatus;
+
+            if (string.IsNullOrWhiteSpace(
+                    historyStatus))
+            {
+                historyStatus =
+                    _context.ProjectMasters
+                        .AsNoTracking()
+                        .Where(x =>
+                            x.ProjectId ==
+                            bidItem.ProjectMasterId)
+                        .Select(x =>
+                            x.HistoryStatus)
+                        .FirstOrDefault();
+            }
+
+            return string.Equals(
+                historyStatus,
+                "Approved",
+                StringComparison.OrdinalIgnoreCase
+            );
         }
 
         private bool
