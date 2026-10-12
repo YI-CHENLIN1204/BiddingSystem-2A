@@ -34,6 +34,16 @@ interface ReadinessResponse {
   items: ReadinessItem[]
 }
 
+interface StructuralReadiness {
+  majorCategory: string
+  eligibleMetadataProjectCount: number
+  availableProjectCount: number
+  minimumSampleCount: number
+  missingProjectCount: number
+  status: string
+  message: string
+}
+
 interface OneDStatus {
   configured: boolean
   message: string
@@ -42,6 +52,7 @@ interface OneDStatus {
 const cases = ref<AnalysisCaseSummary[]>([])
 const projects = ref<ProjectSummary[]>([])
 const readiness = ref<ReadinessResponse | null>(null)
+const structuralReadiness = ref<StructuralReadiness | null>(null)
 const oneDStatus = ref<OneDStatus>({ configured: false, message: '1D API 尚未設定' })
 const loading = ref(false)
 const error = ref('')
@@ -72,16 +83,18 @@ async function load() {
   loading.value = true
   error.value = ''
   try {
-    const [caseResult, projectResult, readinessResult, oneDResult] = await Promise.all([
+    const [caseResult, projectResult, readinessResult, structuralResult, oneDResult] = await Promise.all([
       api<AnalysisCaseSummary[]>('/analysis-cases'),
       api<{ items: ProjectSummary[] }>('/projects'),
       api<ReadinessResponse>('/detection-category/readiness'),
+      api<StructuralReadiness>('/major-category-price/readiness'),
       api<OneDStatus>('/one-d/status'),
     ])
 
     cases.value = caseResult
     projects.value = projectResult.items
     readiness.value = readinessResult
+    structuralReadiness.value = structuralResult
     oneDStatus.value = oneDResult
   } catch (caught) {
     error.value = caught instanceof Error ? caught.message : '無法載入系統總覽'
@@ -177,12 +190,28 @@ onMounted(load)
       <section v-if="readiness" class="card">
         <div class="card-header">
           <div>
-            <h3>細項數量偵錯準備度</h3>
-            <div class="text-muted small mt-1">目前只以鋼筋與混凝土建立歷史單位用量基準。</div>
+            <h3>模型歷史基準準備度</h3>
+            <div class="text-muted small mt-1">結構體工程使用價格歷史；鋼筋與混凝土使用數量歷史。</div>
           </div>
         </div>
 
         <div class="readiness-grid">
+          <div v-if="structuralReadiness" class="readiness-item">
+            <div class="readiness-top">
+              <strong>{{ structuralReadiness.majorCategory }}價格</strong>
+              <span :class="structuralReadiness.status === 'ReadyForEstimation' ? 'ready' : 'waiting'">
+                {{ structuralReadiness.status === 'ReadyForEstimation' ? '可估算' : '樣本不足' }}
+              </span>
+            </div>
+            <div class="readiness-count">
+              <strong>{{ structuralReadiness.availableProjectCount }}</strong>
+              <span>/ {{ structuralReadiness.minimumSampleCount }} 案</span>
+            </div>
+            <div class="readiness-bar">
+              <span :style="{ width: Math.min(100, structuralReadiness.availableProjectCount / structuralReadiness.minimumSampleCount * 100) + '%' }"></span>
+            </div>
+            <p>{{ structuralReadiness.message }}</p>
+          </div>
           <div v-for="item in readiness.items" :key="item.detectionCategoryName" class="readiness-item">
             <div class="readiness-top">
               <strong>{{ item.detectionCategoryName }}</strong>
@@ -271,7 +300,7 @@ onMounted(load)
 .flow span { padding: 4px 7px; color: #45536c; background: #f1f3f6; border-radius: 5px; font-size: 11px; font-weight: 700; }
 .card-header { display: flex; justify-content: space-between; align-items: center; gap: 12px; }
 .card-header h3 { margin: 0; font-size: 16px; }
-.readiness-grid { display: grid; grid-template-columns: repeat(2, 1fr); }
+.readiness-grid { display: grid; grid-template-columns: repeat(3, 1fr); }
 .readiness-item { padding: 20px; border-right: 1px solid #edf0f4; }
 .readiness-item:last-child { border-right: 0; }
 .readiness-top { display: flex; justify-content: space-between; align-items: center; }
