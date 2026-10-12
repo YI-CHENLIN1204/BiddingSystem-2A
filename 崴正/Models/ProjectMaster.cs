@@ -28,6 +28,13 @@ namespace 崴正.Models
         public string? SourceFileHash { get; set; }
 
         public DateTime? ImportedAt { get; set; }
+
+        public string HistoryStatus { get; set; } = "Draft";
+
+        public DateTime? HistoryApprovedAt { get; set; }
+
+        public string? HistoryApprovedBy { get; set; }
+
         // 一個建案可包含多筆歷史成交紀錄
         public ICollection<HistoricalTransaction> HistoricalTransactions { get; set; }
             = new List<HistoricalTransaction>();
