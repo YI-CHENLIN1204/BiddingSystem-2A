@@ -116,7 +116,8 @@ namespace 崴正.Services
             string fileName,
             string? note,
             string actionUser,
-            CancellationToken cancellationToken)
+            CancellationToken cancellationToken,
+            IReadOnlyCollection<string>? includedSheetNames)
         {
             var validation = ValidateMetadata(metadata);
             if (validation != null)
@@ -125,7 +126,7 @@ namespace 崴正.Services
             }
 
             var parsed =
-                ParseUpload(excelBytes, fileName);
+                ParseUpload(excelBytes, fileName, includedSheetNames);
 
             if (!parsed.Success)
             {
@@ -286,7 +287,8 @@ namespace 崴正.Services
             string fileName,
             string? note,
             string actionUser,
-            CancellationToken cancellationToken)
+            CancellationToken cancellationToken,
+            IReadOnlyCollection<string>? includedSheetNames)
         {
             var analysisCase =
                 await _context.AnalysisCases
@@ -299,7 +301,7 @@ namespace 崴正.Services
                 return ServiceResult.NotFound("找不到待偵錯案件");
             }
 
-            var parsed = ParseUpload(excelBytes, fileName);
+            var parsed = ParseUpload(excelBytes, fileName, includedSheetNames);
             if (!parsed.Success)
             {
                 return parsed.Result!;
@@ -1078,7 +1080,8 @@ namespace 崴正.Services
             ServiceResult? Result)
             ParseUpload(
                 byte[] excelBytes,
-                string fileName)
+                string fileName,
+                IReadOnlyCollection<string>? includedSheetNames)
         {
             if (excelBytes == null ||
                 excelBytes.Length == 0)
@@ -1097,7 +1100,7 @@ namespace 崴正.Services
                     new MemoryStream(excelBytes);
 
                 var rows =
-                    parser.Parse(stream, fileName);
+                    parser.Parse(stream, fileName, includedSheetNames);
 
                 if (rows.Count == 0)
                 {
