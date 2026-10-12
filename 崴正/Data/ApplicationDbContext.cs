@@ -63,6 +63,8 @@ namespace 崴正.Data
 
                 entity.Property(e => e.TotalFloorArea).HasColumnName("total_floor_area");
 
+                entity.Property(e => e.SiteArea).HasColumnName("site_area");
+
                 entity.Property(e => e.FloorCount).HasColumnName("floor_count");
 
                 entity.Property(e => e.BasementFloorCount).HasColumnName("basement_floor_count");
@@ -503,6 +505,9 @@ namespace 崴正.Data
                 entity.Property(e => e.AreaWeight)
                     .HasColumnName("area_weight");
 
+                entity.Property(e => e.SiteAreaWeight)
+                    .HasColumnName("site_area_weight");
+
                 entity.Property(e => e.FloorWeight)
                     .HasColumnName("floor_weight");
 
@@ -514,6 +519,9 @@ namespace 崴正.Data
 
                 entity.Property(e => e.AreaDifferenceCutoffRatio)
                     .HasColumnName("area_difference_cutoff_ratio");
+
+                entity.Property(e => e.SiteAreaDifferenceCutoffRatio)
+                    .HasColumnName("site_area_difference_cutoff_ratio");
 
                 entity.Property(e => e.GroundFloorPenaltyRatio)
                     .HasColumnName("ground_floor_penalty_ratio");
