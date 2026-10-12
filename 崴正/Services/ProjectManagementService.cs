@@ -1090,47 +1090,6 @@ namespace 崴正.Services
                 );
             }
 
-            var publishBlockingIssues =
-                new List<string>();
-
-            if (unclassifiedItemCount > 0)
-            {
-                publishBlockingIssues.Add(
-                    $"未辨識工程大項 {unclassifiedItemCount} 筆"
-                );
-            }
-
-            int structuralUnpricedItemCount =
-                structuralItems.Count -
-                structuralPricedItemCount;
-
-            if (structuralUnpricedItemCount > 0)
-            {
-                publishBlockingIssues.Add(
-                    $"結構體無有效價格 {structuralUnpricedItemCount} 筆"
-                );
-            }
-
-            int quantityBlockedItemCount =
-                Math.Max(
-                    0,
-                    rebarSourceItemCount -
-                    rebarCandidateItemCount
-                ) +
-                Math.Max(
-                    0,
-                    concreteSourceItemCount -
-                    concreteCandidateItemCount
-                );
-
-            if (quantityBlockedItemCount > 0)
-            {
-                publishBlockingIssues.Add(
-                    $"鋼筋／混凝土數量或單位不符合 {quantityBlockedItemCount} 筆"
-                );
-            }
-
-
             var history =
                 await (
                     from h in
@@ -1385,6 +1344,47 @@ namespace 崴正.Services
 
                 structuralPricedItemCount++;
             }
+
+            var publishBlockingIssues =
+                new List<string>();
+
+            if (unclassifiedItemCount > 0)
+            {
+                publishBlockingIssues.Add(
+                    $"未辨識工程大項 {unclassifiedItemCount} 筆"
+                );
+            }
+
+            int structuralUnpricedItemCount =
+                structuralItems.Count -
+                structuralPricedItemCount;
+
+            if (structuralUnpricedItemCount > 0)
+            {
+                publishBlockingIssues.Add(
+                    $"結構體無有效價格 {structuralUnpricedItemCount} 筆"
+                );
+            }
+
+            int quantityBlockedItemCount =
+                Math.Max(
+                    0,
+                    rebarSourceItemCount -
+                    rebarCandidateItemCount
+                ) +
+                Math.Max(
+                    0,
+                    concreteSourceItemCount -
+                    concreteCandidateItemCount
+                );
+
+            if (quantityBlockedItemCount > 0)
+            {
+                publishBlockingIssues.Add(
+                    $"鋼筋／混凝土數量或單位不符合 {quantityBlockedItemCount} 筆"
+                );
+            }
+
 
             var history =
                 await (
