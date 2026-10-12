@@ -1,0 +1,81 @@
+# Vendor Questions — 2A / 1D Integration
+
+> Status: awaiting vendor confirmation  
+> Current implementation follows provisional assumptions so development can continue.
+
+## Message-ready version
+
+想再跟您確認一下 2A 量價估算與異常偵測的實際使用流程，避免後續整合方向跟實務需求有落差，目前有幾個問題想確認：
+
+1. 技術文件有提到 2A 要結合 1D。想確認 1D 是否是 2A 待偵錯標單的必要入口？  
+目前我們預計 2A 同時保留兩種來源：
+- 從 1D 匯入已分類完成的資料
+- 直接在 2A 上傳待偵錯標單
+
+因為同一個案件可能需要反覆修改、反覆偵錯，如果每一次都必須重新跑 1D，實務上會比較不方便；另外也可能有些待偵錯標單本身不需要經過 1D 的格式轉換。想確認是否需要保留「2A 自行上傳」這條路。
+
+2. 如果 2A 可以自行上傳待偵錯標單，對上傳文件格式是否有規範？  
+目前暫定不是接受完全未整理的原始文件，而是要求至少具有和 1D 處理後相同層級的資料，例如：
+- 工程大項
+- 工項名稱／規格
+- 單位
+- 數量
+- 若要做價格異常，另外需要單價或金額
+
+想確認自行上傳的標單是否需要符合固定格式，或是否要求必須與 1D 處理後的標單結構一致。
+
+3. 技術文件中提到「大項價格異常」及「細項數量異常」，但目前文件中沒有明確定義大項與細項的層級。  
+我們目前暫定：
+- 大項：結構體工程
+- 細項：鋼筋、混凝土
+
+更細的規格會保留作為原始工項追溯，但不直接當成歷史比較的偵錯層級。  
+想確認這樣的大項／細項定義是否符合實際使用需求。
+
+4. 想確認 1D 與 2A 的實際使用流程是否如下：
+
+1D 流程：
+業主提供標單格式 + 快易新清圖後數量表  
+→ 1D 進行工程大項分類與整理  
+→ 使用者確認  
+→ 匯入 2A  
+→ 2A 建立自己的待偵錯案件快照  
+→ 後續可以反覆偵錯，不需要每次重新執行 1D
+
+若直接從 2A 上傳：
+待偵錯標單  
+→ 建立待偵錯案件  
+→ 後續可上傳 V2、V3 等修改版本  
+→ 每一版都可以重新進行數量及價格異常分析
+
+而歷史估算基準則是另一條流程：
+已定案的最終標單  
+→ 2A 解析  
+→ 工程大項／材料／單位審核  
+→ 人工確認後發布為歷史基準  
+→ 提供未來待偵錯案件作為估算與異常判定的基準
+
+想確認這樣的流程理解是否正確。
+
+5. 另外想確認，是否不是所有工程類別都適合使用歷史建案進行數量估算？  
+目前我們先聚焦：
+- 鋼筋
+- 混凝土
+
+但像門窗數量可能直接受到建築設計、開口配置等因素影響，因此不適合單靠歷史資料做數量異常判定。
+
+想請教實務上哪些工程大項／材料適合納入 2A 的歷史數量估算，哪些建議排除或需要額外條件後才能估算。
+
+另外也想確認一點：如果某工程類別不適合做「數量異常」，是否仍有需要保留「大項價格異常」的分析？例如門窗數量可能不適合估，但整體門窗工程每坪價格是否仍具有歷史比較價值。
+
+## Current provisional implementation
+
+Until answers are received, current code assumes:
+
+- direct upload remains available
+- 1D is optional
+- 1D import creates a one-time 2A snapshot
+- direct upload accepts structured target data
+- major-category estimation is currently structural work
+- quantity anomaly detection currently uses rebar and concrete
+- finalized history requires explicit review / publish before model use
