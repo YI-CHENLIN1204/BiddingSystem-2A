@@ -13,12 +13,12 @@ const actionLabels: Record<string, string> = {
   CreateMaterial: '新增標準材料', UpdateMaterial: '修改標準材料', DisableMaterial: '停用標準材料', EnableMaterial: '啟用標準材料',
   CreateCategory: '新增材料分類', UpdateCategory: '修改材料分類', DisableCategory: '停用材料分類', EnableCategory: '啟用材料分類',
   CreateUnitCategory: '新增單位類別', CreateUnit: '新增單位', UpdateUnit: '修改單位', DisableUnit: '停用單位', EnableUnit: '啟用單位',
-  UpdateEstimationSettings: '修改估算參數', EnableCoreMaterial: '設為核心材料', DisableCoreMaterial: '取消核心材料',
-  UpdateProject: '修改建案', DeleteProject: '刪除建案', ImportFinalBid: '決標標單回寫', AnalyzeBidRange: '執行異常偵測',
+  UpdateEstimationSettings: '修改估算參數',
+  UpdateProject: '修改建案', DeleteProject: '刪除建案', ImportFinalBid: '決標標單回寫',
 }
 const entityLabels: Record<string, string> = {
   System: '系統', FinalBidItem: '決標工項', MaterialMaster: '標準材料', MaterialCategory: '材料分類', UnitMaster: '標準單位',
-  UnitCategory: '單位類別', EstimationSetting: '估算參數', QuantityRuleBase: '核心材料設定', ProjectMaster: '建案', BidRangeAnomalyAnalysis: '異常偵測分析',
+  UnitCategory: '單位類別', EstimationSetting: '估算參數', ProjectMaster: '建案',
 }
 const fieldLabels: Record<string, string> = {
   materialId: '材料編號', materialName: '材料名稱', mappingStatus: '對應狀態', itemName: '工項名稱', qty: '數量', unitPrice: '單價', unit: '標單單位',
@@ -29,7 +29,7 @@ const fieldLabels: Record<string, string> = {
   sourceFileName: '來源檔案', fileName: '檔案名稱', totalCount: '工項總數', autoMappedCount: '自動對應數', unmappedCount: '未對應數', historyInsertCount: '新增歷史交易數',
   topK: 'Top K', minimumSampleCount: '最低樣本數', lowerQuantile: '下界分位數', medianQuantile: '中位分位數', upperQuantile: '上界分位數',
   similarityExponent: '相似度指數', timeHalfLifeYears: '時間半衰期（年）', minimumSimilarityScore: '最低相似度', structureWeight: '結構權重', areaWeight: '樓地板面積權重', siteAreaWeight: '基地面積權重',
-  floorWeight: '樓層權重', yearWeight: '年份權重', cityWeight: '縣市權重', isCoreEstimation: '核心材料',
+  floorWeight: '樓層權重', yearWeight: '年份權重', cityWeight: '縣市權重',
 }
 
 const filters = ref({ search: '', module: '', actionType: '', startDate: '', endDate: '', page: 1, pageSize: 25 })
