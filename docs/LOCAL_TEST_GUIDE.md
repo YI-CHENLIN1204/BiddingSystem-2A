@@ -203,3 +203,19 @@ Therefore:
 - concrete readiness may remain below 5
 
 Until enough valid history exists, P15 / P50 / P85 should not be forced.
+
+## 11. Read-only pre-import quantity inspection
+
+For both `/final-bid` and `/analysis-cases`:
+
+1. Upload an Excel file with multiple worksheets.
+2. Select **only** the authentic detail worksheet(s), not summary/quotation/comparison sheets.
+3. Click **檢查選取工作表的全部候選明細**.
+4. Verify displayed sheet, original row number, item/spec, quantity, unit, unit price and amount against the source.
+5. Use the steel, concrete and review filters. Verify units: T -> kg (x1000) and M3 -> m³ (x1), but couplers/placement and unconvertible units do not enter the candidate total.
+6. Test removing/changing the worksheet selection: stale inspection results must clear.
+7. Inspect before filling out project metadata; the preview **must not** create projects, analysis cases, model history or fake samples.
+
+Real workbook first checkpoint: `最終標單.xls`, choose `建築工程-預算單` (preview previously reported 49 candidate rows). Check sample source values 214 M3, unit price 2350 and amount 502900. Do not infer finality from the title “預算單”; do not publish it as Approved until actual final-price evidence and verified project metadata exist.
+
+Automated synthetic regression: `dotnet run --project ./tests/WorkbookParserTests/WorkbookParserTests.csproj -c Release`. CI also builds the backend and frontend.
