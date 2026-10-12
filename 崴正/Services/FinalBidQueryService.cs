@@ -21,6 +21,7 @@ namespace 崴正.Services
             string status,
             string? search,
             string? issueCode,
+            string? majorCategory,
             string? category,
             string? unit,
             int page,
@@ -151,6 +152,81 @@ namespace 崴正.Services
                         );
                 }
             }
+
+            if (!string.IsNullOrWhiteSpace(
+                    majorCategory) &&
+                !string.Equals(
+                    majorCategory,
+                    "All",
+                    StringComparison.OrdinalIgnoreCase))
+            {
+                string selectedMajorCategory =
+                    majorCategory.Trim();
+
+                if (string.Equals(
+                        selectedMajorCategory,
+                        "Unclassified",
+                        StringComparison.OrdinalIgnoreCase))
+                {
+                    var knownMajorCategories =
+                        TwoAScopePolicy
+                            .GetKnownMajorCategories()
+                            .ToArray();
+
+                    query = query.Where(x =>
+                        (
+                            x.MajorCategoryOverride == null ||
+                            x.MajorCategoryOverride == ""
+                        ) &&
+                        (
+                            x.Category1 == null ||
+                            !knownMajorCategories.Contains(
+                                x.Category1)
+                        ) &&
+                        (
+                            x.Category2 == null ||
+                            !knownMajorCategories.Contains(
+                                x.Category2)
+                        ) &&
+                        (
+                            x.Category3 == null ||
+                            !knownMajorCategories.Contains(
+                                x.Category3)
+                        )
+                    );
+                }
+                else
+                {
+                    if (!TwoAScopePolicy
+                        .IsKnownMajorCategory(
+                            selectedMajorCategory))
+                    {
+                        return ServiceResult.Validation(
+                            "不支援的工程大項篩選條件"
+                        );
+                    }
+
+                    query = query.Where(x =>
+                        x.MajorCategoryOverride ==
+                            selectedMajorCategory ||
+                        (
+                            (
+                                x.MajorCategoryOverride == null ||
+                                x.MajorCategoryOverride == ""
+                            ) &&
+                            (
+                                x.Category1 ==
+                                    selectedMajorCategory ||
+                                x.Category2 ==
+                                    selectedMajorCategory ||
+                                x.Category3 ==
+                                    selectedMajorCategory
+                            )
+                        )
+                    );
+                }
+            }
+
 
             if (!string.IsNullOrWhiteSpace(category) &&
                 !string.Equals(
@@ -405,6 +481,7 @@ namespace 崴正.Services
                     status,
                     search,
                     issueCode,
+                    majorCategory,
                     category,
                     unit
                 },
