@@ -119,8 +119,15 @@ onMounted(load)
         <div>
           <div class="d-flex align-items-center gap-2 mb-2 flex-wrap">
             <h5 class="mb-0">{{ project.projectName }}</h5>
-            <span class="badge" :class="project.hasFinalBid ? 'bg-success' : 'bg-secondary'">
+            <span class="badge" :class="project.hasFinalBid ? 'bg-secondary' : 'bg-light text-dark border'">
               {{ project.hasFinalBid ? '已有決標資料' : '尚無決標資料' }}
+            </span>
+            <span
+              v-if="project.hasFinalBid"
+              class="badge"
+              :class="project.historyStatus === 'Approved' ? 'bg-success' : 'bg-warning text-dark'"
+            >
+              {{ project.historyStatus === 'Approved' ? '已納入 2A 模型' : '待歷史基準審核' }}
             </span>
           </div>
           <div class="text-muted small">
@@ -146,6 +153,7 @@ onMounted(load)
         <div class="col-md-3"><div class="text-muted">地上 / 地下樓層</div><strong>{{ project.floorCount ?? '-' }} / {{ project.basementFloorCount ?? '-' }}</strong></div>
         <div class="col-md-3"><div class="text-muted">決標工項</div><strong>{{ project.finalBidItemCount ?? 0 }}</strong></div>
         <div class="col-md-3"><div class="text-muted">有效歷史交易</div><strong>{{ project.historicalTransactionCount ?? 0 }}</strong></div>
+        <div class="col-md-3"><div class="text-muted">歷史基準狀態</div><strong>{{ project.historyStatus === 'Approved' ? '已發布' : '審核中' }}</strong></div>
       </div>
     </article>
 
