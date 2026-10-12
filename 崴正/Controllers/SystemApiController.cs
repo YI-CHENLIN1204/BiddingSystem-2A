@@ -10,14 +10,10 @@ namespace 崴正.Controllers;
 public class SystemApiController : ControllerBase
 {
     private readonly ApplicationDbContext _context;
-    private readonly CoreMaterialService _coreMaterialService;
-
     public SystemApiController(
-        ApplicationDbContext context,
-        CoreMaterialService coreMaterialService)
+        ApplicationDbContext context)
     {
         _context = context;
-        _coreMaterialService = coreMaterialService;
     }
 
     [HttpGet("health")]
@@ -39,9 +35,6 @@ public class SystemApiController : ControllerBase
             })
             .ToListAsync();
 
-        var coreMaterials = await _coreMaterialService
-            .GetCoreMaterialOptionsAsync();
-
         return Ok(new
         {
             projectTypes = new[] { "住宅", "廠房" },
@@ -53,8 +46,7 @@ public class SystemApiController : ControllerBase
                 "嘉義縣", "臺南市", "高雄市", "屏東縣", "宜蘭縣", "花蓮縣",
                 "臺東縣", "澎湖縣", "金門縣", "連江縣"
             },
-            materials,
-            coreMaterials
+            materials
         });
     }
 }
