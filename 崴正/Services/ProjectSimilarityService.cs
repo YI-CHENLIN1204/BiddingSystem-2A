@@ -363,6 +363,7 @@ namespace 崴正.Services
                     .AsNoTracking()
                     .Where(p =>
                         !p.IsDeleted &&
+                        p.HistoryStatus == "Approved" &&
                         p.ProjectType ==
                             target.ProjectType
                     )
