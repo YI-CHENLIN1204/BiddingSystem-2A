@@ -200,6 +200,7 @@ namespace 崴正.Controllers
             [FromForm] string structureType,
             [FromForm] string city,
             [FromForm] decimal totalFloorArea,
+            [FromForm] decimal siteArea,
             [FromForm] int floorCount,
             [FromForm] int basementFloorCount,
             [FromForm] DateTime projectDate,
@@ -233,6 +234,8 @@ namespace 崴正.Controllers
                     City = city,
                     TotalFloorArea =
                         totalFloorArea,
+                    SiteArea =
+                        siteArea,
                     FloorCount = floorCount,
                     BasementFloorCount =
                         basementFloorCount,
