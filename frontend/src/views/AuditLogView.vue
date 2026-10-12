@@ -13,7 +13,7 @@ const actionLabels: Record<string, string> = {
   CreateMaterial: '新增標準材料', UpdateMaterial: '修改標準材料', DisableMaterial: '停用標準材料', EnableMaterial: '啟用標準材料',
   CreateCategory: '新增材料分類', UpdateCategory: '修改材料分類', DisableCategory: '停用材料分類', EnableCategory: '啟用材料分類',
   CreateUnitCategory: '新增單位類別', CreateUnit: '新增單位', UpdateUnit: '修改單位', DisableUnit: '停用單位', EnableUnit: '啟用單位',
-  UpdateEstimationSettings: '修改估算參數',
+  UpdateEstimationSettings: '修改估算參數', UpdateMajorCategory: '修改工程大項',
   UpdateProject: '修改建案', DeleteProject: '刪除建案', ImportFinalBid: '決標標單回寫',
 }
 const entityLabels: Record<string, string> = {
@@ -26,6 +26,7 @@ const fieldLabels: Record<string, string> = {
   unitId: '單位編號', unitName: '單位名稱', unitCategoryId: '單位類別編號', allowConversion: '允許換算', toBaseFactor: '換算倍率', isBaseUnit: '是否基準單位',
   isActive: '啟用狀態', isIgnored: '忽略狀態', historyDeleted: '歷史交易已刪除', projectId: '建案編號', projectName: '建案名稱', projectType: '建案類型',
   structureType: '結構類型', city: '縣市', totalFloorArea: '總樓地板面積', siteArea: '基地面積', floorCount: '地上樓層', basementFloorCount: '地下樓層',
+  majorCategoryOverride: '人工工程大項', effectiveMajorCategory: '有效工程大項',
   sourceFileName: '來源檔案', fileName: '檔案名稱', totalCount: '工項總數', autoMappedCount: '自動對應數', unmappedCount: '未對應數', historyInsertCount: '新增歷史交易數',
   topK: 'Top K', minimumSampleCount: '最低樣本數', lowerQuantile: '下界分位數', medianQuantile: '中位分位數', upperQuantile: '上界分位數',
   similarityExponent: '相似度指數', timeHalfLifeYears: '時間半衰期（年）', minimumSimilarityScore: '最低相似度', structureWeight: '結構權重', areaWeight: '樓地板面積權重', siteAreaWeight: '基地面積權重',
