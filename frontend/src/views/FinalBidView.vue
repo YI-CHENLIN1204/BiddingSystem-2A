@@ -21,7 +21,7 @@ interface MasterOption { categoryId?: number; categoryName?: string; unitId?: nu
 
 const { options, error: optionsError } = useSystemOptions()
 const project = ref<ProjectForm>({
-  projectName: '', projectType: '', structureType: '', city: '', totalFloorArea: null,
+  projectName: '', projectType: '', structureType: '', city: '', totalFloorArea: null, siteArea: null,
   floorCount: null, basementFloorCount: 0, projectMonth: '',
 })
 const file = ref<File | null>(null)
