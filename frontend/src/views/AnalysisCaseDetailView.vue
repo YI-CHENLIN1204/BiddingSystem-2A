@@ -10,6 +10,7 @@ interface CaseSummary {
   structureType: string
   city: string
   totalFloorArea: number
+  siteArea: number
   floorCount: number
   basementFloorCount: number
   projectDate: string
@@ -447,7 +448,8 @@ onMounted(loadCase)
         <h2 class="mt-2">{{ detail?.case.caseName ?? '待偵錯案件' }}</h2>
         <p v-if="detail">
           {{ detail.case.projectType }} ・ {{ detail.case.structureType }} ・ {{ detail.case.city }} ・
-          {{ formatNumber(detail.case.totalFloorArea) }} m² ・
+          樓地板 {{ formatNumber(detail.case.totalFloorArea) }} m² ・
+          基地 {{ formatNumber(detail.case.siteArea) }} m² ・
           {{ detail.case.floorCount }}F / B{{ detail.case.basementFloorCount }}
         </p>
       </div>
