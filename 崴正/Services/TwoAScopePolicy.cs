@@ -213,6 +213,32 @@ namespace 崴正.Services
 
 
         public static string?
+            ResolveEffectiveMajorCategory(
+                string? overrideCategory,
+                params string?[] sourceCategories)
+        {
+            if (!string.IsNullOrWhiteSpace(
+                    overrideCategory))
+            {
+                string normalizedOverride =
+                    overrideCategory.Trim();
+
+                if (KnownMajorCategories
+                    .Contains(
+                        normalizedOverride
+                    ))
+                {
+                    return normalizedOverride;
+                }
+            }
+
+            return ResolveMajorCategory(
+                sourceCategories
+            );
+        }
+
+
+        public static string?
             ResolveMajorCategory(
                 params string?[] categories)
         {
