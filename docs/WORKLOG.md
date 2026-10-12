@@ -143,3 +143,16 @@ Added:
 - explicit instruction to tell the user when the local system is ready for actual operation
 
 The next phase is hands-on validation with real finalized bid data, not architecture redesign.
+
+## 2026-10-13 — Read-only pre-import quantity inspection
+
+Added on the existing `feature/1d-api-integration` branch:
+
+- `POST /api/tender-import/inspect` requires an explicit selected-worksheet list and does not write to the database.
+- The shared `WorkbookSheetPicker` now lets users inspect all parsed candidate rows, including the original sheet/row, source categories, quantity, unit, price, amount and warnings before entering project metadata.
+- Conservative steel/rebar and concrete candidate detection: supported kg/T and m³ units are converted only when unambiguous; steel couplers, rebar work/services and concrete placement/services are not counted as material quantities.
+- Unknown units, missing quantities, uncertain structural major category and identical source-row fingerprints are surfaced for review.
+- Candidate summaries are **not** model anomalies, approved history, or official quantities. No P15/P50/P85 values are fabricated.
+- Regression checks added to `tests/WorkbookParserTests`.
+
+Next: verify the uploaded real `.xls` case manually in the UI, check its 49 parsed candidate rows against Excel, then fix any concrete/rebar omission or misclassified source rows. Do not publish budget or supplier-quotation prices as approved historical truth.
