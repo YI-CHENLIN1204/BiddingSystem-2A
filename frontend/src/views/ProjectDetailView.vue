@@ -39,6 +39,14 @@ interface ProjectTwoASummary {
   majorCategory: string
   structuralItemCount: number
   structuralPricedItemCount: number
+  structuralUnpricedItemCount: number
+  unclassifiedItemCount: number
+  manualMajorCategoryCount: number
+  structuralUnmappedItemCount: number
+  rebarSourceItemCount: number
+  rebarExcludedItemCount: number
+  concreteSourceItemCount: number
+  concreteExcludedItemCount: number
   structuralAmount: number
   structuralPricePerPing?: number | null
   rebarQuantity?: number | null
@@ -433,6 +441,39 @@ onMounted(async () => {
           </div>
         </div>
 
+        <div class="qualification-grid">
+          <div>
+            <span>未辨識工程大項</span>
+            <strong :class="twoASummary.unclassifiedItemCount ? 'text-warning' : 'text-success'">{{ twoASummary.unclassifiedItemCount }}</strong>
+            <small>可到「決標工項」人工指定，不修改原始分類欄位。</small>
+          </div>
+          <div>
+            <span>人工校正大項</span>
+            <strong>{{ twoASummary.manualMajorCategoryCount }}</strong>
+            <small>已保留原始 Category1 / 2 / 3，可隨時恢復。</small>
+          </div>
+          <div>
+            <span>結構體未對應材料</span>
+            <strong :class="twoASummary.structuralUnmappedItemCount ? 'text-warning' : 'text-success'">{{ twoASummary.structuralUnmappedItemCount }}</strong>
+            <small>只影響鋼筋／混凝土數量歷史，不影響已存在的結構體價格。</small>
+          </div>
+          <div>
+            <span>結構體無可用價格</span>
+            <strong :class="twoASummary.structuralUnpricedItemCount ? 'text-warning' : 'text-success'">{{ twoASummary.structuralUnpricedItemCount }}</strong>
+            <small>Amount 或 Qty × UnitPrice 都無法形成價格時才會列入。</small>
+          </div>
+          <div>
+            <span>鋼筋數量資格</span>
+            <strong>{{ twoASummary.rebarSourceItemCount - twoASummary.rebarExcludedItemCount }} / {{ twoASummary.rebarSourceItemCount }}</strong>
+            <small>{{ twoASummary.rebarExcludedItemCount }} 筆未形成有效歷史交易。</small>
+          </div>
+          <div>
+            <span>混凝土數量資格</span>
+            <strong>{{ twoASummary.concreteSourceItemCount - twoASummary.concreteExcludedItemCount }} / {{ twoASummary.concreteSourceItemCount }}</strong>
+            <small>{{ twoASummary.concreteExcludedItemCount }} 筆未形成有效歷史交易。</small>
+          </div>
+        </div>
+
         <div class="baseline-foot">
           <span>{{ twoASummary.message }}</span>
           <span v-if="twoASummary.otherStructuralItemCount > 0">
@@ -566,5 +607,5 @@ onMounted(async () => {
 .item-menu .dropdown-menu { position: absolute; top: 100%; right: 0; left: auto; z-index: 20; }
 .modal-backdrop-custom { position: fixed; inset: 0; z-index: 1080; display: grid; place-items: center; padding: 1.5rem; background: rgba(0,0,0,.5); }
 .modal-backdrop-custom .modal-dialog { width: min(500px, 100%); margin: auto; }
-.basic-stack{display:grid;gap:16px}.baseline-card{overflow:hidden}.baseline-header{display:flex;align-items:flex-start;justify-content:space-between;gap:16px;padding:16px 18px;background:#f8f9fa;border-bottom:1px solid #e3e5e8}.baseline-header h5{margin:0 0 4px;font-size:15px;font-weight:800;color:#321fdb}.baseline-grid{display:grid;grid-template-columns:repeat(4,1fr)}.baseline-cell{padding:18px;border-right:1px solid #edf0f4}.baseline-cell:last-child{border-right:0}.baseline-cell>span{display:block;color:#6c757d;font-size:12px}.baseline-cell>strong{display:block;margin-top:7px;font-size:20px;font-variant-numeric:tabular-nums}.baseline-cell>small{display:block;margin-top:6px;font-size:11px}.baseline-foot{display:flex;justify-content:space-between;gap:18px;padding:11px 18px;background:#fbfcfd;border-top:1px solid #edf0f4;color:#6c757d;font-size:11px}@media(max-width:1000px){.baseline-grid{grid-template-columns:repeat(2,1fr)}.baseline-cell:nth-child(2){border-right:0}.baseline-cell:nth-child(-n+2){border-bottom:1px solid #edf0f4}.baseline-foot{flex-direction:column}}@media(max-width:600px){.baseline-grid{grid-template-columns:1fr}.baseline-cell{border-right:0;border-bottom:1px solid #edf0f4}.baseline-cell:last-child{border-bottom:0}}
+.basic-stack{display:grid;gap:16px}.baseline-card{overflow:hidden}.baseline-header{display:flex;align-items:flex-start;justify-content:space-between;gap:16px;padding:16px 18px;background:#f8f9fa;border-bottom:1px solid #e3e5e8}.baseline-header h5{margin:0 0 4px;font-size:15px;font-weight:800;color:#321fdb}.baseline-grid{display:grid;grid-template-columns:repeat(4,1fr)}.baseline-cell{padding:18px;border-right:1px solid #edf0f4}.baseline-cell:last-child{border-right:0}.baseline-cell>span{display:block;color:#6c757d;font-size:12px}.baseline-cell>strong{display:block;margin-top:7px;font-size:20px;font-variant-numeric:tabular-nums}.baseline-cell>small{display:block;margin-top:6px;font-size:11px}.qualification-grid{display:grid;grid-template-columns:repeat(3,1fr);border-top:1px solid #edf0f4}.qualification-grid>div{padding:14px 18px;border-right:1px solid #edf0f4;border-bottom:1px solid #edf0f4}.qualification-grid>div:nth-child(3n){border-right:0}.qualification-grid>div:nth-last-child(-n+3){border-bottom:0}.qualification-grid span,.qualification-grid small{display:block}.qualification-grid span{color:#6c757d;font-size:11px}.qualification-grid strong{display:block;margin:5px 0;font-size:18px}.qualification-grid small{color:#6c757d;font-size:10px;line-height:1.4}.baseline-foot{display:flex;justify-content:space-between;gap:18px;padding:11px 18px;background:#fbfcfd;border-top:1px solid #edf0f4;color:#6c757d;font-size:11px}@media(max-width:1000px){.qualification-grid{grid-template-columns:repeat(2,1fr)}.qualification-grid>div{border-right:1px solid #edf0f4!important;border-bottom:1px solid #edf0f4!important}.qualification-grid>div:nth-child(2n){border-right:0!important}.qualification-grid>div:nth-last-child(-n+2){border-bottom:0!important}.baseline-grid{grid-template-columns:repeat(2,1fr)}.baseline-cell:nth-child(2){border-right:0}.baseline-cell:nth-child(-n+2){border-bottom:1px solid #edf0f4}.baseline-foot{flex-direction:column}}@media(max-width:600px){.qualification-grid{grid-template-columns:1fr}.qualification-grid>div{border-right:0!important;border-bottom:1px solid #edf0f4!important}.qualification-grid>div:last-child{border-bottom:0!important}.baseline-grid{grid-template-columns:1fr}.baseline-cell{border-right:0;border-bottom:1px solid #edf0f4}.baseline-cell:last-child{border-bottom:0}}
 </style>
