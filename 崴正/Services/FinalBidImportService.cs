@@ -262,6 +262,15 @@ namespace 崴正.Services
                         ImportedAt =
                             now,
 
+                        HistoryStatus =
+                            "Draft",
+
+                        HistoryApprovedAt =
+                            null,
+
+                        HistoryApprovedBy =
+                            null,
+
                         IsDeleted =
                             false
                     };
@@ -587,60 +596,36 @@ namespace 崴正.Services
 
             int historyInsertCount = 0;
 
+            var historyCandidateItems =
+                createdItems
+                    .Where(x =>
+                        _finalBidService
+                            .CanBecomeHistoricalTransaction(
+                                x
+                            ))
+                    .ToList();
 
+            int historyCandidateCount =
+                historyCandidateItems.Count;
 
-            var histories =
-                new List<HistoricalTransaction>();
-
-            foreach (var bidItem in createdItems)
-            {
-                var history =
-                    _finalBidService
-                        .BuildHistoricalTransactionForNewImport(
-                            bidItem
-                        );
-
-                if (history == null)
-                {
-                    continue;
-                }
-
-                histories.Add(
-                    history
-                );
-            }
-
-            historyInsertCount =
-                histories.Count;
-
-            int rebarHistoryInsertCount =
-                histories.Count(x =>
-                    materialDictionary
-                        .TryGetValue(
-                            x.MaterialId,
-                            out var material) &&
+            int rebarHistoryCandidateCount =
+                historyCandidateItems.Count(x =>
                     string.Equals(
-                        material.MaterialName,
+                        x.Material?.MaterialName,
                         "鋼筋",
                         StringComparison.OrdinalIgnoreCase
                     ));
 
-            int concreteHistoryInsertCount =
-                histories.Count(x =>
-                    materialDictionary
-                        .TryGetValue(
-                            x.MaterialId,
-                            out var material) &&
+            int concreteHistoryCandidateCount =
+                historyCandidateItems.Count(x =>
                     string.Equals(
-                        material.MaterialName,
+                        x.Material?.MaterialName,
                         "混凝土",
                         StringComparison.OrdinalIgnoreCase
                     ));
 
-            _context.HistoricalTransactions
-                .AddRange(
-                    histories
-                );
+            // 最終標單匯入後先進入 Draft 審核狀態。
+            // 在人工確認建案可成為歷史基準前，不寫入 HistoricalTransaction。
 
 
                 _auditLogService.AddLog(
@@ -697,8 +682,9 @@ namespace 崴正.Services
                                     structuralAmount,
                                     2
                                 ),
-                            rebarHistoryInsertCount,
-                            concreteHistoryInsertCount,
+                            historyCandidateCount,
+                            rebarHistoryCandidateCount,
+                            concreteHistoryCandidateCount,
 
                             invalidQuantityCount,
 
@@ -762,6 +748,13 @@ namespace 崴正.Services
                         pendingCount,
 
                     historyInsertCount,
+
+                    historyStatus =
+                        project.HistoryStatus,
+
+                    historyCandidateCount,
+                    rebarHistoryCandidateCount,
+                    concreteHistoryCandidateCount,
 
                     recognizedMajorCategoryCount,
                     unclassifiedMajorCategoryCount,
