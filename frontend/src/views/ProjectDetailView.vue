@@ -6,6 +6,11 @@ import type { ProjectSummary } from '../types'
 
 interface BidItem {
   finalBidItemId: number
+  category1?: string | null
+  category2?: string | null
+  category3?: string | null
+  majorCategoryOverride?: string | null
+  effectiveMajorCategory?: string | null
   itemName: string
   spec?: string | null
   unit?: string | null
@@ -57,6 +62,7 @@ interface HistoryItem {
   totalQuantity: number
 }
 
+interface PolicyResponse { knownMajorCategories: string[] }
 interface FilterOptions { categories: string[]; units: string[] }
 interface PageResult<T> { totalCount: number; page: number; pageSize: number; items: T[] }
 interface MasterOption { categoryId?: number; categoryName?: string; unitId?: number; unitName?: string; isActive: boolean }
@@ -71,6 +77,7 @@ const twoASummary = ref<ProjectTwoASummary | null>(null)
 const materialOptions = ref<MaterialOption[]>([])
 const filterOptions = ref<FilterOptions>({ categories: [], units: [] })
 const masterOptions = ref<{ categories: MasterOption[]; units: MasterOption[] }>({ categories: [], units: [] })
+const majorCategories = ref<string[]>([])
 const selectedCategory = ref<Record<number, string>>({})
 const selectedMaterial = ref<Record<number, number | '__NEW__' | null>>({})
 const search = ref('')
@@ -122,14 +129,16 @@ async function loadProject() {
 }
 
 async function loadFilterOptions() {
-  const [filters, materials, masters] = await Promise.all([
+  const [filters, materials, masters, policy] = await Promise.all([
     api<FilterOptions>(`/Estimation/mapping-filter-options${queryString({ projectId })}`),
     api<MaterialOption[]>('/Estimation/material-options'),
     api<{ categories: MasterOption[]; units: MasterOption[] }>('/standard-material/filter-options'),
+    api<PolicyResponse>('/analysis-cases/policy'),
   ])
   filterOptions.value = filters
   materialOptions.value = materials
   masterOptions.value = masters
+  majorCategories.value = policy.knownMajorCategories
 }
 
 async function loadBidItems() {
@@ -173,6 +182,23 @@ async function loadTwoASummary() {
 async function reloadRelated(messageText?: string) {
   await Promise.all([loadBidItems(), loadHistory(), loadProject(), loadTwoASummary()])
   if (messageText) message.value = messageText
+}
+
+async function updateMajorCategory(item: BidItem, event: Event) {
+  const value = (event.target as HTMLSelectElement).value
+  busyId.value = item.finalBidItemId
+  error.value = ''
+  try {
+    const form = new FormData()
+    form.append('finalBidItemId', String(item.finalBidItemId))
+    form.append('majorCategory', value)
+    await apiForm('/Estimation/update-major-category', form)
+    await reloadRelated(value ? '工程大項已人工確認。' : '已恢復使用標單原始分類。')
+  } catch (caught) {
+    error.value = caught instanceof Error ? caught.message : '工程大項更新失敗'
+  } finally {
+    busyId.value = null
+  }
 }
 
 function changeCategory(item: BidItem) {
@@ -438,6 +464,8 @@ onMounted(async () => {
           <div class="d-flex justify-content-between align-items-start mb-2 gap-3">
             <h5 class="mb-1">{{ item.itemName }}</h5>
             <div class="d-flex align-items-center gap-1 flex-wrap justify-content-end">
+              <span v-if="item.effectiveMajorCategory" class="badge bg-info text-dark">{{ item.effectiveMajorCategory }}</span>
+              <span v-if="item.majorCategoryOverride" class="badge bg-primary">人工大項</span>
               <span class="badge" :class="mappingBadge(item).className">{{ mappingBadge(item).label }}</span>
               <span v-if="item.invalidQuantity" class="badge bg-danger">數量無效</span>
               <span v-if="item.invalidUnitPrice" class="badge bg-danger">單價無效</span>
@@ -452,7 +480,29 @@ onMounted(async () => {
               </div>
             </div>
           </div>
-          <div class="text-muted small mb-3">單位：{{ item.unit || '無' }} ｜ 數量：{{ formatNumber(item.qty, 4) }} ｜ 單價：{{ formatNumber(item.unitPrice) }}</div>
+          <div class="text-muted small mb-2">單位：{{ item.unit || '無' }} ｜ 數量：{{ formatNumber(item.qty, 4) }} ｜ 單價：{{ formatNumber(item.unitPrice) }}</div>
+          <div class="text-muted small mb-3">
+            原始分類：{{ [item.category1, item.category2, item.category3].filter(Boolean).join(' → ') || '未辨識' }}
+          </div>
+          <div v-if="!item.isIgnored" class="row g-2 mb-3">
+            <div class="col-md-6">
+              <label class="form-label small fw-bold">工程大項</label>
+              <select
+                class="form-select"
+                :value="item.majorCategoryOverride ?? ''"
+                :disabled="busyId === item.finalBidItemId"
+                @change="updateMajorCategory(item, $event)"
+              >
+                <option value="">使用原始分類（{{ item.effectiveMajorCategory || '未辨識' }}）</option>
+                <option v-for="entry in majorCategories" :key="entry" :value="entry">{{ entry }}</option>
+              </select>
+            </div>
+            <div class="col-md-6 d-flex align-items-end">
+              <div class="small text-muted">
+                人工指定只覆蓋 2A 判定用大項，原始 Category1 / 2 / 3 仍完整保留。
+              </div>
+            </div>
+          </div>
           <div class="mb-2 small"><strong>目前標準材料：</strong><span v-if="item.materialName">{{ item.materialName }}</span><span v-else class="text-warning">尚未對應</span></div>
           <div v-if="!item.isIgnored" class="row g-2">
             <div class="col-md-4"><label class="form-label small fw-bold">材料分類</label><select v-model="selectedCategory[item.finalBidItemId]" class="form-select" @change="changeCategory(item)"><option value="">請選擇材料分類</option><option v-for="entry in filterOptions.categories" :key="entry" :value="entry">{{ entry }}</option></select></div>
