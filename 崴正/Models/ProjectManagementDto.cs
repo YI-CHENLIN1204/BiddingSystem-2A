@@ -66,11 +66,20 @@ namespace 崴正.Models
 
         public int RebarSourceItemCount { get; set; }
 
+        public int RebarCandidateItemCount { get; set; }
+
         public int RebarExcludedItemCount { get; set; }
 
         public int ConcreteSourceItemCount { get; set; }
 
+        public int ConcreteCandidateItemCount { get; set; }
+
         public int ConcreteExcludedItemCount { get; set; }
+
+        public bool PublishReady { get; set; }
+
+        public List<string> PublishBlockingIssues { get; set; } =
+            new();
 
         public decimal StructuralAmount { get; set; }
 
