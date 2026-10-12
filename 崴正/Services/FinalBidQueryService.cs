@@ -360,6 +360,9 @@ namespace 崴正.Services
                     unitPrice =
                         x.UnitPrice,
 
+                    amount =
+                        x.Amount,
+
                     materialId =
                         x.MaterialId,
 
@@ -433,11 +436,106 @@ namespace 崴正.Services
                                 x.category3
                             ),
 
+                    contributesStructuralPrice =
+                        !x.isIgnored &&
+                        string.Equals(
+                            TwoAScopePolicy
+                                .ResolveEffectiveMajorCategory(
+                                    x.majorCategoryOverride,
+                                    x.category1,
+                                    x.category2,
+                                    x.category3
+                                ),
+                            "結構體工程",
+                            StringComparison.OrdinalIgnoreCase
+                        ) &&
+                        (
+                            (
+                                x.amount.HasValue &&
+                                x.amount.Value > 0
+                            ) ||
+                            (
+                                x.qty.HasValue &&
+                                x.qty.Value > 0 &&
+                                x.unitPrice.HasValue &&
+                                x.unitPrice.Value > 0
+                            )
+                        ),
+
+                    contributesQuantityHistory =
+                        !x.isIgnored &&
+                        string.Equals(
+                            TwoAScopePolicy
+                                .ResolveEffectiveMajorCategory(
+                                    x.majorCategoryOverride,
+                                    x.category1,
+                                    x.category2,
+                                    x.category3
+                                ),
+                            "結構體工程",
+                            StringComparison.OrdinalIgnoreCase
+                        ) &&
+                        (
+                            string.Equals(
+                                x.materialName,
+                                "鋼筋",
+                                StringComparison.OrdinalIgnoreCase
+                            ) ||
+                            string.Equals(
+                                x.materialName,
+                                "混凝土",
+                                StringComparison.OrdinalIgnoreCase
+                            )
+                        ) &&
+                        x.qty.HasValue &&
+                        x.qty.Value > 0 &&
+                        x.materialUnitId.HasValue &&
+                        _unitConversionService.CanConvert(
+                            x.unit,
+                            x.materialUnitId.Value
+                        ),
+
+                    quantityHistoryCategory =
+                        !x.isIgnored &&
+                        string.Equals(
+                            TwoAScopePolicy
+                                .ResolveEffectiveMajorCategory(
+                                    x.majorCategoryOverride,
+                                    x.category1,
+                                    x.category2,
+                                    x.category3
+                                ),
+                            "結構體工程",
+                            StringComparison.OrdinalIgnoreCase
+                        ) &&
+                        (
+                            string.Equals(
+                                x.materialName,
+                                "鋼筋",
+                                StringComparison.OrdinalIgnoreCase
+                            ) ||
+                            string.Equals(
+                                x.materialName,
+                                "混凝土",
+                                StringComparison.OrdinalIgnoreCase
+                            )
+                        ) &&
+                        x.qty.HasValue &&
+                        x.qty.Value > 0 &&
+                        x.materialUnitId.HasValue &&
+                        _unitConversionService.CanConvert(
+                            x.unit,
+                            x.materialUnitId.Value
+                        )
+                            ? x.materialName
+                            : null,
+
                     x.itemName,
                     x.spec,
                     x.unit,
                     x.qty,
                     x.unitPrice,
+                    x.amount,
                     x.materialId,
                     x.materialName,
                     x.materialCategory,
