@@ -50,6 +50,7 @@ function emptyForm(): ProjectForm {
     structureType: '',
     city: '',
     totalFloorArea: null,
+    siteArea: null,
     floorCount: null,
     basementFloorCount: 0,
     projectMonth: '',
@@ -61,6 +62,7 @@ function validate() {
   if (!form.value.structureType) throw new Error('請選擇結構類型')
   if (!form.value.city) throw new Error('請選擇縣市')
   if (!form.value.totalFloorArea || form.value.totalFloorArea <= 0) throw new Error('請輸入有效的總樓地板面積')
+  if (!form.value.siteArea || form.value.siteArea <= 0) throw new Error('請輸入有效的基地面積')
   if (!form.value.floorCount || form.value.floorCount <= 0) throw new Error('請輸入有效的地上樓層')
   if (form.value.basementFloorCount == null || form.value.basementFloorCount < 0) throw new Error('請輸入有效的地下樓層')
   if (!form.value.projectMonth) throw new Error('請選擇建案年月')
@@ -83,6 +85,7 @@ async function estimate() {
           structureType: form.value.structureType,
           city: form.value.city,
           totalFloorArea: form.value.totalFloorArea,
+          siteArea: form.value.siteArea,
           floorCount: form.value.floorCount,
           basementFloorCount: form.value.basementFloorCount,
           projectDate: `${form.value.projectMonth}-01`,
