@@ -29,6 +29,10 @@ function formatMonth(value?: string) {
 }
 
 function openEditor(project: ProjectSummary) {
+  if (project.historyStatus === 'Approved') {
+    error.value = '此建案已納入 2A 歷史基準；如需修改基本資料，請先進入建案並重新開啟審核。'
+    return
+  }
   editingId.value = project.projectId
   form.value = {
     projectName: project.projectName,
@@ -139,7 +143,16 @@ onMounted(load)
           <button class="btn btn-sm btn-light border" type="button" data-bs-toggle="dropdown" aria-expanded="false" aria-label="建案操作">⋯</button>
           <ul class="dropdown-menu dropdown-menu-end">
             <li><RouterLink class="dropdown-item" :to="`/projects/${project.projectId}`">查看建案</RouterLink></li>
-            <li><button class="dropdown-item" type="button" @click="openEditor(project)">編輯基本資料</button></li>
+            <li>
+              <button
+                class="dropdown-item"
+                type="button"
+                :disabled="project.historyStatus === 'Approved'"
+                @click="openEditor(project)"
+              >
+                {{ project.historyStatus === 'Approved' ? '基本資料已鎖定' : '編輯基本資料' }}
+              </button>
+            </li>
             <li><hr class="dropdown-divider" /></li>
             <li><button class="dropdown-item text-danger" type="button" @click="remove(project)">刪除建案</button></li>
           </ul>
