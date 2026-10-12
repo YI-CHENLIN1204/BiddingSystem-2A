@@ -16,6 +16,7 @@ interface ProjectSummary {
   hasFinalBid?: boolean
   finalBidItemCount?: number
   historicalTransactionCount?: number
+  historyStatus?: string
 }
 
 interface ReadinessItem {
@@ -59,6 +60,10 @@ const error = ref('')
 
 const finalizedProjects = computed(() =>
   projects.value.filter(x => x.hasFinalBid),
+)
+
+const approvedHistoryProjectCount = computed(() =>
+  projects.value.filter(x => x.historyStatus === 'Approved').length,
 )
 
 const historyProjectCount = computed(() =>
@@ -129,7 +134,7 @@ onMounted(load)
         <RouterLink to="/projects" class="stat stat-link">
           <span>已定案建案</span>
           <strong>{{ finalizedProjects.length }}</strong>
-          <small>歷史最終標單</small>
+          <small>其中 {{ approvedHistoryProjectCount }} 案已發布為模型基準</small>
         </RouterLink>
 
         <div class="stat">
