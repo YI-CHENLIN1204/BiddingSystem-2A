@@ -52,7 +52,7 @@ const selectedEditUnitCategory = computed(() => unitCategories.value.find(item =
 const projectTypes = computed(() => [...new Set(coreMaterials.value.map(x => x.projectType).filter(Boolean))].sort())
 const structureTypes = computed(() => [...new Set(coreMaterials.value.map(x => x.structureType).filter(Boolean))].sort())
 const coreCategories = computed(() => [...new Set(coreMaterials.value.map(x => x.category).filter(Boolean))].sort())
-const weightTotal = computed(() => ['structureWeight', 'areaWeight', 'floorWeight', 'cityWeight', 'yearWeight'].reduce((sum, key) => sum + Number(form.value[key] ?? 0), 0))
+const weightTotal = computed(() => ['structureWeight', 'areaWeight', 'siteAreaWeight', 'floorWeight', 'cityWeight', 'yearWeight'].reduce((sum, key) => sum + Number(form.value[key] ?? 0), 0))
 
 const filteredCore = computed(() => {
   const items = coreMaterials.value.filter(item => {
@@ -116,8 +116,9 @@ async function loadSettings() {
     topK: Number(s.topK), minimumSampleCount: Number(s.minimumSampleCount),
     lowerQuantilePercent: Number(s.lowerQuantile) * 100, medianQuantilePercent: Number(s.medianQuantile) * 100, upperQuantilePercent: Number(s.upperQuantile) * 100,
     similarityExponent: Number(s.similarityExponent), timeHalfLifeYears: Number(s.timeHalfLifeYears), minimumSimilarityScore: Number(s.minimumSimilarityScore),
-    structureWeight: Number(s.structureWeight), areaWeight: Number(s.areaWeight), floorWeight: Number(s.floorWeight), yearWeight: Number(s.yearWeight), cityWeight: Number(s.cityWeight),
+    structureWeight: Number(s.structureWeight), areaWeight: Number(s.areaWeight), siteAreaWeight: Number(s.siteAreaWeight), floorWeight: Number(s.floorWeight), yearWeight: Number(s.yearWeight), cityWeight: Number(s.cityWeight),
     areaDifferenceCutoffPercent: Number(s.areaDifferenceCutoffRatio) * 100,
+    siteAreaDifferenceCutoffPercent: Number(s.siteAreaDifferenceCutoffRatio) * 100,
     groundFloorPenaltyPercent: Number(s.groundFloorPenaltyRatio) * 100,
     basementFloorPenaltyPercent: Number(s.basementFloorPenaltyRatio) * 100,
     yearDifferenceCutoffYears: Number(s.yearDifferenceCutoffYears),
@@ -157,8 +158,9 @@ async function saveSettings() {
     topK: f.topK, minimumSampleCount: f.minimumSampleCount,
     lowerQuantile: f.lowerQuantilePercent / 100, medianQuantile: f.medianQuantilePercent / 100, upperQuantile: f.upperQuantilePercent / 100,
     similarityExponent: f.similarityExponent, timeHalfLifeYears: f.timeHalfLifeYears, minimumSimilarityScore: f.minimumSimilarityScore,
-    structureWeight: f.structureWeight, areaWeight: f.areaWeight, floorWeight: f.floorWeight, yearWeight: f.yearWeight, cityWeight: f.cityWeight,
+    structureWeight: f.structureWeight, areaWeight: f.areaWeight, siteAreaWeight: f.siteAreaWeight, floorWeight: f.floorWeight, yearWeight: f.yearWeight, cityWeight: f.cityWeight,
     areaDifferenceCutoffRatio: f.areaDifferenceCutoffPercent / 100,
+    siteAreaDifferenceCutoffRatio: f.siteAreaDifferenceCutoffPercent / 100,
     groundFloorPenaltyRatio: f.groundFloorPenaltyPercent / 100,
     basementFloorPenaltyRatio: f.basementFloorPenaltyPercent / 100,
     yearDifferenceCutoffYears: f.yearDifferenceCutoffYears,
@@ -216,9 +218,9 @@ onMounted(async () => {
       <div class="tab-content-area">
         <form v-if="tab === 'model'" @submit.prevent="saveSettings">
           <section class="model-section"><header><div class="section-title">樣本與合理區間</div><div class="section-description">設定每項材料採用的歷史案件數，以及 P15 / P50 / P85 合理用量區間。</div></header><div class="section-body"><div class="parameter-grid cols-2"><label><span>每項材料參考上限（Top K）</span><input v-model.number="form.topK" type="number" min="1" required /><small>每項材料最多採用多少個相似歷史建案。</small></label><label><span>最低有效樣本數</span><input v-model.number="form.minimumSampleCount" type="number" min="1" required /><small>低於此數量時，不進行合理區間與異常判定。</small></label></div><div class="parameter-grid cols-3 mt-3"><label v-for="entry in [['lowerQuantilePercent','合理區間下界（P15）'],['medianQuantilePercent','參考中位數（P50）'],['upperQuantilePercent','合理區間上界（P85）']]" :key="entry[0]"><span>{{ entry[1] }}</span><div class="input-group"><input v-model.number="form[entry[0]]" type="number" min="0" max="100" step="0.1" required /><span class="input-group-text">%</span></div></label></div></div></section>
-          <section class="model-section"><header class="between"><div><div class="section-title">相似建案權重</div><div class="section-description">控制結構、面積、樓層、縣市與年份對建案相似度的影響。</div></div><div class="weight-total">權重合計 <strong>{{ weightTotal }}</strong></div></header><div class="section-body"><div class="parameter-grid cols-5"><label v-for="entry in [['structureWeight','結構權重'],['areaWeight','面積權重'],['floorWeight','樓層權重'],['cityWeight','縣市權重'],['yearWeight','年份權重']]" :key="entry[0]"><span>{{ entry[1] }}</span><input v-model.number="form[entry[0]]" type="number" min="0" step="0.1" required /></label></div></div></section>
+          <section class="model-section"><header class="between"><div><div class="section-title">相似建案權重</div><div class="section-description">控制結構、總樓地板面積、基地面積、樓層、縣市與年份對建案相似度的影響。</div></div><div class="weight-total">權重合計 <strong>{{ weightTotal }}</strong></div></header><div class="section-body"><div class="parameter-grid cols-3"><label v-for="entry in [['structureWeight','結構權重'],['areaWeight','樓地板面積權重'],['siteAreaWeight','基地面積權重'],['floorWeight','樓層權重'],['cityWeight','縣市權重'],['yearWeight','年份權重']]" :key="entry[0]"><span>{{ entry[1] }}</span><input v-model.number="form[entry[0]]" type="number" min="0" step="0.1" required /></label></div></div></section>
           <section class="model-section"><header><div class="section-title">相似度與時間控制</div><div class="section-description">設定相似案件門檻、高相似案件的加權程度與歷史資料的時間衰減。</div></header><div class="section-body"><div class="parameter-grid cols-4"><label><span>相似度強化指數</span><input v-model.number="form.similarityExponent" type="number" min="0.1" step="0.1" required /></label><label><span>最低相似度</span><div class="input-group"><input v-model.number="form.minimumSimilarityScore" type="number" min="0" max="100" step="0.1" required /><span class="input-group-text">分</span></div></label><label><span>時間半衰期</span><div class="input-group"><input v-model.number="form.timeHalfLifeYears" type="number" min="0.1" step="0.1" required /><span class="input-group-text">年</span></div></label><label><span>年份差距截止</span><div class="input-group"><input v-model.number="form.yearDifferenceCutoffYears" type="number" min="1" required /><span class="input-group-text">年</span></div></label></div></div></section>
-          <section class="model-section"><header><div class="section-title">差距懲罰</div><div class="section-description">控制面積與樓層差異造成的相似度扣分程度。</div></header><div class="section-body"><div class="parameter-grid cols-3"><label v-for="entry in [['areaDifferenceCutoffPercent','面積差距截止比例'],['groundFloorPenaltyPercent','地上樓層懲罰比例'],['basementFloorPenaltyPercent','地下樓層懲罰比例']]" :key="entry[0]"><span>{{ entry[1] }}</span><div class="input-group"><input v-model.number="form[entry[0]]" type="number" min="0" max="100" step="0.1" required /><span class="input-group-text">%</span></div></label></div></div></section>
+          <section class="model-section"><header><div class="section-title">差距懲罰</div><div class="section-description">控制樓地板面積、基地面積與樓層差異造成的相似度扣分程度。</div></header><div class="section-body"><div class="parameter-grid cols-4"><label v-for="entry in [['areaDifferenceCutoffPercent','樓地板面積差距截止比例'],['siteAreaDifferenceCutoffPercent','基地面積差距截止比例'],['groundFloorPenaltyPercent','地上樓層懲罰比例'],['basementFloorPenaltyPercent','地下樓層懲罰比例']]" :key="entry[0]"><span>{{ entry[1] }}</span><div class="input-group"><input v-model.number="form[entry[0]]" type="number" min="0" max="100" step="0.1" required /><span class="input-group-text">%</span></div></label></div></div></section>
           <div class="save-bar"><div class="text-muted small">最後更新：{{ formatDate(updatedAt) }}<span v-if="updatedBy"> ／ {{ updatedBy }}</span></div><button class="btn-save" type="submit" :disabled="loading">{{ loading ? '儲存中...' : '儲存模型參數' }}</button></div>
         </form>
 
