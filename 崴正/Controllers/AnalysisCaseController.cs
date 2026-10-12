@@ -1,3 +1,4 @@
+using System.Text.Json;
 using Microsoft.AspNetCore.Mvc;
 using 崴正.Models;
 using 崴正.Services;
@@ -205,6 +206,7 @@ namespace 崴正.Controllers
             [FromForm] int basementFloorCount,
             [FromForm] DateTime projectDate,
             [FromForm] string? note,
+            [FromForm] string? includedSheetNames,
             CancellationToken cancellationToken)
         {
             if (excelFile == null ||
@@ -215,6 +217,13 @@ namespace 崴正.Controllers
                     message =
                         "請先選擇待偵錯標單"
                 });
+            }
+
+            IReadOnlyCollection<string>? selectedSheets = null;
+            if (includedSheetNames != null)
+            {
+                try { selectedSheets = JsonSerializer.Deserialize<List<string>>(includedSheetNames); }
+                catch (JsonException) { return BadRequest(new { message = "工作表選擇格式錯誤" }); }
             }
 
             using var buffer =
@@ -250,7 +259,8 @@ namespace 崴正.Controllers
                         excelFile.FileName,
                         note,
                         GetActionUser(),
-                        cancellationToken
+                        cancellationToken,
+                        selectedSheets
                     )
             );
         }
@@ -288,6 +298,7 @@ namespace 崴正.Controllers
                 int analysisCaseId,
                 IFormFile excelFile,
                 [FromForm] string? note,
+                [FromForm] string? includedSheetNames,
                 CancellationToken cancellationToken)
         {
             if (excelFile == null ||
@@ -298,6 +309,13 @@ namespace 崴正.Controllers
                     message =
                         "請先選擇待偵錯標單"
                 });
+            }
+
+            IReadOnlyCollection<string>? selectedSheets = null;
+            if (includedSheetNames != null)
+            {
+                try { selectedSheets = JsonSerializer.Deserialize<List<string>>(includedSheetNames); }
+                catch (JsonException) { return BadRequest(new { message = "工作表選擇格式錯誤" }); }
             }
 
             using var buffer =
@@ -316,7 +334,8 @@ namespace 崴正.Controllers
                         excelFile.FileName,
                         note,
                         GetActionUser(),
-                        cancellationToken
+                        cancellationToken,
+                        selectedSheets
                     )
             );
         }
