@@ -8,7 +8,12 @@ ASP.NET Core 後端溝通，後端不包含 Razor Views 或前端靜態資產。
 - `frontend/`：Vue 3、TypeScript、Vite 單頁應用程式
 - `崴正/`：ASP.NET Core Web API、EF Core 與 PostgreSQL
 - `database/`：目前正式資料庫調整 SQL
-- `docs/2A_CURRENT_ARCHITECTURE.md`：2A 現行架構、資料流、分析範圍與待確認事項
+- `docs/2A_CURRENT_ARCHITECTURE.md`：2A 現行架構、資料流與分析範圍
+- `docs/HANDOFF.md`：目前開發交接與下一步
+- `docs/DECISIONS.md`：已確認、不應被任意推翻的架構決策
+- `docs/WORKLOG.md`：開發進度紀錄
+- `docs/LOCAL_TEST_GUIDE.md`：本機啟動與實際操作測試流程
+- `docs/VENDOR_QUESTIONS.md`：尚待廠商確認的 1D / 2A 問題
 
 ## 目前 2A 分析範圍
 
@@ -18,7 +23,7 @@ ASP.NET Core 後端溝通，後端不包含 Razor Views 或前端靜態資產。
 - 已定案最終標單使用獨立 History Pipeline 建立歷史基準
 - 1D 是選配的待偵錯資料來源；沒有 1D 時 2A 仍可自行上傳並獨立運作
 
-詳細設計與目前限制請以 `docs/2A_CURRENT_ARCHITECTURE.md` 為準。
+新接手開發時請先閱讀 `docs/HANDOFF.md`；詳細設計以 `docs/2A_CURRENT_ARCHITECTURE.md` 為準。
 
 ## 本機開發
 
