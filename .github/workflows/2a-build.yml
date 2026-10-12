@@ -15,6 +15,8 @@ jobs:
           dotnet-version: '10.0.x'
       - name: Build ASP.NET Core API
         run: dotnet build "./崴正/崴正.csproj" -c Release
+      - name: Verify sheet selection and price column safety
+        run: dotnet run --project "./tests/WorkbookParserTests/WorkbookParserTests.csproj" -c Release --no-restore
 
   frontend-build:
     runs-on: ubuntu-latest
