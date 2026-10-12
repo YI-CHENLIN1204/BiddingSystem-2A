@@ -120,6 +120,7 @@ const newMaterial = ref({ materialName: '', categoryId: null as number | null, u
 let searchTimer: number | undefined
 
 const totalPages = computed(() => Math.max(1, Math.ceil(totalCount.value / pageSize.value)))
+const isHistoryLocked = computed(() => project.value?.historyStatus === 'Approved')
 
 function formatNumber(value: number | null | undefined, digits = 2) {
   if (value == null) return '無'
@@ -457,6 +458,10 @@ onMounted(async () => {
       </div>
     </div>
 
+    <div v-if="isHistoryLocked" class="alert alert-success mb-3">
+      此建案目前是已發布的 2A 歷史基準。為避免已驗證歷史資料被直接改動，建案條件、工程大項、材料對應、數量、單價與忽略狀態目前鎖定；如需修正，請先按「重新開啟審核」。
+    </div>
+
     <ul class="nav nav-tabs mb-3">
       <li class="nav-item"><button class="nav-link" :class="{ active: tab === 'basic' }" @click="tab = 'basic'">基本資料</button></li>
       <li class="nav-item"><button class="nav-link" :class="{ active: tab === 'bid' }" @click="tab = 'bid'">決標工項</button></li>
@@ -615,7 +620,7 @@ onMounted(async () => {
               <span v-if="item.invalidUnitPrice" class="badge bg-danger">單價無效</span>
               <span v-if="item.unitMismatch" class="badge bg-danger">單位不符</span>
               <div class="item-menu">
-                <button class="btn btn-sm btn-light border" type="button" @click="openMenuId = openMenuId === item.finalBidItemId ? null : item.finalBidItemId">⋯</button>
+                <button class="btn btn-sm btn-light border" type="button" :disabled="isHistoryLocked" @click="openMenuId = openMenuId === item.finalBidItemId ? null : item.finalBidItemId">⋯</button>
                 <div v-if="openMenuId === item.finalBidItemId" class="dropdown-menu dropdown-menu-end show">
                   <button class="dropdown-item" type="button" @click="openEdit(item)">編輯工項</button>
                   <button v-if="item.isIgnored" class="dropdown-item" type="button" @click="setIgnored(item, false)">取消忽略</button>
@@ -634,7 +639,7 @@ onMounted(async () => {
               <select
                 class="form-select"
                 :value="item.majorCategoryOverride ?? ''"
-                :disabled="busyId === item.finalBidItemId"
+                :disabled="isHistoryLocked || busyId === item.finalBidItemId"
                 @change="updateMajorCategory(item, $event)"
               >
                 <option value="">使用原始分類（{{ item.effectiveMajorCategory || '未辨識' }}）</option>
@@ -649,9 +654,9 @@ onMounted(async () => {
           </div>
           <div class="mb-2 small"><strong>目前標準材料：</strong><span v-if="item.materialName">{{ item.materialName }}</span><span v-else class="text-warning">尚未對應</span></div>
           <div v-if="!item.isIgnored" class="row g-2">
-            <div class="col-md-4"><label class="form-label small fw-bold">材料分類</label><select v-model="selectedCategory[item.finalBidItemId]" class="form-select" @change="changeCategory(item)"><option value="">請選擇材料分類</option><option v-for="entry in filterOptions.categories" :key="entry" :value="entry">{{ entry }}</option></select></div>
-            <div class="col-md-5"><label class="form-label small fw-bold">標準材料</label><select v-model="selectedMaterial[item.finalBidItemId]" class="form-select" :disabled="!selectedCategory[item.finalBidItemId]"><option :value="null">請選擇標準材料</option><option v-for="material in materialsFor(item)" :key="material.materialId" :value="material.materialId">{{ material.materialName }} ({{ material.unitName }})</option><option value="__NEW__">＋ 新增標準材料</option></select></div>
-            <div class="col-md-3"><label class="form-label small fw-bold">&nbsp;</label><button class="btn btn-outline-primary w-100" type="button" :disabled="busyId === item.finalBidItemId" @click="updateMapping(item)">{{ selectedMaterial[item.finalBidItemId] === '__NEW__' ? '新增標準材料' : item.mappingStatus === 'Pending' ? '人工對應' : '修改對應' }}</button></div>
+            <div class="col-md-4"><label class="form-label small fw-bold">材料分類</label><select v-model="selectedCategory[item.finalBidItemId]" class="form-select" :disabled="isHistoryLocked" @change="changeCategory(item)"><option value="">請選擇材料分類</option><option v-for="entry in filterOptions.categories" :key="entry" :value="entry">{{ entry }}</option></select></div>
+            <div class="col-md-5"><label class="form-label small fw-bold">標準材料</label><select v-model="selectedMaterial[item.finalBidItemId]" class="form-select" :disabled="isHistoryLocked || !selectedCategory[item.finalBidItemId]"><option :value="null">請選擇標準材料</option><option v-for="material in materialsFor(item)" :key="material.materialId" :value="material.materialId">{{ material.materialName }} ({{ material.unitName }})</option><option value="__NEW__">＋ 新增標準材料</option></select></div>
+            <div class="col-md-3"><label class="form-label small fw-bold">&nbsp;</label><button class="btn btn-outline-primary w-100" type="button" :disabled="isHistoryLocked || busyId === item.finalBidItemId" @click="updateMapping(item)">{{ selectedMaterial[item.finalBidItemId] === '__NEW__' ? '新增標準材料' : item.mappingStatus === 'Pending' ? '人工對應' : '修改對應' }}</button></div>
           </div>
         </div>
       </article>
