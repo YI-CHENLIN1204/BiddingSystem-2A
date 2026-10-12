@@ -433,6 +433,7 @@ namespace 崴正.Data
                 entity.Property(e => e.Category1).HasColumnName("category1");
                 entity.Property(e => e.Category2).HasColumnName("category2");
                 entity.Property(e => e.Category3).HasColumnName("category3");
+                entity.Property(e => e.MajorCategoryOverride).HasColumnName("major_category_override");
                 entity.Property(e => e.ItemName).HasColumnName("item_name");
                 entity.Property(e => e.Spec).HasColumnName("spec");
                 entity.Property(e => e.Unit).HasColumnName("unit");
