@@ -28,12 +28,26 @@ namespace 崴正.Models
         public int FinalBidItemCount { get; set; }
 
         public int HistoricalTransactionCount { get; set; }
+
+        public string HistoryStatus { get; set; } =
+            "Draft";
+
+        public DateTime? HistoryApprovedAt { get; set; }
+
+        public string? HistoryApprovedBy { get; set; }
     }
 
 
     public class ProjectTwoASummaryDto
     {
         public int ProjectId { get; set; }
+
+        public string HistoryStatus { get; set; } =
+            "Draft";
+
+        public DateTime? HistoryApprovedAt { get; set; }
+
+        public string? HistoryApprovedBy { get; set; }
 
         public string MajorCategory { get; set; } =
             "結構體工程";
