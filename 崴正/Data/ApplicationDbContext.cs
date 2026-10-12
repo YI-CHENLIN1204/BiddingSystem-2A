@@ -13,7 +13,6 @@ namespace 崴正.Data
         public DbSet<ProjectMaster> ProjectMasters { get; set; }
         public DbSet<MaterialMaster> MaterialMasters { get; set; }
         public DbSet<MaterialCategory> MaterialCategories { get; set; }
-        public DbSet<QuantityRuleBase> QuantityRuleBases { get; set; }
         public DbSet<HistoricalTransaction> HistoricalTransactions { get; set; }
         public DbSet<ItemDictionary> ItemDictionaries { get; set; }
         public DbSet<AuditLog> AuditLogs { get; set; }
@@ -380,17 +379,6 @@ namespace 崴正.Data
                 entity.HasOne(e =>e.UnitMaster).WithMany().HasForeignKey(e =>e.UnitId).OnDelete(DeleteBehavior.Restrict).HasConstraintName("fk_material_master_unit");
             });
 
-
-            modelBuilder.Entity<QuantityRuleBase>(entity =>
-            {
-                entity.ToTable("quantity_rule_base");
-                entity.HasKey(e => e.RuleID);
-                entity.Property(e => e.RuleID).HasColumnName("rule_id");
-                entity.Property(e => e.Material_ID).HasColumnName("material_id");
-                entity.Property(e => e.Project_Type).HasColumnName("project_type");
-                entity.Property(e => e.Structure_Type).HasColumnName("structure_type");
-                entity.Property(e => e.Is_Core_Estimation).HasColumnName("is_core_estimation");
-            });
 
             modelBuilder.Entity<ItemDictionary>(entity =>
             {
