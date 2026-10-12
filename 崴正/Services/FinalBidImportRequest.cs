@@ -5,6 +5,8 @@ namespace 崴正.Services
         public byte[] ExcelBytes { get; set; } =
             Array.Empty<byte>();
 
+        public IReadOnlyCollection<string>? IncludedSheetNames { get; set; }
+
         public string FileName { get; set; } =
             string.Empty;
 
