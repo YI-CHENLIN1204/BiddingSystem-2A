@@ -69,10 +69,12 @@ namespace 崴正.Services
                 settings.MinimumSimilarityScore,
                 settings.StructureWeight,
                 settings.AreaWeight,
+                settings.SiteAreaWeight,
                 settings.FloorWeight,
                 settings.YearWeight,
                 settings.CityWeight,
                 settings.AreaDifferenceCutoffRatio,
+                settings.SiteAreaDifferenceCutoffRatio,
                 settings.GroundFloorPenaltyRatio,
                 settings.BasementFloorPenaltyRatio,
                 settings.YearDifferenceCutoffYears,
@@ -111,6 +113,9 @@ namespace 崴正.Services
             settings.AreaWeight =
                 request.AreaWeight;
 
+            settings.SiteAreaWeight =
+                request.SiteAreaWeight;
+
             settings.FloorWeight =
                 request.FloorWeight;
 
@@ -122,6 +127,9 @@ namespace 崴正.Services
 
             settings.AreaDifferenceCutoffRatio =
                 request.AreaDifferenceCutoffRatio;
+
+            settings.SiteAreaDifferenceCutoffRatio =
+                request.SiteAreaDifferenceCutoffRatio;
 
             settings.GroundFloorPenaltyRatio =
                 request.GroundFloorPenaltyRatio;
@@ -269,6 +277,7 @@ namespace 崴正.Services
             if (
                 settings.StructureWeight < 0 ||
                 settings.AreaWeight < 0 ||
+                settings.SiteAreaWeight < 0 ||
                 settings.FloorWeight < 0 ||
                 settings.YearWeight < 0 ||
                 settings.CityWeight < 0
@@ -283,6 +292,7 @@ namespace 崴正.Services
             decimal totalWeight =
                 settings.StructureWeight +
                 settings.AreaWeight +
+                settings.SiteAreaWeight +
                 settings.FloorWeight +
                 settings.YearWeight +
                 settings.CityWeight;
@@ -302,6 +312,17 @@ namespace 崴正.Services
             {
                 throw new InvalidOperationException(
                     "面積差距截止比例必須介於 0 到 1 之間。"
+                );
+            }
+
+
+            if (
+                settings.SiteAreaDifferenceCutoffRatio <= 0 ||
+                settings.SiteAreaDifferenceCutoffRatio > 1
+            )
+            {
+                throw new InvalidOperationException(
+                    "基地面積差距截止比例必須介於 0 到 1 之間。"
                 );
             }
 
