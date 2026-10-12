@@ -38,6 +38,7 @@ ALTER TABLE project_master
 -- historical_transaction：來源追溯統一透過 final_bid_item_id，
 -- 移除舊版重複保存的 source_* 欄位。
 ALTER TABLE historical_transaction
+    DROP COLUMN IF EXISTS unit_price,
     DROP COLUMN IF EXISTS source_project_key,
     DROP COLUMN IF EXISTS source_project_name,
     DROP COLUMN IF EXISTS source_sheet_name,
