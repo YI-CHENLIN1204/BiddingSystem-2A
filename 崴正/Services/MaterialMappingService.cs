@@ -144,8 +144,7 @@ namespace 崴正.Services
                 string historyAction =
                     _finalBidService
                         .SyncHistoricalTransaction(
-                            bidItem,
-                            dataIssue.Code
+                            bidItem
                         );
 
                 _auditLogService.AddLog(
