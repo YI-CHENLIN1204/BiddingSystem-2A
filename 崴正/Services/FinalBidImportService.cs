@@ -530,6 +530,60 @@ namespace 崴正.Services
                 _context.SaveChanges();
 
 
+            int recognizedMajorCategoryCount =
+                createdItems.Count(x =>
+                    TwoAScopePolicy
+                        .ResolveMajorCategory(
+                            x.Category1,
+                            x.Category2,
+                            x.Category3
+                        ) != null);
+
+            int unclassifiedMajorCategoryCount =
+                createdItems.Count -
+                recognizedMajorCategoryCount;
+
+            var structuralItems =
+                createdItems
+                    .Where(x =>
+                        string.Equals(
+                            TwoAScopePolicy
+                                .ResolveMajorCategory(
+                                    x.Category1,
+                                    x.Category2,
+                                    x.Category3
+                                ),
+                            "結構體工程",
+                            StringComparison.OrdinalIgnoreCase
+                        ))
+                    .ToList();
+
+            int structuralPricedItemCount =
+                structuralItems.Count(x =>
+                    (
+                        x.Amount.HasValue &&
+                        x.Amount.Value > 0
+                    ) ||
+                    (
+                        x.Qty.HasValue &&
+                        x.Qty.Value > 0 &&
+                        x.UnitPrice.HasValue &&
+                        x.UnitPrice.Value > 0
+                    ));
+
+            decimal structuralAmount =
+                structuralItems.Sum(x =>
+                    x.Amount.HasValue &&
+                    x.Amount.Value > 0
+                        ? x.Amount.Value
+                        : x.Qty.HasValue &&
+                          x.Qty.Value > 0 &&
+                          x.UnitPrice.HasValue &&
+                          x.UnitPrice.Value > 0
+                            ? x.Qty.Value *
+                              x.UnitPrice.Value
+                            : 0m);
+
 
             int historyInsertCount = 0;
 
@@ -558,6 +612,30 @@ namespace 崴正.Services
 
             historyInsertCount =
                 histories.Count;
+
+            int rebarHistoryInsertCount =
+                histories.Count(x =>
+                    materialDictionary
+                        .TryGetValue(
+                            x.MaterialId,
+                            out var material) &&
+                    string.Equals(
+                        material.MaterialName,
+                        "鋼筋",
+                        StringComparison.OrdinalIgnoreCase
+                    ));
+
+            int concreteHistoryInsertCount =
+                histories.Count(x =>
+                    materialDictionary
+                        .TryGetValue(
+                            x.MaterialId,
+                            out var material) &&
+                    string.Equals(
+                        material.MaterialName,
+                        "混凝土",
+                        StringComparison.OrdinalIgnoreCase
+                    ));
 
             _context.HistoricalTransactions
                 .AddRange(
@@ -608,6 +686,19 @@ namespace 崴正.Services
                                 pendingCount,
 
                             historyInsertCount,
+
+                            recognizedMajorCategoryCount,
+                            unclassifiedMajorCategoryCount,
+                            structuralItemCount =
+                                structuralItems.Count,
+                            structuralPricedItemCount,
+                            structuralAmount =
+                                Math.Round(
+                                    structuralAmount,
+                                    2
+                                ),
+                            rebarHistoryInsertCount,
+                            concreteHistoryInsertCount,
 
                             invalidQuantityCount,
 
