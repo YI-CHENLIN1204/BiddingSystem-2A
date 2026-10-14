@@ -183,3 +183,14 @@ Current next phase remains:
 
 No fake history should be inserted for demonstration.
 
+## 2026-10-15 — Documentation index and branch visibility
+
+Completed:
+
+- added `docs/README.md` as the documentation entry point
+- documented the recommended reading order for handoff and development
+- clarified that current docs and formal 2A implementation live on `feature/1d-api-integration`
+- clarified why the `docs/` directory may not appear while GitHub is displaying `main`
+- kept the no-merge-to-main rule unchanged
+
+Current next step remains real-system operation and real finalized-bid validation.
