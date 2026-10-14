@@ -8,24 +8,23 @@
 - **細項數量偵錯：鋼筋、混凝土**
 - 待偵錯案件與歷史最終標單完全分流
 - 1D 為選配資料來源，2A 必須可獨立運作
-- 歷史最終標單必須經人工審核與 Publish History 才能成為模型基準
-- 相似建案使用建案條件 + 時間權重建立 P15 / P50 / P85 合理範圍
+- 歷史最終標單必須經人工審核與 `Publish History` 才能成為模型基準
+- 相似建案使用建案條件 + 時間權重建立 P15／P50／P85 合理範圍
 
-> Active development branch: `feature/1d-api-integration`
+> 目前正式開發 Branch：`feature/1d-api-integration`
 
 ---
 
-## 1. Current system concept
+## 1. 目前系統概念
 
 ```text
                          2A
                           │
             ┌─────────────┴─────────────┐
             │                           │
-        Target Pipeline            History Pipeline
-        待偵錯案件                  已定案最終標單
+        待偵錯流程                  歷史資料流程
             │                           │
-    ┌───────┴───────┐             Draft review
+    ┌───────┴───────┐              Draft 審核
     │               │                  │
 自行上傳        選配 1D 匯入          Publish History
     │               │                  │
@@ -39,52 +38,51 @@
             │                           │
             └─────────────┬─────────────┘
                           ↓
-                   2A estimation
-                   / anomaly detection
+                 2A 估算／異常偵測
 ```
 
-Important:
+關鍵規則：
 
 ```text
 AnalysisCase != ProjectMaster
 ```
 
-A working target bid must never automatically become historical model truth.
+正在修改中的待偵錯標單絕對不能自動成為歷史模型真值。
 
 ---
 
-## 2. Current analysis scope
+## 2. 目前分析範圍
 
-### Major-category estimation
-
-```text
-結構體工程
--> historical price per ping
--> similar-project weighting
--> time weighting
--> weighted P15 / P50 / P85
-```
-
-### Detail quantity anomaly detection
+### 大項估算
 
 ```text
 結構體工程
-├─ 鋼筋      -> kg / m²
-└─ 混凝土    -> m³ / m²
+→ 歷史每坪單價
+→ 相似建案加權
+→ 時間權重
+→ 加權 P15／P50／P85
 ```
 
-The system intentionally does not estimate every engineering category.
+### 細項數量異常偵測
+
+```text
+結構體工程
+├─ 鋼筋      → kg / m²
+└─ 混凝土    → m³ / m²
+```
+
+系統刻意不對所有工程類別做估算。
 
 ---
 
-## 3. Technology stack
+## 3. 技術架構
 
 ### Frontend
 
 - Vue 3
 - TypeScript
 - Vite
-- Nginx in Docker production container
+- 正式 Docker Container 內使用 Nginx
 
 ### Backend
 
@@ -93,28 +91,28 @@ The system intentionally does not estimate every engineering category.
 - Entity Framework Core
 - Npgsql
 
-### Database
+### 資料庫
 
 - PostgreSQL
-- current development database hosted on Supabase
+- 目前開發資料庫使用 Supabase
 
-### Deployment / local integration
+### 部署／本機整合
 
 - Docker Compose
-- frontend and backend are fully separated
-- frontend calls backend only through HTTP API
+- Frontend 與 Backend 完全分離
+- Frontend 只透過 HTTP API 呼叫 Backend
 
 ---
 
-## 4. Repository structure
+## 4. Repository 結構
 
 ```text
 BiddingSystem-2A/
-├─ frontend/                 Vue 3 frontend
-├─ 崴正/                     ASP.NET Core backend
-├─ database/                 SQL migrations / schema changes
-├─ docs/                     architecture and handoff documentation
-├─ tests/                    parser regression tests
+├─ frontend/                 Vue 3 前端
+├─ 崴正/                     ASP.NET Core 後端
+├─ database/                 SQL Migration／Schema 異動
+├─ docs/                     架構、交接與開發文件
+├─ tests/                    Parser 回歸測試
 ├─ compose.yaml
 ├─ .env.example
 └─ README.md
@@ -122,29 +120,29 @@ BiddingSystem-2A/
 
 ---
 
-## 5. Documentation index
+## 5. 文件索引
 
-New development chats and new team members should read the documentation instead of reconstructing the project from old conversations.
+新的開發對話或新成員應先閱讀文件，不要再從舊對話重新拼湊整個專案。
 
-| Document | Purpose |
+| 文件 | 用途 |
 |---|---|
-| `docs/README.md` | Documentation index and recommended reading order |
-| `docs/NEXT_CHAT_HANDOFF.md` | Short handoff for the next ChatGPT/development conversation |
-| `docs/HANDOFF.md` | Current development state and immediate next work |
-| `docs/2A_CURRENT_ARCHITECTURE.md` | Formal system architecture and data flow |
-| `docs/DECISIONS.md` | Architecture decisions that should not be silently reversed |
-| `docs/API.md` | Current backend API reference |
-| `docs/DATABASE.md` | Database tables, responsibilities, relationships and eligibility rules |
-| `docs/DEVELOPMENT.md` | Local development, Docker, build, testing and change rules |
-| `docs/LOCAL_TEST_GUIDE.md` | Hands-on validation procedure |
-| `docs/VENDOR_QUESTIONS.md` | Questions still awaiting vendor confirmation |
-| `docs/WORKLOG.md` | Development history |
+| `docs/README.md` | 文件索引與建議閱讀順序 |
+| `docs/NEXT_CHAT_HANDOFF.md` | 下一個 ChatGPT／開發對話的精簡交接 |
+| `docs/HANDOFF.md` | 目前開發狀態與下一步 |
+| `docs/2A_CURRENT_ARCHITECTURE.md` | 正式系統架構與資料流 |
+| `docs/DECISIONS.md` | 不應被默默推翻的架構決策 |
+| `docs/API.md` | 目前 Backend API 參考 |
+| `docs/DATABASE.md` | 資料表、責任、關聯與模型資格規則 |
+| `docs/DEVELOPMENT.md` | 本機開發、Docker、Build、測試與修改規則 |
+| `docs/LOCAL_TEST_GUIDE.md` | 本機實際驗證步驟 |
+| `docs/VENDOR_QUESTIONS.md` | 仍等待廠商確認的問題 |
+| `docs/WORKLOG.md` | 開發紀錄 |
 
-Recommended reading order:
+建議閱讀順序：
 
 1. `docs/README.md`
 2. `docs/NEXT_CHAT_HANDOFF.md`
-3. this README
+3. 本 README
 4. `docs/2A_CURRENT_ARCHITECTURE.md`
 5. `docs/DECISIONS.md`
 6. `docs/API.md`
@@ -155,23 +153,23 @@ Recommended reading order:
 
 ---
 
-## 6. Quick start — Docker
+## 6. Docker 快速啟動
 
-Create `.env` from `.env.example`.
+從 `.env.example` 建立 `.env`。
 
-Required:
+必要：
 
 ```text
 DB_CONNECTION_STRING
 ```
 
-Optional:
+選配：
 
 ```text
 ONE_D_API_BASE_URL
 ```
 
-Update the local branch:
+更新本機 Branch：
 
 ```powershell
 git status
@@ -180,7 +178,7 @@ git switch feature/1d-api-integration
 git pull origin feature/1d-api-integration
 ```
 
-Build and start:
+重新 Build 並啟動：
 
 ```powershell
 docker compose down
@@ -188,13 +186,13 @@ docker compose up -d --build
 docker compose ps
 ```
 
-Open:
+開啟：
 
 ```text
 http://localhost:8081
 ```
 
-If startup fails:
+若啟動失敗：
 
 ```powershell
 docker compose logs --tail=150
@@ -202,22 +200,22 @@ docker compose logs --tail=150
 
 ---
 
-## 7. Local frontend/backend development
+## 7. 本機 Frontend／Backend 開發
 
-Backend:
+Backend：
 
 ```powershell
-$env:ConnectionStrings__DefaultConnection = "<PostgreSQL connection string>"
+$env:ConnectionStrings__DefaultConnection = "<PostgreSQL 連線字串>"
 dotnet run --project .\崴正\崴正.csproj
 ```
 
-Default backend development URL:
+Backend 預設開發網址：
 
 ```text
 http://127.0.0.1:5261
 ```
 
-Frontend:
+Frontend：
 
 ```powershell
 cd .\frontend
@@ -225,144 +223,144 @@ npm install
 npm run dev
 ```
 
-Default frontend development URL:
+Frontend 預設開發網址：
 
 ```text
 http://127.0.0.1:5174
 ```
 
-Vite proxies `/api` to the backend.
+Vite 會將 `/api` 代理到 Backend。
 
 ---
 
-## 8. Environment behavior
+## 8. 不同環境的行為
 
-### Standalone / school-project mode
+### 專題／獨立模式
 
-Leave:
+保持：
 
 ```text
 ONE_D_API_BASE_URL=
 ```
 
-2A remains fully usable through direct upload.
+2A 仍可完全透過直接上傳運作。
 
-### Industry integration mode
+### 產學整合模式
 
-Configure:
+設定：
 
 ```text
-ONE_D_API_BASE_URL=<1D API base URL>
+ONE_D_API_BASE_URL=<1D API Base URL>
 ```
 
-Then the UI additionally exposes 1D import.
+之後 UI 會額外開放 1D 匯入。
 
-1D is used only to create a local 2A snapshot; later analysis runs operate on the local `AnalysisBidVersion`.
+1D 只用來建立一次性的 2A 本地快照；後續分析都使用本地 `AnalysisBidVersion`。
 
 ---
 
-## 9. Historical data workflow
+## 9. 歷史資料流程
 
-A finalized-bid import does not immediately become model truth.
+匯入最終標單後不會立即成為模型真值。
 
 ```text
-Excel/CSV
--> worksheet preview
--> explicit sheet selection
--> read-only inspection
--> import
--> ProjectMaster Draft
--> row/category/material/unit/price review
--> publish blockers resolved
--> Publish History
--> Approved
+Excel / CSV
+→ 預覽工作表
+→ 明確選擇工作表
+→ 唯讀檢查
+→ 匯入
+→ ProjectMaster Draft
+→ 工項／工程大項／材料／單位／價格審核
+→ 處理發布阻擋項目
+→ Publish History
+→ Approved
 ```
 
-Only Approved history participates in estimation.
+只有 Approved 歷史資料可以參與估算。
 
-To edit an Approved baseline:
+若要修改 Approved 基準：
 
 ```text
 Reopen History Review
--> Draft
--> edit
--> publish again
+→ Draft
+→ 修改
+→ 再次發布
 ```
 
 ---
 
-## 10. Target-case workflow
+## 10. 待偵錯案件流程
 
 ```text
-Create AnalysisCase
--> V1
--> run quantity / price analysis
--> upload revised bid
--> V2
--> analyze again
--> keep V1 and previous AnalysisRun results
+建立 AnalysisCase
+→ V1
+→ 執行數量／價格分析
+→ 上傳修改後標單
+→ V2
+→ 再次分析
+→ 保留 V1 與舊 AnalysisRun
 ```
 
-Old target versions are immutable snapshots.
+舊的待偵錯版本都是不可覆寫快照。
 
 ---
 
-## 11. Read-only workbook inspection
+## 11. 匯入前唯讀 Excel 檢查
 
-Before importing a workbook, use the shared preview/inspection flow.
+正式匯入前，使用共用工作表預覽／檢查流程。
 
-Backend:
+Backend：
 
 ```text
 POST /api/tender-import/preview
 POST /api/tender-import/inspect
 ```
 
-The inspection flow:
+檢查流程：
 
-- does not create a project
-- does not create an AnalysisCase
-- does not write historical transactions
-- preserves source worksheet and row number
-- does not guess arbitrary numeric columns
-- surfaces candidate rebar/concrete quantities and warnings
+- 不建立 Project
+- 不建立 AnalysisCase
+- 不寫入 HistoricalTransaction
+- 保留來源工作表與列號
+- 不猜測任意數字欄位
+- 顯示鋼筋／混凝土候選數量與警告
 
 ---
 
-## 12. Model readiness
+## 12. 模型準備度
 
-Default minimum valid history:
+預設最低有效歷史資料：
 
 ```text
-5 approved projects
+5 個 Approved 建案
 ```
 
-Readiness is independent for:
+準備度分開計算：
 
 - 結構體工程價格
 - 鋼筋數量
 - 混凝土數量
 
-If history is insufficient, the correct result is:
+歷史資料不足時，正確結果就是：
 
 ```text
-Insufficient data
+樣本不足
 ```
 
-Do not seed fake history just to make P15/P50/P85 appear.
+不要為了讓 P15／P50／P85 出現而建立假歷史資料。
 
 ---
 
-## 13. Build verification
+## 13. Build 驗證
 
-Backend:
+Backend：
 
 ```powershell
 dotnet restore .\崴正\崴正.csproj
 dotnet build .\崴正\崴正.csproj -c Release
 ```
 
-Frontend:
+Frontend：
 
 ```powershell
 cd .\frontend
@@ -370,7 +368,7 @@ npm ci
 npm run build
 ```
 
-Parser regression:
+Parser 回歸測試：
 
 ```powershell
 dotnet run --project .\tests\WorkbookParserTests\WorkbookParserTests.csproj -c Release
@@ -378,92 +376,93 @@ dotnet run --project .\tests\WorkbookParserTests\WorkbookParserTests.csproj -c R
 
 ---
 
-## 14. Security / configuration rule
+## 14. 安全／設定規則
 
-Do not commit:
+禁止提交：
 
-- PostgreSQL passwords
-- API keys
+- PostgreSQL 密碼
+- API Key
 - `.env`
-- production secrets
+- 正式環境機密資料
 
-Database connection must be supplied through:
+資料庫連線必須透過：
 
 ```text
 ConnectionStrings__DefaultConnection
 ```
 
-Docker Compose maps:
+Docker Compose 對應：
 
 ```text
 DB_CONNECTION_STRING
--> ConnectionStrings__DefaultConnection
+→ ConnectionStrings__DefaultConnection
 ```
 
 ---
 
-## 15. Removed legacy architecture
+## 15. 已移除舊架構
 
-Do not restore without an explicit new decision:
+沒有新的明確決策前，不要恢復：
 
-- generic material estimation
+- 通用材料估算
 - `RangeEstimationService`
 - `BatchEstimationService`
 - `CoreMaterialService`
 - `quantity_rule_base`
-- old one-shot `/api/bid-anomaly`
-- old one-shot anomaly UI
-- POC granularity tradeoff demo
+- 舊版一次性 `/api/bid-anomaly`
+- 舊版一次性異常 UI
+- POC 偵錯顆粒度取捨示範
 
-The formal target-analysis entry is:
+目前正式待偵錯入口：
 
 ```text
-AnalysisCase -> AnalysisBidVersion -> AnalysisRun
+AnalysisCase → AnalysisBidVersion → AnalysisRun
 ```
 
 ---
 
-## 16. Current development phase
+## 16. 目前開發階段
 
-The architecture is sufficiently defined for hands-on validation.
+目前架構已經足以進入實際操作與真實資料驗證。
 
-The immediate goal is:
+立即目標：
 
-1. run the latest branch locally
-2. inspect a real workbook against its source rows
-3. import the first truly finalized historical bid
-4. resolve Draft review blockers
-5. publish the first Approved history
-6. repeat with additional real cases
-7. when enough history exists, validate P15/P50/P85
-8. create a real target case
-9. compare V1/V2 results
+1. 在本機執行最新 Branch
+2. 將真實 Excel 解析結果與原始列對照
+3. 匯入第一份真正已定案歷史標單
+4. 處理 Draft 審核阻擋項目
+5. 發布第一個 Approved 歷史建案
+6. 持續加入其他真實案件
+7. 有足夠歷史資料後驗證 P15／P50／P85
+8. 建立真實待偵錯案件
+9. 比較 V1／V2 結果
 
-Do not redesign the system before this real-data validation reveals an actual problem.
-
----
-
-## 17. Branch policy
-
-Current development:
-
-```text
-feature/1d-api-integration
-```
-
-Do not merge to `main` unless explicitly requested.
-
+在真實資料驗證發現真正問題以前，不要再重新設計整套系統。
 
 ---
 
-## 18. GitHub branch visibility
+## 17. Branch 規則
 
-The documentation and current formal implementation are maintained on:
+目前正式開發：
 
 ```text
 feature/1d-api-integration
 ```
 
-If GitHub is currently showing `main`, the `docs/` directory and the latest 2A changes may not be visible yet. Use the branch selector to switch to `feature/1d-api-integration`.
+除非使用者明確要求，否則不要合併到 `main`。
 
-Do not merge to `main` unless explicitly requested.
+---
+
+## 18. GitHub Branch 顯示
+
+目前正式文件與最新 2A 實作都維護在：
+
+```text
+feature/1d-api-integration
+```
+
+如果 GitHub 當前顯示 `main`，可能看不到最新 `docs/` 與 2A 修改。
+
+請使用 Branch 選擇器切換到 `feature/1d-api-integration`。
+
+除非使用者明確要求，否則不要合併到 `main`。
