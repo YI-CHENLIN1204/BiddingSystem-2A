@@ -61,6 +61,22 @@ var selected = parser.Parse(new MemoryStream(content), "test.xlsx", new[] { "建
 Check(selected.Count == 3, "只解析選定工作表的有效工程明細，含小數點項次");
 Check(selected.Any(x => x.ItemCode == "2.01" && x.Qty == 214m && x.Amount == 502900m),
     "2.01 等小數點項次若有數量與價格，必須保留為工項而非細分類標題");
+// 擬真標單常用右側「工種分類」逐列標示工程大項，不能忽略該欄。
+var classifiedSheet = wb.Worksheets.Add("分類欄測試");
+string[] classifiedHeaders = { "項次", "工項名稱", "規格／說明", "單位", "數量", "單價", "複價", "工種分類" };
+for (int i = 0; i < classifiedHeaders.Length; i++) classifiedSheet.Cell(1, i + 1).Value = classifiedHeaders[i];
+classifiedSheet.Cell(2, 1).Value = "2.01";
+classifiedSheet.Cell(2, 2).Value = "預拌混凝土";
+classifiedSheet.Cell(2, 4).Value = "M3";
+classifiedSheet.Cell(2, 5).Value = 214;
+classifiedSheet.Cell(2, 6).Value = 2350;
+classifiedSheet.Cell(2, 7).Value = 502900;
+classifiedSheet.Cell(2, 8).Value = "結構體工程";
+using var classifiedStream = new MemoryStream();
+wb.SaveAs(classifiedStream);
+var classifiedRows = parser.Parse(new MemoryStream(classifiedStream.ToArray()), "test.xlsx", new[] { "分類欄測試" });
+Check(classifiedRows.Count == 1 && classifiedRows[0].Category1 == "結構體工程",
+    "逐列工種分類可正確成為工程大項，不再全部變成未分類");
 Check(selected[0].Qty == 214, "混凝土數量應為214，不應取到廠商比較欄");
 Check(selected[0].UnitPrice == 2350, "混凝土單價應為2350");
 Check(selected[0].Amount == 502900, "混凝土複價應為502900");
