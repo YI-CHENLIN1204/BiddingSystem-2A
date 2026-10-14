@@ -181,7 +181,10 @@ namespace 崴正.Services
                     }
 
                     // 細分類：1.1、2.3...
-                    if (Regex.IsMatch(col1, @"^[0-9]+\.[0-9]+$") && !string.IsNullOrWhiteSpace(col2))
+                    if (Regex.IsMatch(col1, @"^[0-9]+\.[0-9]+$") && !string.IsNullOrWhiteSpace(col2) &&
+                        !TryGetDecimal(values, qtyCol).HasValue &&
+                        !TryGetDecimal(values, priceCol).HasValue &&
+                        !TryGetDecimal(values, amountCol).HasValue)
                     {
                        
 
