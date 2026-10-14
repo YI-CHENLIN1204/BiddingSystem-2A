@@ -128,6 +128,7 @@ New development chats and new team members should read the documentation instead
 
 | Document | Purpose |
 |---|---|
+| `docs/README.md` | Documentation index and recommended reading order |
 | `docs/NEXT_CHAT_HANDOFF.md` | Short handoff for the next ChatGPT/development conversation |
 | `docs/HANDOFF.md` | Current development state and immediate next work |
 | `docs/2A_CURRENT_ARCHITECTURE.md` | Formal system architecture and data flow |
@@ -141,15 +142,16 @@ New development chats and new team members should read the documentation instead
 
 Recommended reading order:
 
-1. `docs/NEXT_CHAT_HANDOFF.md`
-2. this README
-3. `docs/2A_CURRENT_ARCHITECTURE.md`
-4. `docs/DECISIONS.md`
-5. `docs/API.md`
-6. `docs/DATABASE.md`
-7. `docs/DEVELOPMENT.md`
-8. `docs/LOCAL_TEST_GUIDE.md`
-9. `docs/WORKLOG.md`
+1. `docs/README.md`
+2. `docs/NEXT_CHAT_HANDOFF.md`
+3. this README
+4. `docs/2A_CURRENT_ARCHITECTURE.md`
+5. `docs/DECISIONS.md`
+6. `docs/API.md`
+7. `docs/DATABASE.md`
+8. `docs/DEVELOPMENT.md`
+9. `docs/LOCAL_TEST_GUIDE.md`
+10. `docs/WORKLOG.md`
 
 ---
 
@@ -448,5 +450,20 @@ Current development:
 ```text
 feature/1d-api-integration
 ```
+
+Do not merge to `main` unless explicitly requested.
+
+
+---
+
+## 18. GitHub branch visibility
+
+The documentation and current formal implementation are maintained on:
+
+```text
+feature/1d-api-integration
+```
+
+If GitHub is currently showing `main`, the `docs/` directory and the latest 2A changes may not be visible yet. Use the branch selector to switch to `feature/1d-api-integration`.
 
 Do not merge to `main` unless explicitly requested.
