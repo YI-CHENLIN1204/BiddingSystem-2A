@@ -1,5 +1,7 @@
 # BiddingSystem-2A
 
+> **Repository Policy:** 此專案涉及產學合作內容與合作資料，因此維持 Private。對外作品集只描述可公開的架構、方法與本人實際參與內容，不公開合作方原始資料、資料庫內容或未經授權的程式碼。
+
 專案採完全前後端分離架構：Vue 單頁應用程式只透過 HTTP API 與
 ASP.NET Core 後端溝通，後端不包含 Razor Views 或前端靜態資產。
 
@@ -60,3 +62,10 @@ cd .\frontend
 npm ci
 npm run build
 ```
+
+## Repository Policy
+
+- 不提交正式資料庫密碼、API key 或 deployment secret。
+- 不公開合作方原始工程 / 成交 / 投標資料。
+- `.env.example` 僅保留 placeholder。
+- 若未來需要展示，只使用合成 / 去識別化資料與可公開截圖。
