@@ -1,14 +1,14 @@
-# 2A Documentation Index
+# 2A 文件索引
 
-> Repository: `YI-CHENLIN1204/BiddingSystem-2A`  
-> Active development branch: `feature/1d-api-integration`  
-> Updated: 2026-10-15
+> Repository：`YI-CHENLIN1204/BiddingSystem-2A`  
+> 目前正式開發 Branch：`feature/1d-api-integration`  
+> 更新日期：2026-10-15
 
-This folder is the current documentation source for the 2A quantity/price estimation and anomaly-detection system.
+此資料夾為 2A「量價估算與異常偵測系統」目前正式文件來源。
 
-## Read this first
+## 建議先閱讀
 
-For a new development conversation or a new developer, read in this order:
+如果是新的開發對話或新的開發人員，請依照以下順序閱讀：
 
 1. [NEXT_CHAT_HANDOFF.md](./NEXT_CHAT_HANDOFF.md)
 2. [HANDOFF.md](./HANDOFF.md)
@@ -21,81 +21,81 @@ For a new development conversation or a new developer, read in this order:
 9. [VENDOR_QUESTIONS.md](./VENDOR_QUESTIONS.md)
 10. [WORKLOG.md](./WORKLOG.md)
 
-## What each document is for
+## 各文件用途
 
-| Document | Purpose |
+| 文件 | 用途 |
 |---|---|
-| `NEXT_CHAT_HANDOFF.md` | Short copy-ready handoff for the next ChatGPT/development conversation |
-| `HANDOFF.md` | Current implementation state and immediate next steps |
-| `2A_CURRENT_ARCHITECTURE.md` | Formal Target/History architecture, model scope, and workflow |
-| `DECISIONS.md` | Decisions that must not be silently reversed |
-| `API.md` | Current backend endpoints and request/response responsibilities |
-| `DATABASE.md` | Current tables, columns, relationships, and model-data responsibilities |
-| `DEVELOPMENT.md` | Local build, Docker, Git, schema-change, and documentation rules |
-| `LOCAL_TEST_GUIDE.md` | Hands-on local validation checklist |
-| `VENDOR_QUESTIONS.md` | Open questions that still require vendor confirmation |
-| `WORKLOG.md` | Chronological development record |
+| `NEXT_CHAT_HANDOFF.md` | 可直接複製到下一個 ChatGPT／開發對話的精簡交接資料 |
+| `HANDOFF.md` | 目前實作狀態與接下來應優先處理的工作 |
+| `2A_CURRENT_ARCHITECTURE.md` | Target／History 正式架構、模型範圍與資料流程 |
+| `DECISIONS.md` | 已確認、不應被默默推翻的架構決策 |
+| `API.md` | 目前後端 API 與各端點責任 |
+| `DATABASE.md` | 目前資料表、欄位、關聯與模型資料責任 |
+| `DEVELOPMENT.md` | 本機建置、Docker、Git、Schema 異動與文件維護規則 |
+| `LOCAL_TEST_GUIDE.md` | 本機實際驗證操作清單 |
+| `VENDOR_QUESTIONS.md` | 仍等待廠商確認的問題 |
+| `WORKLOG.md` | 依時間整理的開發紀錄 |
 
-## Current formal scope
+## 目前正式分析範圍
 
 ```text
-Major-category estimation / price anomaly
+大項估算／價格異常
 └─ 結構體工程
 
-Detail quantity anomaly detection
+細項數量異常偵測
 └─ 結構體工程
    ├─ 鋼筋
    └─ 混凝土
 ```
 
-## Current data split
+## 目前資料分流
 
 ```text
-Target / working data
+待偵錯／工作資料
 AnalysisCase
 └─ AnalysisBidVersion
    ├─ AnalysisBidItem
    └─ AnalysisRun
 
-Verified history
+已確認歷史資料
 ProjectMaster
 └─ FinalBidItem
    └─ HistoricalTransaction
 ```
 
-Critical rule:
+關鍵規則：
 
 ```text
 AnalysisCase != ProjectMaster
 ```
 
-A target bid must never automatically become model truth.
+待偵錯標單不得自動成為模型歷史真值。
 
-## Current development phase
+## 目前開發階段
 
-The architecture is defined enough for real-data validation.
+目前架構已經足以進入真實資料驗證。
 
-Current priority:
+目前優先順序：
 
-1. run the latest `feature/1d-api-integration`
-2. inspect a real workbook before import
-3. import a truly finalized bid as Draft history
-4. resolve review blockers
-5. Publish History -> Approved
-6. repeat until there are enough valid historical cases
-7. validate structural-work P15/P50/P85
-8. create a real target case and compare V1/V2
+1. 啟動最新 `feature/1d-api-integration`
+2. 在正式匯入前先檢查真實 Excel
+3. 將真正已定案的最終標單匯入為 Draft 歷史資料
+4. 處理審核阻擋項目
+5. 執行 Publish History → Approved
+6. 持續匯入直到有足夠有效歷史案件
+7. 驗證結構體工程 P15／P50／P85
+8. 建立真實待偵錯案件並比較 V1／V2
 
-Do not insert fake history merely to make the model return a range.
+不要為了讓模型產生合理區間而塞入假歷史資料。
 
-## Branch visibility note
+## Branch 顯示注意事項
 
-The `docs/` directory is currently maintained on:
+`docs/` 目前維護在：
 
 ```text
 feature/1d-api-integration
 ```
 
-If GitHub is showing the default `main` branch, this folder may not appear yet. Use the branch selector and switch to `feature/1d-api-integration`.
+如果 GitHub 當前顯示的是預設 `main`，可能看不到這個資料夾的最新內容。請使用 Branch 選擇器切換到 `feature/1d-api-integration`。
 
-Do not merge to `main` unless explicitly requested.
+除非使用者明確要求，否則不要合併到 `main`。
