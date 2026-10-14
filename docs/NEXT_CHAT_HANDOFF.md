@@ -1,18 +1,18 @@
-# 2A Next Chat Handoff
+# 2A 下一個對話交接
 
-> Updated: 2026-10-15  
-> Repository: `YI-CHENLIN1204/BiddingSystem-2A`  
-> Active branch: `feature/1d-api-integration`
+> 更新日期：2026-10-15  
+> Repository：`YI-CHENLIN1204/BiddingSystem-2A`  
+> 目前正式 Branch：`feature/1d-api-integration`
 
-## Instruction to the next chat
+## 給下一個對話的指示
 
-Directly continue the existing project.
+直接延續目前既有專案。
 
-Do **not** redesign the system from scratch.
-Do **not** restore removed generic material-estimation code.
-Do **not** merge `main` unless the user explicitly requests it.
+**不要**從頭重新設計系統。  
+**不要**恢復已移除的通用材料估算程式。  
+除非使用者明確要求，否則**不要**合併到 `main`。
 
-First read:
+請先閱讀：
 
 1. `README.md`
 2. `docs/HANDOFF.md`
@@ -25,22 +25,22 @@ First read:
 9. `docs/VENDOR_QUESTIONS.md`
 10. `docs/WORKLOG.md`
 
-Then continue from the current real-data validation phase.
+之後直接從目前的真實資料驗證階段繼續。
 
 ---
 
-## Current formal scope
+## 目前正式範圍
 
 ```text
-Major-category estimation / price anomaly:
+大項估算／價格異常：
 結構體工程
 
-Detail quantity anomaly:
+細項數量異常：
 鋼筋
 混凝土
 ```
 
-Current hierarchy:
+目前層級：
 
 ```text
 結構體工程
@@ -48,194 +48,194 @@ Current hierarchy:
 └─ 混凝土
 ```
 
-Do not automatically re-add template/formwork, steel structure, doors/windows, landscape, or all-category estimation.
+不要自動重新加入模板、鋼骨、門窗、景觀或全類別估算。
 
 ---
 
-## Critical architecture
+## 關鍵架構
 
-### Target / working pipeline
+### 待偵錯／工作資料流程
 
 ```text
-Direct upload ─────────┐
-                      ├─ AnalysisCase
-Optional 1D import ───┘      │
-                             ├─ V1
-                             ├─ V2
-                             └─ V3
-                                  │
-                                  └─ AnalysisRun
+直接上傳 ─────────────┐
+                     ├─ AnalysisCase
+選配 1D 匯入 ─────────┘      │
+                            ├─ V1
+                            ├─ V2
+                            └─ V3
+                                 │
+                                 └─ AnalysisRun
 ```
 
-Target tables:
+待偵錯資料表：
 
 - `analysis_case`
 - `analysis_bid_version`
 - `analysis_bid_item`
 - `analysis_run`
 
-### Historical pipeline
+### 歷史資料流程
 
 ```text
-Finalized bid candidate
--> ProjectMaster (Draft)
--> FinalBidItem
--> review
--> Publish History
--> ProjectMaster (Approved)
-   ├─ structural price baseline from FinalBidItem
-   └─ rebar/concrete quantity baseline in HistoricalTransaction
+已定案標單候選
+→ ProjectMaster（Draft）
+→ FinalBidItem
+→ 人工審核
+→ Publish History
+→ ProjectMaster（Approved）
+   ├─ 結構體工程價格基準來自 FinalBidItem
+   └─ 鋼筋／混凝土數量基準寫入 HistoricalTransaction
 ```
 
-Historical tables:
+歷史資料表：
 
 - `project_master`
 - `final_bid_item`
 - `historical_transaction`
 
-Never treat an AnalysisCase as historical truth.
+永遠不要把 AnalysisCase 直接視為歷史真值。
 
 ---
 
-## 1D rule
+## 1D 規則
 
-1D is optional.
+1D 為選配。
 
-School-project / standalone environment:
+專題／獨立環境：
 
 ```text
-direct structured upload
--> 2A snapshot
--> analysis
+直接上傳結構化標單
+→ 2A 快照
+→ 分析
 ```
 
-Industry environment:
+產學環境：
 
 ```text
 1D
--> one-time import
--> local 2A snapshot
--> later analysis stays inside 2A
+→ 一次性匯入
+→ 2A 本地快照
+→ 後續分析都留在 2A
 ```
 
-Do not make 1D a runtime dependency for every check.
+不要讓 1D 變成每一次偵錯都必須呼叫的執行期依賴。
 
 ---
 
-## Historical review rule
+## 歷史資料審核規則
 
-Import does not equal approval.
+匯入不等於核准。
 
 ```text
-Import
--> Draft
--> review source rows / major category / material / quantity / unit / price
--> resolve blockers
--> Publish History
--> Approved
+匯入
+→ Draft
+→ 檢查原始列／工程大項／材料／數量／單位／價格
+→ 處理阻擋項目
+→ Publish History
+→ Approved
 ```
 
-Approved data is locked.
+Approved 資料必須鎖定。
 
-Corrections require:
+若要修正：
 
 ```text
 Reopen History Review
--> Draft
--> correct
--> publish again
+→ Draft
+→ 修正
+→ 再次發布
 ```
 
-Source `Category1 / Category2 / Category3` must remain traceable.
-Human major-category correction uses `major_category_override`.
+來源 `Category1 / Category2 / Category3` 必須保留追溯。  
+人工修正實際工程大項使用 `major_category_override`。
 
 ---
 
-## Workbook safeguard already implemented
+## 已實作 Excel 防護
 
-Both historical import and target upload have a shared worksheet-preview / inspection concept.
+歷史匯入與待偵錯上傳共用工作表預覽／檢查概念。
 
-Read-only APIs:
+唯讀 API：
 
 ```text
 POST /api/tender-import/preview
 POST /api/tender-import/inspect
 ```
 
-Rules:
+規則：
 
-- explicitly choose included worksheet(s)
-- preserve original sheet and row
-- do not silently import all sheets
-- do not guess numeric columns from row endings
-- do not treat summary / quotation / supplier-comparison rows as engineering details
-- candidate rebar/concrete totals are inspection aids only
-- inspection must not write model history
+- 必須明確選擇要納入的工作表
+- 保留原始工作表名稱與列號
+- 不可以默默匯入所有工作表
+- 不可以從每列尾端任意數字猜測數量欄
+- 不可以把摘要、報價、廠商比較等列當作工程明細
+- 鋼筋／混凝土候選總量只作檢查輔助
+- 檢查流程不得寫入模型歷史
 
-A sheet title containing `預算單` or `自估` does not prove that the prices are finalized.
+工作表名稱包含「預算單」或「自估」，不代表該價格已經正式定案。
 
 ---
 
-## Similar-project features
+## 相似建案特徵
 
-Current formal inputs:
+目前正式輸入：
 
-- project type
-- structure type
-- city
-- total floor area
-- site area
-- ground-floor count
-- basement-floor count
-- project year
+- 建案類型
+- 結構類型
+- 縣市
+- 總樓地板面積
+- 基地面積
+- 地上樓層
+- 地下樓層
+- 建案年份
 
-Model uses:
+模型使用：
 
-- similarity weights
-- similarity exponent
-- time decay
-- weighted P15/P50/P85
-- insufficient-history fallback
+- 相似度權重
+- 相似度指數
+- 時間衰減
+- 加權 P15／P50／P85
+- 歷史不足備援
 
-Default minimum sample count:
+預設最低樣本數：
 
 ```text
-5 Approved projects
+5 個 Approved 建案
 ```
 
-Never create fake history to satisfy the threshold.
+絕對不要建立假歷史資料來湊足門檻。
 
 ---
 
-## Price and quantity responsibility
+## 價格與數量資料責任
 
-Structural-work historical price:
+結構體工程歷史價格：
 
 ```text
 FinalBidItem.Amount
-or Qty * UnitPrice
--> project structural-work total
--> price / ping
+或 Qty × UnitPrice
+→ 建案結構體工程總價
+→ 每坪單價
 ```
 
-Rebar / concrete historical quantity:
+鋼筋／混凝土歷史數量：
 
 ```text
 HistoricalTransaction
 ```
 
-Standard units:
+標準單位：
 
-- rebar = kg
-- concrete = 立方公尺
+- 鋼筋 = kg
+- 混凝土 = 立方公尺
 
-`historical_transaction` intentionally does not store price.
+`historical_transaction` 刻意不保存價格。
 
 ---
 
-## Development database state
+## 開發資料庫狀態
 
-As of 2026-10-15:
+截至 2026-10-15：
 
 ```text
 project_master             0
@@ -247,13 +247,13 @@ analysis_bid_item          0
 analysis_run               0
 ```
 
-This clean state is intentional.
+這個乾淨狀態是刻意保留的。
 
 ---
 
-## Local startup
+## 本機啟動
 
-From repository root:
+在 Repository 根目錄：
 
 ```powershell
 git status
@@ -266,88 +266,88 @@ docker compose up -d --build
 docker compose ps
 ```
 
-Open:
+開啟：
 
 ```text
 http://localhost:8081
 ```
 
-If it fails:
+若啟動失敗：
 
 ```powershell
 docker compose logs --tail=150
 ```
 
-The system is ready for actual operation when both containers are running and the UI loads without API errors.
+當 Backend、Frontend 容器都正常執行，而且 UI 沒有 API 錯誤時，就可以開始實際操作。
 
 ---
 
-## What to do next
+## 接下來要做什麼
 
-The next task is **real-data validation**.
+下一個任務是**真實資料驗證**。
 
-Do this, in order:
+請依照以下順序：
 
-1. run the latest system locally
-2. open the finalized-bid import page
-3. upload a real workbook
-4. preview worksheets
-5. select only authentic detail worksheet(s)
-6. run read-only inspection
-7. compare parsed quantities / prices / rows with the Excel source
-8. do not create Approved history until commercial finality and project metadata are confirmed
-9. if it is a truly finalized bid, create Draft history
-10. resolve review blockers
+1. 在本機啟動最新版系統
+2. 開啟最終標單匯入頁面
+3. 上傳真實 Excel
+4. 預覽所有工作表
+5. 只選擇真正的工程明細工作表
+6. 執行唯讀檢查
+7. 將解析出的數量／價格／原始列與 Excel 來源逐筆核對
+8. 在商務定案狀態與建案資料尚未確認前，不得建立 Approved 歷史資料
+9. 如果確定是真正最終標單，先建立 Draft 歷史建案
+10. 處理審核阻擋項目
 11. Publish History
-12. verify the 2A project summary
-13. repeat with additional real historical projects
-14. when enough Approved history exists, test structural-work P15/P50/P85
-15. create a real target AnalysisCase
-16. compare V1/V2 quantity and price runs
+12. 確認 2A 建案歷史摘要
+13. 持續加入其他真實歷史建案
+14. 有足夠 Approved 歷史案件後，測試結構體工程 P15／P50／P85
+15. 建立真實待偵錯 AnalysisCase
+16. 比較 V1／V2 的數量與價格分析結果
 
-The next chat should prioritize testing the real system, not inventing another architecture.
+下一個對話應優先測試實際系統，不要再發明另一套架構。
 
 ---
 
-## Removed code that must not return
+## 不得恢復的已移除程式
 
-Do not restore:
+不要恢復：
 
 - `RangeEstimationService`
 - `BatchEstimationService`
 - `CoreMaterialService`
 - `quantity_rule_base`
-- legacy `/api/bid-anomaly`
-- old generic material estimation page
-- old one-shot anomaly page
-- POC granularity tradeoff demo
+- 舊版 `/api/bid-anomaly`
+- 舊版通用材料估算頁面
+- 舊版一次性異常偵測頁面
+- POC 偵錯顆粒度取捨示範
 
 ---
 
-## Vendor questions still pending
+## 仍待廠商確認
 
-Keep current provisional implementation until confirmed:
+正式回覆前維持目前暫定實作：
 
-1. direct upload vs mandatory 1D in the industry version
-2. exact direct-upload schema
-3. accepted major/detail hierarchy
-4. whether one-time 1D snapshot is correct
-5. which engineering categories should participate in quantity / price analysis
+1. 產學版是否保留直接上傳，或 1D 為唯一入口
+2. 直接上傳的正式資料格式
+3. 接受的大項／細項層級
+4. 1D 一次性快照流程是否正確
+5. 哪些工程類別應參與數量／價格分析
 
-See:
+詳見：
 
 `docs/VENDOR_QUESTIONS.md`
 
 ---
 
-## Short prompt for the next conversation
+## 給下一個對話的精簡提示詞
 
-Paste this after opening a new chat:
+開啟新對話後可直接貼上：
 
 ```text
 請直接接手 GitHub 專案 YI-CHENLIN1204/BiddingSystem-2A。
 
-目前正式開發 branch 是 feature/1d-api-integration，請不要重新設計整套系統，也不要恢復已移除的 generic material estimation。
+目前正式開發 branch 是 feature/1d-api-integration，請不要重新設計整套系統，也不要恢復已移除的通用材料估算。
 
 請先閱讀：
 README.md
@@ -363,14 +363,14 @@ docs/VENDOR_QUESTIONS.md
 docs/WORKLOG.md
 
 目前核心：
-- 結構體工程 = 大項估算/價格異常
+- 結構體工程 = 大項估算／價格異常
 - 鋼筋、混凝土 = 細項數量偵錯
-- AnalysisCase/Version/Run 是待偵錯工作資料
-- ProjectMaster/FinalBidItem/HistoricalTransaction 是已定案歷史資料
+- AnalysisCase／Version／Run 是待偵錯工作資料
+- ProjectMaster／FinalBidItem／HistoricalTransaction 是已定案歷史資料
 - 1D 是選配，沒有 1D 時 2A 必須能獨立上傳使用
-- 歷史標單匯入後先 Draft，人工審核後才能 Publish History -> Approved
+- 歷史標單匯入後先 Draft，人工審核後才能 Publish History → Approved
 - Approved 歷史要修改必須 Reopen History Review
-- HistoricalTransaction 只存鋼筋/混凝土數量，不存價格
+- HistoricalTransaction 只存鋼筋／混凝土數量，不存價格
 - 相似建案包含 SiteArea
 - 樣本不足就顯示不足，不准塞假資料
 
