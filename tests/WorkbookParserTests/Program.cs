@@ -133,4 +133,17 @@ Check(inspection.Rows[4].StandardQuantity == null && inspection.Rows[4].Warnings
 Check(inspection.Notice.Contains("尚未驗證決標真實性"),
     "預匯入明示候選合計不等於異常判定或歷史基準");
 
+Check(TenderImportInspectionService.ClassifyQuantityCandidate("鋼筋加工組立", "SD420W") == "Excluded",
+    "鋼筋加工組立不可混入材料重量");
+Check(TenderImportInspectionService.ClassifyQuantityCandidate("鋼筋綁紮工資", "") == "Excluded",
+    "鋼筋綁紮工資不可混入材料重量");
+Check(TenderImportInspectionService.ClassifyQuantityCandidate("預拌混凝土澆置人工", "") == "Excluded",
+    "混凝土澆置人工不可混入混凝土體積");
+Check(TenderImportInspectionService.ClassifyQuantityCandidate("混凝土試體試驗", "") == "Excluded",
+    "混凝土試驗不可造成正式數量組換算失敗");
+Check(TenderImportInspectionService.ClassifyQuantityCandidate("鋼筋材料", "SD420W") == "Rebar",
+    "鋼筋材料應保留");
+Check(TenderImportInspectionService.ClassifyQuantityCandidate("預拌混凝土", "3500 psi") == "Concrete",
+    "預拌混凝土材料應保留");
+
 Console.WriteLine("WorkbookParserTests: all checks passed.");
