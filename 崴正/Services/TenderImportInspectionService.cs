@@ -43,6 +43,33 @@ public static class TenderImportInspectionService
         string Notice
     );
 
+    // 與正式 AnalysisCase 數量偵錯共用，避免把施工服務或配件當成材料重量/體積。
+    public static string ClassifyQuantityCandidate(string? itemName, string? spec)
+    {
+        string sourceName = ((itemName ?? "") + " " + (spec ?? ""))
+            .Replace(" ", "").ToUpperInvariant();
+        bool hasRebar = sourceName.Contains("鋼筋", StringComparison.Ordinal)
+            || sourceName.Contains("SD420W", StringComparison.Ordinal)
+            || sourceName.Contains("SD420", StringComparison.Ordinal)
+            || sourceName.Contains("SD280", StringComparison.Ordinal);
+        bool hasConcrete = sourceName.Contains("混凝土", StringComparison.Ordinal)
+            || sourceName.Contains("預拌", StringComparison.Ordinal);
+        bool rebarAccessory = hasRebar && new[]
+        {
+            "續接", "接頭", "套筒", "植筋", "綁紮", "加工", "組立",
+            "彎紮", "切割", "運費", "檢驗", "試驗", "工資", "人工"
+        }.Any(sourceName.Contains);
+        bool concreteService = hasConcrete && new[]
+        {
+            "打除", "澆置", "搗築", "鑽心", "檢驗", "試驗", "運費", "工資", "人工"
+        }.Any(sourceName.Contains);
+
+        if (rebarAccessory || concreteService) return "Excluded";
+        if (hasRebar && !hasConcrete) return "Rebar";
+        if (hasConcrete && !hasRebar) return "Concrete";
+        return "Other";
+    }
+
     public static InspectionReport Build(IReadOnlyCollection<TenderImportRowDto> source)
     {
         var duplicateCounts = source
@@ -52,28 +79,7 @@ public static class TenderImportInspectionService
 
         var rows = source.Select(item =>
         {
-            string sourceName = (item.ItemName + " " + item.Spec).Replace(" ", "").ToUpperInvariant();
-            string category = "Other";
-
-            bool hasRebar = sourceName.Contains("鋼筋", StringComparison.Ordinal);
-            bool hasConcrete = sourceName.Contains("混凝土", StringComparison.Ordinal);
-            bool rebarAccessory = hasRebar && new[]
-            {
-                "續接", "接頭", "套筒", "植筋", "綁紮", "加工", "組立",
-                "彎紮", "切割", "運費", "檢驗", "試驗"
-            }.Any(sourceName.Contains);
-
-            bool concreteService = hasConcrete && new[]
-            {
-                "打除", "澆置", "搗築", "鑽心", "檢驗", "試驗", "運費"
-            }.Any(sourceName.Contains);
-
-            if (rebarAccessory || concreteService)
-                category = "Excluded";
-            else if (hasRebar && !hasConcrete)
-                category = "Rebar";
-            else if (hasConcrete && !hasRebar)
-                category = "Concrete";
+            string category = ClassifyQuantityCandidate(item.ItemName, item.Spec);
 
             string? majorCategory = TwoAScopePolicy.ResolveMajorCategory(
                 item.Category1, item.Category2, item.Category3);
