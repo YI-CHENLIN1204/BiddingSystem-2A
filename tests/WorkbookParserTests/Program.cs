@@ -21,6 +21,12 @@ work.Cell(2, 7).Value = 2100;
 work.Cell(2, 8).Value = 2100;
 work.Cell(2, 9).Value = 250;
 // 未填工程量時，不可再使用供應商數字補上。
+work.Cell(4, 1).Value = "2.01";
+work.Cell(4, 2).Value = "編號含小數點的預拌混凝土";
+work.Cell(4, 3).Value = "M3";
+work.Cell(4, 4).Value = 214;
+work.Cell(4, 5).Value = 2350;
+work.Cell(4, 6).Value = 502900;
 work.Cell(3, 1).Value = "2";
 work.Cell(3, 2).Value = "待確認價款工項";
 work.Cell(3, 3).Value = "M3";
@@ -52,7 +58,9 @@ Check(blocked, "多工作表且未選取時必須拒絕匯入");
 var names = parser.GetSheetNames(new MemoryStream(content), "test.xlsx");
 Check(names.Count == 3, "預覽保留全部工作表供確認");
 var selected = parser.Parse(new MemoryStream(content), "test.xlsx", new[] { "建築工程-預算單" });
-Check(selected.Count == 2, "只解析選定工作表的有效工程明細");
+Check(selected.Count == 3, "只解析選定工作表的有效工程明細，含小數點項次");
+Check(selected.Any(x => x.ItemCode == "2.01" && x.Qty == 214m && x.Amount == 502900m),
+    "2.01 等小數點項次若有數量與價格，必須保留為工項而非細分類標題");
 Check(selected[0].Qty == 214, "混凝土數量應為214，不應取到廠商比較欄");
 Check(selected[0].UnitPrice == 2350, "混凝土單價應為2350");
 Check(selected[0].Amount == 502900, "混凝土複價應為502900");
