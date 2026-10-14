@@ -1,43 +1,259 @@
 # 2A Next Chat Handoff
 
-> Updated: 2026-10-12  
+> Updated: 2026-10-15  
 > Repository: `YI-CHENLIN1204/BiddingSystem-2A`  
 > Active branch: `feature/1d-api-integration`
 
-## What the next chat should do first
+## Instruction to the next chat
 
-Do not redesign the system and do not restore removed legacy estimation code.
+Directly continue the existing project.
 
-Read, in this order:
+Do **not** redesign the system from scratch.
+Do **not** restore removed generic material-estimation code.
+Do **not** merge `main` unless the user explicitly requests it.
 
-1. `docs/HANDOFF.md`
-2. `docs/2A_CURRENT_ARCHITECTURE.md`
-3. `docs/DECISIONS.md`
-4. `docs/LOCAL_TEST_GUIDE.md`
-5. `docs/VENDOR_QUESTIONS.md`
-6. `docs/WORKLOG.md`
+First read:
 
-Then help the user run the current branch locally and move into real-data validation.
+1. `README.md`
+2. `docs/HANDOFF.md`
+3. `docs/2A_CURRENT_ARCHITECTURE.md`
+4. `docs/DECISIONS.md`
+5. `docs/API.md`
+6. `docs/DATABASE.md`
+7. `docs/DEVELOPMENT.md`
+8. `docs/LOCAL_TEST_GUIDE.md`
+9. `docs/VENDOR_QUESTIONS.md`
+10. `docs/WORKLOG.md`
 
-## Current development state
+Then continue from the current real-data validation phase.
 
-The formal current scope is:
+---
 
-- major-category estimation / price anomaly: **結構體工程**
-- detail quantity anomaly detection: **鋼筋、混凝土**
-- target working data: `AnalysisCase / AnalysisBidVersion / AnalysisRun`
-- finalized historical truth: `ProjectMaster / FinalBidItem / HistoricalTransaction`
-- 1D is optional; 2A must remain fully usable without 1D
-- finalized historical imports start as `Draft`, require review, then explicit `Publish History`
-- approved history is locked until explicitly reopened
-- `HistoricalTransaction` is quantity-only
-- structural price history remains in `FinalBidItem`
-- `SiteArea` is part of target/history metadata and similarity scoring
-- insufficient history must remain insufficient; do not create fake history
+## Current formal scope
 
-## The user can begin actual system operation when
+```text
+Major-category estimation / price anomaly:
+結構體工程
 
-The local machine has completed all of the following:
+Detail quantity anomaly:
+鋼筋
+混凝土
+```
+
+Current hierarchy:
+
+```text
+結構體工程
+├─ 鋼筋
+└─ 混凝土
+```
+
+Do not automatically re-add template/formwork, steel structure, doors/windows, landscape, or all-category estimation.
+
+---
+
+## Critical architecture
+
+### Target / working pipeline
+
+```text
+Direct upload ─────────┐
+                      ├─ AnalysisCase
+Optional 1D import ───┘      │
+                             ├─ V1
+                             ├─ V2
+                             └─ V3
+                                  │
+                                  └─ AnalysisRun
+```
+
+Target tables:
+
+- `analysis_case`
+- `analysis_bid_version`
+- `analysis_bid_item`
+- `analysis_run`
+
+### Historical pipeline
+
+```text
+Finalized bid candidate
+-> ProjectMaster (Draft)
+-> FinalBidItem
+-> review
+-> Publish History
+-> ProjectMaster (Approved)
+   ├─ structural price baseline from FinalBidItem
+   └─ rebar/concrete quantity baseline in HistoricalTransaction
+```
+
+Historical tables:
+
+- `project_master`
+- `final_bid_item`
+- `historical_transaction`
+
+Never treat an AnalysisCase as historical truth.
+
+---
+
+## 1D rule
+
+1D is optional.
+
+School-project / standalone environment:
+
+```text
+direct structured upload
+-> 2A snapshot
+-> analysis
+```
+
+Industry environment:
+
+```text
+1D
+-> one-time import
+-> local 2A snapshot
+-> later analysis stays inside 2A
+```
+
+Do not make 1D a runtime dependency for every check.
+
+---
+
+## Historical review rule
+
+Import does not equal approval.
+
+```text
+Import
+-> Draft
+-> review source rows / major category / material / quantity / unit / price
+-> resolve blockers
+-> Publish History
+-> Approved
+```
+
+Approved data is locked.
+
+Corrections require:
+
+```text
+Reopen History Review
+-> Draft
+-> correct
+-> publish again
+```
+
+Source `Category1 / Category2 / Category3` must remain traceable.
+Human major-category correction uses `major_category_override`.
+
+---
+
+## Workbook safeguard already implemented
+
+Both historical import and target upload have a shared worksheet-preview / inspection concept.
+
+Read-only APIs:
+
+```text
+POST /api/tender-import/preview
+POST /api/tender-import/inspect
+```
+
+Rules:
+
+- explicitly choose included worksheet(s)
+- preserve original sheet and row
+- do not silently import all sheets
+- do not guess numeric columns from row endings
+- do not treat summary / quotation / supplier-comparison rows as engineering details
+- candidate rebar/concrete totals are inspection aids only
+- inspection must not write model history
+
+A sheet title containing `預算單` or `自估` does not prove that the prices are finalized.
+
+---
+
+## Similar-project features
+
+Current formal inputs:
+
+- project type
+- structure type
+- city
+- total floor area
+- site area
+- ground-floor count
+- basement-floor count
+- project year
+
+Model uses:
+
+- similarity weights
+- similarity exponent
+- time decay
+- weighted P15/P50/P85
+- insufficient-history fallback
+
+Default minimum sample count:
+
+```text
+5 Approved projects
+```
+
+Never create fake history to satisfy the threshold.
+
+---
+
+## Price and quantity responsibility
+
+Structural-work historical price:
+
+```text
+FinalBidItem.Amount
+or Qty * UnitPrice
+-> project structural-work total
+-> price / ping
+```
+
+Rebar / concrete historical quantity:
+
+```text
+HistoricalTransaction
+```
+
+Standard units:
+
+- rebar = kg
+- concrete = 立方公尺
+
+`historical_transaction` intentionally does not store price.
+
+---
+
+## Development database state
+
+As of 2026-10-15:
+
+```text
+project_master             0
+final_bid_item             0
+historical_transaction     0
+analysis_case              0
+analysis_bid_version       0
+analysis_bid_item          0
+analysis_run               0
+```
+
+This clean state is intentional.
+
+---
+
+## Local startup
+
+From repository root:
 
 ```powershell
 git status
@@ -50,99 +266,113 @@ docker compose up -d --build
 docker compose ps
 ```
 
-The user is ready to operate the system when:
+Open:
 
-1. `git status` says the branch is up to date and working tree is clean.
-2. `docker compose ps` shows both frontend and backend containers running.
-3. `http://localhost:8081` opens successfully.
-4. The following pages load without API errors:
-   - 系統總覽
-   - 待偵錯案件
-   - 建案管理
-   - 決標回寫 / 最終標單匯入
-   - 結構體工程估算
-   - 參數管理
-   - 操作紀錄
+```text
+http://localhost:8081
+```
 
-At that point, tell the user explicitly:
+If it fails:
 
-> **現在可以開始實際操作系統。**
+```powershell
+docker compose logs --tail=150
+```
 
-## First real operation sequence
+The system is ready for actual operation when both containers are running and the UI loads without API errors.
 
-Do not start by fabricating history.
+---
 
-Use this sequence:
+## What to do next
 
-1. Import **one real finalized historical bid**.
-2. Confirm the created project enters `Draft`.
-3. Review:
-   - effective major category
-   - material mapping
-   - quantity
-   - unit
-   - unit price / amount
-   - ignored rows
-   - publication blockers
-4. Correct issues.
-5. Use **Publish History**.
-6. Confirm the project becomes `Approved`.
-7. Confirm:
-   - structural-work price baseline appears
-   - rebar quantity baseline appears when eligible
-   - concrete quantity baseline appears when eligible
-   - unrelated rows do not enter rebar/concrete history
-8. Open the project detail and verify the **2A 歷史基準摘要**.
-9. Repeat with additional finalized bids.
-10. Once enough approved history exists, create a real target case and test V1/V2 analysis.
+The next task is **real-data validation**.
 
-## Expected behavior with the clean database
+Do this, in order:
 
-The database intentionally starts without fake historical projects.
+1. run the latest system locally
+2. open the finalized-bid import page
+3. upload a real workbook
+4. preview worksheets
+5. select only authentic detail worksheet(s)
+6. run read-only inspection
+7. compare parsed quantities / prices / rows with the Excel source
+8. do not create Approved history until commercial finality and project metadata are confirmed
+9. if it is a truly finalized bid, create Draft history
+10. resolve review blockers
+11. Publish History
+12. verify the 2A project summary
+13. repeat with additional real historical projects
+14. when enough Approved history exists, test structural-work P15/P50/P85
+15. create a real target AnalysisCase
+16. compare V1/V2 quantity and price runs
 
-Therefore, before at least `MinimumSampleCount` valid approved projects exist:
+The next chat should prioritize testing the real system, not inventing another architecture.
 
-- structural price estimation may show insufficient data
-- rebar quantity anomaly detection may show insufficient data
-- concrete quantity anomaly detection may show insufficient data
+---
 
-This is expected behavior, not a bug.
+## Removed code that must not return
 
-## Do not restore
+Do not restore:
 
-Do not reintroduce unless a new explicit decision is made:
-
-- generic material estimation
 - `RangeEstimationService`
 - `BatchEstimationService`
 - `CoreMaterialService`
 - `quantity_rule_base`
 - legacy `/api/bid-anomaly`
+- old generic material estimation page
 - old one-shot anomaly page
 - POC granularity tradeoff demo
 
-## Vendor-confirmation items still pending
+---
 
-Keep the provisional implementation until confirmed:
+## Vendor questions still pending
 
-1. whether industry 2A must preserve direct upload in addition to 1D
+Keep current provisional implementation until confirmed:
+
+1. direct upload vs mandatory 1D in the industry version
 2. exact direct-upload schema
-3. whether `結構體工程 -> 鋼筋 / 混凝土` is the accepted major/detail hierarchy
-4. whether 1D should be a one-time snapshot source
-5. which categories should participate in quantity estimation and whether excluded quantity categories may still use major-category price analysis
+3. accepted major/detail hierarchy
+4. whether one-time 1D snapshot is correct
+5. which engineering categories should participate in quantity / price analysis
 
-## Branch rule
+See:
 
-Continue development on:
+`docs/VENDOR_QUESTIONS.md`
 
-`feature/1d-api-integration`
+---
 
-Do not merge `main` unless the user explicitly asks.
+## Short prompt for the next conversation
 
-## 2026-10-13 pre-import inspection continuation
+Paste this after opening a new chat:
 
-Read-only quantity preview is now part of the same workbook sheet picker for both target uploads and finalized history import. The API is `POST /api/tender-import/inspect` and requires selected worksheet names. It returns all parsed candidate rows with original line/source and conservative rebar/concrete candidate quantities and warnings; it does not persist or publish anything.
+```text
+請直接接手 GitHub 專案 YI-CHENLIN1204/BiddingSystem-2A。
 
-The next hands-on test should open `http://localhost:8081/final-bid`, choose `最終標單.xls`, select only `建築工程-預算單`, and click **檢查選取工作表的全部候選明細**. Inspect steel and concrete filters against source lines before creating any Draft. In the historical budget/quotation workbook, financial finality and project metadata remain unconfirmed, so it must not be published as Approved.
+目前正式開發 branch 是 feature/1d-api-integration，請不要重新設計整套系統，也不要恢復已移除的 generic material estimation。
 
-Never interpret candidate quantity totals as P15/P50/P85 anomaly results or insert fake history to make the model ready.
+請先閱讀：
+README.md
+docs/NEXT_CHAT_HANDOFF.md
+docs/HANDOFF.md
+docs/2A_CURRENT_ARCHITECTURE.md
+docs/DECISIONS.md
+docs/API.md
+docs/DATABASE.md
+docs/DEVELOPMENT.md
+docs/LOCAL_TEST_GUIDE.md
+docs/VENDOR_QUESTIONS.md
+docs/WORKLOG.md
+
+目前核心：
+- 結構體工程 = 大項估算/價格異常
+- 鋼筋、混凝土 = 細項數量偵錯
+- AnalysisCase/Version/Run 是待偵錯工作資料
+- ProjectMaster/FinalBidItem/HistoricalTransaction 是已定案歷史資料
+- 1D 是選配，沒有 1D 時 2A 必須能獨立上傳使用
+- 歷史標單匯入後先 Draft，人工審核後才能 Publish History -> Approved
+- Approved 歷史要修改必須 Reopen History Review
+- HistoricalTransaction 只存鋼筋/混凝土數量，不存價格
+- 相似建案包含 SiteArea
+- 樣本不足就顯示不足，不准塞假資料
+
+現在不要再做架構重整，直接進入本機啟動與真實標單資料驗證。
+```
