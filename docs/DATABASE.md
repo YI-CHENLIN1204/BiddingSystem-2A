@@ -1,41 +1,41 @@
-# 2A Database Design
+# 2A 資料庫設計
 
-> Updated: 2026-10-15  
-> Database: PostgreSQL  
-> Active development branch: `feature/1d-api-integration`
+> 更新日期：2026-10-15  
+> 資料庫：PostgreSQL  
+> 目前正式開發 Branch：`feature/1d-api-integration`
 
-This document describes the current 2A database responsibilities. The development database has been deliberately cleaned so obsolete experimental tables and duplicate fields do not remain in the formal design.
+本文件說明目前 2A 各資料表的責任。開發資料庫已經刻意清理，已淘汰的實驗資料表與重複欄位不應留在正式設計中。
 
-## 1. Core rule
+## 1. 核心規則
 
-There are two independent data domains:
+系統有兩個完全獨立的資料領域：
 
 ```text
-TARGET / WORKING DATA
+待偵錯／工作資料
 analysis_case
-  -> analysis_bid_version
-      -> analysis_bid_item
-      -> analysis_run
+  → analysis_bid_version
+      → analysis_bid_item
+      → analysis_run
 
-HISTORICAL / VERIFIED DATA
+歷史／已驗證資料
 project_master
-  -> final_bid_item
-  -> historical_transaction
+  → final_bid_item
+  → historical_transaction
 ```
 
-Do not merge these domains.
+不得合併這兩個資料領域。
 
-A target case can be revised many times and must never automatically become model truth.
+待偵錯案件可以反覆修改，但絕對不能自動變成模型歷史真值。
 
 ---
 
-# 2. Target pipeline tables
+## 2. 待偵錯流程資料表
 
-## analysis_case
+### analysis_case
 
-One in-progress project being checked by 2A.
+代表一個目前正在被 2A 檢查的建案。
 
-Main columns:
+主要欄位：
 
 - `analysis_case_id`
 - `case_name`
@@ -51,17 +51,17 @@ Main columns:
 - `created_at`
 - `updated_at`
 
-Purpose:
+用途：
 
-- store target project metadata
-- serve as parent of all target bid versions
-- never act as historical truth
+- 保存待偵錯建案基本資料
+- 作為所有待偵錯標單版本的父資料
+- 永遠不能直接視為歷史真值
 
-## analysis_bid_version
+### analysis_bid_version
 
-Immutable bid snapshot belonging to one target case.
+屬於某一個待偵錯案件的不可覆寫標單快照。
 
-Main columns:
+主要欄位：
 
 - `analysis_bid_version_id`
 - `analysis_case_id`
@@ -74,24 +74,24 @@ Main columns:
 - `is_current`
 - `created_at`
 
-Current source types:
+目前來源類型：
 
 - `Upload`
 - `OneD`
 
-Rule:
+規則：
 
 ```text
 V1 != V2 != V3
 ```
 
-Do not overwrite an older version when the bid changes.
+標單修改後必須建立新版本，不可以覆寫舊版本。
 
-## analysis_bid_item
+### analysis_bid_item
 
-Parsed item snapshot for one target version.
+屬於單一待偵錯版本的解析工項快照。
 
-Main columns:
+主要欄位：
 
 - `analysis_bid_item_id`
 - `analysis_bid_version_id`
@@ -112,44 +112,44 @@ Main columns:
 - `source_confidence`
 - `note`
 
-Purpose:
+用途：
 
-- preserve the exact target-version snapshot
-- keep source traceability
-- support quantity and major-price analysis without re-reading 1D
+- 保存當下版本完整快照
+- 保留來源追溯
+- 不需要重新讀取 1D 就能執行數量與大項價格分析
 
-## analysis_run
+### analysis_run
 
-Saved result of one analysis executed against one target version.
+某一個待偵錯版本執行一次分析後保存的結果。
 
-Main columns:
+主要欄位：
 
 - `analysis_run_id`
 - `analysis_bid_version_id`
 - `run_type`
 - `status`
-- `result_json` JSONB
+- `result_json`：JSONB
 - `created_at`
 
-Examples of run type:
+Run Type 範例：
 
-- quantity analysis
-- major-category price analysis
+- 數量分析
+- 大項價格分析
 
-Purpose:
+用途：
 
-- preserve historical results even after V2/V3 is uploaded
-- allow users to reopen old analysis runs
+- 即使後續上傳 V2／V3，也能保留舊分析結果
+- 允許使用者重新開啟以前的 Run
 
 ---
 
-# 3. Historical pipeline tables
+## 3. 歷史流程資料表
 
-## project_master
+### project_master
 
-One candidate or approved finalized historical project.
+代表一個歷史最終標單候選或已核准建案。
 
-Main columns:
+主要欄位：
 
 - `project_id`
 - `project_name`
@@ -169,26 +169,26 @@ Main columns:
 - `history_approved_by`
 - `is_deleted`
 
-Current historical state model:
+目前歷史狀態：
 
 ```text
 Draft
-  -> review
-  -> Publish History
-  -> Approved
+  → 審核
+  → Publish History
+  → Approved
 
 Approved
-  -> Reopen History Review
-  -> Draft
+  → Reopen History Review
+  → Draft
 ```
 
-Only `Approved` projects may participate in active model baselines.
+只有 `Approved` 建案可以參與有效模型基準。
 
-## final_bid_item
+### final_bid_item
 
-Original / reviewed source rows from a finalized bid.
+保存最終標單原始／審核後的來源工項。
 
-Main columns:
+主要欄位：
 
 - `final_bid_item_id`
 - `project_master_id`
@@ -218,35 +218,35 @@ Main columns:
 - `created_at`
 - `updated_at`
 
-Important design rule:
+重要設計規則：
 
-Source `category1/category2/category3` is preserved.
+來源 `category1 / category2 / category3` 必須保留。
 
-If the engineering major requires human correction, use:
+若工程大項需要人工修正，使用：
 
 ```text
 major_category_override
 ```
 
-Do not overwrite the source hierarchy.
+不得覆寫來源分類層級。
 
-### Price responsibility
+#### 價格責任
 
-Structural-work historical price is derived from `final_bid_item`:
+結構體工程歷史價格從 `final_bid_item` 推導：
 
 ```text
 Amount
-or
-Qty * UnitPrice
+或
+Qty × UnitPrice
 ```
 
-Then normalized to price per ping.
+再依總樓地板面積換算為每坪單價。
 
-## historical_transaction
+### historical_transaction
 
-Standardized quantity history only.
+只保存標準化後的數量歷史。
 
-Main columns:
+主要欄位：
 
 - `transaction_id`
 - `material_id`
@@ -257,37 +257,37 @@ Main columns:
 - `is_outlier`
 - `is_deleted`
 
-Current scope:
+目前範圍：
 
-- rebar quantity
-- concrete quantity
+- 鋼筋數量
+- 混凝土數量
 
-Important:
+重要：
 
-`historical_transaction` intentionally has **no unit-price column**.
+`historical_transaction` 刻意**沒有單價欄位**。
 
-Price responsibility belongs to `final_bid_item`.
+價格責任屬於 `final_bid_item`。
 
 ---
 
-# 4. Material / detection master tables
+## 4. 材料／偵錯主檔
 
-## material_category
+### material_category
 
-Main columns:
+主要欄位：
 
 - `category_id`
 - `category_name`
 - `is_active`
 - `sort_order`
 
-Current core category:
+目前核心分類：
 
 - 結構體工程
 
-## material_master
+### material_master
 
-Main columns:
+主要欄位：
 
 - `material_id`
 - `material_name`
@@ -295,33 +295,33 @@ Main columns:
 - `unit_id`
 - `is_active`
 
-Current important materials:
+目前重要材料：
 
-- 鋼筋 / kg
-- 混凝土 / 立方公尺
-- 鋼筋續接器 / 組
+- 鋼筋／kg
+- 混凝土／立方公尺
+- 鋼筋續接器／組
 
-Why keep 鋼筋續接器:
+為什麼保留鋼筋續接器：
 
-It prevents keyword matching from incorrectly treating couplers as rebar weight.
+避免關鍵字比對時把「鋼筋續接器」誤判成鋼筋重量。
 
-## item_dictionary
+### item_dictionary
 
-Main columns:
+主要欄位：
 
 - `dictionary_id`
 - `keyword`
 - `material_id`
 - `created_at`
 
-Purpose:
+用途：
 
-- map source item/spec text to a standard material
-- retain learned/manual matching rules
+- 將來源工項／規格文字對應到標準材料
+- 保存人工學習／手動建立的比對規則
 
-## detection_category
+### detection_category
 
-Main columns:
+主要欄位：
 
 - `detection_category_id`
 - `major_category_name`
@@ -330,16 +330,16 @@ Main columns:
 - `is_active`
 - `sort_order`
 
-Current formal detection categories:
+目前正式偵錯細項：
 
 ```text
 結構體工程 / 鋼筋 / kg
 結構體工程 / 混凝土 / 立方公尺
 ```
 
-## detection_category_material_map
+### detection_category_material_map
 
-Main columns:
+主要欄位：
 
 - `material_id`
 - `detection_category_id`
@@ -347,17 +347,17 @@ Main columns:
 - `created_at`
 - `updated_at`
 
-Purpose:
+用途：
 
-- connect standard materials to the 2A detection category used by the quantity model
+- 將標準材料連接到數量模型使用的 2A 偵錯細項
 
 ---
 
-# 5. Unit master tables
+## 5. 單位主檔
 
-## unit_category
+### unit_category
 
-Main columns:
+主要欄位：
 
 - `unit_category_id`
 - `category_name`
@@ -365,15 +365,15 @@ Main columns:
 - `is_active`
 - `sort_order`
 
-Current important categories:
+目前重要類別：
 
 - 重量
 - 體積
 - 其他
 
-## unit_master
+### unit_master
 
-Main columns:
+主要欄位：
 
 - `unit_id`
 - `unit_name`
@@ -383,32 +383,32 @@ Main columns:
 - `is_active`
 - `sort_order`
 
-Current examples:
+目前範例：
 
 ```text
 重量
-├─ kg      base
+├─ kg      基準單位
 ├─ 公斤
 ├─ t       1000 kg
 └─ 噸      1000 kg
 
 體積
-├─ 立方公尺  base
+├─ 立方公尺  基準單位
 └─ m3
 
 其他
 └─ 組
 ```
 
-Unit conversion is used before standardized quantity history is created.
+建立標準化數量歷史前會先進行單位換算。
 
 ---
 
-# 6. Model settings
+## 6. 模型參數
 
-## estimation_settings
+### estimation_settings
 
-Main columns:
+主要欄位：
 
 - `settings_id`
 - `top_k`
@@ -433,32 +433,32 @@ Main columns:
 - `updated_at`
 - `updated_by`
 
-Current similarity inputs:
+目前相似度輸入：
 
-- project type
-- structure type
-- city
-- total floor area
-- site area
-- ground floors
-- basement floors
-- project year
+- 建案類型
+- 結構類型
+- 縣市
+- 總樓地板面積
+- 基地面積
+- 地上樓層
+- 地下樓層
+- 建案年份
 
-Current default minimum history sample count:
+目前預設最低歷史樣本數：
 
 ```text
-5 projects
+5 個建案
 ```
 
-Do not fabricate history just to reach the threshold.
+不要為了達到門檻而建立假歷史資料。
 
 ---
 
-# 7. Audit table
+## 7. Audit 資料表
 
-## audit_log
+### audit_log
 
-Main columns:
+主要欄位：
 
 - `log_id`
 - `module`
@@ -472,67 +472,67 @@ Main columns:
 - `action_user`
 - `created_at`
 
-Purpose:
+用途：
 
-Track review and configuration actions such as:
+記錄審核與設定操作，例如：
 
-- material mapping changes
-- final-bid row edits
-- major-category overrides
-- project changes
-- publish/reopen operations
-- master-data changes
-- settings changes
+- 材料對應變更
+- 最終標單工項修改
+- 工程大項人工覆寫
+- 建案資料修改
+- Publish／Reopen 操作
+- 主檔異動
+- 參數設定異動
 
 ---
 
-# 8. Current model data eligibility
+## 8. 目前模型資料資格
 
-## Structural price
+### 結構體工程價格
 
-Source:
+來源：
 
 `final_bid_item`
 
-Eligibility requires:
+資格：
 
-- project is Approved
-- effective major category is 結構體工程
-- row is not ignored
-- usable amount or `Qty * UnitPrice`
+- 建案為 Approved
+- 實際工程大項為結構體工程
+- 工項未被忽略
+- 有可用 Amount 或 `Qty × UnitPrice`
 
-## Rebar / concrete quantity
+### 鋼筋／混凝土數量
 
-Source:
+來源：
 
 `historical_transaction`
 
-Eligibility requires:
+資格：
 
-- project is Approved
-- effective major category is 結構體工程
-- mapped standard material is rebar or concrete
-- positive quantity
-- source unit can be converted to the standard unit
-- transaction is active and not outlier
+- 建案為 Approved
+- 實際工程大項為結構體工程
+- 已對應標準材料為鋼筋或混凝土
+- 數量為正值
+- 原始單位可轉為標準單位
+- Transaction 為有效且非 Outlier
 
 ---
 
-# 9. Removed database design
+## 9. 已移除資料庫設計
 
-The following obsolete design must not be restored without a new explicit architecture decision:
+除非未來有新的明確架構決策，以下舊設計不得恢復：
 
 - `quantity_rule_base`
 - `historical_transaction.unit_price`
-- old duplicated source fields in `historical_transaction`
-- obsolete project columns no longer used by the model
-- fake/test history retained only to make ranges appear
+- `historical_transaction` 舊版重複來源欄位
+- 模型已不使用的舊建案欄位
+- 只為了讓估算區間顯示而保留的假／測試歷史資料
 
 ---
 
-# 10. Development database state
+## 10. 開發資料庫目前狀態
 
-As of 2026-10-15, the cleaned development database intentionally contains no imported working/history cases:
+截至 2026-10-15，清理後的開發資料庫刻意沒有任何已匯入的工作／歷史案件：
 
 ```text
 project_master             0
@@ -545,26 +545,26 @@ analysis_bid_item          0
 analysis_run               0
 ```
 
-Master/configuration tables remain populated as required by the application.
+系統必要的主檔與參數表仍保留必要資料。
 
-This empty state is intentional. The next phase is real-data validation.
+這個空白狀態是刻意的。下一階段是真實資料驗證。
 
 ---
 
-# 11. Migration rule
+## 11. Migration 規則
 
-Database schema changes should be recorded under:
+資料庫 Schema 異動必須記錄在：
 
 ```text
 database/
 ```
 
-When changing a model:
+修改 Model 時：
 
-1. update C# model / EF mapping
-2. add a matching SQL migration
-3. apply it to the development database
-4. verify the resulting schema
-5. update this document if the data responsibility changes
+1. 更新 C# Model／EF Mapping
+2. 新增對應 SQL Migration
+3. 套用到開發資料庫
+4. 驗證實際 Schema
+5. 如果資料責任改變，更新本文件
 
-Do not keep obsolete columns “just in case” during the current development phase when the current architecture has explicitly removed them.
+目前仍在開發階段，既然某個欄位或資料表已被正式架構淘汰，就不要因為「可能以後會用」而繼續保留。
