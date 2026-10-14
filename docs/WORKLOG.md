@@ -156,3 +156,30 @@ Added on the existing `feature/1d-api-integration` branch:
 - Regression checks added to `tests/WorkbookParserTests`.
 
 Next: verify the uploaded real `.xls` case manually in the UI, check its 49 parsed candidate rows against Excel, then fix any concrete/rebar omission or misclassified source rows. Do not publish budget or supplier-quotation prices as approved historical truth.
+
+## 2026-10-15 — Documentation / project-transfer checkpoint
+
+Completed:
+
+- expanded `README.md` into the current project entry point
+- added `docs/API.md` with the current controller/API contract
+- added `docs/DATABASE.md` with current table responsibilities and live development-schema state
+- added `docs/DEVELOPMENT.md` with Docker, local build, parser-test and change-management rules
+- refreshed `docs/HANDOFF.md`
+- refreshed `docs/NEXT_CHAT_HANDOFF.md` with a copy-ready next-chat prompt
+- aligned documentation around the current Draft -> review -> Publish History -> Approved historical workflow
+- documented the read-only workbook preview / inspection safeguards
+- documented the clean separation between structural-work price history and rebar/concrete quantity history
+
+Current next phase remains:
+
+1. pull and run the latest branch locally
+2. verify workbook preview/inspection against a real source file
+3. import only truly finalized historical bids
+4. resolve Draft review blockers
+5. publish Approved history
+6. accumulate enough real history for P15/P50/P85
+7. then validate real target V1/V2 analysis
+
+No fake history should be inserted for demonstration.
+
