@@ -1,10 +1,10 @@
-# 2A Local Test Guide
+# 2A 本機測試指南
 
-> Branch: `feature/1d-api-integration`
+> Branch：`feature/1d-api-integration`
 
-## 1. Update local code
+## 1. 更新本機程式碼
 
-From the repository root:
+在 Repository 根目錄：
 
 ```powershell
 git status
@@ -13,7 +13,7 @@ git switch feature/1d-api-integration
 git pull origin feature/1d-api-integration
 ```
 
-Expected status:
+預期狀態：
 
 ```text
 On branch feature/1d-api-integration
@@ -22,7 +22,9 @@ Your branch is up to date with 'origin/feature/1d-api-integration'.
 nothing to commit, working tree clean
 ```
 
-## 2. Rebuild Docker
+以上為 Git 原生訊息，保留英文即可。
+
+## 2. 重新 Build Docker
 
 ```powershell
 docker compose down
@@ -30,192 +32,200 @@ docker compose up -d --build
 docker compose ps
 ```
 
-Open:
+開啟：
 
 ```text
 http://localhost:8081
 ```
 
-If startup fails:
+若啟動失敗：
 
 ```powershell
 docker compose logs --tail=150
 ```
 
-## 3. Smoke-test pages
+## 3. 頁面基本測試
 
-Check that these pages load:
+確認以下頁面都能正常開啟：
 
 - 系統總覽
 - 待偵錯案件
 - 建案管理
-- 決標回寫 / final bid import
+- 決標回寫／最終標單匯入
 - 結構體工程估算
 - 參數管理
 - 操作紀錄
 
-Also confirm:
+另外確認：
 
-- no old generic material-estimation page remains
-- no old one-shot anomaly page remains
-- standalone mode works even if 1D is not configured
+- 舊版通用材料估算頁已不存在
+- 舊版一次性異常偵測頁已不存在
+- 即使未設定 1D，獨立模式仍能正常運作
 
-## 4. First real historical-bid test
+## 4. 第一個真實歷史標單測試
 
-Use a real finalized bid.
+使用真正已定案的最終標單。
 
-Expected workflow:
+預期流程：
 
 ```text
-Upload finalized bid
--> ProjectMaster created as Draft
--> FinalBidItem rows created
--> review
--> resolve blockers
--> Publish History
--> Approved
+上傳最終標單
+→ 建立 ProjectMaster，狀態為 Draft
+→ 建立 FinalBidItem
+→ 人工審核
+→ 處理阻擋項目
+→ Publish History
+→ Approved
 ```
 
-### Review checks
+### 審核項目
 
-For each relevant row inspect:
+對每一筆相關工項檢查：
 
-- effective major category
-- original Category1 / Category2 / Category3
-- optional major-category override
-- material mapping
-- quantity
-- unit
-- unit price / amount
-- ignore state
-- current 2A model impact
+- 實際工程大項
+- 原始 `Category1 / Category2 / Category3`
+- 是否有人工工程大項覆寫
+- 材料對應
+- 數量
+- 單位
+- 單價／金額
+- 忽略狀態
+- 對目前 2A 模型的影響
 
-Expected model-impact labels:
+預期模型影響標示：
 
-- structural price baseline
-- rebar / concrete quantity baseline
-- not in current 2A baseline
+- 結構體工程價格基準
+- 鋼筋／混凝土數量基準
+- 不納入目前 2A 基準
 
-## 5. Publish-history checks
+## 5. Publish History 測試
 
-Publication should be blocked when unresolved issues remain.
+如果仍有未處理問題，系統必須阻止發布。
 
-Important blockers include:
+重要阻擋條件包括：
 
-- unrecognized engineering major on a non-ignored row
-- structural row with unusable price data
-- mapped rebar / concrete row with invalid quantity / unit
+- 未忽略工項仍無法辨識工程大項
+- 結構體工程工項沒有可使用價格資料
+- 已對應鋼筋／混凝土的工項仍有無效數量／單位
 
-After all blockers are resolved:
+全部處理完成後：
 
 ```text
 Publish History
--> HistoryStatus = Approved
+→ HistoryStatus = Approved
 ```
 
-Verify:
+確認：
 
-- project is now counted by readiness
-- approved history is locked
-- historical quantity rows exist only for rebar / concrete
-- structural price remains derived from `FinalBidItem`
+- 該建案開始計入模型準備度
+- Approved 歷史資料被鎖定
+- 數量歷史只建立鋼筋／混凝土
+- 結構體工程價格仍由 `FinalBidItem` 推導
 
-## 6. Reopen-history test
+## 6. Reopen History Review 測試
 
-For an approved project:
+對一個 Approved 建案執行：
 
 ```text
-Reopen history review
+Reopen History Review
 ```
 
-Expected:
+預期：
 
-- status becomes Draft
-- project is temporarily excluded from active model baseline
-- historical quantity rows are disabled / excluded
-- editing becomes available again
-- after correction, publish is required again
+- 狀態回到 Draft
+- 暫時從有效模型基準中排除
+- 歷史數量資料暫停使用
+- 可以重新修改
+- 修正後必須重新 Publish
 
-## 7. Target-case test
+## 7. 待偵錯案件測試
 
-Create a target case from:
+建立待偵錯案件，來源可以是：
 
-- direct structured upload, or
-- 1D when configured
+- 直接上傳結構化標單
+- 或在已設定 1D 時從 1D 匯入
 
-Expected:
+預期：
 
 ```text
 AnalysisCase
 └─ V1
 ```
 
-Run:
+執行：
 
-- rebar / concrete quantity analysis
-- structural-work price analysis
+- 鋼筋／混凝土數量分析
+- 結構體工程價格分析
 
-If history is insufficient, the correct result is:
-
-```text
-Insufficient data
-```
-
-Do not treat that as a system failure.
-
-## 8. Version test
-
-Upload a revised target bid:
+如果歷史資料不足，正確結果應該是：
 
 ```text
-V1 -> V2
+樣本不足
 ```
 
-Verify:
+不要把樣本不足視為系統錯誤。
 
-- V1 remains unchanged
-- V2 becomes current
-- each version can have its own analysis runs
-- old runs can be reopened from history
+## 8. 版本測試
 
-## 9. 1D test
+上傳修改後的待偵錯標單：
 
-If `OneD:BaseUrl` is configured:
+```text
+V1 → V2
+```
 
-- 1D import option should be enabled
-- import reads 1D once
-- result is stored as local 2A snapshot
-- later analysis must not call 1D again
+確認：
 
-If 1D is not configured:
+- V1 保持不變
+- V2 成為目前版本
+- 每個版本都可以有自己的 AnalysisRun
+- 舊的 Run 可以從歷史紀錄重新開啟
 
-- direct upload remains fully usable
-- 1D option should be unavailable without breaking the page
+## 9. 1D 測試
 
-## 10. Current expected limitation
+若已設定 `OneD:BaseUrl`：
 
-The cleaned development database may have fewer than 5 approved historical projects.
+- 1D 匯入入口應可使用
+- 匯入只讀取 1D 一次
+- 結果存成 2A 本地快照
+- 後續分析不可以再次呼叫 1D
 
-Therefore:
+若沒有設定 1D：
 
-- structural price readiness may remain below 5
-- rebar readiness may remain below 5
-- concrete readiness may remain below 5
+- 直接上傳仍必須完整可用
+- 1D 選項應顯示不可使用，但不能讓整個頁面失效
 
-Until enough valid history exists, P15 / P50 / P85 should not be forced.
+## 10. 目前預期限制
 
-## 11. Read-only pre-import quantity inspection
+清理後的開發資料庫可能少於 5 個 Approved 歷史建案。
 
-For both `/final-bid` and `/analysis-cases`:
+因此：
 
-1. Upload an Excel file with multiple worksheets.
-2. Select **only** the authentic detail worksheet(s), not summary/quotation/comparison sheets.
-3. Click **檢查選取工作表的全部候選明細**.
-4. Verify displayed sheet, original row number, item/spec, quantity, unit, unit price and amount against the source.
-5. Use the steel, concrete and review filters. Verify units: T -> kg (x1000) and M3 -> m³ (x1), but couplers/placement and unconvertible units do not enter the candidate total.
-6. Test removing/changing the worksheet selection: stale inspection results must clear.
-7. Inspect before filling out project metadata; the preview **must not** create projects, analysis cases, model history or fake samples.
+- 結構體工程價格準備度可能低於 5
+- 鋼筋準備度可能低於 5
+- 混凝土準備度可能低於 5
 
-Real workbook first checkpoint: `最終標單.xls`, choose `建築工程-預算單` (preview previously reported 49 candidate rows). Check sample source values 214 M3, unit price 2350 and amount 502900. Do not infer finality from the title “預算單”; do not publish it as Approved until actual final-price evidence and verified project metadata exist.
+在有效歷史資料足夠前，不可以強制產生 P15／P50／P85。
 
-Automated synthetic regression: `dotnet run --project ./tests/WorkbookParserTests/WorkbookParserTests.csproj -c Release`. CI also builds the backend and frontend.
+## 11. 匯入前唯讀數量檢查
+
+在 `/final-bid` 與 `/analysis-cases` 都要測：
+
+1. 上傳包含多個工作表的 Excel。
+2. **只選擇**真正工程明細工作表，不選摘要／報價／比價工作表。
+3. 點選「**檢查選取工作表的全部候選明細**」。
+4. 對照原始檔，確認畫面上的工作表、原始列號、工項／規格、數量、單位、單價與金額。
+5. 使用鋼筋、混凝土與待檢查篩選。確認單位轉換：T → kg（×1000）、M3 → m³（×1）；續接器、施工服務與無法換算單位不得進入候選總量。
+6. 移除或更改工作表選擇後，舊的檢查結果必須清除。
+7. 在尚未填寫建案資料前也可以檢查；預覽流程**不得**建立 Project、AnalysisCase、模型歷史或假樣本。
+
+真實 Excel 第一個檢查點：`最終標單.xls`，選擇 `建築工程-預算單`。先前預覽回報 49 筆候選列。請核對來源範例值：214 M3、單價 2350、金額 502900。
+
+不要因為工作表名稱叫「預算單」就推論它已經定案；在取得真正最終價格證據與確認建案基本資料前，不得發布成 Approved 歷史資料。
+
+自動化 Parser 回歸測試：
+
+```powershell
+dotnet run --project ./tests/WorkbookParserTests/WorkbookParserTests.csproj -c Release
+```
+
+CI 也會建置 Backend 與 Frontend。
