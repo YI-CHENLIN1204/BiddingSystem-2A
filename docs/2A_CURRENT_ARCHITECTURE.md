@@ -1,6 +1,6 @@
 # 2A Current Architecture
 
-> Updated: 2026-10-12  
+> Updated: 2026-10-15  
 > Development branch: `feature/1d-api-integration`
 
 This document records the current production direction of 2A. It is intentionally separate from the older POC branch and from legacy generic material-estimation experiments.
