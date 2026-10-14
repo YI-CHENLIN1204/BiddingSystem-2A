@@ -599,7 +599,7 @@ namespace 崴正.Services
                     AnalysisBidVersionId = versionId,
                     RunType = "Quantity",
                     Status = "Completed",
-                    ResultJson = JsonSerializer.Serialize(analysis.Data),
+                    ResultJson = JsonSerializer.Serialize(analysis.Data, new JsonSerializerOptions(JsonSerializerDefaults.Web)),
                     CreatedAt = DateTime.UtcNow
                 };
 
@@ -688,7 +688,7 @@ namespace 崴正.Services
                     AnalysisBidVersionId = versionId,
                     RunType = $"MajorPrice:{majorCategory}",
                     Status = "Completed",
-                    ResultJson = JsonSerializer.Serialize(analysis.Data),
+                    ResultJson = JsonSerializer.Serialize(analysis.Data, new JsonSerializerOptions(JsonSerializerDefaults.Web)),
                     CreatedAt = DateTime.UtcNow
                 };
 
