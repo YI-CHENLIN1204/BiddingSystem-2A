@@ -1,57 +1,57 @@
-# 2A API Reference
+# 2A API 參考
 
-> Updated: 2026-10-15  
-> Branch: `feature/1d-api-integration`  
-> Base path: `/api`
+> 更新日期：2026-10-15  
+> Branch：`feature/1d-api-integration`  
+> 基底路徑：`/api`
 
-This document reflects the current ASP.NET Core controllers on the active development branch. It documents the formal 2A workflow, the historical-final-bid review flow, master data, settings, and the optional 1D integration.
+本文件對應目前正式開發 Branch 上的 ASP.NET Core Controller，記錄 2A 正式流程、歷史最終標單審核流程、主檔、參數設定與選配 1D 整合。
 
-## 1. Conventions
+## 1. 共通規則
 
-### Response behavior
+### 回應行為
 
-Most service-backed endpoints return:
+多數由 Service 驅動的 API 會使用：
 
-- `200 OK` on success
-- `400 Bad Request` for validation errors
-- `404 Not Found` when the requested entity does not exist
-- `409 Conflict` when the current state does not allow the requested action
+- `200 OK`：成功
+- `400 Bad Request`：資料驗證錯誤
+- `404 Not Found`：找不到指定資料
+- `409 Conflict`：目前狀態不允許執行該操作
 
-Error body:
+錯誤內容：
 
 ```json
 {
-  "message": "error description"
+  "message": "錯誤說明"
 }
 ```
 
-### Upload limit
+### 上傳限制
 
-Excel/CSV upload routes currently accept request bodies up to **100 MB**.
+目前 Excel／CSV 上傳 API 的 Request Body 上限為 **100 MB**。
 
-### Important data rule
+### 重要資料規則
 
-Target-case APIs and historical-project APIs are intentionally separate:
+待偵錯 API 與歷史建案 API 是刻意分開的：
 
 ```text
-Target working data:
-AnalysisCase -> Version -> Run
+待偵錯工作資料：
+AnalysisCase → Version → Run
 
-Historical truth:
-ProjectMaster -> FinalBidItem -> HistoricalTransaction
+歷史真值：
+ProjectMaster → FinalBidItem → HistoricalTransaction
 ```
 
-A target case never automatically becomes historical truth.
+待偵錯案件不得自動轉成歷史真值。
 
 ---
 
-# 2. System
+## 2. 系統
 
-## GET /api/system/health
+### GET /api/system/health
 
-Simple backend health check.
+Backend 基本健康檢查。
 
-Example response:
+範例回應：
 
 ```json
 {
@@ -59,95 +59,95 @@ Example response:
 }
 ```
 
-## GET /api/system/options
+### GET /api/system/options
 
-Returns UI option lists and standard materials.
+回傳 UI 選項與標準材料。
 
-Current option groups include:
+目前包含：
 
-- project types: 住宅 / 廠房
-- structure types: RC / SC / SRC
-- Taiwan cities/counties
-- active standard materials
+- 建案類型：住宅／廠房
+- 結構類型：RC／SC／SRC
+- 臺灣縣市
+- 啟用中的標準材料
 
 ---
 
-# 3. Workbook preview / inspection
+## 3. Excel 工作表預覽／檢查
 
-These endpoints are **read-only**. They do not create projects, target cases, historical transactions, or model samples.
+以下 API 都是**唯讀**，不會建立建案、待偵錯案件、歷史交易或模型樣本。
 
-## POST /api/tender-import/preview
+### POST /api/tender-import/preview
 
-Content type: `multipart/form-data`
+Content Type：`multipart/form-data`
 
-Fields:
+欄位：
 
-- `excelFile`: Excel/CSV file
+- `excelFile`：Excel／CSV
 
-Purpose:
+用途：
 
-- list workbook worksheets
-- show parsed row counts and sample items
-- force the user to decide which worksheet(s) are the authentic engineering details
+- 列出 Excel 內所有工作表
+- 顯示解析列數與範例工項
+- 讓使用者明確判斷哪些工作表才是真正工程明細
 
-Important:
+注意：
 
-- multi-sheet workbooks should not silently import every sheet
-- summary / quotation / supplier-comparison sheets require manual review
+- 多工作表 Excel 不可以默默全部匯入
+- 摘要／報價／廠商比較工作表必須人工判斷
 
-## POST /api/tender-import/inspect
+### POST /api/tender-import/inspect
 
-Content type: `multipart/form-data`
+Content Type：`multipart/form-data`
 
-Fields:
+欄位：
 
-- `excelFile`: Excel/CSV file
-- `includedSheetNames`: JSON array of explicitly selected sheet names
+- `excelFile`：Excel／CSV
+- `includedSheetNames`：明確選取工作表名稱的 JSON Array
 
-Example:
+範例：
 
 ```text
 includedSheetNames = ["建築工程-預算單"]
 ```
 
-Purpose:
+用途：
 
-- parse only selected worksheets
-- return source sheet / row traceability
-- preview candidate rebar / concrete quantities conservatively
-- surface warnings before any database write
+- 只解析被選取的工作表
+- 回傳原始工作表／列號供追溯
+- 保守預覽鋼筋／混凝土候選數量
+- 在任何資料庫寫入之前顯示警告
 
-Rules:
+規則：
 
-- at least one worksheet must be explicitly selected
-- duplicate or blank sheet names are rejected
-- more than 5000 candidate rows are rejected
-- preview quantities are not approved history and are not P15/P50/P85 results
+- 至少要明確選取一個工作表
+- 重複或空白工作表名稱會被拒絕
+- 候選列超過 5000 筆會被拒絕
+- 預覽數量不是 Approved 歷史資料，也不是 P15／P50／P85 結果
 
 ---
 
-# 4. Target cases — AnalysisCase
+## 4. 待偵錯案件 — AnalysisCase
 
-Base route:
+基底路徑：
 
 ```text
 /api/analysis-cases
 ```
 
-## GET /api/analysis-cases/policy
+### GET /api/analysis-cases/policy
 
-Returns the current provisional business policy, including:
+回傳目前暫定業務規則，包括：
 
-- standalone upload enabled
-- 1D optional
-- current major/detail hierarchy
-- current estimation scope
+- 可獨立上傳
+- 1D 為選配
+- 目前大項／細項層級
+- 目前估算範圍
 
-## GET /api/analysis-cases
+### GET /api/analysis-cases
 
-Lists target cases.
+列出待偵錯案件。
 
-Main response fields include:
+主要回傳欄位：
 
 - `analysisCaseId`
 - `caseName`
@@ -165,29 +165,29 @@ Main response fields include:
 - `currentSourceType`
 - `updatedAt`
 
-## GET /api/analysis-cases/{analysisCaseId}
+### GET /api/analysis-cases/{analysisCaseId}
 
-Returns one target case and its version list.
+回傳單一待偵錯案件與版本清單。
 
-## GET /api/analysis-cases/{analysisCaseId}/versions/{versionId}
+### GET /api/analysis-cases/{analysisCaseId}/versions/{versionId}
 
-Returns one immutable target-bid snapshot and all stored items.
+回傳某一個不可覆寫的待偵錯標單快照與所有工項。
 
-## GET /api/analysis-cases/{analysisCaseId}/runs
+### GET /api/analysis-cases/{analysisCaseId}/runs
 
-Returns saved analysis-run summaries.
+回傳已保存的分析執行摘要。
 
-## GET /api/analysis-cases/{analysisCaseId}/runs/{analysisRunId}
+### GET /api/analysis-cases/{analysisCaseId}/runs/{analysisRunId}
 
-Returns one saved analysis result from `analysis_run.result_json`.
+回傳一筆儲存在 `analysis_run.result_json` 的歷史分析結果。
 
-## POST /api/analysis-cases/from-upload
+### POST /api/analysis-cases/from-upload
 
-Creates a new target case from a structured upload.
+由結構化上傳建立新的待偵錯案件。
 
-Content type: `multipart/form-data`
+Content Type：`multipart/form-data`
 
-Fields:
+欄位：
 
 - `excelFile`
 - `caseName`
@@ -199,20 +199,20 @@ Fields:
 - `floorCount`
 - `basementFloorCount`
 - `projectDate`
-- `note` optional
-- `includedSheetNames` JSON array
+- `note`：選填
+- `includedSheetNames`：工作表名稱 JSON Array
 
-Current provisional rule:
+目前暫定規則：
 
-The upload must provide enough structure for 2A to resolve usable engineering-major/item/unit/quantity data. Arbitrary raw files are not silently guessed.
+上傳檔案必須提供足夠結構，讓 2A 能辨識可使用的工程大項／工項／單位／數量資料。任意原始檔不會被系統默默猜測。
 
-## POST /api/analysis-cases/from-1d/{oneDProjectId}
+### POST /api/analysis-cases/from-1d/{oneDProjectId}
 
-Creates a new target case by reading 1D **once**, then storing a local 2A snapshot.
+讀取 1D **一次**，建立新的待偵錯案件並保存成 2A 本地快照。
 
-Content type: `application/json`
+Content Type：`application/json`
 
-Body:
+Body：
 
 ```json
 {
@@ -228,31 +228,31 @@ Body:
 }
 ```
 
-Optional query parameter:
+選填 Query Parameter：
 
 - `note`
 
-1D is not called again for later analysis runs.
+後續 AnalysisRun 不會再次呼叫 1D。
 
-## POST /api/analysis-cases/{analysisCaseId}/versions/upload
+### POST /api/analysis-cases/{analysisCaseId}/versions/upload
 
-Adds a new immutable target version.
+新增一個不可覆寫的待偵錯版本。
 
-Content type: `multipart/form-data`
+Content Type：`multipart/form-data`
 
-Fields:
+欄位：
 
 - `excelFile`
-- `note` optional
-- `includedSheetNames` JSON array
+- `note`：選填
+- `includedSheetNames`：工作表名稱 JSON Array
 
-The previous version remains unchanged.
+上一版必須保持不變。
 
-## POST /api/analysis-cases/{analysisCaseId}/versions/from-1d/{oneDProjectId}
+### POST /api/analysis-cases/{analysisCaseId}/versions/from-1d/{oneDProjectId}
 
-Adds a new version by explicitly re-reading 1D.
+明確重新讀取 1D，建立新版本。
 
-Body:
+Body：
 
 ```json
 {
@@ -260,13 +260,13 @@ Body:
 }
 ```
 
-Use this only when an updated 1D result is actually needed.
+只有真的需要重新取得 1D 最新資料時才使用。
 
-## POST /api/analysis-cases/{analysisCaseId}/versions/{versionId}/quantity-analysis
+### POST /api/analysis-cases/{analysisCaseId}/versions/{versionId}/quantity-analysis
 
-Runs the current rebar/concrete quantity anomaly flow against a stored version.
+對已保存版本執行目前鋼筋／混凝土數量異常分析。
 
-Body:
+Body：
 
 ```json
 {
@@ -274,18 +274,18 @@ Body:
 }
 ```
 
-`topCount` is optional.
+`topCount` 選填。
 
-Current detail scope:
+目前細項範圍：
 
 - 鋼筋
 - 混凝土
 
-## POST /api/analysis-cases/{analysisCaseId}/versions/{versionId}/major-price-analysis
+### POST /api/analysis-cases/{analysisCaseId}/versions/{versionId}/major-price-analysis
 
-Runs major-category price analysis against a stored target version.
+對已保存版本執行大項價格分析。
 
-Body:
+Body：
 
 ```json
 {
@@ -294,21 +294,21 @@ Body:
 }
 ```
 
-Current supported major category:
+目前支援大項：
 
 - 結構體工程
 
 ---
 
-# 5. Historical finalized bids
+## 5. 歷史最終標單
 
-## POST /api/Estimation/upload-final-bid
+### POST /api/Estimation/upload-final-bid
 
-Imports a finalized-bid candidate into the **history review** pipeline.
+將最終標單候選匯入**歷史審核流程**。
 
-Content type: `multipart/form-data`
+Content Type：`multipart/form-data`
 
-Fields:
+欄位：
 
 - `excelFile`
 - `projectName`
@@ -320,89 +320,89 @@ Fields:
 - `floorCount`
 - `basementFloorCount`
 - `projectMonth`
-- `includedSheetNames` optional JSON array, but multi-sheet files should use explicit selection
+- `includedSheetNames`：選填 JSON Array；但多工作表檔案應明確選擇
 
-Important:
+重要：
 
-Import does **not** make the data trusted model history.
+匯入後**不代表**已成為可信任歷史模型資料。
 
-New project state:
+新建案狀態：
 
 ```text
 HistoryStatus = Draft
 ```
 
-## GET /api/Estimation/mapping-items
+### GET /api/Estimation/mapping-items
 
-Query parameters:
+Query Parameter：
 
-- `projectId` optional
-- `status` default `Pending`
-- `search` optional
-- `issueCode` optional
-- `majorCategory` optional
-- `category` optional
-- `unit` optional
-- `page` default 1
-- `pageSize` default 50
+- `projectId`：選填
+- `status`：預設 `Pending`
+- `search`：選填
+- `issueCode`：選填
+- `majorCategory`：選填
+- `category`：選填
+- `unit`：選填
+- `page`：預設 1
+- `pageSize`：預設 50
 
-Returns review rows for category/material/unit/data correction.
+回傳工程大項／材料／單位／資料修正審核列。
 
-## GET /api/Estimation/mapping-summary
+### GET /api/Estimation/mapping-summary
 
-Query:
+Query：
 
-- `projectId` optional
+- `projectId`：選填
 
-Returns review summary counts.
+回傳審核摘要統計。
 
-## GET /api/Estimation/mapping-filter-options
+### GET /api/Estimation/mapping-filter-options
 
-Query:
+Query：
 
-- `projectId` optional
+- `projectId`：選填
 
-Returns filter option values for the review UI.
+回傳審核 UI 使用的篩選選項。
 
-## GET /api/Estimation/material-options
+### GET /api/Estimation/material-options
 
-Query:
+Query：
 
-- `search` optional
+- `search`：選填
 
-Returns standard materials for manual mapping.
+回傳人工材料對應可用的標準材料。
 
-## POST /api/Estimation/update-material-mapping
+### POST /api/Estimation/update-material-mapping
 
-Content type: `multipart/form-data`
+Content Type：`multipart/form-data`
 
-Fields:
+欄位：
 
 - `finalBidItemId`
 - `materialId`
 
-Manually assigns a standard material.
+人工指定標準材料。
 
-Approved history must be reopened before editing.
+Approved 歷史資料必須先重新開啟審核才能修改。
 
-## POST /api/Estimation/update-major-category
+### POST /api/Estimation/update-major-category
 
-Content type: `multipart/form-data`
+Content Type：`multipart/form-data`
 
-Fields:
+欄位：
 
 - `finalBidItemId`
-- `majorCategory` optional
+- `majorCategory`：選填
 
-Sets or clears `major_category_override`.
+設定或清除 `major_category_override`。
 
-Source `Category1 / Category2 / Category3` values are preserved.
+來源 `Category1 / Category2 / Category3` 保持不變。
 
-## POST /api/Estimation/update-bid-item-data
+### POST /api/Estimation/update-bid-item-data
 
-Content type: `multipart/form-data`
+Content Type：`multipart/form-data`
 
-Fields:
+欄位：
 
 - `finalBidItemId`
 - `itemName`
@@ -410,49 +410,49 @@ Fields:
 - `unitPrice`
 - `unit`
 
-Used during Draft review to correct parsed source data.
+用於 Draft 審核期間修正 Parser 解析資料。
 
-## POST /api/Estimation/ignore-bid-item
+### POST /api/Estimation/ignore-bid-item
 
-Fields:
-
-- `finalBidItemId`
-
-Excludes a row from the historical baseline review.
-
-## POST /api/Estimation/unignore-bid-item
-
-Fields:
+欄位：
 
 - `finalBidItemId`
 
-Restores an ignored row.
+將工項排除於歷史基準審核。
+
+### POST /api/Estimation/unignore-bid-item
+
+欄位：
+
+- `finalBidItemId`
+
+恢復已忽略工項。
 
 ---
 
-# 6. Historical project management
+## 6. 歷史建案管理
 
-Base route:
+基底路徑：
 
 ```text
 /api/projects
 ```
 
-## GET /api/projects
+### GET /api/projects
 
-Query:
+Query：
 
-- `search` optional
+- `search`：選填
 
-Lists historical-project candidates and their review state.
+列出歷史建案候選與目前審核狀態。
 
-## GET /api/projects/{projectId}
+### GET /api/projects/{projectId}
 
-Returns one historical project.
+回傳單一歷史建案。
 
-## PUT /api/projects/{projectId}
+### PUT /api/projects/{projectId}
 
-Body:
+Body：
 
 ```json
 {
@@ -468,88 +468,88 @@ Body:
 }
 ```
 
-Approved history is locked. Reopen review before modifying model inputs.
+Approved 歷史資料會鎖定。修改模型輸入前必須重新開啟審核。
 
-## POST /api/projects/{projectId}/publish-history
+### POST /api/projects/{projectId}/publish-history
 
-Explicitly publishes a reviewed Draft project.
+明確將已審核 Draft 建案發布為歷史基準。
 
-Expected state transition:
-
-```text
-Draft -> Approved
-```
-
-Publication is blocked while unresolved issues remain.
-
-Current important blockers include:
-
-- unrecognized engineering major on a non-ignored row
-- structural-work row without usable price data
-- rebar/concrete row with invalid quantity/unit
-- other review conditions reported by the project summary
-
-## POST /api/projects/{projectId}/reopen-history-review
-
-State transition:
+預期狀態轉換：
 
 ```text
-Approved -> Draft
+Draft → Approved
 ```
 
-Reopening temporarily removes the project from active model baselines and permits corrections.
+仍有未解決問題時必須阻止發布。
 
-## DELETE /api/projects/{projectId}
+目前重要阻擋項目：
 
-Deletes/soft-deletes the project according to the current service rules.
+- 未忽略工項仍無法辨識工程大項
+- 結構體工程工項沒有可用價格資料
+- 鋼筋／混凝土工項有無效數量／單位
+- 建案摘要回報的其他審核條件
 
-## GET /api/projects/{projectId}/final-bid-items
+### POST /api/projects/{projectId}/reopen-history-review
 
-Query:
+狀態轉換：
 
-- `search` optional
-- `page` default 1
-- `pageSize` default 50
+```text
+Approved → Draft
+```
 
-Returns source final-bid rows.
+重新開啟後，該建案會暫時從有效模型基準中排除，並重新允許修改。
 
-## GET /api/projects/{projectId}/2a-summary
+### DELETE /api/projects/{projectId}
 
-Returns 2A qualification diagnostics, including:
+依目前 Service 規則刪除／軟刪除建案。
 
-- history status
-- structural item/priced/unpriced counts
-- unclassified rows
-- manual major-category correction count
-- structural unmapped count
-- rebar/concrete source/candidate/excluded counts
-- publish readiness and blockers
-- structural total amount
-- structural price per ping
-- rebar/concrete historical quantities and transaction counts
+### GET /api/projects/{projectId}/final-bid-items
 
-## GET /api/projects/{projectId}/historical-data
+Query：
 
-Returns standardized active quantity history for the project.
+- `search`：選填
+- `page`：預設 1
+- `pageSize`：預設 50
 
-Current quantity-history scope:
+回傳最終標單來源工項。
 
-- rebar
-- concrete
+### GET /api/projects/{projectId}/2a-summary
+
+回傳 2A 資格診斷，包括：
+
+- 歷史狀態
+- 結構體工程工項數／有價工項數／無價工項數
+- 未分類工項
+- 人工工程大項修正數
+- 結構體工程未對應材料數
+- 鋼筋／混凝土來源工項／候選工項／排除工項數
+- 是否可發布與阻擋原因
+- 結構體工程總價
+- 結構體工程每坪單價
+- 鋼筋／混凝土歷史數量與交易筆數
+
+### GET /api/projects/{projectId}/historical-data
+
+回傳該建案標準化後、目前有效的數量歷史資料。
+
+目前數量歷史範圍：
+
+- 鋼筋
+- 混凝土
 
 ---
 
-# 7. Structural-work price estimation
+## 7. 結構體工程價格估算
 
-## GET /api/major-category-price/readiness
+### GET /api/major-category-price/readiness
 
-Returns current price-baseline readiness for `結構體工程`.
+回傳 `結構體工程` 目前價格歷史基準準備度。
 
-Readiness is based on valid **Approved** historical projects.
+準備度只計算有效的 **Approved** 歷史建案。
 
-## POST /api/major-category-price/range
+### POST /api/major-category-price/range
 
-Body:
+Body：
 
 ```json
 {
@@ -569,73 +569,73 @@ Body:
 }
 ```
 
-Main response fields:
+主要回傳：
 
-- candidate / available / reference project counts
+- 候選／可用／實際參考建案數
 - `hasEnoughSamples`
-- P15 / P50 / P85 price per ping
-- P15 / P50 / P85 total amount
-- optional observed amount / observed price per ping
-- analysis status / traffic light
-- weighted historical references
+- P15／P50／P85 每坪單價
+- P15／P50／P85 總價
+- 選填的觀察金額／觀察每坪單價
+- 分析狀態／交通燈
+- 加權歷史參考案件
 
-If valid samples are below `MinimumSampleCount`, the correct response is insufficient history rather than a forced range.
+如果有效樣本低於 `MinimumSampleCount`，正確結果是樣本不足，而不是強制產生區間。
 
 ---
 
-# 8. Detection categories — rebar / concrete quantity
+## 8. 偵錯細項 — 鋼筋／混凝土數量
 
-Base route:
+基底路徑：
 
 ```text
 /api/detection-category
 ```
 
-## GET /api/detection-category
+### GET /api/detection-category
 
-Returns configured detection categories.
+回傳目前設定的偵錯細項。
 
-Current formal categories:
+目前正式偵錯細項：
 
-- 結構體工程 / 鋼筋 / kg
-- 結構體工程 / 混凝土 / 立方公尺
+- 結構體工程／鋼筋／kg
+- 結構體工程／混凝土／立方公尺
 
-## GET /api/detection-category/readiness
+### GET /api/detection-category/readiness
 
-Returns independent historical-sample readiness for each quantity detection category.
+分別回傳每個數量偵錯細項的歷史樣本準備度。
 
-## GET /api/detection-category/mappings
+### GET /api/detection-category/mappings
 
-Query:
+Query：
 
-- `detectionCategoryId` optional
+- `detectionCategoryId`：選填
 
-Returns standard-material mappings.
+回傳標準材料對應。
 
-## POST /api/detection-category/create
+### POST /api/detection-category/create
 
-Form fields:
+Form 欄位：
 
 - `majorCategoryName`
 - `detectionCategoryName`
 - `unitId`
 
-## POST /api/detection-category/assign-material
+### POST /api/detection-category/assign-material
 
-Form fields:
+Form 欄位：
 
 - `detectionCategoryId`
 - `materialId`
 
-## POST /api/detection-category/unassign-material
+### POST /api/detection-category/unassign-material
 
-Form fields:
+Form 欄位：
 
 - `materialId`
 
-## POST /api/detection-category/{detectionCategoryId}/range
+### POST /api/detection-category/{detectionCategoryId}/range
 
-Body:
+Body：
 
 ```json
 {
@@ -653,40 +653,40 @@ Body:
 }
 ```
 
-Returns weighted quantity / unit-area range and historical references.
+回傳加權後的數量／單位面積合理範圍與歷史參考案件。
 
 ---
 
-# 9. Optional 1D integration
+## 9. 選配 1D 整合
 
-Base route:
+基底路徑：
 
 ```text
 /api/one-d
 ```
 
-## GET /api/one-d/status
+### GET /api/one-d/status
 
-Returns:
+回傳：
 
 - `configured`
-- human-readable message
+- 可讀訊息
 
-When 1D is not configured, 2A direct upload remains available.
+即使沒有設定 1D，2A 直接上傳仍必須可用。
 
-## GET /api/one-d/projects/{projectId}/result
+### GET /api/one-d/projects/{projectId}/result
 
-Integration-check / preview endpoint only.
+只用於整合檢查／預覽。
 
-The formal workflow should use:
+正式流程應使用：
 
 ```text
 POST /api/analysis-cases/from-1d/{projectId}
 ```
 
-to create a local target snapshot.
+建立本地待偵錯快照。
 
-Expected 1D item fields include:
+預期 1D 工項欄位：
 
 - category
 - chapter
@@ -697,19 +697,19 @@ Expected 1D item fields include:
 - quantity
 - confidence
 
-1D currently does not provide the monetary fields required for target structural-price analysis.
+目前 1D 沒有提供結構體工程價格分析需要的金額欄位。
 
 ---
 
-# 10. Settings
+## 10. 參數設定
 
-## GET /api/settings
+### GET /api/settings
 
-Returns the current estimation settings.
+回傳目前估算參數。
 
-## PUT /api/settings
+### PUT /api/settings
 
-Body fields:
+Body 欄位：
 
 - `topK`
 - `minimumSampleCount`
@@ -733,11 +733,11 @@ Body fields:
 
 ---
 
-# 11. Audit log
+## 11. 操作紀錄
 
-## GET /api/audit-logs
+### GET /api/audit-logs
 
-Query parameters:
+Query Parameter：
 
 - `search`
 - `module`
@@ -747,38 +747,38 @@ Query parameters:
 - `page`
 - `pageSize`
 
-Returns paginated audit records.
+回傳分頁 Audit Log。
 
 ---
 
-# 12. Material-category master
+## 12. 材料分類主檔
 
-Base route:
+基底路徑：
 
 ```text
 /api/material-category
 ```
 
-Endpoints:
+API：
 
 - `GET /`
 - `POST /create`
 - `POST /update`
 - `POST /set-active`
 
-Create/update uses form data.
+新增／修改使用 Form Data。
 
 ---
 
-# 13. Standard-material master
+## 13. 標準材料主檔
 
-Base route:
+基底路徑：
 
 ```text
 /api/standard-material
 ```
 
-Endpoints:
+API：
 
 - `GET /`
 - `GET /filter-options`
@@ -786,54 +786,54 @@ Endpoints:
 - `POST /update`
 - `POST /set-active`
 
-Main material fields:
+主要材料欄位：
 
-- name
-- material category
-- standard unit
-- active state
+- 材料名稱
+- 材料分類
+- 標準單位
+- 啟用狀態
 
 ---
 
-# 14. Unit-category master
+## 14. 單位類別主檔
 
-Base route:
+基底路徑：
 
 ```text
 /api/unit-category
 ```
 
-Endpoints:
+API：
 
 - `GET /`
 - `POST /create`
 
-Create fields:
+新增欄位：
 
 - `categoryName`
 - `allowConversion`
 - `baseUnitName`
 
-For conversion-enabled categories, a base unit is required.
+可換算類別必須有基準單位。
 
 ---
 
-# 15. Unit master
+## 15. 單位主檔
 
-Base route:
+基底路徑：
 
 ```text
 /api/unit-master
 ```
 
-Endpoints:
+API：
 
 - `GET /`
 - `POST /create`
 - `POST /update`
 - `POST /set-active`
 
-Main fields:
+主要欄位：
 
 - `unitName`
 - `unitCategoryId`
@@ -841,13 +841,13 @@ Main fields:
 
 ---
 
-# 16. Current API boundaries
+## 16. 目前 API 邊界
 
-Do not reintroduce these removed legacy endpoints unless a new architecture decision is made:
+除非未來有新的架構決策，否則不要重新加入以下已移除舊 API：
 
 - `/api/bid-anomaly`
-- generic material range-estimation endpoints
-- core-material estimation endpoints
-- old quantity-rule endpoints
+- 通用材料合理區間估算 API
+- 核心材料估算 API
+- 舊數量規則 API
 
-The formal target-analysis entry is the versioned `AnalysisCase` workflow.
+目前正式待偵錯分析入口是版本化 `AnalysisCase` 流程。
