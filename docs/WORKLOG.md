@@ -1,196 +1,205 @@
-# 2A Worklog
+# 2A 開發紀錄
 
-## 2026-10-12 — Target / History architecture formalized
+## 2026-10-12 — 正式建立待偵錯／歷史資料分流
 
-Completed:
+完成：
 
-- added versioned `AnalysisCase` target pipeline
-- separated target tables from historical tables
-- added one-time 1D snapshot import
-- preserved standalone direct-upload path
-- added target versions V1 / V2 / V3
-- added persisted `AnalysisRun`
-- added ability to reopen saved run results
-- prevented target cases from writing historical truth
+- 新增版本化 `AnalysisCase` 待偵錯流程
+- 待偵錯資料表與歷史資料表完全分離
+- 新增一次性 1D 快照匯入
+- 保留 2A 獨立直接上傳
+- 新增 V1／V2／V3 等待偵錯版本
+- 新增可保存的 `AnalysisRun`
+- 新增重新開啟歷史 Run 結果功能
+- 阻止待偵錯案件寫入歷史真值
 
-## 2026-10-12 — Scope narrowed
+## 2026-10-12 — 收斂分析範圍
 
-Current formal working scope:
+目前正式工作範圍：
 
-- structural-work major-category estimation / price anomaly
-- rebar quantity anomaly
-- concrete quantity anomaly
+- 結構體工程大項估算／價格異常
+- 鋼筋數量異常
+- 混凝土數量異常
 
-Removed from current detection scope:
+從目前偵錯範圍移除：
 
-- formwork
-- steel structure
+- 模板
+- 鋼骨
 
-Other engineering categories remain source data but are not forced into the current quantity model.
+其他工程類別仍保留原始資料，但不強迫進入目前數量模型。
 
-## 2026-10-12 — Database hard cleanup
+## 2026-10-12 — 資料庫硬清理
 
-Development database cleaned.
+開發資料庫完成清理。
 
-Removed obsolete / duplicate design including:
+移除已淘汰／重複設計，包括：
 
-- old project fields no longer used
-- redundant history source fields
-- historical price from `historical_transaction`
+- 已不使用的舊建案欄位
+- 重複保存的歷史來源欄位
+- `historical_transaction` 中的歷史價格欄位
 - `quantity_rule_base`
-- fake / old test history
+- 舊測試／假歷史資料
 
-Current history responsibilities:
+目前歷史資料責任：
 
-- `final_bid_item`: source rows and structural-work price
-- `historical_transaction`: standardized rebar / concrete quantity only
+- `final_bid_item`：原始工項與結構體工程價格
+- `historical_transaction`：只保存標準化後的鋼筋／混凝土數量
 
-## 2026-10-12 — Site area integrated
+## 2026-10-12 — 基地面積整合
 
-Added `SiteArea` to:
+將 `SiteArea` 加入：
 
 - `ProjectMaster`
 - `AnalysisCase`
-- final-bid import metadata
-- target-case metadata
-- structural estimation form
-- similarity scoring
-- settings and audit display
+- 最終標單匯入資料
+- 待偵錯案件基本資料
+- 結構體工程估算表單
+- 相似度評分
+- 參數設定與 Audit 顯示
 
-Added configurable:
+新增可設定：
 
 - `SiteAreaWeight`
 - `SiteAreaDifferenceCutoffRatio`
 
-## 2026-10-12 — Legacy generic estimation removed
+## 2026-10-12 — 移除舊版通用材料估算
 
-Removed obsolete stack:
+移除已淘汰架構：
 
-- generic material range estimation
-- batch material estimation
-- core-material estimation
-- legacy quantity rule table
-- old one-shot bid anomaly route
-- old generic estimation UI
+- 通用材料合理區間估算
+- 批次材料估算
+- 核心材料估算
+- 舊版數量規則資料表
+- 舊版一次性標單異常 Route
+- 舊版通用估算 UI
 
-The formal system now uses:
+目前正式服務：
 
 - `MajorCategoryPriceRangeService`
 - `DetectionCategoryRangeService`
 - `AnalysisCaseService`
 
-## 2026-10-12 — Historical review / publish workflow added
+## 2026-10-12 — 建立歷史審核／發布流程
 
-Finalized bid imports now enter:
+最終標單匯入後目前先進：
 
 ```text
 Draft
 ```
 
-Added review support for:
+新增審核：
 
-- effective major-category override
-- material mapping
-- quantity / unit / unit price corrections
-- ignore state
-- live publish blockers
+- 實際工程大項覆寫
+- 材料對應
+- 數量／單位／單價修正
+- 忽略狀態
+- 即時發布阻擋條件
 
-Added explicit:
+新增：
 
 - `Publish History`
-- `Reopen history review`
+- `Reopen History Review`
 
-Approved projects participate in model baselines.
+Approved 建案才會進入模型基準。
 
-Draft projects do not.
+Draft 建案不會參與模型。
 
-## 2026-10-12 — Approved history locking added
+## 2026-10-12 — Approved 歷史資料鎖定
 
-When history is `Approved`, lock:
+歷史狀態為 `Approved` 時鎖定：
 
-- project similarity metadata
-- bid row edits
-- major-category override
-- material mapping
-- ignore / unignore
+- 建案相似度基本資料
+- 標單工項修改
+- 工程大項覆寫
+- 材料對應
+- 忽略／取消忽略
 
-Corrections require reopening history review.
+若要修正，必須先重新開啟歷史審核。
 
-## 2026-10-12 — Current validation phase
+## 2026-10-12 — 進入真實資料驗證階段
 
-The next phase is not more architecture work.
+下一階段不再繼續擴張架構。
 
-Next focus:
+接下來優先：
 
-1. run system locally
-2. import first real finalized bid
-3. inspect review blockers
-4. verify category / mapping / unit correction flow
-5. publish first approved historical project
-6. verify 2A project summary
-7. accumulate enough real history for P15 / P50 / P85
-8. create real target case and compare V1 / V2 analysis
+1. 在本機啟動系統
+2. 匯入第一份真正已定案最終標單
+3. 檢查審核阻擋項目
+4. 驗證工程大項／材料對應／單位修正流程
+5. 發布第一個 Approved 歷史建案
+6. 驗證 2A 建案摘要
+7. 累積足夠真實歷史資料後驗證 P15／P50／P85
+8. 建立真實待偵錯案件並比較 V1／V2
 
+## 2026-10-12 — 新對話操作交接文件
 
-## 2026-10-12 — Next-chat operation handoff added
-
-Added:
+新增：
 
 - `docs/NEXT_CHAT_HANDOFF.md`
-- explicit local-operation readiness gate
-- exact pull / Docker rebuild commands
-- first real finalized-bid validation sequence
-- explicit instruction to tell the user when the local system is ready for actual operation
+- 明確的本機「可以開始操作」條件
+- 完整 Git Pull／Docker 重建指令
+- 第一份真實最終標單驗證順序
+- 明確要求下一個對話在本機系統可操作時直接告知使用者
 
-The next phase is hands-on validation with real finalized bid data, not architecture redesign.
+下一階段是用真實最終標單進行實際驗證，不是再重新設計架構。
 
-## 2026-10-13 — Read-only pre-import quantity inspection
+## 2026-10-13 — 匯入前唯讀數量檢查
 
-Added on the existing `feature/1d-api-integration` branch:
+在既有 `feature/1d-api-integration` Branch 上新增：
 
-- `POST /api/tender-import/inspect` requires an explicit selected-worksheet list and does not write to the database.
-- The shared `WorkbookSheetPicker` now lets users inspect all parsed candidate rows, including the original sheet/row, source categories, quantity, unit, price, amount and warnings before entering project metadata.
-- Conservative steel/rebar and concrete candidate detection: supported kg/T and m³ units are converted only when unambiguous; steel couplers, rebar work/services and concrete placement/services are not counted as material quantities.
-- Unknown units, missing quantities, uncertain structural major category and identical source-row fingerprints are surfaced for review.
-- Candidate summaries are **not** model anomalies, approved history, or official quantities. No P15/P50/P85 values are fabricated.
-- Regression checks added to `tests/WorkbookParserTests`.
+- `POST /api/tender-import/inspect`：必須明確提供選取工作表清單，而且不寫入資料庫。
+- 共用 `WorkbookSheetPicker`：讓使用者在輸入建案基本資料前，就可以檢查所有解析候選列，包括原始工作表／列號、來源分類、數量、單位、價格、金額與警告。
+- 保守辨識鋼筋與混凝土候選：只有在單位明確時才換算 kg／T 與 m³；鋼筋續接器、鋼筋施工服務、混凝土澆置服務不計入材料數量。
+- 無法辨識單位、缺少數量、結構體工程大項不確定、來源列指紋重複等情況都會顯示待審核警告。
+- 候選摘要**不是**模型異常、Approved 歷史或正式工程量，不會製造假的 P15／P50／P85。
+- 在 `tests/WorkbookParserTests` 加入回歸測試。
 
-Next: verify the uploaded real `.xls` case manually in the UI, check its 49 parsed candidate rows against Excel, then fix any concrete/rebar omission or misclassified source rows. Do not publish budget or supplier-quotation prices as approved historical truth.
+下一步：在 UI 手動驗證實際上傳的 `.xls`，將 49 筆解析候選列與 Excel 原始資料逐筆比對，再處理任何漏抓混凝土／鋼筋或錯誤分類列。
 
-## 2026-10-15 — Documentation / project-transfer checkpoint
+不得把預算價或廠商報價直接發布成 Approved 歷史真值。
 
-Completed:
+## 2026-10-15 — 文件／專案交接檢查點
 
-- expanded `README.md` into the current project entry point
-- added `docs/API.md` with the current controller/API contract
-- added `docs/DATABASE.md` with current table responsibilities and live development-schema state
-- added `docs/DEVELOPMENT.md` with Docker, local build, parser-test and change-management rules
-- refreshed `docs/HANDOFF.md`
-- refreshed `docs/NEXT_CHAT_HANDOFF.md` with a copy-ready next-chat prompt
-- aligned documentation around the current Draft -> review -> Publish History -> Approved historical workflow
-- documented the read-only workbook preview / inspection safeguards
-- documented the clean separation between structural-work price history and rebar/concrete quantity history
+完成：
 
-Current next phase remains:
+- 擴充 `README.md`，作為目前專案入口
+- 新增 `docs/API.md`，記錄目前 Controller／API 合約
+- 新增 `docs/DATABASE.md`，記錄目前資料表責任與開發資料庫 Schema
+- 新增 `docs/DEVELOPMENT.md`，記錄 Docker、本機 Build、Parser 測試與修改規則
+- 更新 `docs/HANDOFF.md`
+- 更新 `docs/NEXT_CHAT_HANDOFF.md`，加入可直接複製的新對話提示詞
+- 將文件統一到目前 Draft → 審核 → Publish History → Approved 歷史流程
+- 記錄唯讀 Excel 工作表預覽／檢查防護
+- 記錄結構體工程價格歷史與鋼筋／混凝土數量歷史的責任分離
 
-1. pull and run the latest branch locally
-2. verify workbook preview/inspection against a real source file
-3. import only truly finalized historical bids
-4. resolve Draft review blockers
-5. publish Approved history
-6. accumulate enough real history for P15/P50/P85
-7. then validate real target V1/V2 analysis
+目前下一階段仍然是：
 
-No fake history should be inserted for demonstration.
+1. 拉取並執行最新 Branch
+2. 使用真實來源檔驗證工作表預覽／檢查
+3. 只匯入真正已定案歷史標單
+4. 處理 Draft 審核阻擋
+5. 發布 Approved 歷史資料
+6. 累積足夠真實歷史後驗證 P15／P50／P85
+7. 最後驗證真實待偵錯 V1／V2 分析
 
-## 2026-10-15 — Documentation index and branch visibility
+不得為了展示而加入假歷史資料。
 
-Completed:
+## 2026-10-15 — 文件索引與 Branch 顯示說明
 
-- added `docs/README.md` as the documentation entry point
-- documented the recommended reading order for handoff and development
-- clarified that current docs and formal 2A implementation live on `feature/1d-api-integration`
-- clarified why the `docs/` directory may not appear while GitHub is displaying `main`
-- kept the no-merge-to-main rule unchanged
+完成：
 
-Current next step remains real-system operation and real finalized-bid validation.
+- 新增 `docs/README.md` 作為文件入口
+- 記錄交接與開發建議閱讀順序
+- 明確說明目前正式文件與 2A 實作位於 `feature/1d-api-integration`
+- 說明 GitHub 顯示 `main` 時可能看不到 `docs/` 的原因
+- 保持「不得自行合併 main」規則不變
+
+目前下一步仍為實際系統操作與真實最終標單驗證。
+
+## 2026-10-15 — 文件中文化
+
+完成：
+
+- 將專案 README 與 `docs/` 主要說明內容統一改為繁體中文
+- 保留 API 路徑、Branch 名稱、Class／Table／欄位名稱等實際技術識別字
+- 後續新增文件預設使用繁體中文
