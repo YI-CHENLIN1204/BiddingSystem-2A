@@ -1,25 +1,25 @@
-# 2A Architecture Decisions
+# 2A 架構決策紀錄
 
-> Updated: 2026-10-12
+> 更新日期：2026-10-15
 
-This file records decisions that should not be silently reversed during development.
+本文件記錄已經確認、開發過程中不得被默默推翻的架構決策。
 
-## D-001 — Separate target cases from historical truth
+## D-001 — 待偵錯案件與歷史真值分開
 
-**Decision:**  
-`AnalysisCase` is not `ProjectMaster`.
+**決策：**  
+`AnalysisCase` 不等於 `ProjectMaster`。
 
-Target cases are working data. Historical projects are finalized official bid data.
+待偵錯案件是工作資料；歷史建案是已定案的正式標單資料。
 
-**Reason:**  
-A target case may be revised repeatedly and must never contaminate its own estimation baseline.
+**原因：**  
+待偵錯案件可能反覆修改，不能讓它污染自己的估算基準。
 
 ---
 
-## D-002 — Use immutable target versions
+## D-002 — 待偵錯版本使用不可覆寫快照
 
-**Decision:**  
-Repeated checks use `AnalysisBidVersion` snapshots.
+**決策：**  
+反覆檢查使用 `AnalysisBidVersion` 快照。
 
 ```text
 AnalysisCase
@@ -28,174 +28,178 @@ AnalysisCase
 └─ V3
 ```
 
-Do not overwrite old quantities or prices in place.
+不要直接覆寫舊版本的數量或價格。
 
-**Reason:**  
-The system must preserve how a bid changed between submissions.
-
----
-
-## D-003 — 1D is optional
-
-**Decision:**  
-2A must operate standalone.
-
-1D is only an optional source for creating a target snapshot.
-
-**Reason:**  
-The school-project version will not have 1D, and repeated analysis must not require re-running 1D.
+**原因：**  
+系統必須保留每一次送估之間的變化。
 
 ---
 
-## D-004 — Current analysis scope is deliberately narrow
+## D-003 — 1D 為選配
 
-**Decision:**
+**決策：**  
+2A 必須可以獨立運作。
 
-- major-category estimation / price anomaly: `結構體工程`
-- detail quantity anomaly: `鋼筋`, `混凝土`
+1D 只是一個可選擇的待偵錯快照來源。
 
-**Reason:**  
-These currently have the clearest historical-comparison meaning. Do not estimate every category simply because 1D can classify it.
-
----
-
-## D-005 — Drawing-driven categories are not forced into quantity estimation
-
-**Decision:**  
-Do not force quantity-history models for categories such as doors/windows solely from coarse project metadata.
-
-**Reason:**  
-Their quantities may be driven much more directly by drawings and design choices.
-
-This does **not** automatically mean major-category price analysis is permanently excluded; that remains a separate business decision.
+**原因：**  
+專題版本不會有 1D，而且反覆分析也不應該要求每次重新執行 1D。
 
 ---
 
-## D-006 — Preserve source hierarchy; use reviewed override separately
+## D-004 — 目前分析範圍刻意收斂
 
-**Decision:**  
-Keep source `Category1 / Category2 / Category3` unchanged.
+**決策：**
 
-If the effective engineering major is wrong or missing, store a separate `major_category_override`.
+- 大項估算／價格異常：`結構體工程`
+- 細項數量異常：`鋼筋`、`混凝土`
 
-**Reason:**  
-Review corrections must not destroy source traceability.
+**原因：**  
+目前這些項目最具有明確的歷史比較意義。不能因為 1D 能分類所有工程類別，就代表 2A 應該全部估算。
 
 ---
 
-## D-007 — Historical import starts as Draft
+## D-005 — 受圖面高度影響的類別不強迫做數量估算
 
-**Decision:**  
-Importing a finalized bid does not immediately make it model truth.
+**決策：**  
+像門窗等主要受圖面與設計決定的類別，不可以只依粗略建案基本資料強制建立數量歷史模型。
+
+**原因：**  
+這些類別的數量可能更直接受設計圖與設計選擇影響。
+
+這**不代表**它們永遠不能做大項價格分析；價格分析是否保留是另一個獨立的業務決策。
+
+---
+
+## D-006 — 保留原始分類層級，人工修正另外保存
+
+**決策：**  
+來源 `Category1 / Category2 / Category3` 必須保持不變。
+
+如果實際工程大項錯誤或缺失，另外保存 `major_category_override`。
+
+**原因：**  
+人工審核修正不能破壞來源追溯能力。
+
+---
+
+## D-007 — 歷史匯入一律先進 Draft
+
+**決策：**  
+匯入最終標單後，不可以直接成為模型真值。
 
 ```text
-Import -> Draft -> review -> explicit publish -> Approved
+匯入 → Draft → 審核 → 明確發布 → Approved
 ```
 
-**Reason:**  
-Parsing, category recognition, unit conversion and material mapping can be wrong.
+**原因：**  
+Parser、工程大項辨識、單位轉換與材料對應都可能出錯。
 
 ---
 
-## D-008 — Approved history is immutable until reopened
+## D-008 — Approved 歷史資料必須鎖定，除非重新開啟審核
 
-**Decision:**  
-Approved project metadata, row edits, major overrides, mappings and ignore state are locked.
+**決策：**  
+Approved 建案的基本資料、工項修改、工程大項覆寫、材料對應與忽略狀態都要鎖定。
 
-Corrections require explicit `Reopen history review`.
+要修正必須明確執行 `Reopen History Review`。
 
-**Reason:**  
-A verified baseline must not silently change after being used by the model.
-
----
-
-## D-009 — HistoricalTransaction is quantity-only
-
-**Decision:**  
-`historical_transaction` stores standardized quantity history for rebar / concrete.
-
-It does not store price.
-
-**Reason:**  
-Structural-work price comes from finalized bid lines in `final_bid_item`; mixing quantity and price responsibilities caused duplicate and inconsistent data.
+**原因：**  
+已驗證的模型基準不能在使用後默默改變。
 
 ---
 
-## D-010 — Structural price history stays in FinalBidItem
+## D-009 — HistoricalTransaction 只保存數量
 
-**Decision:**  
-Structural-work historical price uses the finalized bid rows:
+**決策：**  
+`historical_transaction` 只保存鋼筋／混凝土標準化後的數量歷史。
+
+不保存價格。
+
+**原因：**  
+結構體工程價格來源已經是 `final_bid_item` 的正式標單工項。將數量與價格責任混在一起會造成重複與不一致資料。
+
+---
+
+## D-010 — 結構體工程歷史價格保留在 FinalBidItem
+
+**決策：**  
+結構體工程歷史價格直接使用最終標單工項：
 
 ```text
 Amount
-or
-Qty * UnitPrice
+或
+Qty × UnitPrice
 ```
 
-Then normalize by floor area to price per ping.
+再依總樓地板面積換算成每坪單價。
 
 ---
 
-## D-011 — Site area is a formal similarity feature
+## D-011 — 基地面積為正式相似度特徵
 
-**Decision:**  
-Site area is required for target and historical project metadata and participates in similarity scoring.
+**決策：**  
+基地面積是待偵錯案件與歷史建案的必要基本資料，並參與相似度評分。
 
-**Reason:**  
-It is part of the formal project input requirement and can materially affect project form / constraints.
-
----
-
-## D-012 — Insufficient history must remain insufficient
-
-**Decision:**  
-Do not create fake history or force a range when valid samples are below `MinimumSampleCount`.
-
-Default minimum sample count: **5**.
-
-**Reason:**  
-A visible “insufficient data” result is more trustworthy than a fabricated estimate.
+**原因：**  
+基地面積屬於正式建案輸入條件，而且可能實質影響建案形式與限制。
 
 ---
 
-## D-013 — Remove obsolete generic material-estimation architecture
+## D-012 — 歷史不足就必須維持歷史不足
 
-**Decision:**  
-The old generic material-estimation stack is removed.
+**決策：**  
+當有效樣本數低於 `MinimumSampleCount` 時，不建立假歷史資料，也不強制產生合理範圍。
 
-Removed concepts include:
+預設最低樣本數：**5**。
+
+**原因：**  
+清楚顯示「樣本不足」比製造一個看似合理但無法信任的估算更可靠。
+
+---
+
+## D-013 — 移除已淘汰的通用材料估算架構
+
+**決策：**  
+舊版通用材料估算架構已移除。
+
+已移除概念包括：
 
 - `quantity_rule_base`
-- core-material estimation
-- generic range-estimation stack
-- legacy one-shot anomaly route
+- 核心材料估算
+- 通用 Range Estimation 架構
+- 舊版一次性異常分析 Route
 
-**Reason:**  
-It conflicts with the current major-price / detail-quantity architecture.
+**原因：**  
+這些設計與目前「大項價格／細項數量」架構衝突。
+
+---
+
+## D-014 — 直接上傳規則目前仍為暫定
+
+**決策：**  
+廠商尚未確認前，直接上傳待偵錯標單必須是具備可使用工程大項、工項／規格、單位與數量的結構化資料。
+
+若要做價格分析，還需要金額或單價。
+
+**原因：**  
+在介面規格尚未定案前，不應該讓系統默默猜測任意原始文件。
 
 ---
 
-## D-014 — Current direct-upload rule is provisional
+## D-015 — 兩種 2A 上傳流程都必須先檢查工作表
 
-**Decision:**  
-Until vendor confirmation, direct target upload accepts structured bid data with usable major category, item/spec, unit and quantity.
+**決策：**  
+不論是獨立 2A 待偵錯上傳（包含 V1／V2／V3），還是歷史最終標單匯入，都要共用工作表選擇與列解析防護。
 
-Price analysis additionally requires amount or unit price.
+- 多工作表 Excel 必須明確指定要納入的工作表。未指定時直接拒絕，不可以默默全部匯入。
+- UI 必須先顯示每個工作表的解析列數與範例工項。多工作表檔案不得自動勾選任何一張。
+- 未選取的工作表不得進入匯入快照。每一列匯入資料都要保留原始工作表名稱與列號。
+- 數量／單價／金額只能來自已明確辨識的欄位。**禁止**直接取每列最後三個數字，或被廠商比價欄位覆蓋。
+- 摘要、說明、沒有實際數值的列不得被當成工程明細。
+- 鋼筋／混凝土候選總量只能作為檢查輔助，不是正式模型資料。
+- 待偵錯版本匯入仍然不得寫入歷史真值。歷史匯入仍必須先進 Draft，人工審核後再明確 Publish History。
+- 工作表名稱叫「預算單」或包含「自估」，**不代表**價格已經正式定案。歷史基準核准前仍必須人工確認商務定案狀態。
 
-**Reason:**  
-Do not silently guess arbitrary raw files while the interface contract is still unresolved.
-
----
-## D-015 — Both 2A upload routes require worksheet review
-
-**Decision:** Both standalone target uploads (including V1/V2/V3) and historical finalized-bid imports use the same worksheet-selection and row-parsing safeguards.
-
-- A multi-sheet workbook must have an explicit list of included worksheets. No list means reject, rather than silently import everything.
-- The UI previews parsed row counts and sample names for every worksheet. No worksheet is automatically selected for a multi-sheet workbook.
-- Unselected sheets remain outside the imported snapshot. Each imported row retains the source worksheet and row number.
-- Numeric fields must come from positively identified quantity / unit-price / amount columns. **Never** guess from the last three numbers on a row or overwrite values with vendor comparison columns.
-- Summary, explanatory and no-value rows must not become engineering detail rows.
-- Target-version imports still do not write historical truth. Historical imports still start as Draft and require human review + explicit Publish History.
-- A worksheet titled “預算單” or containing “自估” values is **not** proof that prices were finalized. Reviewers must confirm commercial finality before approving a historical baseline.
-
-**Reason:** Real supplier quotation / comparison workbooks can contain unrelated projects, duplicate valuations and multiple suppliers. Importing all worksheets or guessing numeric columns can corrupt both target estimates and approved history.
+**原因：**  
+真實廠商報價／比價 Excel 可能同時包含其他建案、重複估價與多家廠商資料。如果默默匯入所有工作表或猜測數字欄位，會同時污染待偵錯結果與 Approved 歷史基準。
