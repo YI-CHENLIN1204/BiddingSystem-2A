@@ -379,6 +379,21 @@ async function runQuantity() {
   }
 }
 
+// 舊版 AnalysisRun.result_json 可能使用 C# PascalCase；即時 API 則為 camelCase。
+// 僅轉換歷史結果的物件欄位名稱，不更動已保存的 Run 或分析數值。
+function normalizeRunResult(value: unknown): unknown {
+  if (Array.isArray(value)) return value.map(normalizeRunResult)
+  if (value !== null && typeof value === 'object') {
+    return Object.fromEntries(
+      Object.entries(value as Record<string, unknown>).map(([key, item]) => [
+        key.charAt(0).toLowerCase() + key.slice(1),
+        normalizeRunResult(item),
+      ]),
+    )
+  }
+  return value
+}
+
 async function viewRun(run: RunSummary) {
   error.value = ''
   try {
@@ -396,13 +411,13 @@ async function viewRun(run: RunSummary) {
         analysisBidVersionId: saved.analysisBidVersionId,
         versionNo: saved.versionNo,
         sourceType: versionDetail.value?.version.sourceType ?? '',
-        result: saved.result as QuantityAnalysis,
+        result: normalizeRunResult(saved.result) as QuantityAnalysis,
       }
       priceResult.value = null
     } else if (saved.runType.startsWith('MajorPrice:')) {
       priceResult.value = {
         analysisRunId: saved.analysisRunId,
-        result: saved.result as PriceAnalysis,
+        result: normalizeRunResult(saved.result) as PriceAnalysis,
       }
       quantityResult.value = null
     }
