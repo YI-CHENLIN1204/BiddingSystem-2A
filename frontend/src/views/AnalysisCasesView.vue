@@ -442,10 +442,16 @@ onMounted(load)
 .source-option span { color: var(--muted); font-size: 13px; line-height: 1.5; }
 .source-option.active { color: var(--wz-primary); border-color: var(--wz-primary); background: var(--blue-soft); }
 .source-option.unavailable, .source-option:disabled { opacity: .55; cursor: not-allowed; background: #f7f8fa; }
-.source-fields { display: grid; grid-template-columns: minmax(260px, .6fr) 1fr; gap: 16px; align-items: end; }
+.source-fields { display: grid; grid-template-columns: minmax(0, 1fr); gap: 16px; align-items: stretch; min-width: 0; }
+.source-fields > * { min-width: 0; }
+.source-fields :deep(.workbook-review) { min-width: 0; width: 100%; }
+.source-fields :deep(.table-responsive) { width: 100%; max-width: 100%; overflow-x: auto; }
+.source-fields :deep(.table-responsive table) { min-width: 1000px; }
 .modal-backdrop-custom { position: fixed; inset: 0; z-index: 1080; display: grid; place-items: center; padding: 1.5rem; overflow-y: auto; background: rgba(0,0,0,.5); }
-.modal-backdrop-custom .modal-dialog { width: min(1050px, 100%); margin: auto; }
-.modal-content { max-height: calc(100vh - 3rem); overflow-y: auto; }
+.modal-backdrop-custom .modal-dialog.modal-xl { width: min(1440px, calc(100vw - 48px)); max-width: none; margin: auto; min-width: 0; }
+.modal-backdrop-custom .modal-dialog .modal-content { min-width: 0; }
+.modal-content { max-height: calc(100vh - 3rem); overflow-x: hidden; overflow-y: auto; }
+.modal-body { min-width: 0; }
 .modal-backdrop-custom :deep(.form-grid) { grid-template-columns: repeat(4, minmax(0, 1fr)); }
 .modal-backdrop-custom :deep(.form-grid .span-2:first-child) { grid-column: span 2; }
 .history-readiness { overflow: hidden; }
