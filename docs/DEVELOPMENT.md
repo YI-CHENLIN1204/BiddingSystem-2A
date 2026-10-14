@@ -1,34 +1,34 @@
-# 2A Development Guide
+# 2A 開發指南
 
-> Updated: 2026-10-15  
-> Repository: `YI-CHENLIN1204/BiddingSystem-2A`  
-> Active development branch: `feature/1d-api-integration`
+> 更新日期：2026-10-15  
+> Repository：`YI-CHENLIN1204/BiddingSystem-2A`  
+> 目前正式開發 Branch：`feature/1d-api-integration`
 
-This guide explains how to continue development without reintroducing removed architecture.
+本文件說明如何延續目前開發，同時避免把已經移除的舊架構重新加回來。
 
-## 1. Branch rule
+## 1. Branch 規則
 
-Formal current development continues on:
+目前正式開發持續使用：
 
 ```text
 feature/1d-api-integration
 ```
 
-Do not merge `main` unless the user explicitly asks.
+除非使用者明確要求，否則不要合併到 `main`。
 
-The older POC branch:
+舊版 POC Branch：
 
 ```text
 feature/1d-detection-integration
 ```
 
-is not the formal production direction and should remain separate.
+不是目前正式產品方向，必須與正式開發分開。
 
 ---
 
-# 2. Required documents before changing architecture
+## 2. 修改架構前必讀文件
 
-Read in this order:
+請依照以下順序閱讀：
 
 1. `docs/NEXT_CHAT_HANDOFF.md`
 2. `README.md`
@@ -40,13 +40,13 @@ Read in this order:
 8. `docs/VENDOR_QUESTIONS.md`
 9. `docs/WORKLOG.md`
 
-Do not infer old behavior from deleted services or earlier branches.
+不要從已刪除 Service 或舊 Branch 猜測目前系統行為。
 
 ---
 
-# 3. Local Docker workflow
+## 3. 本機 Docker 開發流程
 
-From repository root:
+在 Repository 根目錄：
 
 ```powershell
 git status
@@ -55,7 +55,7 @@ git switch feature/1d-api-integration
 git pull origin feature/1d-api-integration
 ```
 
-Then rebuild the containers:
+重新建置並啟動容器：
 
 ```powershell
 docker compose down
@@ -63,25 +63,25 @@ docker compose up -d --build
 docker compose ps
 ```
 
-Open:
+開啟：
 
 ```text
 http://localhost:8081
 ```
 
-If startup fails:
+若啟動失敗：
 
 ```powershell
 docker compose logs --tail=150
 ```
 
-Backend-only logs:
+只看 Backend：
 
 ```powershell
 docker compose logs backend --tail=150
 ```
 
-Frontend-only logs:
+只看 Frontend：
 
 ```powershell
 docker compose logs frontend --tail=150
@@ -89,59 +89,59 @@ docker compose logs frontend --tail=150
 
 ---
 
-# 4. Environment variables
+## 4. 環境變數
 
-Create:
-
-```text
-.env
-```
-
-from:
+從：
 
 ```text
 .env.example
 ```
 
-Required:
+建立：
+
+```text
+.env
+```
+
+必要：
 
 ```text
 DB_CONNECTION_STRING
 ```
 
-Optional:
+選配：
 
 ```text
 ONE_D_API_BASE_URL
 ```
 
-If `ONE_D_API_BASE_URL` is blank:
+如果 `ONE_D_API_BASE_URL` 為空：
 
-- 2A still works
-- direct upload remains available
-- 1D buttons should be unavailable/disabled
-- no target analysis should depend on 1D
+- 2A 仍然必須可以正常使用
+- 直接上傳必須保留
+- 1D 按鈕應為不可使用／停用狀態
+- 待偵錯分析不得依賴 1D
 
-Never commit passwords, connection strings, API keys, or local `.env` content.
+禁止提交密碼、Connection String、API Key 或本機 `.env` 內容。
 
 ---
 
-# 5. Non-Docker local development
+## 5. 不使用 Docker 的本機開發
 
-Backend:
+Backend：
 
 ```powershell
-$env:ConnectionStrings__DefaultConnection = "<PostgreSQL connection string>"
+$env:ConnectionStrings__DefaultConnection = "<PostgreSQL 連線字串>"
 dotnet run --project .\崴正\崴正.csproj
 ```
 
-Default backend development URL:
+Backend 預設開發網址：
 
 ```text
 http://127.0.0.1:5261
 ```
 
-Frontend:
+Frontend：
 
 ```powershell
 cd .\frontend
@@ -149,26 +149,26 @@ npm install
 npm run dev
 ```
 
-Default frontend URL:
+Frontend 預設網址：
 
 ```text
 http://127.0.0.1:5174
 ```
 
-Vite proxies `/api` to the backend.
+Vite 會將 `/api` 代理到 Backend。
 
 ---
 
-# 6. Build verification
+## 6. Build 驗證
 
-Backend:
+Backend：
 
 ```powershell
 dotnet restore .\崴正\崴正.csproj
 dotnet build .\崴正\崴正.csproj -c Release
 ```
 
-Frontend:
+Frontend：
 
 ```powershell
 cd .\frontend
@@ -176,110 +176,110 @@ npm ci
 npm run build
 ```
 
-Do not consider a change complete if one side fails to build.
+只要任一端 Build 失敗，就不能視為修改完成。
 
 ---
 
-# 7. Parser regression test
+## 7. Parser 回歸測試
 
-The repository contains workbook-parser regression checks.
+Repository 內有 Excel／CSV Parser 回歸測試。
 
-Run:
+執行：
 
 ```powershell
 dotnet run --project .\tests\WorkbookParserTests\WorkbookParserTests.csproj -c Release
 ```
 
-Use this after changes to:
+以下修改完成後建議執行：
 
-- worksheet selection
-- quantity/price column recognition
-- Excel/CSV parsing
-- rebar/concrete candidate inspection
-- source-row handling
+- 工作表選擇
+- 數量／價格欄位辨識
+- Excel／CSV 解析
+- 鋼筋／混凝土候選檢查
+- 原始列追溯
 
 ---
 
-# 8. Current formal architecture
+## 8. 目前正式架構
 
-Do not redesign away from:
+不要偏離以下架構：
 
 ```text
-Target
+待偵錯
 AnalysisCase
-  -> AnalysisBidVersion
-      -> AnalysisBidItem
-      -> AnalysisRun
+  → AnalysisBidVersion
+      → AnalysisBidItem
+      → AnalysisRun
 
-History
+歷史資料
 ProjectMaster
-  -> FinalBidItem
-      -> HistoricalTransaction
+  → FinalBidItem
+      → HistoricalTransaction
 ```
 
-Target and historical data are separate by design.
+待偵錯資料與歷史資料是刻意分開的。
 
 ---
 
-# 9. Current analysis scope
+## 9. 目前分析範圍
 
-Do not broaden automatically.
+不要自動擴大。
 
-Current major-category price scope:
+目前大項價格分析範圍：
 
 ```text
 結構體工程
 ```
 
-Current quantity-detection scope:
+目前數量偵錯範圍：
 
 ```text
 鋼筋
 混凝土
 ```
 
-Do not re-add:
+除非有新的明確需求，否則不要重新加入：
 
-- generic material estimation
-- template/formwork estimation
-- steel-structure estimation
-- doors/windows quantity estimation
-- arbitrary all-category estimation
-
-unless a new requirement explicitly changes the scope.
+- 通用材料估算
+- 模板估算
+- 鋼骨估算
+- 門窗數量估算
+- 任意全類別估算
 
 ---
 
-# 10. Finalized-history development rule
+## 10. 已定案歷史資料開發規則
 
-Import does not mean approval.
+匯入不代表核准。
 
-Formal workflow:
+正式流程：
 
 ```text
-Upload finalized-bid candidate
--> Draft
--> review
--> fix blockers
--> Publish History
--> Approved
+上傳最終標單候選
+→ Draft
+→ 人工審核
+→ 處理阻擋項目
+→ Publish History
+→ Approved
 ```
 
-Approved model input is immutable until:
+Approved 模型輸入在重新執行：
 
 ```text
 Reopen History Review
 ```
 
-Never bypass publication review just to create model samples.
+之前必須保持不可修改。
+
+不要為了快速建立模型樣本而繞過發布審核。
 
 ---
 
-# 11. Target-version development rule
+## 11. 待偵錯版本開發規則
 
-A changed target bid creates a new version.
+待偵錯標單有修改時，要建立新版本。
 
-Correct:
+正確：
 
 ```text
 AnalysisCase
@@ -288,31 +288,31 @@ AnalysisCase
 └─ V3
 ```
 
-Incorrect:
+錯誤：
 
 ```text
-V1 overwritten repeatedly
+一直覆寫 V1
 ```
 
-Saved runs must remain tied to the version that produced them.
+已儲存的 AnalysisRun 必須永遠綁定當時產生結果的版本。
 
 ---
 
-# 12. Workbook-import rule
+## 12. Excel 匯入規則
 
-Both target upload and historical-final-bid import must use explicit worksheet selection when needed.
+待偵錯上傳與歷史最終標單匯入，在需要時都必須明確選擇工作表。
 
-Required safeguards:
+必要防護：
 
-- preview workbook sheets
-- user explicitly selects included worksheets
-- preserve sheet name and row number
-- do not infer quantity/price from arbitrary trailing numbers
-- do not treat summaries/explanations as engineering rows
-- do not automatically trust a worksheet because its name contains 預算單 or 自估
-- inspection is read-only
+- 先預覽 Excel 內工作表
+- 由使用者明確選擇要納入的工作表
+- 保留工作表名稱與原始列號
+- 不可以從列尾任意數字猜測數量／價格
+- 不可以把摘要／說明資料當成工程明細
+- 不可以只因工作表名稱含「預算單」或「自估」就自動信任
+- 檢查流程必須唯讀
 
-Useful endpoints:
+相關 API：
 
 ```text
 POST /api/tender-import/preview
@@ -321,62 +321,62 @@ POST /api/tender-import/inspect
 
 ---
 
-# 13. Database-change rule
+## 13. 資料庫異動規則
 
-Current project phase allows hard cleanup of development data/schema when a design is explicitly obsolete.
+目前仍在開發階段，若設計已明確淘汰，可以直接硬清理開發資料與 Schema。
 
-When changing schema:
+修改 Schema 時依序：
 
-1. change the C# model
-2. change EF mapping
-3. add SQL under `database/`
-4. apply migration to development DB
-5. verify actual schema
-6. remove obsolete code
-7. update `docs/DATABASE.md`
-8. update `docs/DECISIONS.md` if responsibility/architecture changed
+1. 修改 C# Model
+2. 修改 EF Mapping
+3. 在 `database/` 新增 SQL
+4. 套用到開發資料庫
+5. 驗證實際 Schema
+6. 移除已淘汰程式
+7. 更新 `docs/DATABASE.md`
+8. 如果資料責任／架構改變，更新 `docs/DECISIONS.md`
 
-Do not leave dead columns or compatibility fields without a concrete reason.
+沒有明確理由時，不要保留死欄位或相容性欄位。
 
 ---
 
-# 14. Documentation-change rule
+## 14. 文件維護規則
 
-After meaningful development, update at least one of:
+完成有意義的開發後，至少更新以下其中一份：
 
 - `docs/WORKLOG.md`
 - `docs/HANDOFF.md`
 - `docs/NEXT_CHAT_HANDOFF.md`
 
-If API changes:
+如果 API 改變：
 
-- update `docs/API.md`
+- 更新 `docs/API.md`
 
-If schema/data responsibility changes:
+如果 Schema／資料責任改變：
 
-- update `docs/DATABASE.md`
+- 更新 `docs/DATABASE.md`
 
-If architecture changes:
+如果架構改變：
 
-- update `docs/2A_CURRENT_ARCHITECTURE.md`
-- update `docs/DECISIONS.md`
+- 更新 `docs/2A_CURRENT_ARCHITECTURE.md`
+- 更新 `docs/DECISIONS.md`
 
-README should remain the entry point, not the full internal design document.
+README 應維持入口文件角色，不要塞入所有內部設計細節。
 
 ---
 
-# 15. Git workflow
+## 15. Git 開發流程
 
-Before editing:
+修改前：
 
 ```powershell
 git status
 git pull origin feature/1d-api-integration
 ```
 
-After code changes, verify build/tests before committing.
+修改完成後，先驗證 Build／測試，再 Commit。
 
-Suggested commit style:
+建議 Commit 格式：
 
 ```text
 feat: ...
@@ -387,47 +387,47 @@ docs: ...
 test: ...
 ```
 
-Do not create a new branch for every small change unless explicitly requested.
+除非使用者明確要求，不要為每一個小修改另外建立 Branch。
 
 ---
 
-# 16. Current real-data validation sequence
+## 16. 目前真實資料驗證順序
 
-The immediate next phase is system operation, not architecture expansion.
+現在優先目標是實際操作，不是繼續擴張架構。
 
-Recommended sequence:
+建議順序：
 
-1. update local branch
-2. rebuild Docker
-3. open `http://localhost:8081`
-4. preview a real workbook
-5. explicitly select authentic detail sheets
-6. run read-only inspection
-7. verify parsed rows against Excel
-8. only then create a Draft historical project if it is truly finalized history
-9. review category/material/unit/price blockers
-10. publish only after verification
-11. repeat with additional real history
-12. once enough history exists, test a target AnalysisCase
-13. compare V1/V2 runs
+1. 更新本機 Branch
+2. 重新 Build Docker
+3. 開啟 `http://localhost:8081`
+4. 預覽真實 Excel
+5. 明確選擇真正的工程明細工作表
+6. 執行唯讀檢查
+7. 將解析列與 Excel 原始資料比對
+8. 確定是真正已定案資料後，才建立 Draft 歷史建案
+9. 檢查工程大項／材料／單位／價格阻擋項目
+10. 驗證完成後才發布
+11. 持續加入真實歷史建案
+12. 有足夠歷史資料後，建立真實 AnalysisCase
+13. 比較 V1／V2 分析結果
 
 ---
 
-# 17. Definition of “ready to operate”
+## 17. 「可以開始操作」的判定
 
-The local system is ready for hands-on testing when:
+當以下條件都成立時，本機系統即可開始實際操作測試：
 
-- branch is up to date
-- working tree is clean
-- backend container is Up
-- frontend container is Up
-- `http://localhost:8081` opens
-- system overview loads
-- target case page loads
-- project/history page loads
-- final-bid import page loads
-- structural estimation page loads
-- settings page loads
-- audit log page loads
+- Branch 已更新到最新
+- Working Tree 乾淨
+- Backend Container 為 Up
+- Frontend Container 為 Up
+- `http://localhost:8081` 可以開啟
+- 系統總覽正常載入
+- 待偵錯案件頁正常載入
+- 建案／歷史資料頁正常載入
+- 最終標單匯入頁正常載入
+- 結構體工程估算頁正常載入
+- 參數設定頁正常載入
+- 操作紀錄頁正常載入
 
-At that point, move to real-data validation rather than adding synthetic history.
+達成後就進入真實資料驗證，不要再建立人工假歷史資料。
