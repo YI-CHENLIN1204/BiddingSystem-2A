@@ -1,37 +1,50 @@
 # 2A Development Handoff
 
-> Updated: 2026-10-12  
+> Updated: 2026-10-15  
 > Repository: `YI-CHENLIN1204/BiddingSystem-2A`  
 > Active development branch: `feature/1d-api-integration`
 
-## 1. Start here
+## 1. Read first
 
-Do **not** redesign the system from the old generic material-estimation architecture.
+Do not reconstruct the project from old conversations or restore removed generic-estimation code.
 
-Read these files first:
+Read in this order:
 
 1. `docs/NEXT_CHAT_HANDOFF.md`
 2. `README.md`
 3. `docs/2A_CURRENT_ARCHITECTURE.md`
 4. `docs/DECISIONS.md`
-5. `docs/LOCAL_TEST_GUIDE.md`
-6. `docs/WORKLOG.md`
+5. `docs/API.md`
+6. `docs/DATABASE.md`
+7. `docs/DEVELOPMENT.md`
+8. `docs/LOCAL_TEST_GUIDE.md`
+9. `docs/VENDOR_QUESTIONS.md`
+10. `docs/WORKLOG.md`
 
-The current formal direction is:
+## 2. Formal current scope
+
+Current model scope:
 
 - major-category estimation / price anomaly: **結構體工程**
-- detail quantity anomaly detection: **鋼筋、混凝土**
-- target data and historical data are strictly separated
-- 1D is optional and only an additional target-data source
-- finalized history must pass review and explicit publication before entering the model
+- detail quantity anomaly: **鋼筋、混凝土**
 
-## 2. Current data architecture
+Current hierarchy:
 
-### Target pipeline
+```text
+結構體工程
+├─ 鋼筋      -> quantity anomaly
+└─ 混凝土    -> quantity anomaly
+```
+
+Do not automatically broaden to all engineering categories.
+
+## 3. Formal data split
+
+### Target / working data
 
 ```text
 Upload ───────────────┐
-                     ├─> AnalysisCase
+                     ├─ AnalysisCase
 Optional 1D import ──┘      │
                             ├─ V1
                             ├─ V2
@@ -47,19 +60,17 @@ Tables:
 - `analysis_bid_item`
 - `analysis_run`
 
-Target data must never directly become historical model truth.
-
-### History pipeline
+### Verified historical data
 
 ```text
-Final bid
--> ProjectMaster (Draft)
+Finalized-bid candidate
+-> ProjectMaster Draft
 -> FinalBidItem
 -> review
 -> Publish History
--> ProjectMaster (Approved)
-   ├─ structural-work price baseline: FinalBidItem
-   └─ rebar/concrete quantity baseline: HistoricalTransaction
+-> ProjectMaster Approved
+   ├─ structural price baseline -> FinalBidItem
+   └─ rebar/concrete quantity baseline -> HistoricalTransaction
 ```
 
 Tables:
@@ -68,47 +79,99 @@ Tables:
 - `final_bid_item`
 - `historical_transaction`
 
-## 3. Current review workflow
-
-Imported final bids are not trusted automatically.
-
-A project starts as:
+Critical rule:
 
 ```text
-HistoryStatus = Draft
+AnalysisCase != ProjectMaster
 ```
 
-Before publication, reviewers can:
+Target data must never automatically become historical model truth.
 
-- correct the effective major category using `major_category_override`
-- correct material mapping
-- correct quantity / unit / unit price
-- ignore irrelevant rows
-- inspect publication blockers
+## 4. 1D rule
 
-After publication:
+2A must work with or without 1D.
+
+Standalone / school project:
 
 ```text
-HistoryStatus = Approved
+structured upload
+-> AnalysisCase snapshot
+-> V1/V2/V3
+-> analysis
 ```
+
+Industry integration:
+
+```text
+1D
+-> one-time import
+-> local 2A snapshot
+-> all later analysis inside 2A
+```
+
+1D is not a runtime dependency for every analysis run.
+
+## 5. Historical review rule
+
+Import is not approval.
+
+```text
+Import
+-> Draft
+-> review
+-> resolve blockers
+-> Publish History
+-> Approved
+```
+
+Review can correct:
+
+- effective engineering major through `major_category_override`
+- material mapping
+- quantity
+- unit
+- unit price
+- ignore state
+
+Source `Category1/Category2/Category3` must remain preserved.
 
 Approved history is locked.
 
-To correct it:
+To fix it:
 
 ```text
 Approved
--> Reopen history review
+-> Reopen History Review
 -> Draft
--> edit
+-> correct
 -> publish again
 ```
 
-Reopening disables the project's active quantity-history rows until re-approved.
+## 6. Workbook safeguards
 
-## 4. Current similarity features
+A major current focus is preventing bad Excel parsing from contaminating model history.
 
-Current target / historical project metadata:
+Use:
+
+```text
+POST /api/tender-import/preview
+POST /api/tender-import/inspect
+```
+
+Current rules:
+
+- multi-sheet workbooks require explicit worksheet selection
+- inspection is read-only
+- selected source sheet and row are preserved
+- quantity/price must come from positively identified columns
+- do not guess from arbitrary trailing numbers
+- summary / supplier-comparison / explanatory sheets must not silently become detail data
+- candidate steel/concrete totals are only inspection aids
+- worksheet names such as 預算單 or 自估 do not prove commercial finality
+
+## 7. Current similarity model
+
+Target / historical project features:
 
 - project type
 - structure type
@@ -117,85 +180,79 @@ Current target / historical project metadata:
 - site area
 - ground-floor count
 - basement-floor count
-- project date / year
+- project date/year
 
-Current model also supports:
+Model behavior:
 
-- similarity weighting
+- weighted similar-project scoring
+- similarity exponent
 - time decay
 - weighted P15 / P50 / P85
-- insufficient-history fallback
+- minimum-sample fallback
 
-Default minimum valid project count: **5**.
-
-## 5. Current database state
-
-The development database has been hard-cleaned.
-
-No fake historical projects should be inserted only to make the model return a range.
-
-Expected at the start of real validation:
-
-- `project_master`: empty until real finalized bids are imported
-- `historical_transaction`: empty until reviewed rebar/concrete history is published
-- `analysis_case`: empty until a target case is created
-
-Removed legacy database design:
-
-- `quantity_rule_base`
-- `historical_transaction.unit_price`
-- old duplicate source fields
-- old project columns no longer used by the current model
-
-## 6. Current model scope
-
-### Major-category price
-
-Current supported major category:
-
-- `結構體工程`
-
-Price source:
-
-- sum `FinalBidItem.Amount`
-- fallback to `Qty * UnitPrice`
-
-Normalize to:
-
-- structural-work price per ping
-
-### Quantity anomaly detection
-
-Current supported detection categories:
-
-- `鋼筋` -> kg
-- `混凝土` -> 立方公尺
-
-Quantity history only uses approved history.
-
-## 7. 1D integration rule
-
-2A must work without 1D.
-
-Standalone / school-project mode:
+Default minimum valid history:
 
 ```text
-structured upload -> AnalysisCase -> versions -> analysis
+5 approved projects
 ```
 
-Industry integration mode:
+Insufficient history must remain insufficient.
+
+## 8. Current price / quantity responsibility
+
+### Structural-work price
+
+Source:
+
+`final_bid_item`
+
+Per project:
 
 ```text
-1D -> one-time import -> 2A snapshot -> later analysis inside 2A
+Amount
+or Qty * UnitPrice
+-> structural-work total
+-> floor area in ping
+-> price / ping
 ```
 
-Do not make 1D a runtime dependency for every analysis.
+### Rebar / concrete quantity
 
-## 8. Do not restore removed legacy paths
+Source:
 
-Do not reintroduce unless there is a new explicit decision:
+`historical_transaction`
 
-- generic material estimation page
+Current standard units:
+
+- rebar -> kg
+- concrete -> 立方公尺
+
+`historical_transaction` is quantity-only and intentionally has no unit-price field.
+
+## 9. Current database state
+
+Development database is intentionally clean.
+
+As of 2026-10-15:
+
+```text
+project_master             0
+final_bid_item             0
+historical_transaction     0
+
+analysis_case              0
+analysis_bid_version       0
+analysis_bid_item          0
+analysis_run               0
+```
+
+Do not insert fake cases merely to make the model produce ranges.
+
+## 10. Removed architecture — do not restore
+
+Unless a new explicit decision is made, do not reintroduce:
+
+- generic material estimation
 - `RangeEstimationService`
 - `BatchEstimationService`
 - `CoreMaterialService`
@@ -204,33 +261,47 @@ Do not reintroduce unless there is a new explicit decision:
 - old one-shot anomaly page
 - POC granularity tradeoff demo
 
-## 9. Immediate next work
+## 11. Immediate next phase
 
-The next development phase is **real-data validation**, not another architecture redesign.
+The system is now in **real-data validation**, not architecture redesign.
 
-Recommended order:
+Next sequence:
 
-1. run the latest branch locally
-2. import one real finalized historical bid
-3. review effective major categories
-4. review material mappings
-5. fix quantity / unit / price issues
-6. confirm publish blockers are correct
-7. publish history
-8. verify project summary
-9. repeat with additional finalized bids
-10. once enough history exists, create a target `AnalysisCase`
-11. run structural price and rebar/concrete quantity checks
-12. upload V2 and compare saved runs
+1. pull the latest `feature/1d-api-integration`
+2. rebuild Docker
+3. open `http://localhost:8081`
+4. use workbook preview
+5. explicitly select authentic detail worksheet(s)
+6. run read-only inspection
+7. compare parser output with source Excel
+8. only import a historical project if the file is truly finalized history
+9. review Draft blockers
+10. publish first Approved history
+11. verify project 2A summary
+12. repeat with additional real historical bids
+13. only after enough approved history exists, validate P15/P50/P85
+14. create a target AnalysisCase and compare V1/V2 runs
 
-## 10. Current vendor questions
+## 12. Vendor questions still pending
 
-Still awaiting confirmation:
+Continue using provisional assumptions until confirmed:
 
-1. Must industry 2A preserve direct upload in addition to 1D?
-2. What exact direct-upload schema is required?
-3. Is current hierarchy accepted: structural work -> rebar/concrete?
-4. Is one-time 1D snapshot import the correct operational workflow?
-5. Which categories are meaningful for historical quantity checks, and can excluded quantity categories still use major-category price analysis?
+1. whether industry 2A must preserve direct upload in addition to 1D
+2. exact direct-upload schema
+3. whether `結構體工程 -> 鋼筋 / 混凝土` is the accepted hierarchy
+4. whether 1D should be a one-time snapshot source
+5. which categories are valid for quantity history and whether excluded quantity categories can still use major-category price analysis
 
-Until confirmed, keep the current provisional implementation.
+See:
+
+`docs/VENDOR_QUESTIONS.md`
+
+## 13. Branch rule
+
+Continue on:
+
+```text
+feature/1d-api-integration
+```
+
+Do not merge `main` unless explicitly requested.
