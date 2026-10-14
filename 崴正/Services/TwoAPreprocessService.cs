@@ -213,80 +213,37 @@ namespace 崴正.Services
 
             if (chapter.Contains(
                     "結構體",
-                    StringComparison
-                        .OrdinalIgnoreCase))
+                    StringComparison.OrdinalIgnoreCase))
             {
-                if (ContainsAny(
-                        item.Name,
-                        "續接器",
-                        "套筒",
-                        "接頭"))
+                string candidateType = TenderImportInspectionService
+                    .ClassifyQuantityCandidate(item.Name, null);
+
+                if (candidateType == "Excluded")
                 {
-                    return
-                        CreateItem(
-                            item,
-                            null,
-                            "Pending",
-                            "屬鋼筋相關配件，但不可直接併入鋼筋重量，需另行確認。"
-                        );
+                    return CreateItem(item, null, "Excluded",
+                        "施工服務、加工、試驗或材料配件不得當成鋼筋／混凝土數量。");
                 }
 
-                if (ContainsAny(
-                        item.Name,
-                        "鋼筋",
-                        "SD420W",
-                        "SD420",
-                        "SD280",
-                        "竹節鋼筋",
-                        "高拉力鋼筋"))
+                if (candidateType == "Rebar")
                 {
-                    return
-                        CreateItem(
-                            item,
-                            "鋼筋",
-                            "Included",
-                            "結構體工程中的鋼筋工項，納入鋼筋用量比較。"
-                        );
+                    return CreateItem(item, "鋼筋", "Included",
+                        "結構體工程中的鋼筋材料用量。");
                 }
 
-                if (ContainsAny(
-                        item.Name,
-                        "混凝土",
-                        "預拌混凝土",
-                        "預拌"))
+                if (candidateType == "Concrete")
                 {
-                    return
-                        CreateItem(
-                            item,
-                            "混凝土",
-                            "Included",
-                            "結構體工程中的混凝土工項，納入混凝土用量比較。"
-                        );
+                    return CreateItem(item, "混凝土", "Included",
+                        "結構體工程中的混凝土材料用量。");
                 }
 
-                if (ContainsAny(
-                        item.Name,
-                        "模板",
-                        "模版",
-                        "系統模",
-                        "清水模"))
+                if (ContainsAny(item.Name, "模板", "模版", "系統模", "清水模"))
                 {
-                    return
-                        CreateItem(
-                            item,
-                            null,
-                            "Excluded",
-                            "目前細項數量偵錯先聚焦鋼筋與混凝土；模板保留原始工項，但暫不納入本階段偵錯。"
-                        );
+                    return CreateItem(item, null, "Excluded",
+                        "模板不在目前數量偵錯範圍。");
                 }
 
-                return
-                    CreateItem(
-                        item,
-                        null,
-                        "Pending",
-                        "此工項位於可估算的結構體工程，但尚未建立 2A 偵錯細項規則。"
-                    );
+                return CreateItem(item, null, "Pending",
+                    "此工項位於結構體工程，但不在目前鋼筋／混凝土材料偵錯範圍。");
             }
 
             if (chapter.Contains(
