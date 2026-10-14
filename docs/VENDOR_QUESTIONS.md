@@ -1,9 +1,9 @@
-# Vendor Questions — 2A / 1D Integration
+# 廠商確認問題 — 2A／1D 整合
 
-> Status: awaiting vendor confirmation  
-> Current implementation follows provisional assumptions so development can continue.
+> 狀態：等待廠商確認  
+> 為了不中斷開發，目前系統先依暫定假設實作。
 
-## Message-ready version
+## 可直接傳給廠商的版本
 
 想再跟您確認一下 2A 量價估算與異常偵測的實際使用流程，避免後續整合方向跟實務需求有落差，目前有幾個問題想確認：
 
@@ -68,14 +68,14 @@
 
 另外也想確認一點：如果某工程類別不適合做「數量異常」，是否仍有需要保留「大項價格異常」的分析？例如門窗數量可能不適合估，但整體門窗工程每坪價格是否仍具有歷史比較價值。
 
-## Current provisional implementation
+## 目前暫定實作
 
-Until answers are received, current code assumes:
+在廠商正式回覆前，目前程式暫定採用：
 
-- direct upload remains available
-- 1D is optional
-- 1D import creates a one-time 2A snapshot
-- direct upload accepts structured target data
-- major-category estimation is currently structural work
-- quantity anomaly detection currently uses rebar and concrete
-- finalized history requires explicit review / publish before model use
+- 保留直接上傳
+- 1D 為選配
+- 從 1D 匯入時只建立一次性的 2A 快照
+- 直接上傳接受結構化待偵錯資料
+- 大項估算目前以結構體工程為單位
+- 數量異常偵測目前以鋼筋、混凝土為單位
+- 歷史最終標單必須經過明確人工審核與發布後，才可以成為模型基準
