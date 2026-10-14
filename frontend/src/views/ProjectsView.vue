@@ -20,7 +20,7 @@ let searchTimer: number | undefined
 function emptyForm(): ProjectForm {
   return {
     projectName: '', projectType: '', structureType: '', city: '',
-    totalFloorArea: null, floorCount: null, basementFloorCount: 0, projectMonth: '',
+    totalFloorArea: null, siteArea: null, floorCount: null, basementFloorCount: 0, projectMonth: '',
   }
 }
 
@@ -29,6 +29,10 @@ function formatMonth(value?: string) {
 }
 
 function openEditor(project: ProjectSummary) {
+  if (project.historyStatus === 'Approved') {
+    error.value = '此建案已納入 2A 歷史基準；如需修改基本資料，請先進入建案並重新開啟審核。'
+    return
+  }
   editingId.value = project.projectId
   form.value = {
     projectName: project.projectName,
@@ -36,6 +40,7 @@ function openEditor(project: ProjectSummary) {
     structureType: project.structureType ?? '',
     city: project.city ?? '',
     totalFloorArea: project.totalFloorArea ?? null,
+    siteArea: project.siteArea ?? null,
     floorCount: project.floorCount ?? null,
     basementFloorCount: project.basementFloorCount ?? 0,
     projectMonth: project.startDate?.slice(0, 7) ?? '',
@@ -118,8 +123,15 @@ onMounted(load)
         <div>
           <div class="d-flex align-items-center gap-2 mb-2 flex-wrap">
             <h5 class="mb-0">{{ project.projectName }}</h5>
-            <span class="badge" :class="project.hasFinalBid ? 'bg-success' : 'bg-secondary'">
+            <span class="badge" :class="project.hasFinalBid ? 'bg-secondary' : 'bg-light text-dark border'">
               {{ project.hasFinalBid ? '已有決標資料' : '尚無決標資料' }}
+            </span>
+            <span
+              v-if="project.hasFinalBid"
+              class="badge"
+              :class="project.historyStatus === 'Approved' ? 'bg-success' : 'bg-warning text-dark'"
+            >
+              {{ project.historyStatus === 'Approved' ? '已納入 2A 模型' : '待歷史基準審核' }}
             </span>
           </div>
           <div class="text-muted small">
@@ -131,7 +143,16 @@ onMounted(load)
           <button class="btn btn-sm btn-light border" type="button" data-bs-toggle="dropdown" aria-expanded="false" aria-label="建案操作">⋯</button>
           <ul class="dropdown-menu dropdown-menu-end">
             <li><RouterLink class="dropdown-item" :to="`/projects/${project.projectId}`">查看建案</RouterLink></li>
-            <li><button class="dropdown-item" type="button" @click="openEditor(project)">編輯基本資料</button></li>
+            <li>
+              <button
+                class="dropdown-item"
+                type="button"
+                :disabled="project.historyStatus === 'Approved'"
+                @click="openEditor(project)"
+              >
+                {{ project.historyStatus === 'Approved' ? '基本資料已鎖定' : '編輯基本資料' }}
+              </button>
+            </li>
             <li><hr class="dropdown-divider" /></li>
             <li><button class="dropdown-item text-danger" type="button" @click="remove(project)">刪除建案</button></li>
           </ul>
@@ -141,9 +162,11 @@ onMounted(load)
       <hr />
       <div class="row g-3 small">
         <div class="col-md-3"><div class="text-muted">總樓地板面積</div><strong>{{ project.totalFloorArea ?? '未設定' }} m²</strong></div>
+        <div class="col-md-3"><div class="text-muted">基地面積</div><strong>{{ project.siteArea ?? '未設定' }} m²</strong></div>
         <div class="col-md-3"><div class="text-muted">地上 / 地下樓層</div><strong>{{ project.floorCount ?? '-' }} / {{ project.basementFloorCount ?? '-' }}</strong></div>
         <div class="col-md-3"><div class="text-muted">決標工項</div><strong>{{ project.finalBidItemCount ?? 0 }}</strong></div>
         <div class="col-md-3"><div class="text-muted">有效歷史交易</div><strong>{{ project.historicalTransactionCount ?? 0 }}</strong></div>
+        <div class="col-md-3"><div class="text-muted">歷史基準狀態</div><strong>{{ project.historyStatus === 'Approved' ? '已發布' : '審核中' }}</strong></div>
       </div>
     </article>
 

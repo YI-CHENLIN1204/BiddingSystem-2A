@@ -9,13 +9,16 @@ namespace 崴正.Services
     {
         private readonly ApplicationDbContext _context;
         private readonly AuditLogService _auditLogService;
+        private readonly FinalBidService _finalBidService;
 
         public ProjectManagementService(
             ApplicationDbContext context,
-            AuditLogService auditLogService)
+            AuditLogService auditLogService,
+            FinalBidService finalBidService)
         {
             _context = context;
             _auditLogService = auditLogService;
+            _finalBidService = finalBidService;
         }
 
 
@@ -149,6 +152,9 @@ namespace 崴正.Services
                         TotalFloorArea =
                             project.TotalFloorArea,
 
+                        SiteArea =
+                            project.SiteArea,
+
                         FloorCount =
                             project.FloorCount,
 
@@ -165,7 +171,16 @@ namespace 崴正.Services
                             finalBidItemCount,
 
                         HistoricalTransactionCount =
-                            historicalCount
+                            historicalCount,
+
+                        HistoryStatus =
+                            project.HistoryStatus,
+
+                        HistoryApprovedAt =
+                            project.HistoryApprovedAt,
+
+                        HistoryApprovedBy =
+                            project.HistoryApprovedBy
                     };
                 })
                 .ToList();
@@ -230,6 +245,9 @@ namespace 崴正.Services
                     TotalFloorArea =
                         project.TotalFloorArea,
 
+                    SiteArea =
+                        project.SiteArea,
+
                     FloorCount =
                         project.FloorCount,
 
@@ -246,7 +264,16 @@ namespace 崴正.Services
                         finalBidItemCount,
 
                     HistoricalTransactionCount =
-                        historyCount
+                        historyCount,
+
+                    HistoryStatus =
+                        project.HistoryStatus,
+
+                    HistoryApprovedAt =
+                        project.HistoryApprovedAt,
+
+                    HistoryApprovedBy =
+                        project.HistoryApprovedBy
                 }
             );
         }
@@ -284,6 +311,16 @@ namespace 崴正.Services
                 );
             }
 
+            if (string.Equals(
+                    project.HistoryStatus,
+                    "Approved",
+                    StringComparison.OrdinalIgnoreCase))
+            {
+                return ServiceResult.Conflict(
+                    "此建案已納入 2A 歷史基準。若要修改建案條件，請先重新開啟歷史基準審核。"
+                );
+            }
+
             string projectName =
                 request.ProjectName.Trim();
 
@@ -311,9 +348,9 @@ namespace 崴正.Services
                 project.StructureType,
                 project.City,
                 project.TotalFloorArea,
+                project.SiteArea,
                 project.FloorCount,
                 project.BasementFloorCount,
-                project.FloorRange,
                 project.StartDate,
                 project.IsDeleted
             };
@@ -333,19 +370,14 @@ namespace 崴正.Services
             project.TotalFloorArea =
                 request.TotalFloorArea;
 
+            project.SiteArea =
+                request.SiteArea;
+
             project.FloorCount =
                 request.FloorCount;
 
             project.BasementFloorCount =
                 request.BasementFloorCount;
-
-            project.FloorRange =
-                BuildFloorRange(
-                    request.FloorCount!.Value,
-                    request
-                        .BasementFloorCount!
-                        .Value
-                );
 
             project.StartDate =
                 projectDate;
@@ -383,9 +415,9 @@ namespace 崴正.Services
                         project.StructureType,
                         project.City,
                         project.TotalFloorArea,
+                        project.SiteArea,
                         project.FloorCount,
                         project.BasementFloorCount,
-                        project.FloorRange,
                         project.StartDate,
                         project.IsDeleted
                     }
@@ -398,6 +430,413 @@ namespace 崴正.Services
                 message =
                     "建案資料已更新"
             });
+        }
+
+
+        public async Task<ServiceResult>
+            PublishHistoryAsync(
+                int projectId,
+                string? actionUser)
+        {
+            using var transaction =
+                await _context.Database
+                    .BeginTransactionAsync();
+
+            try
+            {
+                var project =
+                    await _context.ProjectMasters
+                        .FirstOrDefaultAsync(x =>
+                            x.ProjectId ==
+                                projectId &&
+                            !x.IsDeleted
+                        );
+
+                if (project == null)
+                {
+                    return ServiceResult.NotFound(
+                        "找不到指定建案"
+                    );
+                }
+
+                if (string.Equals(
+                        project.HistoryStatus,
+                        "Approved",
+                        StringComparison.OrdinalIgnoreCase))
+                {
+                    return ServiceResult.Conflict(
+                        "此建案已經納入 2A 歷史基準"
+                    );
+                }
+
+                var items =
+                    await _context.FinalBidItems
+                        .Include(x =>
+                            x.Material)
+                        .Include(x =>
+                            x.ProjectMaster)
+                        .Where(x =>
+                            x.ProjectMasterId ==
+                                projectId)
+                        .ToListAsync();
+
+                if (!items.Any())
+                {
+                    return ServiceResult.Validation(
+                        "此建案沒有可審核的最終標單工項"
+                    );
+                }
+
+                var reviewItems =
+                    items
+                        .Where(x =>
+                            !x.IsIgnored)
+                        .ToList();
+
+                int unclassifiedItemCount =
+                    reviewItems.Count(x =>
+                        TwoAScopePolicy
+                            .ResolveEffectiveMajorCategory(
+                                x.MajorCategoryOverride,
+                                x.Category1,
+                                x.Category2,
+                                x.Category3
+                            ) == null);
+
+                var structuralReviewItems =
+                    reviewItems
+                        .Where(x =>
+                            string.Equals(
+                                TwoAScopePolicy
+                                    .ResolveEffectiveMajorCategory(
+                                        x.MajorCategoryOverride,
+                                        x.Category1,
+                                        x.Category2,
+                                        x.Category3
+                                    ),
+                                "結構體工程",
+                                StringComparison.OrdinalIgnoreCase
+                            ))
+                        .ToList();
+
+                int structuralUnpricedItemCount =
+                    structuralReviewItems.Count(x =>
+                        !(
+                            x.Amount.HasValue &&
+                            x.Amount.Value > 0
+                        ) &&
+                        !(
+                            x.Qty.HasValue &&
+                            x.Qty.Value > 0 &&
+                            x.UnitPrice.HasValue &&
+                            x.UnitPrice.Value > 0
+                        ));
+
+                int invalidQuantityBaselineCount =
+                    structuralReviewItems.Count(x =>
+                        TwoAScopePolicy
+                            .IsQuantityHistoryMaterial(
+                                x.Material?.MaterialName
+                            ) &&
+                        !_finalBidService
+                            .CanBecomeHistoricalTransaction(
+                                x
+                            ));
+
+                if (unclassifiedItemCount > 0 ||
+                    structuralUnpricedItemCount > 0 ||
+                    invalidQuantityBaselineCount > 0)
+                {
+                    var blockers =
+                        new List<string>();
+
+                    if (unclassifiedItemCount > 0)
+                    {
+                        blockers.Add(
+                            $"未辨識工程大項 {unclassifiedItemCount} 筆"
+                        );
+                    }
+
+                    if (structuralUnpricedItemCount > 0)
+                    {
+                        blockers.Add(
+                            $"結構體無有效價格 {structuralUnpricedItemCount} 筆"
+                        );
+                    }
+
+                    if (invalidQuantityBaselineCount > 0)
+                    {
+                        blockers.Add(
+                            $"鋼筋／混凝土數量或單位不符合 {invalidQuantityBaselineCount} 筆"
+                        );
+                    }
+
+                    return ServiceResult.Validation(
+                        "尚不能發布歷史基準：" +
+                        string.Join(
+                            "、",
+                            blockers
+                        ) +
+                        "。請先修正資料，或明確忽略不應參與模型的工項。"
+                    );
+                }
+
+
+                string approvedBy =
+                    string.IsNullOrWhiteSpace(
+                        actionUser)
+                        ? "System"
+                        : actionUser.Trim();
+
+                project.HistoryStatus =
+                    "Approved";
+
+                project.HistoryApprovedAt =
+                    DateTime.UtcNow;
+
+                project.HistoryApprovedBy =
+                    approvedBy;
+
+                int eligibleCandidateCount =
+                    items.Count(x =>
+                        _finalBidService
+                            .CanBecomeHistoricalTransaction(
+                                x
+                            ));
+
+                int createdOrUpdatedCount = 0;
+
+                foreach (var item in items)
+                {
+                    string action =
+                        _finalBidService
+                            .SyncHistoricalTransaction(
+                                item
+                            );
+
+                    if (action ==
+                            "建立歷史交易" ||
+                        action ==
+                            "更新歷史交易")
+                    {
+                        createdOrUpdatedCount++;
+                    }
+                }
+
+                _auditLogService.AddLog(
+                    module:
+                        "歷史基準",
+
+                    actionType:
+                        "PublishHistoryBaseline",
+
+                    entityType:
+                        "ProjectMaster",
+
+                    entityId:
+                        project.ProjectId,
+
+                    description:
+                        $"確認建案「{project.ProjectName}」並納入 2A 歷史基準",
+
+                    actionUser:
+                        approvedBy,
+
+                    projectId:
+                        project.ProjectId,
+
+                    oldValue:
+                        new
+                        {
+                            historyStatus =
+                                "Draft"
+                        },
+
+                    newValue:
+                        new
+                        {
+                            project.HistoryStatus,
+                            project.HistoryApprovedAt,
+                            project.HistoryApprovedBy,
+                            eligibleCandidateCount,
+                            createdOrUpdatedCount
+                        }
+                );
+
+                await _context.SaveChangesAsync();
+                await transaction.CommitAsync();
+
+                int activeHistoryCount =
+                    await _context
+                        .HistoricalTransactions
+                        .AsNoTracking()
+                        .CountAsync(x =>
+                            x.ProjectMasterId ==
+                                projectId &&
+                            !x.IsDeleted
+                        );
+
+                return ServiceResult.Ok(
+                    new
+                    {
+                        message =
+                            "已確認並納入 2A 歷史基準",
+
+                        projectId =
+                            project.ProjectId,
+
+                        historyStatus =
+                            project.HistoryStatus,
+
+                        historyApprovedAt =
+                            project.HistoryApprovedAt,
+
+                        historyApprovedBy =
+                            project.HistoryApprovedBy,
+
+                        eligibleCandidateCount,
+
+                        activeHistoryCount
+                    }
+                );
+            }
+            catch
+            {
+                await transaction.RollbackAsync();
+                throw;
+            }
+        }
+
+
+        public async Task<ServiceResult>
+            ReopenHistoryReviewAsync(
+                int projectId,
+                string? actionUser)
+        {
+            using var transaction =
+                await _context.Database
+                    .BeginTransactionAsync();
+
+            try
+            {
+                var project =
+                    await _context.ProjectMasters
+                        .FirstOrDefaultAsync(x =>
+                            x.ProjectId ==
+                                projectId &&
+                            !x.IsDeleted
+                        );
+
+                if (project == null)
+                {
+                    return ServiceResult.NotFound(
+                        "找不到指定建案"
+                    );
+                }
+
+                if (!string.Equals(
+                        project.HistoryStatus,
+                        "Approved",
+                        StringComparison.OrdinalIgnoreCase))
+                {
+                    return ServiceResult.Conflict(
+                        "此建案目前不是已發布的歷史基準"
+                    );
+                }
+
+                var histories =
+                    await _context
+                        .HistoricalTransactions
+                        .Where(x =>
+                            x.ProjectMasterId ==
+                                projectId &&
+                            !x.IsDeleted
+                        )
+                        .ToListAsync();
+
+                foreach (var history in histories)
+                {
+                    history.IsDeleted =
+                        true;
+                }
+
+                var oldValue = new
+                {
+                    project.HistoryStatus,
+                    project.HistoryApprovedAt,
+                    project.HistoryApprovedBy,
+                    activeHistoricalTransactionCount =
+                        histories.Count
+                };
+
+                project.HistoryStatus =
+                    "Draft";
+
+                project.HistoryApprovedAt =
+                    null;
+
+                project.HistoryApprovedBy =
+                    null;
+
+                _auditLogService.AddLog(
+                    module:
+                        "歷史基準",
+
+                    actionType:
+                        "ReopenHistoryReview",
+
+                    entityType:
+                        "ProjectMaster",
+
+                    entityId:
+                        project.ProjectId,
+
+                    description:
+                        $"重新開啟建案「{project.ProjectName}」的歷史基準審核",
+
+                    actionUser:
+                        actionUser ?? "System",
+
+                    projectId:
+                        project.ProjectId,
+
+                    oldValue:
+                        oldValue,
+
+                    newValue:
+                        new
+                        {
+                            project.HistoryStatus,
+                            disabledHistoricalTransactionCount =
+                                histories.Count
+                        }
+                );
+
+                await _context.SaveChangesAsync();
+                await transaction.CommitAsync();
+
+                return ServiceResult.Ok(
+                    new
+                    {
+                        message =
+                            "已重新開啟審核；此建案暫時不參與 2A 模型",
+
+                        projectId =
+                            project.ProjectId,
+
+                        historyStatus =
+                            project.HistoryStatus,
+
+                        disabledHistoricalTransactionCount =
+                            histories.Count
+                    }
+                );
+            }
+            catch
+            {
+                await transaction.RollbackAsync();
+                throw;
+            }
         }
 
 
@@ -709,11 +1148,7 @@ namespace 崴正.Services
 
                         totalQuantity =
                             g.Sum(x =>
-                                x.ActualQuantity),
-
-                        averageUnitPrice =
-                            g.Average(x =>
-                                x.UnitPrice)
+                                x.ActualQuantity)
                     }
                 )
                 .OrderBy(x =>
@@ -730,6 +1165,448 @@ namespace 崴正.Services
                 items =
                     history
             });
+        }
+
+
+        public async Task<ServiceResult>
+            GetTwoASummaryAsync(
+                int projectId)
+        {
+            var project =
+                await _context.ProjectMasters
+                    .AsNoTracking()
+                    .FirstOrDefaultAsync(x =>
+                        x.ProjectId == projectId &&
+                        !x.IsDeleted
+                    );
+
+            if (project == null)
+            {
+                return ServiceResult.NotFound(
+                    "找不到指定建案"
+                );
+            }
+
+            var sourceItems =
+                await _context.FinalBidItems
+                    .AsNoTracking()
+                    .Where(x =>
+                        x.ProjectMasterId ==
+                            projectId &&
+                        !x.IsIgnored
+                    )
+                    .Select(x => new
+                    {
+                        x.Category1,
+                        x.Category2,
+                        x.Category3,
+                        x.MajorCategoryOverride,
+                        x.Qty,
+                        x.UnitPrice,
+                        x.Amount,
+                        x.MaterialId,
+                        MaterialName =
+                            x.Material != null
+                                ? x.Material.MaterialName
+                                : null
+                    })
+                    .ToListAsync();
+
+            var reviewEntities =
+                await _context.FinalBidItems
+                    .Include(x =>
+                        x.Material)
+                    .Include(x =>
+                        x.ProjectMaster)
+                    .Where(x =>
+                        x.ProjectMasterId ==
+                            projectId &&
+                        !x.IsIgnored
+                    )
+                    .ToListAsync();
+
+            var structuralItems =
+                sourceItems
+                    .Where(x =>
+                        string.Equals(
+                            TwoAScopePolicy
+                                .ResolveEffectiveMajorCategory(
+                                    x.MajorCategoryOverride,
+                                    x.Category1,
+                                    x.Category2,
+                                    x.Category3
+                                ),
+                            "結構體工程",
+                            StringComparison
+                                .OrdinalIgnoreCase
+                        ))
+                    .ToList();
+
+            int unclassifiedItemCount =
+                sourceItems.Count(x =>
+                    TwoAScopePolicy
+                        .ResolveEffectiveMajorCategory(
+                            x.MajorCategoryOverride,
+                            x.Category1,
+                            x.Category2,
+                            x.Category3
+                        ) == null);
+
+            int manualMajorCategoryCount =
+                sourceItems.Count(x =>
+                    !string.IsNullOrWhiteSpace(
+                        x.MajorCategoryOverride));
+
+            int structuralUnmappedItemCount =
+                structuralItems.Count(x =>
+                    !x.MaterialId.HasValue);
+
+            int rebarSourceItemCount =
+                structuralItems.Count(x =>
+                    string.Equals(
+                        x.MaterialName,
+                        "鋼筋",
+                        StringComparison.OrdinalIgnoreCase
+                    ));
+
+            int concreteSourceItemCount =
+                structuralItems.Count(x =>
+                    string.Equals(
+                        x.MaterialName,
+                        "混凝土",
+                        StringComparison.OrdinalIgnoreCase
+                    ));
+
+            int rebarCandidateItemCount =
+                reviewEntities.Count(x =>
+                    string.Equals(
+                        TwoAScopePolicy
+                            .ResolveEffectiveMajorCategory(
+                                x.MajorCategoryOverride,
+                                x.Category1,
+                                x.Category2,
+                                x.Category3
+                            ),
+                        "結構體工程",
+                        StringComparison.OrdinalIgnoreCase
+                    ) &&
+                    string.Equals(
+                        x.Material?.MaterialName,
+                        "鋼筋",
+                        StringComparison.OrdinalIgnoreCase
+                    ) &&
+                    _finalBidService
+                        .CanBecomeHistoricalTransaction(
+                            x
+                        ));
+
+            int concreteCandidateItemCount =
+                reviewEntities.Count(x =>
+                    string.Equals(
+                        TwoAScopePolicy
+                            .ResolveEffectiveMajorCategory(
+                                x.MajorCategoryOverride,
+                                x.Category1,
+                                x.Category2,
+                                x.Category3
+                            ),
+                        "結構體工程",
+                        StringComparison.OrdinalIgnoreCase
+                    ) &&
+                    string.Equals(
+                        x.Material?.MaterialName,
+                        "混凝土",
+                        StringComparison.OrdinalIgnoreCase
+                    ) &&
+                    _finalBidService
+                        .CanBecomeHistoricalTransaction(
+                            x
+                        ));
+
+
+            decimal structuralAmount =
+                0m;
+
+            int structuralPricedItemCount =
+                0;
+
+            foreach (var item in structuralItems)
+            {
+                decimal? amount =
+                    item.Amount.HasValue &&
+                    item.Amount.Value > 0
+                        ? item.Amount.Value
+                        : item.Qty.HasValue &&
+                          item.Qty.Value > 0 &&
+                          item.UnitPrice.HasValue &&
+                          item.UnitPrice.Value > 0
+                            ? item.Qty.Value *
+                              item.UnitPrice.Value
+                            : null;
+
+                if (!amount.HasValue)
+                {
+                    continue;
+                }
+
+                structuralAmount +=
+                    amount.Value;
+
+                structuralPricedItemCount++;
+            }
+
+            var publishBlockingIssues =
+                new List<string>();
+
+            if (unclassifiedItemCount > 0)
+            {
+                publishBlockingIssues.Add(
+                    $"未辨識工程大項 {unclassifiedItemCount} 筆"
+                );
+            }
+
+            int structuralUnpricedItemCount =
+                structuralItems.Count -
+                structuralPricedItemCount;
+
+            if (structuralUnpricedItemCount > 0)
+            {
+                publishBlockingIssues.Add(
+                    $"結構體無有效價格 {structuralUnpricedItemCount} 筆"
+                );
+            }
+
+            int quantityBlockedItemCount =
+                Math.Max(
+                    0,
+                    rebarSourceItemCount -
+                    rebarCandidateItemCount
+                ) +
+                Math.Max(
+                    0,
+                    concreteSourceItemCount -
+                    concreteCandidateItemCount
+                );
+
+            if (quantityBlockedItemCount > 0)
+            {
+                publishBlockingIssues.Add(
+                    $"鋼筋／混凝土數量或單位不符合 {quantityBlockedItemCount} 筆"
+                );
+            }
+
+
+            var history =
+                await (
+                    from h in
+                        _context.HistoricalTransactions
+                            .AsNoTracking()
+
+                    join m in
+                        _context.MaterialMasters
+                            .AsNoTracking()
+
+                    on h.MaterialId
+                    equals m.MaterialId
+
+                    where
+                        h.ProjectMasterId ==
+                            projectId &&
+                        !h.IsDeleted &&
+                        !h.IsOutlier &&
+                        (
+                            m.MaterialName ==
+                                "鋼筋" ||
+                            m.MaterialName ==
+                                "混凝土"
+                        )
+
+                    group h by m.MaterialName
+                    into g
+
+                    select new
+                    {
+                        MaterialName =
+                            g.Key,
+
+                        TransactionCount =
+                            g.Count(),
+
+                        Quantity =
+                            g.Sum(x =>
+                                x.ActualQuantity)
+                    }
+                )
+                .ToListAsync();
+
+            var rebar =
+                history.FirstOrDefault(x =>
+                    x.MaterialName == "鋼筋");
+
+            var concrete =
+                history.FirstOrDefault(x =>
+                    x.MaterialName == "混凝土");
+
+            decimal? structuralPricePerPing =
+                null;
+
+            if (
+                structuralAmount > 0 &&
+                project.TotalFloorArea.HasValue &&
+                project.TotalFloorArea.Value > 0
+            )
+            {
+                decimal floorAreaPing =
+                    project.TotalFloorArea.Value /
+                    3.305785m;
+
+                if (floorAreaPing > 0)
+                {
+                    structuralPricePerPing =
+                        Math.Round(
+                            structuralAmount /
+                            floorAreaPing,
+                            2
+                        );
+                }
+            }
+
+            int otherStructuralItemCount =
+                structuralItems.Count(x =>
+                    !string.Equals(
+                        x.MaterialName,
+                        "鋼筋",
+                        StringComparison
+                            .OrdinalIgnoreCase
+                    ) &&
+                    !string.Equals(
+                        x.MaterialName,
+                        "混凝土",
+                        StringComparison
+                            .OrdinalIgnoreCase
+                    ));
+
+            return ServiceResult.Ok(
+                new ProjectTwoASummaryDto
+                {
+                    ProjectId =
+                        project.ProjectId,
+
+                    HistoryStatus =
+                        project.HistoryStatus,
+
+                    HistoryApprovedAt =
+                        project.HistoryApprovedAt,
+
+                    HistoryApprovedBy =
+                        project.HistoryApprovedBy,
+
+                    StructuralItemCount =
+                        structuralItems.Count,
+
+                    StructuralPricedItemCount =
+                        structuralPricedItemCount,
+
+                    StructuralUnpricedItemCount =
+                        structuralUnpricedItemCount,
+
+                    UnclassifiedItemCount =
+                        unclassifiedItemCount,
+
+                    ManualMajorCategoryCount =
+                        manualMajorCategoryCount,
+
+                    StructuralUnmappedItemCount =
+                        structuralUnmappedItemCount,
+
+                    RebarSourceItemCount =
+                        rebarSourceItemCount,
+
+                    RebarCandidateItemCount =
+                        rebarCandidateItemCount,
+
+                    RebarExcludedItemCount =
+                        Math.Max(
+                            0,
+                            rebarSourceItemCount -
+                            rebarCandidateItemCount
+                        ),
+
+                    ConcreteSourceItemCount =
+                        concreteSourceItemCount,
+
+                    ConcreteCandidateItemCount =
+                        concreteCandidateItemCount,
+
+                    ConcreteExcludedItemCount =
+                        Math.Max(
+                            0,
+                            concreteSourceItemCount -
+                            concreteCandidateItemCount
+                        ),
+
+                    PublishReady =
+                        publishBlockingIssues.Count == 0,
+
+                    PublishBlockingIssues =
+                        publishBlockingIssues,
+
+                    StructuralAmount =
+                        Math.Round(
+                            structuralAmount,
+                            2
+                        ),
+
+                    StructuralPricePerPing =
+                        structuralPricePerPing,
+
+                    RebarQuantity =
+                        rebar == null
+                            ? null
+                            : Math.Round(
+                                rebar.Quantity,
+                                4
+                            ),
+
+                    RebarTransactionCount =
+                        rebar?.TransactionCount
+                        ?? 0,
+
+                    ContributesRebarHistory =
+                        rebar != null &&
+                        rebar.Quantity > 0,
+
+                    ConcreteQuantity =
+                        concrete == null
+                            ? null
+                            : Math.Round(
+                                concrete.Quantity,
+                                4
+                            ),
+
+                    ConcreteTransactionCount =
+                        concrete
+                            ?.TransactionCount
+                        ?? 0,
+
+                    ContributesConcreteHistory =
+                        concrete != null &&
+                        concrete.Quantity > 0,
+
+                    OtherStructuralItemCount =
+                        otherStructuralItemCount,
+
+                    Message =
+                        structuralItems.Count == 0
+                            ? "此最終標單尚未辨識到結構體工程工項。"
+                            : string.Equals(
+                                project.HistoryStatus,
+                                "Approved",
+                                StringComparison.OrdinalIgnoreCase)
+                                ? "此建案已人工確認並納入 2A 歷史基準。"
+                                : "此建案目前仍在審核階段；下列資料僅為候選基準，尚未參與 2A 模型。"
+                }
+            );
         }
 
 
@@ -786,6 +1663,14 @@ namespace 崴正.Services
                 );
             }
 
+            if (!request.SiteArea.HasValue ||
+                request.SiteArea.Value <= 0)
+            {
+                return ServiceResult.Validation(
+                    "基地面積必須大於 0"
+                );
+            }
+
             if (!request.FloorCount.HasValue ||
                 request.FloorCount.Value <= 0)
             {
@@ -825,13 +1710,5 @@ namespace 崴正.Services
         }
 
 
-        private static string BuildFloorRange(
-            int floorCount,
-            int basementFloorCount)
-        {
-            return basementFloorCount > 0
-                ? $"B{basementFloorCount}~{floorCount}F"
-                : $"1~{floorCount}F";
-        }
     }
 }

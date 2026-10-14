@@ -35,6 +35,26 @@ public class ProjectsApiController : ControllerBase
             request,
             User.Identity?.Name ?? "System"));
 
+    [HttpPost("{projectId:int}/publish-history")]
+    public async Task<IActionResult> PublishHistory(
+        int projectId) =>
+        ToActionResult(
+            await _service.PublishHistoryAsync(
+                projectId,
+                User.Identity?.Name ?? "System"
+            )
+        );
+
+    [HttpPost("{projectId:int}/reopen-history-review")]
+    public async Task<IActionResult> ReopenHistoryReview(
+        int projectId) =>
+        ToActionResult(
+            await _service.ReopenHistoryReviewAsync(
+                projectId,
+                User.Identity?.Name ?? "System"
+            )
+        );
+
     [HttpDelete("{projectId:int}")]
     public async Task<IActionResult> Delete(int projectId) =>
         ToActionResult(await _service.DeleteProjectAsync(
@@ -52,6 +72,15 @@ public class ProjectsApiController : ControllerBase
             search,
             page,
             pageSize));
+
+    [HttpGet("{projectId:int}/2a-summary")]
+    public async Task<IActionResult> TwoASummary(
+        int projectId) =>
+        ToActionResult(
+            await _service.GetTwoASummaryAsync(
+                projectId
+            )
+        );
 
     [HttpGet("{projectId:int}/historical-data")]
     public async Task<IActionResult> HistoricalData(int projectId) =>

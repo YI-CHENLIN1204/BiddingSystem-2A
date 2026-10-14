@@ -65,6 +65,14 @@ namespace 崴正.Services
                     );
                 }
 
+                if (IsProjectHistoryApproved(
+                        bidItem))
+                {
+                    return ServiceResult.Conflict(
+                        "此建案已納入 2A 歷史基準。若要修改工項，請先重新開啟歷史基準審核。"
+                    );
+                }
+
                 var oldValue = new
                 {
                     itemName =
@@ -134,8 +142,7 @@ namespace 崴正.Services
 
                 string historyAction =
                     SyncHistoricalTransaction(
-                        bidItem,
-                        dataIssue.Code
+                        bidItem
                     );
 
                 _auditLogService.AddLog(
@@ -196,8 +203,7 @@ namespace 崴正.Services
 
                 bool historyEligible =
                     IsHistoryEligible(
-                        bidItem,
-                        dataIssue.Code
+                        bidItem
                     );
 
 
@@ -249,6 +255,8 @@ namespace 崴正.Services
             try
             {
                 var bidItem = _context.FinalBidItems
+                    .Include(x =>
+                        x.ProjectMaster)
                     .FirstOrDefault(x =>
                         x.FinalBidItemId ==
                         finalBidItemId);
@@ -257,6 +265,14 @@ namespace 崴正.Services
                 {
                     return ServiceResult.NotFound(
                         "找不到此工項"
+                    );
+                }
+
+                if (IsProjectHistoryApproved(
+                        bidItem))
+                {
+                    return ServiceResult.Conflict(
+                        "此建案已納入 2A 歷史基準。若要修改工項，請先重新開啟歷史基準審核。"
                     );
                 }
 
@@ -356,6 +372,14 @@ namespace 崴正.Services
                     );
                 }
 
+                if (IsProjectHistoryApproved(
+                        bidItem))
+                {
+                    return ServiceResult.Conflict(
+                        "此建案已納入 2A 歷史基準。若要修改工項，請先重新開啟歷史基準審核。"
+                    );
+                }
+
                 var oldValue = new
                 {
                     isIgnored =
@@ -387,8 +411,7 @@ namespace 崴正.Services
 
                 string historyAction =
                     SyncHistoricalTransaction(
-                        bidItem,
-                        dataIssue.Code
+                        bidItem
                     );
 
                 _auditLogService.AddLog(
@@ -509,71 +532,8 @@ namespace 崴正.Services
             );
         }
 
-        public HistoricalTransaction?
-            BuildHistoricalTransactionForNewImport(
-                FinalBidItem bidItem,
-                string? dataIssueCode)
-        {
-            if (!IsHistoryEligible(
-                    bidItem,
-                    dataIssueCode))
-            {
-                return null;
-            }
-
-            var material =
-                bidItem.Material;
-
-            if (material == null)
-            {
-                return null;
-            }
-
-            var conversion =
-                _unitConversionService.Convert(
-                    bidItem.Qty!.Value,
-                    bidItem.UnitPrice!.Value,
-                    bidItem.Unit,
-                    material.UnitId
-                );
-
-            if (!conversion.Success)
-            {
-                return null;
-            }
-
-            return new HistoricalTransaction
-            {
-                MaterialId =
-                    material.MaterialId,
-
-                ActualQuantity =
-                    conversion.Quantity,
-
-                UnitPrice =
-                    conversion.UnitPrice,
-
-                TransactionDate =
-                    bidItem.ProjectMaster.StartDate
-                    ?? DateTime.UtcNow.Date,
-
-                IsDeleted =
-                    false,
-
-                IsOutlier =
-                    false,
-
-                ProjectMasterId =
-                    bidItem.ProjectMasterId,
-
-                FinalBidItemId =
-                    bidItem.FinalBidItemId
-            };
-        }
-
         public string SyncHistoricalTransaction(
-            FinalBidItem bidItem,
-            string? dataIssueCode)
+            FinalBidItem bidItem)
         {
             var history =
                 _context.HistoricalTransactions
@@ -581,10 +541,33 @@ namespace 崴正.Services
                         x.FinalBidItemId ==
                         bidItem.FinalBidItemId);
 
+            if (!IsProjectHistoryApproved(
+                    bidItem))
+            {
+                if (history != null)
+                {
+                    history.IsDeleted = true;
+                }
+
+                return
+                    "歷史基準尚未人工確認，暫不納入模型";
+            }
+
+            if (!IsInTwoAHistoryScope(
+                    bidItem))
+            {
+                if (history != null)
+                {
+                    history.IsDeleted = true;
+                }
+
+                return
+                    "此工程大項或材料不納入目前 2A 數量歷史基準";
+            }
+
             bool historyEligible =
                 IsHistoryEligible(
-                    bidItem,
-                    dataIssueCode
+                    bidItem
                 );
 
             if (!historyEligible)
@@ -628,7 +611,7 @@ namespace 崴正.Services
             var conversion =
                 _unitConversionService.Convert(
                     bidItem.Qty!.Value,
-                    bidItem.UnitPrice!.Value,
+                    0m,
                     bidItem.Unit,
                     material.UnitId
                 );
@@ -655,9 +638,6 @@ namespace 崴正.Services
 
                         ActualQuantity =
                             conversion.Quantity,
-
-                        UnitPrice =
-                            conversion.UnitPrice,
 
                         TransactionDate =
                             bidItem.ProjectMaster.StartDate
@@ -690,9 +670,6 @@ namespace 崴正.Services
             history.ActualQuantity =
                 conversion.Quantity;
 
-            history.UnitPrice =
-                conversion.UnitPrice;
-
             history.TransactionDate =
                 bidItem.ProjectMaster.StartDate
                 ?? history.TransactionDate;
@@ -707,10 +684,66 @@ namespace 崴正.Services
                 "更新歷史交易";
         }
 
-        private static bool IsHistoryEligible(
-            FinalBidItem bidItem,
-            string? dataIssueCode)
+        public bool CanBecomeHistoricalTransaction(
+            FinalBidItem bidItem)
         {
+            if (!IsHistoryCandidate(
+                    bidItem))
+            {
+                return false;
+            }
+
+            MaterialMaster? material =
+                bidItem.Material;
+
+            if (material == null &&
+                bidItem.MaterialId.HasValue)
+            {
+                material =
+                    _context.MaterialMasters
+                        .AsNoTracking()
+                        .FirstOrDefault(x =>
+                            x.MaterialId ==
+                            bidItem.MaterialId.Value);
+            }
+
+            if (material == null)
+            {
+                return false;
+            }
+
+            var conversion =
+                _unitConversionService.Convert(
+                    bidItem.Qty!.Value,
+                    0m,
+                    bidItem.Unit,
+                    material.UnitId
+                );
+
+            return conversion.Success;
+        }
+
+        private bool IsHistoryEligible(
+            FinalBidItem bidItem)
+        {
+            return
+                IsProjectHistoryApproved(
+                    bidItem
+                ) &&
+                IsHistoryCandidate(
+                    bidItem
+                );
+        }
+
+        private bool IsHistoryCandidate(
+            FinalBidItem bidItem)
+        {
+            if (!IsInTwoAHistoryScope(
+                    bidItem))
+            {
+                return false;
+            }
+
             if (bidItem.IsIgnored)
             {
                 return false;
@@ -725,13 +758,246 @@ namespace 崴正.Services
 
             return
                 mappingCompleted &&
-                dataIssueCode == null &&
                 bidItem.Qty.HasValue &&
-                bidItem.Qty.Value > 0 &&
-                bidItem.UnitPrice.HasValue &&
-                bidItem.UnitPrice.Value > 0
-                ;
+                bidItem.Qty.Value > 0;
         }
+
+        private bool IsProjectHistoryApproved(
+            FinalBidItem bidItem)
+        {
+            string? historyStatus =
+                bidItem.ProjectMaster?
+                    .HistoryStatus;
+
+            if (string.IsNullOrWhiteSpace(
+                    historyStatus))
+            {
+                historyStatus =
+                    _context.ProjectMasters
+                        .AsNoTracking()
+                        .Where(x =>
+                            x.ProjectId ==
+                            bidItem.ProjectMasterId)
+                        .Select(x =>
+                            x.HistoryStatus)
+                        .FirstOrDefault();
+            }
+
+            return string.Equals(
+                historyStatus,
+                "Approved",
+                StringComparison.OrdinalIgnoreCase
+            );
+        }
+
+        private bool
+            IsInTwoAHistoryScope(
+                FinalBidItem bidItem)
+        {
+            string? majorCategory =
+                TwoAScopePolicy
+                    .ResolveEffectiveMajorCategory(
+                        bidItem.MajorCategoryOverride,
+                        bidItem.Category1,
+                        bidItem.Category2,
+                        bidItem.Category3
+                    );
+
+            if (!TwoAScopePolicy
+                .IsQuantityEstimableMajorCategory(
+                    majorCategory
+                ))
+            {
+                return false;
+            }
+
+            if (!bidItem.MaterialId.HasValue)
+            {
+                return false;
+            }
+
+            string? materialName =
+                bidItem.Material?.MaterialName;
+
+            if (string.IsNullOrWhiteSpace(
+                    materialName))
+            {
+                materialName =
+                    _context.MaterialMasters
+                        .AsNoTracking()
+                        .Where(x =>
+                            x.MaterialId ==
+                            bidItem.MaterialId.Value)
+                        .Select(x =>
+                            x.MaterialName)
+                        .FirstOrDefault();
+            }
+
+            return TwoAScopePolicy
+                .IsQuantityHistoryMaterial(
+                    materialName
+                );
+        }
+
+
+        public ServiceResult
+            UpdateMajorCategoryOverride(
+                long finalBidItemId,
+                string? majorCategory,
+                string actionUser)
+        {
+            string? normalized =
+                string.IsNullOrWhiteSpace(
+                    majorCategory)
+                    ? null
+                    : majorCategory.Trim();
+
+            if (normalized != null &&
+                !TwoAScopePolicy
+                    .IsKnownMajorCategory(
+                        normalized))
+            {
+                return ServiceResult.Validation(
+                    "不支援的工程大項"
+                );
+            }
+
+            using var transaction =
+                _context.Database
+                    .BeginTransaction();
+
+            try
+            {
+                var bidItem =
+                    _context.FinalBidItems
+                        .Include(x =>
+                            x.Material)
+                        .Include(x =>
+                            x.ProjectMaster)
+                        .FirstOrDefault(x =>
+                            x.FinalBidItemId ==
+                                finalBidItemId);
+
+                if (bidItem == null)
+                {
+                    return ServiceResult.NotFound(
+                        "找不到此工項"
+                    );
+                }
+
+                if (IsProjectHistoryApproved(
+                        bidItem))
+                {
+                    return ServiceResult.Conflict(
+                        "此建案已納入 2A 歷史基準。若要修改工程大項，請先重新開啟歷史基準審核。"
+                    );
+                }
+
+                string? oldEffective =
+                    TwoAScopePolicy
+                        .ResolveEffectiveMajorCategory(
+                            bidItem.MajorCategoryOverride,
+                            bidItem.Category1,
+                            bidItem.Category2,
+                            bidItem.Category3
+                        );
+
+                var oldValue = new
+                {
+                    majorCategoryOverride =
+                        bidItem.MajorCategoryOverride,
+
+                    effectiveMajorCategory =
+                        oldEffective
+                };
+
+                bidItem.MajorCategoryOverride =
+                    normalized;
+
+                bidItem.UpdatedAt =
+                    DateTime.UtcNow;
+
+                string historyAction =
+                    SyncHistoricalTransaction(
+                        bidItem
+                    );
+
+                string? effective =
+                    TwoAScopePolicy
+                        .ResolveEffectiveMajorCategory(
+                            bidItem.MajorCategoryOverride,
+                            bidItem.Category1,
+                            bidItem.Category2,
+                            bidItem.Category3
+                        );
+
+                _auditLogService.AddLog(
+                    module:
+                        "決標工項",
+
+                    actionType:
+                        "UpdateMajorCategory",
+
+                    entityType:
+                        "FinalBidItem",
+
+                    entityId:
+                        bidItem.FinalBidItemId,
+
+                    description:
+                        $"更新決標工項「{bidItem.ItemName}」工程大項",
+
+                    actionUser:
+                        actionUser,
+
+                    projectId:
+                        bidItem.ProjectMasterId,
+
+                    oldValue:
+                        oldValue,
+
+                    newValue:
+                        new
+                        {
+                            majorCategoryOverride =
+                                bidItem.MajorCategoryOverride,
+
+                            effectiveMajorCategory =
+                                effective,
+
+                            historyAction
+                        }
+                );
+
+                _context.SaveChanges();
+                transaction.Commit();
+
+                return ServiceResult.Ok(
+                    new
+                    {
+                        message =
+                            "工程大項已更新",
+
+                        finalBidItemId =
+                            bidItem.FinalBidItemId,
+
+                        majorCategoryOverride =
+                            bidItem.MajorCategoryOverride,
+
+                        effectiveMajorCategory =
+                            effective,
+
+                        historyAction
+                    }
+                );
+            }
+            catch
+            {
+                transaction.Rollback();
+                throw;
+            }
+        }
+
 
         private static string NormalizeText(
             string? value)

@@ -63,6 +63,16 @@ namespace 崴正.Services
                     );
                 }
 
+                if (string.Equals(
+                        bidItem.ProjectMaster.HistoryStatus,
+                        "Approved",
+                        StringComparison.OrdinalIgnoreCase))
+                {
+                    return ServiceResult.Conflict(
+                        "此建案已納入 2A 歷史基準。若要修改材料對應，請先重新開啟歷史基準審核。"
+                    );
+                }
+
                 var material =
                     _context.MaterialMasters
                         .FirstOrDefault(x =>
@@ -90,11 +100,10 @@ namespace 崴正.Services
                     bidItem.MappingStatus;
 
                 string keyword =
-                    !string.IsNullOrWhiteSpace(
-                        bidItem.ItemName)
-                        ? bidItem.ItemName.Trim()
-                        : bidItem.Spec?.Trim()
-                            ?? string.Empty;
+                    SelectDictionaryKeyword(
+                        bidItem.ItemName,
+                        bidItem.Spec
+                    );
 
                 if (string.IsNullOrWhiteSpace(
                         keyword))
@@ -145,8 +154,7 @@ namespace 崴正.Services
                 string historyAction =
                     _finalBidService
                         .SyncHistoricalTransaction(
-                            bidItem,
-                            dataIssue.Code
+                            bidItem
                         );
 
                 _auditLogService.AddLog(
@@ -404,6 +412,63 @@ namespace 崴正.Services
                     materialId;
             }
         }
+
+        private static string
+            SelectDictionaryKeyword(
+                string? itemName,
+                string? spec)
+        {
+            string normalizedItemName =
+                NormalizeText(itemName);
+
+            string normalizedSpec =
+                NormalizeText(spec);
+
+            if (!string.IsNullOrWhiteSpace(
+                    normalizedSpec) &&
+                (
+                    string.IsNullOrWhiteSpace(
+                        normalizedItemName)
+                    ||
+                    LooksLikeItemCode(
+                        normalizedItemName)
+                    ||
+                    normalizedItemName is
+                        "增" or "追加"
+                ))
+            {
+                return normalizedSpec;
+            }
+
+            return !string.IsNullOrWhiteSpace(
+                    normalizedItemName)
+                ? normalizedItemName
+                : normalizedSpec;
+        }
+
+
+        private static bool LooksLikeItemCode(
+            string value)
+        {
+            if (string.IsNullOrWhiteSpace(
+                    value))
+            {
+                return true;
+            }
+
+            bool containsCjk =
+                value.Any(c =>
+                    c >= '\u4e00' &&
+                    c <= '\u9fff');
+
+            if (containsCjk)
+            {
+                return false;
+            }
+
+            return value.Length <= 20;
+        }
+
 
         private static string NormalizeText(
             string? value)

@@ -133,6 +133,14 @@ namespace 崴正.Services
                 );
             }
 
+            if (!request.SiteArea.HasValue ||
+                request.SiteArea.Value <= 0)
+            {
+                return ServiceResult.Validation(
+                    "請輸入正確的基地面積"
+                );
+            }
+
             if (!request.FloorCount.HasValue ||
                 request.FloorCount.Value <= 0)
             {
@@ -185,13 +193,20 @@ namespace 崴正.Services
             var parser =
                 new TenderExcelParser();
 
-            var rows =
-                parser.Parse(
-                    new MemoryStream(
-                        request.ExcelBytes
-                    ),
-                    request.FileName
-                );
+            List<TenderImportRowDto> rows;
+            try
+            {
+                rows = parser.Parse(
+                    new MemoryStream(request.ExcelBytes),
+                    request.FileName,
+                    request.IncludedSheetNames);
+            }
+            catch (Exception ex) when (ex is InvalidDataException ||
+                                      ex is ArgumentException ||
+                                      ex is NotSupportedException)
+            {
+                return ServiceResult.Validation("匯入檢查失敗：" + ex.Message);
+            }
 
 
 
@@ -211,11 +226,6 @@ namespace 崴正.Services
                 DateTime now =
                     DateTime.UtcNow;
 
-                string floorRange =
-                    request.BasementFloorCount.Value > 0
-                        ? $"B{request.BasementFloorCount.Value}~{request.FloorCount.Value}F"
-                        : $"1~{request.FloorCount.Value}F";
-
                 var project =
                     new ProjectMaster
                     {
@@ -234,14 +244,14 @@ namespace 崴正.Services
                         TotalFloorArea =
                             request.TotalFloorArea,
 
+                        SiteArea =
+                            request.SiteArea,
+
                         FloorCount =
                             request.FloorCount.Value,
 
                         BasementFloorCount =
                             request.BasementFloorCount.Value,
-
-                        FloorRange =
-                            floorRange,
 
                         StartDate =
                             new DateTime(
@@ -258,6 +268,15 @@ namespace 崴正.Services
 
                         ImportedAt =
                             now,
+
+                        HistoryStatus =
+                            "Draft",
+
+                        HistoryApprovedAt =
+                            null,
+
+                        HistoryApprovedBy =
+                            null,
 
                         IsDeleted =
                             false
@@ -527,40 +546,93 @@ namespace 崴正.Services
                 _context.SaveChanges();
 
 
+            int recognizedMajorCategoryCount =
+                createdItems.Count(x =>
+                    TwoAScopePolicy
+                        .ResolveMajorCategory(
+                            x.Category1,
+                            x.Category2,
+                            x.Category3
+                        ) != null);
+
+            int unclassifiedMajorCategoryCount =
+                createdItems.Count -
+                recognizedMajorCategoryCount;
+
+            var structuralItems =
+                createdItems
+                    .Where(x =>
+                        string.Equals(
+                            TwoAScopePolicy
+                                .ResolveMajorCategory(
+                                    x.Category1,
+                                    x.Category2,
+                                    x.Category3
+                                ),
+                            "結構體工程",
+                            StringComparison.OrdinalIgnoreCase
+                        ))
+                    .ToList();
+
+            int structuralPricedItemCount =
+                structuralItems.Count(x =>
+                    (
+                        x.Amount.HasValue &&
+                        x.Amount.Value > 0
+                    ) ||
+                    (
+                        x.Qty.HasValue &&
+                        x.Qty.Value > 0 &&
+                        x.UnitPrice.HasValue &&
+                        x.UnitPrice.Value > 0
+                    ));
+
+            decimal structuralAmount =
+                structuralItems.Sum(x =>
+                    x.Amount.HasValue &&
+                    x.Amount.Value > 0
+                        ? x.Amount.Value
+                        : x.Qty.HasValue &&
+                          x.Qty.Value > 0 &&
+                          x.UnitPrice.HasValue &&
+                          x.UnitPrice.Value > 0
+                            ? x.Qty.Value *
+                              x.UnitPrice.Value
+                            : 0m);
+
 
             int historyInsertCount = 0;
 
+            var historyCandidateItems =
+                createdItems
+                    .Where(x =>
+                        _finalBidService
+                            .CanBecomeHistoricalTransaction(
+                                x
+                            ))
+                    .ToList();
 
+            int historyCandidateCount =
+                historyCandidateItems.Count;
 
-            var histories =
-                new List<HistoricalTransaction>();
+            int rebarHistoryCandidateCount =
+                historyCandidateItems.Count(x =>
+                    string.Equals(
+                        x.Material?.MaterialName,
+                        "鋼筋",
+                        StringComparison.OrdinalIgnoreCase
+                    ));
 
-            foreach (var bidItem in createdItems)
-            {
-                var history =
-                    _finalBidService
-                        .BuildHistoricalTransactionForNewImport(
-                            bidItem,
-                            bidItem.DataIssueCode
-                        );
+            int concreteHistoryCandidateCount =
+                historyCandidateItems.Count(x =>
+                    string.Equals(
+                        x.Material?.MaterialName,
+                        "混凝土",
+                        StringComparison.OrdinalIgnoreCase
+                    ));
 
-                if (history == null)
-                {
-                    continue;
-                }
-
-                histories.Add(
-                    history
-                );
-            }
-
-            historyInsertCount =
-                histories.Count;
-
-            _context.HistoricalTransactions
-                .AddRange(
-                    histories
-                );
+            // 最終標單匯入後先進入 Draft 審核狀態。
+            // 在人工確認建案可成為歷史基準前，不寫入 HistoricalTransaction。
 
 
                 _auditLogService.AddLog(
@@ -597,6 +669,9 @@ namespace 崴正.Services
                             sourceFileName =
                                 project.SourceFileName,
 
+                            includedSheetNames = request.IncludedSheetNames ??
+                                rows.Select(x => x.SheetName).Distinct().ToArray(),
+
                             totalCount =
                                 rows.Count,
 
@@ -606,6 +681,20 @@ namespace 崴正.Services
                                 pendingCount,
 
                             historyInsertCount,
+
+                            recognizedMajorCategoryCount,
+                            unclassifiedMajorCategoryCount,
+                            structuralItemCount =
+                                structuralItems.Count,
+                            structuralPricedItemCount,
+                            structuralAmount =
+                                Math.Round(
+                                    structuralAmount,
+                                    2
+                                ),
+                            historyCandidateCount,
+                            rebarHistoryCandidateCount,
+                            concreteHistoryCandidateCount,
 
                             invalidQuantityCount,
 
@@ -625,7 +714,7 @@ namespace 崴正.Services
                 return ServiceResult.Ok(new
                 {
                     message =
-                        "決標標單回寫成功",
+                        "決標標單已匯入，請完成工程大項與材料審查後再發布為 2A 歷史基準。",
 
                     projectId =
                         project.ProjectId,
@@ -644,6 +733,9 @@ namespace 崴正.Services
 
                     totalFloorArea =
                         project.TotalFloorArea,
+
+                    siteArea =
+                        project.SiteArea,
 
                     floorCount =
                         project.FloorCount,
@@ -666,6 +758,24 @@ namespace 崴正.Services
                         pendingCount,
 
                     historyInsertCount,
+
+                    historyStatus =
+                        project.HistoryStatus,
+
+                    historyCandidateCount,
+                    rebarHistoryCandidateCount,
+                    concreteHistoryCandidateCount,
+
+                    recognizedMajorCategoryCount,
+                    unclassifiedMajorCategoryCount,
+                    structuralItemCount =
+                        structuralItems.Count,
+                    structuralPricedItemCount,
+                    structuralAmount =
+                        Math.Round(
+                            structuralAmount,
+                            2
+                        ),
 
                     invalidQuantityCount,
 

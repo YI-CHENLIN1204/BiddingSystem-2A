@@ -13,7 +13,6 @@ namespace 崴正.Data
         public DbSet<ProjectMaster> ProjectMasters { get; set; }
         public DbSet<MaterialMaster> MaterialMasters { get; set; }
         public DbSet<MaterialCategory> MaterialCategories { get; set; }
-        public DbSet<QuantityRuleBase> QuantityRuleBases { get; set; }
         public DbSet<HistoricalTransaction> HistoricalTransactions { get; set; }
         public DbSet<ItemDictionary> ItemDictionaries { get; set; }
         public DbSet<AuditLog> AuditLogs { get; set; }
@@ -21,6 +20,12 @@ namespace 崴正.Data
         public DbSet<EstimationSetting> EstimationSettings { get; set; }
         public DbSet<UnitCategory> UnitCategories { get; set; }
         public DbSet<UnitMaster> UnitMasters { get; set; }
+        public DbSet<DetectionCategory> DetectionCategories { get; set; }
+        public DbSet<DetectionCategoryMaterialMap> DetectionCategoryMaterialMaps { get; set; }
+        public DbSet<AnalysisCase> AnalysisCases { get; set; }
+        public DbSet<AnalysisBidVersion> AnalysisBidVersions { get; set; }
+        public DbSet<AnalysisBidItem> AnalysisBidItems { get; set; }
+        public DbSet<AnalysisRun> AnalysisRuns { get; set; }
 
         protected override void OnModelCreating(ModelBuilder modelBuilder)
         {
@@ -57,7 +62,7 @@ namespace 崴正.Data
 
                 entity.Property(e => e.TotalFloorArea).HasColumnName("total_floor_area");
 
-                entity.Property(e => e.FloorRange).HasColumnName("floor_range");
+                entity.Property(e => e.SiteArea).HasColumnName("site_area");
 
                 entity.Property(e => e.FloorCount).HasColumnName("floor_count");
 
@@ -78,6 +83,12 @@ namespace 崴正.Data
                 entity.Property(e => e.SourceFileHash).HasColumnName("source_file_hash");
 
                 entity.Property(e => e.ImportedAt).HasColumnName("imported_at").HasColumnType("timestamp with time zone");
+
+                entity.Property(e => e.HistoryStatus).HasColumnName("history_status");
+
+                entity.Property(e => e.HistoryApprovedAt).HasColumnName("history_approved_at").HasColumnType("timestamp with time zone");
+
+                entity.Property(e => e.HistoryApprovedBy).HasColumnName("history_approved_by");
             });
 
             modelBuilder.Entity<UnitCategory>(
@@ -177,6 +188,155 @@ namespace 崴正.Data
                 }
             );
 
+            modelBuilder.Entity<DetectionCategory>(
+                entity =>
+                {
+                    entity.ToTable(
+                        "detection_category"
+                    );
+
+                    entity.HasKey(e =>
+                        e.DetectionCategoryId);
+
+                    entity.Property(e =>
+                            e.DetectionCategoryId)
+                        .HasColumnName(
+                            "detection_category_id"
+                        );
+
+                    entity.Property(e =>
+                            e.MajorCategoryName)
+                        .HasColumnName(
+                            "major_category_name"
+                        );
+
+                    entity.Property(e =>
+                            e.DetectionCategoryName)
+                        .HasColumnName(
+                            "detection_category_name"
+                        );
+
+                    entity.Property(e =>
+                            e.UnitId)
+                        .HasColumnName(
+                            "unit_id"
+                        );
+
+                    entity.Property(e =>
+                            e.IsActive)
+                        .HasColumnName(
+                            "is_active"
+                        );
+
+                    entity.Property(e =>
+                            e.SortOrder)
+                        .HasColumnName(
+                            "sort_order"
+                        );
+
+                    entity.HasOne(e =>
+                            e.UnitMaster)
+                        .WithMany()
+                        .HasForeignKey(e =>
+                            e.UnitId)
+                        .OnDelete(
+                            DeleteBehavior.Restrict
+                        )
+                        .HasConstraintName(
+                            "fk_detection_category_unit"
+                        );
+
+                    entity.HasIndex(e => new
+                        {
+                            e.MajorCategoryName,
+                            e.DetectionCategoryName
+                        })
+                        .IsUnique()
+                        .HasDatabaseName(
+                            "ux_detection_category_name"
+                        );
+                }
+            );
+
+            modelBuilder.Entity<DetectionCategoryMaterialMap>(
+                entity =>
+                {
+                    entity.ToTable(
+                        "detection_category_material_map"
+                    );
+
+                    entity.HasKey(e =>
+                        e.MaterialId);
+
+                    entity.Property(e =>
+                            e.DetectionCategoryId)
+                        .HasColumnName(
+                            "detection_category_id"
+                        );
+
+                    entity.Property(e =>
+                            e.MaterialId)
+                        .HasColumnName(
+                            "material_id"
+                        );
+
+                    entity.Property(e =>
+                            e.IsActive)
+                        .HasColumnName(
+                            "is_active"
+                        );
+
+                    entity.Property(e =>
+                            e.CreatedAt)
+                        .HasColumnName(
+                            "created_at"
+                        )
+                        .HasColumnType(
+                            "timestamp with time zone"
+                        );
+
+                    entity.Property(e =>
+                            e.UpdatedAt)
+                        .HasColumnName(
+                            "updated_at"
+                        )
+                        .HasColumnType(
+                            "timestamp with time zone"
+                        );
+
+                    entity.HasOne(e =>
+                            e.DetectionCategory)
+                        .WithMany(e =>
+                            e.MaterialMappings)
+                        .HasForeignKey(e =>
+                            e.DetectionCategoryId)
+                        .OnDelete(
+                            DeleteBehavior.Cascade
+                        )
+                        .HasConstraintName(
+                            "fk_detection_map_category"
+                        );
+
+                    entity.HasOne(e =>
+                            e.Material)
+                        .WithMany()
+                        .HasForeignKey(e =>
+                            e.MaterialId)
+                        .OnDelete(
+                            DeleteBehavior.Restrict
+                        )
+                        .HasConstraintName(
+                            "fk_detection_map_material"
+                        );
+
+                    entity.HasIndex(e =>
+                            e.DetectionCategoryId)
+                        .HasDatabaseName(
+                            "ix_detection_map_category"
+                        );
+                }
+            );
+
             modelBuilder.Entity<AuditLog>(entity =>
             {
                 entity.ToTable("audit_log");
@@ -226,17 +386,6 @@ namespace 崴正.Data
             });
 
 
-            modelBuilder.Entity<QuantityRuleBase>(entity =>
-            {
-                entity.ToTable("quantity_rule_base");
-                entity.HasKey(e => e.RuleID);
-                entity.Property(e => e.RuleID).HasColumnName("rule_id");
-                entity.Property(e => e.Material_ID).HasColumnName("material_id");
-                entity.Property(e => e.Project_Type).HasColumnName("project_type");
-                entity.Property(e => e.Structure_Type).HasColumnName("structure_type");
-                entity.Property(e => e.Is_Core_Estimation).HasColumnName("is_core_estimation");
-            });
-
             modelBuilder.Entity<ItemDictionary>(entity =>
             {
                 entity.ToTable("item_dictionary");
@@ -257,8 +406,6 @@ namespace 崴正.Data
                 entity.Property(e => e.MaterialId).HasColumnName("material_id");
 
                 entity.Property(e => e.ActualQuantity).HasColumnName("actual_quantity");
-
-                entity.Property(e => e.UnitPrice).HasColumnName("unit_price");
 
                 entity.Property(e => e.TransactionDate).HasColumnName("transaction_date").HasColumnType("date");
 
@@ -292,6 +439,7 @@ namespace 崴正.Data
                 entity.Property(e => e.Category1).HasColumnName("category1");
                 entity.Property(e => e.Category2).HasColumnName("category2");
                 entity.Property(e => e.Category3).HasColumnName("category3");
+                entity.Property(e => e.MajorCategoryOverride).HasColumnName("major_category_override");
                 entity.Property(e => e.ItemName).HasColumnName("item_name");
                 entity.Property(e => e.Spec).HasColumnName("spec");
                 entity.Property(e => e.Unit).HasColumnName("unit");
@@ -352,6 +500,9 @@ namespace 崴正.Data
                 entity.Property(e => e.AreaWeight)
                     .HasColumnName("area_weight");
 
+                entity.Property(e => e.SiteAreaWeight)
+                    .HasColumnName("site_area_weight");
+
                 entity.Property(e => e.FloorWeight)
                     .HasColumnName("floor_weight");
 
@@ -363,6 +514,9 @@ namespace 崴正.Data
 
                 entity.Property(e => e.AreaDifferenceCutoffRatio)
                     .HasColumnName("area_difference_cutoff_ratio");
+
+                entity.Property(e => e.SiteAreaDifferenceCutoffRatio)
+                    .HasColumnName("site_area_difference_cutoff_ratio");
 
                 entity.Property(e => e.GroundFloorPenaltyRatio)
                     .HasColumnName("ground_floor_penalty_ratio");

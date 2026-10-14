@@ -5,6 +5,8 @@ namespace 崴正.Services
         public byte[] ExcelBytes { get; set; } =
             Array.Empty<byte>();
 
+        public IReadOnlyCollection<string>? IncludedSheetNames { get; set; }
+
         public string FileName { get; set; } =
             string.Empty;
 
@@ -21,6 +23,8 @@ namespace 崴正.Services
             string.Empty;
 
         public decimal? TotalFloorArea { get; set; }
+
+        public decimal? SiteArea { get; set; }
 
         public int? FloorCount { get; set; }
 

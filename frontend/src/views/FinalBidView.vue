@@ -1,12 +1,16 @@
 <script setup lang="ts">
 import { computed, ref, watch } from 'vue'
 import ProjectFields from '../components/ProjectFields.vue'
+import WorkbookSheetPicker from '../components/WorkbookSheetPicker.vue'
 import { useSystemOptions } from '../composables/useSystemOptions'
 import { api, apiForm, queryString } from '../services/api'
 import type { ProjectForm } from '../types'
 
 interface BidItem {
-  finalBidItemId: number; itemName: string; spec?: string | null; unit?: string | null
+  finalBidItemId: number; category1?: string | null; category2?: string | null; category3?: string | null
+  majorCategoryOverride?: string | null; effectiveMajorCategory?: string | null
+  contributesStructuralPrice?: boolean; contributesQuantityHistory?: boolean; quantityHistoryCategory?: string | null
+  itemName: string; spec?: string | null; unit?: string | null
   qty?: number | null; unitPrice?: number | null; materialId?: number | null
   materialName?: string | null; materialCategory?: string | null; mappingStatus: string
   isIgnored: boolean; invalidQuantity?: boolean; invalidUnitPrice?: boolean; unitMismatch?: boolean
@@ -16,15 +20,36 @@ interface MappingSummary {
   totalCount: number; autoCount: number; manualCount: number; pendingCount: number
   invalidQuantityCount: number; invalidUnitPriceCount: number; unitMismatchCount: number; ignoredCount: number
 }
+interface ProjectTwoASummary {
+  projectId: number
+  historyStatus: string
+  structuralItemCount: number
+  structuralPricedItemCount: number
+  structuralUnpricedItemCount: number
+  unclassifiedItemCount: number
+  manualMajorCategoryCount: number
+  structuralAmount: number
+  rebarSourceItemCount: number
+  rebarCandidateItemCount: number
+  rebarExcludedItemCount: number
+  concreteSourceItemCount: number
+  concreteCandidateItemCount: number
+  concreteExcludedItemCount: number
+  publishReady: boolean
+  publishBlockingIssues: string[]
+}
+interface PolicyResponse { knownMajorCategories: string[] }
 interface FilterOptions { categories: string[]; units: string[] }
 interface MasterOption { categoryId?: number; categoryName?: string; unitId?: number; unitName?: string; isActive: boolean }
 
 const { options, error: optionsError } = useSystemOptions()
 const project = ref<ProjectForm>({
-  projectName: '', projectType: '', structureType: '', city: '', totalFloorArea: null,
+  projectName: '', projectType: '', structureType: '', city: '', totalFloorArea: null, siteArea: null,
   floorCount: null, basementFloorCount: 0, projectMonth: '',
 })
 const file = ref<File | null>(null)
+const includedSheets = ref<string[]>([])
+const workbookReady = ref(false)
 const fileInputKey = ref(0)
 const uploading = ref(false)
 const loadingMappings = ref(false)
@@ -33,11 +58,15 @@ const error = ref('')
 const message = ref('')
 const projectId = ref<number | null>(null)
 const summary = ref<MappingSummary | null>(null)
+const twoASummary = ref<ProjectTwoASummary | null>(null)
+const publishingHistory = ref(false)
 const items = ref<BidItem[]>([])
 const materialOptions = ref<MaterialOption[]>([])
 const filters = ref<FilterOptions>({ categories: [], units: [] })
 const masterOptions = ref<{ categories: MasterOption[]; units: MasterOption[] }>({ categories: [], units: [] })
+const majorCategories = ref<string[]>([])
 const status = ref('Pending')
+const majorCategoryFilter = ref('All')
 const issueCode = ref('All')
 const category = ref('All')
 const unit = ref('All')
@@ -56,6 +85,8 @@ let searchTimer: number | undefined
 const totalPages = computed(() => Math.max(1, Math.ceil(totalCount.value / pageSize)))
 
 function selectFile(event: Event) {
+  includedSheets.value = []
+  workbookReady.value = false
   file.value = (event.target as HTMLInputElement).files?.[0] ?? null
 }
 
@@ -78,20 +109,26 @@ function badge(item: BidItem) {
 
 async function upload() {
   if (!file.value) { error.value = '請選擇 Excel 檔案。'; return }
+  if (!workbookReady.value || !includedSheets.value.length) {
+    error.value = '請先完成工作表預覽，並勾選要匯入的工程明細。'; return
+  }
   uploading.value = true
   error.value = ''
   message.value = ''
   const form = new FormData()
   form.append('excelFile', file.value)
+  form.append('includedSheetNames', JSON.stringify(includedSheets.value))
   Object.entries(project.value).forEach(([key, value]) => form.append(key, value == null ? '' : String(value)))
   try {
     const result = await apiForm<{ projectId: number; message?: string }>('/Estimation/upload-final-bid', form)
     projectId.value = Number(result.projectId)
     message.value = result.message ?? '決標資料已成功回寫。'
     file.value = null
+    includedSheets.value = []
+    workbookReady.value = false
     fileInputKey.value++
     await loadMappingResources()
-    await Promise.all([loadSummary(), loadItems(1)])
+    await Promise.all([loadSummary(), loadTwoASummary(), loadItems(1)])
   } catch (caught) {
     error.value = caught instanceof Error ? caught.message : '決標資料回寫失敗'
   } finally {
@@ -101,19 +138,26 @@ async function upload() {
 
 async function loadMappingResources() {
   if (!projectId.value) return
-  const [materials, filterData, masters] = await Promise.all([
+  const [materials, filterData, masters, policy] = await Promise.all([
     api<MaterialOption[]>('/Estimation/material-options'),
     api<FilterOptions>(`/Estimation/mapping-filter-options${queryString({ projectId: projectId.value })}`),
     api<{ categories: MasterOption[]; units: MasterOption[] }>('/standard-material/filter-options'),
+    api<PolicyResponse>('/analysis-cases/policy'),
   ])
   materialOptions.value = materials
   filters.value = filterData
   masterOptions.value = masters
+  majorCategories.value = policy.knownMajorCategories
 }
 
 async function loadSummary() {
   if (!projectId.value) return
   summary.value = await api<MappingSummary>(`/Estimation/mapping-summary${queryString({ projectId: projectId.value })}`)
+}
+
+async function loadTwoASummary() {
+  if (!projectId.value) return
+  twoASummary.value = await api<ProjectTwoASummary>(`/projects/${projectId.value}/2a-summary`)
 }
 
 async function loadItems(targetPage = page.value) {
@@ -124,7 +168,7 @@ async function loadItems(targetPage = page.value) {
   try {
     const result = await api<{ totalCount: number; items: BidItem[] }>(`/Estimation/mapping-items${queryString({
       projectId: projectId.value, status: status.value, issueCode: issueCode.value,
-      category: category.value, unit: unit.value, search: search.value.trim(), page: page.value, pageSize,
+      majorCategory: majorCategoryFilter.value, category: category.value, unit: unit.value, search: search.value.trim(), page: page.value, pageSize,
     })}`)
     totalCount.value = result.totalCount
     items.value = result.items
@@ -144,13 +188,49 @@ async function loadItems(targetPage = page.value) {
 }
 
 async function refreshMappings(text?: string) {
-  await Promise.all([loadSummary(), loadItems()])
+  await Promise.all([loadSummary(), loadTwoASummary(), loadItems()])
   if (text) message.value = text
+}
+
+async function publishHistory() {
+  if (!projectId.value || !twoASummary.value?.publishReady) return
+  if (!window.confirm(
+    '確認將此建案納入 2A 歷史基準嗎？\n\n發布後，本案會開始參與相似建案、結構體價格與鋼筋／混凝土數量模型。'
+  )) return
+
+  publishingHistory.value = true
+  error.value = ''
+  try {
+    await api(`/projects/${projectId.value}/publish-history`, { method: 'POST' })
+    await Promise.all([loadSummary(), loadTwoASummary(), loadItems()])
+    message.value = '此建案已確認並納入 2A 歷史基準。'
+  } catch (caught) {
+    error.value = caught instanceof Error ? caught.message : '發布歷史基準失敗'
+  } finally {
+    publishingHistory.value = false
+  }
 }
 
 function changeCategory(item: BidItem) {
   if (!materialsFor(item).some(x => x.materialId === selectedMaterial.value[item.finalBidItemId])) {
     selectedMaterial.value[item.finalBidItemId] = null
+  }
+}
+
+async function updateMajorCategory(item: BidItem, event: Event) {
+  const value = (event.target as HTMLSelectElement).value
+  busyId.value = item.finalBidItemId
+  error.value = ''
+  try {
+    const form = new FormData()
+    form.append('finalBidItemId', String(item.finalBidItemId))
+    form.append('majorCategory', value)
+    await apiForm('/Estimation/update-major-category', form)
+    await refreshMappings(value ? '工程大項已人工確認。' : '已恢復使用標單原始分類。')
+  } catch (caught) {
+    error.value = caught instanceof Error ? caught.message : '工程大項更新失敗'
+  } finally {
+    busyId.value = null
   }
 }
 
@@ -237,13 +317,13 @@ async function createMaterial() {
 
 function resetAndLoad() { page.value = 1; loadItems(1) }
 watch(search, () => { window.clearTimeout(searchTimer); searchTimer = window.setTimeout(resetAndLoad, 300) })
-watch([status, issueCode, category, unit], resetAndLoad)
+watch([status, majorCategoryFilter, issueCode, category, unit], resetAndLoad)
 </script>
 
 <template>
   <div class="final-bid-page mt-4">
     <h2 class="page-title">決標單歷史回寫</h2>
-    <div class="page-description">將已完成決標的標單匯入歷史資料庫，供後續工程用量估算與標單異常分析使用。</div>
+    <div class="page-description">將已完成決標的最終標單匯入審核區；完成工程大項、材料與單位檢查並人工發布後，才會進入 2A 歷史模型。</div>
 
     <div v-if="optionsError || error" class="alert alert-danger">{{ optionsError || error }}</div>
     <div v-if="message" class="alert alert-success alert-dismissible">{{ message }}<button type="button" class="btn-close" @click="message = ''"></button></div>
@@ -254,16 +334,63 @@ watch([status, issueCode, category, unit], resetAndLoad)
         <div class="form-section-body"><ProjectFields v-model="project" :options="options" include-name name-label="工程專案名稱" name-placeholder="例如：住宅新建工程" /></div>
       </div>
       <div class="form-section">
-        <div class="form-section-header"><div class="form-section-title">2. 上傳最終決標標單</div><div class="form-section-description">支援 .xlsx、.xls、.xlsm、.xlsb、.csv 格式；解析完成後寫入歷史資料並進行材料對應。</div></div>
+        <div class="form-section-header"><div class="form-section-title">2. 上傳最終決標標單</div><div class="form-section-description">支援 .xlsx、.xls、.xlsm、.xlsb、.csv 格式；解析後先建立審核草稿與材料對應，不會立即影響模型。</div></div>
         <div class="form-section-body">
           <input :key="fileInputKey" id="finalBidFile" class="file-input-native" type="file" accept=".xlsx,.xls,.xlsm,.xlsb,.csv" required @change="selectFile" />
           <label for="finalBidFile" class="file-picker"><span class="file-picker-button">選擇 Excel 檔案</span><span class="file-picker-name" :class="{ 'has-file': file }">{{ file?.name ?? '尚未選擇檔案' }}</span></label>
-          <div class="upload-footer"><div class="upload-hint">請確認建案基本資料與標單檔案後再執行回寫。</div><button class="btn-wz-primary" type="submit" :disabled="uploading">{{ uploading ? '系統正在解析並同步，請稍候...' : '解析並回寫歷史資料' }}</button></div>
+          <WorkbookSheetPicker :file="file" v-model="includedSheets" @update:ready="workbookReady = $event" />
+          <div class="upload-footer"><div class="upload-hint">請確認建案基本資料與標單檔案後再執行回寫。</div><button class="btn-wz-primary" type="submit" :disabled="uploading || !workbookReady || !includedSheets.length">{{ uploading ? '系統正在解析並建立草稿，請稍候...' : '匯入並建立審核草稿' }}</button></div>
         </div>
       </div>
     </form>
 
     <div v-if="summary" class="mt-4">
+      <div v-if="twoASummary && summary" class="card mb-3 import-report">
+        <div class="card-body">
+          <div class="d-flex justify-content-between align-items-start gap-3 flex-wrap mb-3">
+            <div>
+              <h4 class="mb-1">2A 歷史基準審核</h4>
+              <div class="text-muted small">此區會隨工程大項、材料與標單資料修正即時更新；發布前不會影響模型。</div>
+            </div>
+            <div class="d-flex gap-2">
+              <RouterLink v-if="projectId" :to="`/projects/${projectId}`" class="btn btn-sm btn-outline-primary">查看建案完整摘要</RouterLink>
+              <button
+                v-if="twoASummary.historyStatus !== 'Approved'"
+                class="btn btn-sm btn-success"
+                type="button"
+                :disabled="!twoASummary.publishReady || publishingHistory"
+                @click="publishHistory"
+              >
+                {{ publishingHistory ? '發布中...' : '確認並納入 2A 歷史基準' }}
+              </button>
+              <span v-else class="badge bg-success align-self-center">已納入 2A 模型</span>
+            </div>
+          </div>
+          <div class="row g-2">
+            <div class="col-md-2"><div class="stat-box"><div class="text-muted fw-bold">工程大項辨識</div><div class="stat-num">{{ summary.totalCount - twoASummary.unclassifiedItemCount }}</div><small>/ {{ summary.totalCount }} 筆</small></div></div>
+            <div class="col-md-2"><div class="stat-box" :class="{ 'tone-warning': twoASummary.unclassifiedItemCount > 0 }"><div class="text-muted fw-bold">未辨識大項</div><div class="stat-num">{{ twoASummary.unclassifiedItemCount }}</div><small>需校正或忽略</small></div></div>
+            <div class="col-md-2"><div class="stat-box" :class="{ 'tone-warning': twoASummary.structuralUnpricedItemCount > 0 }"><div class="text-muted fw-bold">結構體工項</div><div class="stat-num">{{ twoASummary.structuralItemCount }}</div><small>{{ twoASummary.structuralPricedItemCount }} 筆可計價</small></div></div>
+            <div class="col-md-2"><div class="stat-box"><div class="text-muted fw-bold">結構體總價</div><div class="stat-num report-amount">{{ formatNumber(twoASummary.structuralAmount) }}</div><small>價格基準候選</small></div></div>
+            <div class="col-md-2"><div class="stat-box"><div class="text-muted fw-bold">鋼筋候選</div><div class="stat-num">{{ twoASummary.rebarCandidateItemCount }}</div><small>/ {{ twoASummary.rebarSourceItemCount }} 筆</small></div></div>
+            <div class="col-md-2"><div class="stat-box"><div class="text-muted fw-bold">混凝土候選</div><div class="stat-num">{{ twoASummary.concreteCandidateItemCount }}</div><small>/ {{ twoASummary.concreteSourceItemCount }} 筆</small></div></div>
+          </div>
+          <div
+            class="alert mt-3 mb-0 py-2 small"
+            :class="twoASummary.historyStatus === 'Approved' || twoASummary.publishReady ? 'alert-success' : 'alert-warning'"
+          >
+            <template v-if="twoASummary.historyStatus === 'Approved'">
+              <strong>已發布：</strong>此建案目前會參與 2A 模型。
+            </template>
+            <template v-else-if="twoASummary.publishReady">
+              <strong>可發布：</strong>目前沒有阻擋歷史基準發布的資料問題。
+            </template>
+            <template v-else>
+              <strong>尚不能發布：</strong>{{ twoASummary.publishBlockingIssues.join('、') }}。
+            </template>
+          </div>
+        </div>
+      </div>
+
       <div class="alert alert-success shadow-sm result-summary">
         <h4 class="alert-heading fw-bold mb-2">建案材料對應摘要</h4>
         <div class="text-muted small mb-3">統計依目前資料庫狀態即時更新</div>
@@ -286,7 +413,7 @@ watch([status, issueCode, category, unit], resetAndLoad)
       </div>
 
       <div class="mt-4">
-        <div class="d-flex justify-content-between align-items-center mb-3"><div><h4 class="mb-1">標單材料對應</h4><div class="text-muted small">可查詢尚未對應、自動對應及人工對應的所有工項</div></div><div class="text-muted small">共 {{ totalCount }} 筆</div></div>
+        <div class="d-flex justify-content-between align-items-center mb-3"><div><h4 class="mb-1">標單審查與材料對應</h4><div class="text-muted small">先確認工程大項，再檢查鋼筋／混凝土材料與單位；原始分類永遠保留。</div></div><div class="d-flex align-items-center gap-3"><RouterLink v-if="projectId" :to="`/projects/${projectId}`" class="btn btn-sm btn-outline-primary">查看 2A 歷史基準摘要</RouterLink><div class="text-muted small">共 {{ totalCount }} 筆</div></div></div>
         <div class="card mb-3"><div class="card-body"><div class="mb-3"><input v-model="search" class="form-control" placeholder="搜尋工項名稱、規格、標準材料或建案名稱" /></div><div class="row g-2">
           <div class="col-md-3"><label class="form-label small fw-bold">對應狀態</label><select v-model="status" class="form-select"><option value="Pending">未對應</option><option value="Auto">自動對應</option><option value="Manual">手動對應</option><option value="Ignored">已忽略</option><option value="All">全部</option></select></div>
           <div class="col-md-3"><label class="form-label small fw-bold">待處理原因</label><select v-model="issueCode" class="form-select"><option value="All">全部</option><option value="INVALID_QUANTITY">數量無效</option><option value="INVALID_UNIT_PRICE">單價無效</option><option value="UNIT_MISMATCH">單位不符</option></select></div>
@@ -297,8 +424,10 @@ watch([status, issueCode, category, unit], resetAndLoad)
         <div v-if="loadingMappings" class="card p-4 text-muted">載入材料對應資料中...</div>
         <div v-else-if="!items.length" class="card p-4 text-muted">沒有符合條件的工項</div>
         <article v-for="item in items" v-else :key="item.finalBidItemId" class="card mb-3 mapping-card"><div class="card-body">
-          <div class="d-flex justify-content-between align-items-start gap-3 mb-2"><h5 class="mb-1">{{ item.itemName }}</h5><div class="d-flex gap-1 flex-wrap justify-content-end"><span class="badge" :class="badge(item).css">{{ badge(item).label }}</span><span v-if="item.invalidQuantity" class="badge bg-danger">數量無效</span><span v-if="item.invalidUnitPrice" class="badge bg-danger">單價無效</span><span v-if="item.unitMismatch" class="badge bg-danger">單位不符</span></div></div>
-          <div class="text-muted small mb-3">單位：{{ item.unit || '無' }} ｜ 數量：{{ formatNumber(item.qty, 4) }} ｜ 單價：{{ formatNumber(item.unitPrice) }}</div>
+          <div class="d-flex justify-content-between align-items-start gap-3 mb-2"><h5 class="mb-1">{{ item.itemName }}</h5><div class="d-flex gap-1 flex-wrap justify-content-end"><span v-if="item.effectiveMajorCategory" class="badge bg-info text-dark">{{ item.effectiveMajorCategory }}</span><span v-if="item.contributesStructuralPrice" class="badge bg-success">結構體價格候選</span><span v-if="item.contributesQuantityHistory" class="badge bg-success">{{ item.quantityHistoryCategory }}數量候選</span><span v-if="!item.contributesStructuralPrice && !item.contributesQuantityHistory" class="badge bg-light text-dark border">不納入目前 2A 基準</span><span v-if="item.majorCategoryOverride" class="badge bg-primary">人工大項</span><span class="badge" :class="badge(item).css">{{ badge(item).label }}</span><span v-if="item.invalidQuantity" class="badge bg-danger">數量無效</span><span v-if="item.invalidUnitPrice" class="badge bg-danger">單價無效</span><span v-if="item.unitMismatch" class="badge bg-danger">單位不符</span></div></div>
+          <div class="text-muted small mb-2">單位：{{ item.unit || '無' }} ｜ 數量：{{ formatNumber(item.qty, 4) }} ｜ 單價：{{ formatNumber(item.unitPrice) }}</div>
+          <div class="text-muted small mb-3">原始分類：{{ [item.category1, item.category2, item.category3].filter(Boolean).join(' → ') || '未辨識' }}</div>
+          <div v-if="!item.isIgnored" class="row g-2 mb-3"><div class="col-md-6"><label class="form-label small fw-bold">工程大項</label><select class="form-select" :value="item.majorCategoryOverride ?? ''" :disabled="busyId === item.finalBidItemId" @change="updateMajorCategory(item, $event)"><option value="">使用原始分類（{{ item.effectiveMajorCategory || '未辨識' }}）</option><option v-for="entry in majorCategories" :key="entry" :value="entry">{{ entry }}</option></select></div><div class="col-md-6 d-flex align-items-end"><div class="small text-muted">人工指定只影響 2A 判定，原始 Category1 / 2 / 3 不會被覆蓋。</div></div></div>
           <div class="d-flex justify-content-between align-items-center gap-2 mb-2 flex-wrap"><div class="small"><strong>目前標準材料：</strong><span v-if="item.materialName">{{ item.materialName }}</span><span v-else class="text-warning">尚未對應</span></div><div class="d-flex gap-2"><button class="btn btn-sm btn-outline-secondary" type="button" @click="openEdit(item)">修正標單資料</button><button v-if="!item.isIgnored" class="btn btn-sm btn-outline-danger" type="button" @click="ignore(item)">忽略</button></div></div>
           <div v-if="!item.isIgnored" class="row g-2"><div class="col-md-4"><label class="form-label small fw-bold">材料分類</label><select v-model="selectedCategory[item.finalBidItemId]" class="form-select" @change="changeCategory(item)"><option value="">請選擇材料分類</option><option v-for="entry in filters.categories" :key="entry" :value="entry">{{ entry }}</option></select></div><div class="col-md-5"><label class="form-label small fw-bold">標準材料</label><select v-model="selectedMaterial[item.finalBidItemId]" class="form-select" :disabled="!selectedCategory[item.finalBidItemId]"><option :value="null">請選擇標準材料</option><option v-for="material in materialsFor(item)" :key="material.materialId" :value="material.materialId">{{ material.materialName }} ({{ material.unitName }})</option><option value="__NEW__">＋ 新增標準材料</option></select></div><div class="col-md-3"><label class="form-label small fw-bold">&nbsp;</label><button class="btn btn-outline-primary w-100" type="button" :disabled="busyId === item.finalBidItemId" @click="updateMapping(item)">{{ selectedMaterial[item.finalBidItemId] === '__NEW__' ? '新增標準材料' : item.mappingStatus === 'Pending' ? '人工對應' : '修改對應' }}</button></div></div>
         </div></article>
@@ -337,7 +466,7 @@ watch([status, issueCode, category, unit], resetAndLoad)
 .upload-footer { display: flex; justify-content: space-between; align-items: center; gap: 16px; margin-top: 14px; }
 .upload-hint { color: #6c757d; font-size: 12px; }
 .btn-wz-primary { background: #321fdb; color: #fff; border-radius: 6px; padding: 9px 20px; font-weight: 800; border: 0; }
-.result-summary { background: #fff; border-left: 5px solid #321fdb; }
+.import-report { border-left: 5px solid #198754; }.report-amount{font-size:1.2rem!important;line-height:2.2rem}.result-summary { background: #fff; border-left: 5px solid #321fdb; }
 .result-summary .alert-heading { color: #321fdb; }
 .stat-box { height: 100%; background: #f8f9fa; border: 1px solid #dee2e6; border-radius: 6px; padding: 14px; text-align: center; }
 .stat-num { font-size: 2rem; font-weight: 900; }

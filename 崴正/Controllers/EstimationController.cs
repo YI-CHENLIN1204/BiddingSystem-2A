@@ -1,5 +1,6 @@
 using Microsoft.AspNetCore.Mvc;
 using System.IO;
+using System.Text.Json;
 using 崴正.Services;
 
 namespace 崴正.Controllers
@@ -34,9 +35,11 @@ namespace 崴正.Controllers
             [FromForm] string structureType,
             [FromForm] string city,
             [FromForm] decimal? totalFloorArea,
+            [FromForm] decimal? siteArea,
             [FromForm] int? floorCount,
             [FromForm] int? basementFloorCount,
-            [FromForm] string projectMonth)
+            [FromForm] string projectMonth,
+            [FromForm] string? includedSheetNames = null)
         {
             if (excelFile == null ||
                 excelFile.Length == 0)
@@ -46,6 +49,19 @@ namespace 崴正.Controllers
                     message =
                         "請先選擇 Excel 檔案"
                 });
+            }
+
+            IReadOnlyCollection<string>? selectedSheets = null;
+            if (includedSheetNames != null)
+            {
+                try
+                {
+                    selectedSheets = JsonSerializer.Deserialize<List<string>>(includedSheetNames);
+                }
+                catch (JsonException)
+                {
+                    return BadRequest(new { message = "工作表選擇格式錯誤" });
+                }
             }
 
             using var buffer =
@@ -64,6 +80,9 @@ namespace 崴正.Controllers
                     FileName =
                         excelFile.FileName,
 
+                    IncludedSheetNames =
+                        selectedSheets,
+
                     ProjectName =
                         projectName,
 
@@ -78,6 +97,9 @@ namespace 崴正.Controllers
 
                     TotalFloorArea =
                         totalFloorArea,
+
+                    SiteArea =
+                        siteArea,
 
                     FloorCount =
                         floorCount,
@@ -114,6 +136,7 @@ namespace 崴正.Controllers
             [FromQuery] string status = "Pending",
             [FromQuery] string? search = null,
             [FromQuery] string? issueCode = null,
+            [FromQuery] string? majorCategory = null,
             [FromQuery] string? category = null,
             [FromQuery] string? unit = null,
             [FromQuery] int page = 1,
@@ -126,6 +149,7 @@ namespace 崴正.Controllers
                         status,
                         search,
                         issueCode,
+                        majorCategory,
                         category,
                         unit,
                         page,
@@ -209,6 +233,27 @@ namespace 崴正.Controllers
 
             return ToActionResult(result);
         }
+
+        [HttpPost("update-major-category")]
+        public IActionResult UpdateMajorCategory(
+            [FromForm] long finalBidItemId,
+            [FromForm] string? majorCategory)
+        {
+            string actionUser =
+                User?.Identity?.Name
+                ?? "Estimator_Staff";
+
+            var result =
+                _finalBidService
+                    .UpdateMajorCategoryOverride(
+                        finalBidItemId,
+                        majorCategory,
+                        actionUser
+                    );
+
+            return ToActionResult(result);
+        }
+
 
         [HttpPost("update-bid-item-data")]
         public IActionResult UpdateBidItemData(

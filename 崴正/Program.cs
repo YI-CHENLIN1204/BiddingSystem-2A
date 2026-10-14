@@ -42,17 +42,42 @@ builder.Services.AddScoped<FinalBidImportService>();
 builder.Services.AddScoped<FinalBidQueryService>();
 builder.Services.AddScoped<UnitConversionService>();
 builder.Services.AddScoped<EstimationSettingsService>();
-builder.Services.AddScoped<RangeEstimationService>();
 builder.Services.AddScoped<ProjectManagementService>();
-builder.Services.AddScoped<EstimationTargetService>();
-builder.Services.AddScoped<BatchEstimationService>();
-builder.Services.AddScoped<CoreMaterialService>();
-builder.Services.AddScoped<BidRangeAnomalyAnalysisService>();
 builder.Services.AddScoped<MaterialCategoryService>();
 builder.Services.AddScoped<StandardMaterialService>();
 builder.Services.AddScoped<AuditLogService>();
 builder.Services.AddScoped<UnitCategoryService>();
 builder.Services.AddScoped<UnitMasterService>();
+builder.Services.AddScoped<TwoAPreprocessService>();
+builder.Services.AddScoped<DetectionCategoryService>();
+builder.Services.AddScoped<DetectionCategoryRangeService>();
+builder.Services.AddScoped<TwoAQuantityAnalysisService>();
+builder.Services.AddScoped<MajorCategoryPriceRangeService>();
+builder.Services.AddScoped<AnalysisCaseService>();
+
+builder.Services.AddHttpClient<OneDIntegrationService>(
+    (serviceProvider, client) =>
+    {
+        var configuration =
+            serviceProvider
+                .GetRequiredService<IConfiguration>();
+
+        var baseUrl =
+            configuration["OneD:BaseUrl"];
+
+        if (Uri.TryCreate(
+                baseUrl,
+                UriKind.Absolute,
+                out var baseUri))
+        {
+            client.BaseAddress =
+                baseUri;
+        }
+
+        client.Timeout =
+            TimeSpan.FromSeconds(20);
+    }
+);
 
 
 var connectionString =
@@ -122,9 +147,10 @@ app.Use(async (context, next) =>
         context.Request.Path;
 
     bool useSharedDbConnection =
-        path.StartsWithSegments("/api/range-estimation") ||
-        path.StartsWithSegments("/api/bid-anomaly") ||
-        path.StartsWithSegments("/api/Estimation");
+        path.StartsWithSegments("/api/Estimation") ||
+        path.StartsWithSegments("/api/detection-category") ||
+        path.StartsWithSegments("/api/major-category-price") ||
+        path.StartsWithSegments("/api/analysis-cases");
 
     if (!useSharedDbConnection)
     {
@@ -179,4 +205,3 @@ app.UseSwagger();
 app.UseSwaggerUI();
 
 app.Run();
-

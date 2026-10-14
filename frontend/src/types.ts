@@ -5,7 +5,6 @@ export interface SystemOptions {
   structureTypes: string[]
   cities: string[]
   materials: MaterialOption[]
-  coreMaterials: CoreMaterial[]
 }
 
 export interface MaterialOption {
@@ -15,13 +14,6 @@ export interface MaterialOption {
   category?: string
 }
 
-export interface CoreMaterial extends MaterialOption {
-  projectType?: string
-  structureType?: string
-  isCoreEstimation: boolean
-  validProjectCount?: number
-  historyRowCount?: number
-}
 
 export interface ProjectSummary {
   projectId: number
@@ -30,12 +22,16 @@ export interface ProjectSummary {
   structureType?: string
   city?: string
   totalFloorArea?: number
+  siteArea?: number
   floorCount?: number
   basementFloorCount?: number
   startDate?: string
   hasFinalBid?: boolean
   finalBidItemCount?: number
   historicalTransactionCount?: number
+  historyStatus?: string
+  historyApprovedAt?: string | null
+  historyApprovedBy?: string | null
 }
 
 export interface ProjectForm {
@@ -44,6 +40,7 @@ export interface ProjectForm {
   structureType: string
   city: string
   totalFloorArea: number | null
+  siteArea: number | null
   floorCount: number | null
   basementFloorCount: number | null
   projectMonth: string

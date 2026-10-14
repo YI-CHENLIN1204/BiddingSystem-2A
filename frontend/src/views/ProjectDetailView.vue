@@ -6,6 +6,14 @@ import type { ProjectSummary } from '../types'
 
 interface BidItem {
   finalBidItemId: number
+  category1?: string | null
+  category2?: string | null
+  category3?: string | null
+  majorCategoryOverride?: string | null
+  effectiveMajorCategory?: string | null
+  contributesStructuralPrice?: boolean
+  contributesQuantityHistory?: boolean
+  quantityHistoryCategory?: string | null
   itemName: string
   spec?: string | null
   unit?: string | null
@@ -29,6 +37,40 @@ interface MaterialOption {
   unitName: string
 }
 
+interface ProjectTwoASummary {
+  projectId: number
+  historyStatus: string
+  historyApprovedAt?: string | null
+  historyApprovedBy?: string | null
+  majorCategory: string
+  structuralItemCount: number
+  structuralPricedItemCount: number
+  structuralUnpricedItemCount: number
+  unclassifiedItemCount: number
+  manualMajorCategoryCount: number
+  structuralUnmappedItemCount: number
+  rebarSourceItemCount: number
+  rebarCandidateItemCount: number
+  rebarExcludedItemCount: number
+  concreteSourceItemCount: number
+  concreteCandidateItemCount: number
+  concreteExcludedItemCount: number
+  publishReady: boolean
+  publishBlockingIssues: string[]
+  structuralAmount: number
+  structuralPricePerPing?: number | null
+  rebarQuantity?: number | null
+  rebarUnit: string
+  rebarTransactionCount: number
+  contributesRebarHistory: boolean
+  concreteQuantity?: number | null
+  concreteUnit: string
+  concreteTransactionCount: number
+  contributesConcreteHistory: boolean
+  otherStructuralItemCount: number
+  message: string
+}
+
 interface HistoryItem {
   materialId: number
   materialName: string
@@ -36,9 +78,9 @@ interface HistoryItem {
   unitName: string
   transactionCount: number
   totalQuantity: number
-  averageUnitPrice: number
 }
 
+interface PolicyResponse { knownMajorCategories: string[] }
 interface FilterOptions { categories: string[]; units: string[] }
 interface PageResult<T> { totalCount: number; page: number; pageSize: number; items: T[] }
 interface MasterOption { categoryId?: number; categoryName?: string; unitId?: number; unitName?: string; isActive: boolean }
@@ -49,13 +91,16 @@ const project = ref<ProjectSummary | null>(null)
 const tab = ref<'basic' | 'bid' | 'history'>('basic')
 const bidItems = ref<BidItem[]>([])
 const historyItems = ref<HistoryItem[]>([])
+const twoASummary = ref<ProjectTwoASummary | null>(null)
 const materialOptions = ref<MaterialOption[]>([])
 const filterOptions = ref<FilterOptions>({ categories: [], units: [] })
 const masterOptions = ref<{ categories: MasterOption[]; units: MasterOption[] }>({ categories: [], units: [] })
+const majorCategories = ref<string[]>([])
 const selectedCategory = ref<Record<number, string>>({})
 const selectedMaterial = ref<Record<number, number | '__NEW__' | null>>({})
 const search = ref('')
 const status = ref('All')
+const majorCategoryFilter = ref('All')
 const category = ref('All')
 const unit = ref('All')
 const issueCode = ref('All')
@@ -64,6 +109,7 @@ const pageSize = ref(50)
 const totalCount = ref(0)
 const loading = ref(false)
 const busyId = ref<number | null>(null)
+const publishingHistory = ref(false)
 const error = ref('')
 const message = ref('')
 const openMenuId = ref<number | null>(null)
@@ -74,6 +120,7 @@ const newMaterial = ref({ materialName: '', categoryId: null as number | null, u
 let searchTimer: number | undefined
 
 const totalPages = computed(() => Math.max(1, Math.ceil(totalCount.value / pageSize.value)))
+const isHistoryLocked = computed(() => project.value?.historyStatus === 'Approved')
 
 function formatNumber(value: number | null | undefined, digits = 2) {
   if (value == null) return '無'
@@ -103,14 +150,16 @@ async function loadProject() {
 }
 
 async function loadFilterOptions() {
-  const [filters, materials, masters] = await Promise.all([
+  const [filters, materials, masters, policy] = await Promise.all([
     api<FilterOptions>(`/Estimation/mapping-filter-options${queryString({ projectId })}`),
     api<MaterialOption[]>('/Estimation/material-options'),
     api<{ categories: MasterOption[]; units: MasterOption[] }>('/standard-material/filter-options'),
+    api<PolicyResponse>('/analysis-cases/policy'),
   ])
   filterOptions.value = filters
   materialOptions.value = materials
   masterOptions.value = masters
+  majorCategories.value = policy.knownMajorCategories
 }
 
 async function loadBidItems() {
@@ -119,7 +168,7 @@ async function loadBidItems() {
   try {
     const result = await api<PageResult<BidItem>>(`/Estimation/mapping-items${queryString({
       projectId, status: status.value, search: search.value.trim(), issueCode: issueCode.value,
-      category: category.value, unit: unit.value, page: page.value, pageSize: pageSize.value,
+      majorCategory: majorCategoryFilter.value, category: category.value, unit: unit.value, page: page.value, pageSize: pageSize.value,
     })}`)
     totalCount.value = result.totalCount
     bidItems.value = result.items
@@ -147,9 +196,68 @@ async function loadHistory() {
   historyItems.value = result.items
 }
 
+async function loadTwoASummary() {
+  twoASummary.value = await api<ProjectTwoASummary>(`/projects/${projectId}/2a-summary`)
+}
+
+async function publishHistory() {
+  if (!project.value) return
+  if (!window.confirm(
+    '確認將此建案納入 2A 歷史基準嗎？\n\n系統會依目前工程大項、材料對應、數量與單位建立鋼筋／混凝土歷史交易，並讓本案參與後續相似建案與結構體價格估算。'
+  )) return
+
+  publishingHistory.value = true
+  error.value = ''
+  try {
+    await api(`/projects/${projectId}/publish-history`, { method: 'POST' })
+    await Promise.all([loadProject(), loadHistory(), loadTwoASummary(), loadBidItems()])
+    message.value = '此建案已確認並納入 2A 歷史基準。'
+  } catch (caught) {
+    error.value = caught instanceof Error ? caught.message : '發布歷史基準失敗'
+  } finally {
+    publishingHistory.value = false
+  }
+}
+
+async function reopenHistoryReview() {
+  if (!project.value) return
+  if (!window.confirm(
+    '確定重新開啟審核嗎？\n\n此建案會暫時退出 2A 模型，既有數量歷史交易會停用，修正完成後可再次發布。'
+  )) return
+
+  publishingHistory.value = true
+  error.value = ''
+  try {
+    await api(`/projects/${projectId}/reopen-history-review`, { method: 'POST' })
+    await Promise.all([loadProject(), loadHistory(), loadTwoASummary(), loadBidItems()])
+    message.value = '已重新開啟歷史基準審核。'
+  } catch (caught) {
+    error.value = caught instanceof Error ? caught.message : '重新開啟審核失敗'
+  } finally {
+    publishingHistory.value = false
+  }
+}
+
 async function reloadRelated(messageText?: string) {
-  await Promise.all([loadBidItems(), loadHistory(), loadProject()])
+  await Promise.all([loadBidItems(), loadHistory(), loadProject(), loadTwoASummary()])
   if (messageText) message.value = messageText
+}
+
+async function updateMajorCategory(item: BidItem, event: Event) {
+  const value = (event.target as HTMLSelectElement).value
+  busyId.value = item.finalBidItemId
+  error.value = ''
+  try {
+    const form = new FormData()
+    form.append('finalBidItemId', String(item.finalBidItemId))
+    form.append('majorCategory', value)
+    await apiForm('/Estimation/update-major-category', form)
+    await reloadRelated(value ? '工程大項已人工確認。' : '已恢復使用標單原始分類。')
+  } catch (caught) {
+    error.value = caught instanceof Error ? caught.message : '工程大項更新失敗'
+  } finally {
+    busyId.value = null
+  }
 }
 
 function changeCategory(item: BidItem) {
@@ -280,7 +388,7 @@ watch(search, () => {
   window.clearTimeout(searchTimer)
   searchTimer = window.setTimeout(resetAndLoad, 300)
 })
-watch([status, category, unit, issueCode, pageSize], resetAndLoad)
+watch([status, majorCategoryFilter, category, unit, issueCode, pageSize], resetAndLoad)
 
 onMounted(async () => {
   if (!Number.isInteger(projectId) || projectId <= 0) {
@@ -288,7 +396,7 @@ onMounted(async () => {
     return
   }
   try {
-    await Promise.all([loadProject(), loadFilterOptions(), loadHistory()])
+    await Promise.all([loadProject(), loadFilterOptions(), loadHistory(), loadTwoASummary()])
     await loadBidItems()
   } catch (caught) {
     error.value = caught instanceof Error ? caught.message : '無法載入建案資料'
@@ -310,17 +418,48 @@ onMounted(async () => {
         <div>
           <div class="d-flex align-items-center gap-2 flex-wrap">
             <h3 class="mb-1">{{ project.projectName }}</h3>
-            <span class="badge" :class="project.hasFinalBid ? 'bg-success' : 'bg-secondary'">
+            <span class="badge" :class="project.hasFinalBid ? 'bg-secondary' : 'bg-light text-dark border'">
               {{ project.hasFinalBid ? '已有決標資料' : '尚無決標資料' }}
+            </span>
+            <span
+              v-if="project.hasFinalBid"
+              class="badge"
+              :class="project.historyStatus === 'Approved' ? 'bg-success' : 'bg-warning text-dark'"
+            >
+              {{ project.historyStatus === 'Approved' ? '已納入 2A 模型' : '待歷史基準審核' }}
             </span>
           </div>
           <div class="text-muted">{{ project.projectType }} ・ {{ project.structureType }} ・ {{ project.city }} ・ {{ formatMonth(project.startDate) }}</div>
         </div>
-        <div class="text-end small text-muted">
-          決標工項 {{ project.finalBidItemCount ?? 0 }} 筆<br />
-          有效歷史交易 {{ project.historicalTransactionCount ?? 0 }} 筆
+        <div class="text-end">
+          <div class="small text-muted mb-2">
+            決標工項 {{ project.finalBidItemCount ?? 0 }} 筆<br />
+            有效歷史交易 {{ project.historicalTransactionCount ?? 0 }} 筆
+          </div>
+          <button
+            v-if="project.hasFinalBid && project.historyStatus !== 'Approved'"
+            class="btn btn-sm btn-success"
+            type="button"
+            :disabled="publishingHistory || (twoASummary != null && !twoASummary.publishReady)"
+            @click="publishHistory"
+          >
+            {{ publishingHistory ? '處理中...' : '確認並納入 2A 歷史基準' }}
+          </button>
+          <button
+            v-else-if="project.hasFinalBid"
+            class="btn btn-sm btn-outline-warning"
+            type="button"
+            :disabled="publishingHistory"
+            @click="reopenHistoryReview"
+          >
+            {{ publishingHistory ? '處理中...' : '重新開啟審核' }}
+          </button>
         </div>
       </div>
+    </div>
+
+    <div v-if="isHistoryLocked" class="alert alert-success mb-3">
+      此建案目前是已發布的 2A 歷史基準。為避免已驗證歷史資料被直接改動，建案條件、工程大項、材料對應、數量、單價與忽略狀態目前鎖定；如需修正，請先按「重新開啟審核」。
     </div>
 
     <ul class="nav nav-tabs mb-3">
@@ -329,16 +468,122 @@ onMounted(async () => {
       <li class="nav-item"><button class="nav-link" :class="{ active: tab === 'history' }" @click="tab = 'history'">模型歷史資料</button></li>
     </ul>
 
-    <section v-if="tab === 'basic' && project" class="card p-4">
-      <div class="row g-4">
-        <div class="col-md-3"><div class="text-muted small">建案名稱</div><strong>{{ project.projectName }}</strong></div>
-        <div class="col-md-3"><div class="text-muted small">建案類型</div><strong>{{ project.projectType || '未設定' }}</strong></div>
-        <div class="col-md-3"><div class="text-muted small">結構類型</div><strong>{{ project.structureType || '未設定' }}</strong></div>
-        <div class="col-md-3"><div class="text-muted small">縣市</div><strong>{{ project.city || '未設定' }}</strong></div>
-        <div class="col-md-3"><div class="text-muted small">總樓地板面積</div><strong>{{ formatNumber(project.totalFloorArea) }} m²</strong></div>
-        <div class="col-md-3"><div class="text-muted small">地上樓層</div><strong>{{ project.floorCount ?? '未設定' }}</strong></div>
-        <div class="col-md-3"><div class="text-muted small">地下樓層</div><strong>{{ project.basementFloorCount ?? '未設定' }}</strong></div>
-        <div class="col-md-3"><div class="text-muted small">建案年月</div><strong>{{ formatMonth(project.startDate) }}</strong></div>
+    <section v-if="tab === 'basic' && project" class="basic-stack">
+      <div class="card p-4">
+        <div class="row g-4">
+          <div class="col-md-3"><div class="text-muted small">建案名稱</div><strong>{{ project.projectName }}</strong></div>
+          <div class="col-md-3"><div class="text-muted small">建案類型</div><strong>{{ project.projectType || '未設定' }}</strong></div>
+          <div class="col-md-3"><div class="text-muted small">結構類型</div><strong>{{ project.structureType || '未設定' }}</strong></div>
+          <div class="col-md-3"><div class="text-muted small">縣市</div><strong>{{ project.city || '未設定' }}</strong></div>
+          <div class="col-md-3"><div class="text-muted small">總樓地板面積</div><strong>{{ formatNumber(project.totalFloorArea) }} m²</strong></div>
+          <div class="col-md-3"><div class="text-muted small">基地面積</div><strong>{{ formatNumber(project.siteArea) }} m²</strong></div>
+          <div class="col-md-3"><div class="text-muted small">地上樓層</div><strong>{{ project.floorCount ?? '未設定' }}</strong></div>
+          <div class="col-md-3"><div class="text-muted small">地下樓層</div><strong>{{ project.basementFloorCount ?? '未設定' }}</strong></div>
+          <div class="col-md-3"><div class="text-muted small">建案年月</div><strong>{{ formatMonth(project.startDate) }}</strong></div>
+        </div>
+      </div>
+
+      <div v-if="twoASummary" class="card baseline-card">
+        <div class="baseline-header">
+          <div>
+            <h5>2A 歷史基準摘要</h5>
+            <div class="text-muted small">
+              本建案定案後，實際能提供給 2A 的「結構體工程價格」與「鋼筋／混凝土數量」資料。
+            </div>
+          </div>
+          <span class="badge bg-light text-dark border">{{ twoASummary.majorCategory }}</span>
+        </div>
+
+        <div
+          class="baseline-status"
+          :class="twoASummary.historyStatus === 'Approved' ? 'approved' : twoASummary.publishReady ? 'ready' : 'draft'"
+        >
+          <strong>
+            {{ twoASummary.historyStatus === 'Approved'
+              ? '已發布歷史基準'
+              : twoASummary.publishReady
+                ? '審核資料已符合發布條件'
+                : '目前為審核中' }}
+          </strong>
+          <span v-if="twoASummary.historyStatus === 'Approved'">
+            此建案會參與相似建案篩選、結構體價格估算與鋼筋／混凝土數量基準。
+          </span>
+          <span v-else-if="twoASummary.publishReady">
+            工程大項、結構體價格與鋼筋／混凝土候選資料目前沒有阻擋問題，可人工確認後發布。
+          </span>
+          <span v-else>
+            發布前還需要處理：{{ twoASummary.publishBlockingIssues.join('、') }}。
+          </span>
+        </div>
+
+        <div class="baseline-grid">
+          <div class="baseline-cell">
+            <span>結構體工程總價</span>
+            <strong>{{ formatNumber(twoASummary.structuralAmount) }}</strong>
+            <small>
+              {{ twoASummary.structuralPricedItemCount }} / {{ twoASummary.structuralItemCount }} 筆可計價
+            </small>
+          </div>
+          <div class="baseline-cell">
+            <span>結構體工程每坪單價</span>
+            <strong>{{ formatNumber(twoASummary.structuralPricePerPing) }}</strong>
+            <small>作為大項價格歷史基準</small>
+          </div>
+          <div class="baseline-cell">
+            <span>鋼筋歷史總量</span>
+            <strong>{{ formatNumber(twoASummary.rebarQuantity, 4) }} {{ twoASummary.rebarUnit }}</strong>
+            <small :class="twoASummary.contributesRebarHistory ? 'text-success' : 'text-muted'">
+              {{ twoASummary.contributesRebarHistory ? '已貢獻 ' + twoASummary.rebarTransactionCount + ' 筆歷史交易' : '尚未形成有效歷史資料' }}
+            </small>
+          </div>
+          <div class="baseline-cell">
+            <span>混凝土歷史總量</span>
+            <strong>{{ formatNumber(twoASummary.concreteQuantity, 4) }} {{ twoASummary.concreteUnit }}</strong>
+            <small :class="twoASummary.contributesConcreteHistory ? 'text-success' : 'text-muted'">
+              {{ twoASummary.contributesConcreteHistory ? '已貢獻 ' + twoASummary.concreteTransactionCount + ' 筆歷史交易' : '尚未形成有效歷史資料' }}
+            </small>
+          </div>
+        </div>
+
+        <div class="qualification-grid">
+          <div>
+            <span>未辨識工程大項</span>
+            <strong :class="twoASummary.unclassifiedItemCount ? 'text-warning' : 'text-success'">{{ twoASummary.unclassifiedItemCount }}</strong>
+            <small>可到「決標工項」人工指定，不修改原始分類欄位。</small>
+          </div>
+          <div>
+            <span>人工校正大項</span>
+            <strong>{{ twoASummary.manualMajorCategoryCount }}</strong>
+            <small>已保留原始 Category1 / 2 / 3，可隨時恢復。</small>
+          </div>
+          <div>
+            <span>結構體未對應材料</span>
+            <strong :class="twoASummary.structuralUnmappedItemCount ? 'text-warning' : 'text-success'">{{ twoASummary.structuralUnmappedItemCount }}</strong>
+            <small>只影響鋼筋／混凝土數量歷史，不影響已存在的結構體價格。</small>
+          </div>
+          <div>
+            <span>結構體無可用價格</span>
+            <strong :class="twoASummary.structuralUnpricedItemCount ? 'text-warning' : 'text-success'">{{ twoASummary.structuralUnpricedItemCount }}</strong>
+            <small>Amount 或 Qty × UnitPrice 都無法形成價格時才會列入。</small>
+          </div>
+          <div>
+            <span>鋼筋數量資格</span>
+            <strong>{{ twoASummary.rebarCandidateItemCount }} / {{ twoASummary.rebarSourceItemCount }}</strong>
+            <small>{{ twoASummary.rebarExcludedItemCount }} 筆因數量／單位等條件未通過候選資格。</small>
+          </div>
+          <div>
+            <span>混凝土數量資格</span>
+            <strong>{{ twoASummary.concreteCandidateItemCount }} / {{ twoASummary.concreteSourceItemCount }}</strong>
+            <small>{{ twoASummary.concreteExcludedItemCount }} 筆因數量／單位等條件未通過候選資格。</small>
+          </div>
+        </div>
+
+        <div class="baseline-foot">
+          <span>{{ twoASummary.message }}</span>
+          <span v-if="twoASummary.otherStructuralItemCount > 0">
+            另有 {{ twoASummary.otherStructuralItemCount }} 筆結構體工項保留於最終標單，但不作為鋼筋／混凝土數量基準。
+          </span>
+        </div>
       </div>
     </section>
 
@@ -347,9 +592,10 @@ onMounted(async () => {
         <div class="row g-2">
           <div class="col-lg-4"><input v-model="search" type="search" class="form-control" placeholder="搜尋工項名稱或標準材料" /></div>
           <div class="col-md-2"><select v-model="status" class="form-select"><option value="All">全部對應狀態</option><option value="Pending">未對應</option><option value="Auto">自動對應</option><option value="Manual">人工對應</option><option value="Ignored">已忽略</option></select></div>
-          <div class="col-md-2"><select v-model="category" class="form-select"><option value="All">全部材料分類</option><option v-for="item in filterOptions.categories" :key="item" :value="item">{{ item }}</option></select></div>
-          <div class="col-md-2"><select v-model="unit" class="form-select"><option value="All">全部單位</option><option v-for="item in filterOptions.units" :key="item" :value="item">{{ item }}</option></select></div>
-          <div class="col-md-2"><select v-model="issueCode" class="form-select"><option value="All">全部資料狀態</option><option value="INVALID_QUANTITY">數量無效</option><option value="INVALID_UNIT_PRICE">單價無效</option><option value="UNIT_MISMATCH">單位不符</option></select></div>
+          <div class="col-md-3"><select v-model="majorCategoryFilter" class="form-select"><option value="All">全部工程大項</option><option value="Unclassified">未辨識工程大項</option><option v-for="item in majorCategories" :key="item" :value="item">{{ item }}</option></select></div>
+          <div class="col-md-3"><select v-model="category" class="form-select"><option value="All">全部材料分類</option><option v-for="item in filterOptions.categories" :key="item" :value="item">{{ item }}</option></select></div>
+          <div class="col-md-3"><select v-model="unit" class="form-select"><option value="All">全部單位</option><option v-for="item in filterOptions.units" :key="item" :value="item">{{ item }}</option></select></div>
+          <div class="col-md-3"><select v-model="issueCode" class="form-select"><option value="All">全部資料狀態</option><option value="INVALID_QUANTITY">數量無效</option><option value="INVALID_UNIT_PRICE">單價無效</option><option value="UNIT_MISMATCH">單位不符</option></select></div>
         </div>
         <div class="d-flex justify-content-between align-items-center mt-3">
           <div class="text-muted small">共 {{ totalCount }} 筆</div>
@@ -364,12 +610,17 @@ onMounted(async () => {
           <div class="d-flex justify-content-between align-items-start mb-2 gap-3">
             <h5 class="mb-1">{{ item.itemName }}</h5>
             <div class="d-flex align-items-center gap-1 flex-wrap justify-content-end">
+              <span v-if="item.effectiveMajorCategory" class="badge bg-info text-dark">{{ item.effectiveMajorCategory }}</span>
+              <span v-if="item.contributesStructuralPrice" class="badge bg-success">{{ project?.historyStatus === 'Approved' ? '結構體價格基準' : '結構體價格候選' }}</span>
+              <span v-if="item.contributesQuantityHistory" class="badge bg-success">{{ item.quantityHistoryCategory }}{{ project?.historyStatus === 'Approved' ? '數量基準' : '數量候選' }}</span>
+              <span v-if="!item.contributesStructuralPrice && !item.contributesQuantityHistory" class="badge bg-light text-dark border">不納入目前 2A 基準</span>
+              <span v-if="item.majorCategoryOverride" class="badge bg-primary">人工大項</span>
               <span class="badge" :class="mappingBadge(item).className">{{ mappingBadge(item).label }}</span>
               <span v-if="item.invalidQuantity" class="badge bg-danger">數量無效</span>
               <span v-if="item.invalidUnitPrice" class="badge bg-danger">單價無效</span>
               <span v-if="item.unitMismatch" class="badge bg-danger">單位不符</span>
               <div class="item-menu">
-                <button class="btn btn-sm btn-light border" type="button" @click="openMenuId = openMenuId === item.finalBidItemId ? null : item.finalBidItemId">⋯</button>
+                <button class="btn btn-sm btn-light border" type="button" :disabled="isHistoryLocked" @click="openMenuId = openMenuId === item.finalBidItemId ? null : item.finalBidItemId">⋯</button>
                 <div v-if="openMenuId === item.finalBidItemId" class="dropdown-menu dropdown-menu-end show">
                   <button class="dropdown-item" type="button" @click="openEdit(item)">編輯工項</button>
                   <button v-if="item.isIgnored" class="dropdown-item" type="button" @click="setIgnored(item, false)">取消忽略</button>
@@ -378,12 +629,34 @@ onMounted(async () => {
               </div>
             </div>
           </div>
-          <div class="text-muted small mb-3">單位：{{ item.unit || '無' }} ｜ 數量：{{ formatNumber(item.qty, 4) }} ｜ 單價：{{ formatNumber(item.unitPrice) }}</div>
+          <div class="text-muted small mb-2">單位：{{ item.unit || '無' }} ｜ 數量：{{ formatNumber(item.qty, 4) }} ｜ 單價：{{ formatNumber(item.unitPrice) }}</div>
+          <div class="text-muted small mb-3">
+            原始分類：{{ [item.category1, item.category2, item.category3].filter(Boolean).join(' → ') || '未辨識' }}
+          </div>
+          <div v-if="!item.isIgnored" class="row g-2 mb-3">
+            <div class="col-md-6">
+              <label class="form-label small fw-bold">工程大項</label>
+              <select
+                class="form-select"
+                :value="item.majorCategoryOverride ?? ''"
+                :disabled="isHistoryLocked || busyId === item.finalBidItemId"
+                @change="updateMajorCategory(item, $event)"
+              >
+                <option value="">使用原始分類（{{ item.effectiveMajorCategory || '未辨識' }}）</option>
+                <option v-for="entry in majorCategories" :key="entry" :value="entry">{{ entry }}</option>
+              </select>
+            </div>
+            <div class="col-md-6 d-flex align-items-end">
+              <div class="small text-muted">
+                人工指定只覆蓋 2A 判定用大項，原始 Category1 / 2 / 3 仍完整保留。
+              </div>
+            </div>
+          </div>
           <div class="mb-2 small"><strong>目前標準材料：</strong><span v-if="item.materialName">{{ item.materialName }}</span><span v-else class="text-warning">尚未對應</span></div>
           <div v-if="!item.isIgnored" class="row g-2">
-            <div class="col-md-4"><label class="form-label small fw-bold">材料分類</label><select v-model="selectedCategory[item.finalBidItemId]" class="form-select" @change="changeCategory(item)"><option value="">請選擇材料分類</option><option v-for="entry in filterOptions.categories" :key="entry" :value="entry">{{ entry }}</option></select></div>
-            <div class="col-md-5"><label class="form-label small fw-bold">標準材料</label><select v-model="selectedMaterial[item.finalBidItemId]" class="form-select" :disabled="!selectedCategory[item.finalBidItemId]"><option :value="null">請選擇標準材料</option><option v-for="material in materialsFor(item)" :key="material.materialId" :value="material.materialId">{{ material.materialName }} ({{ material.unitName }})</option><option value="__NEW__">＋ 新增標準材料</option></select></div>
-            <div class="col-md-3"><label class="form-label small fw-bold">&nbsp;</label><button class="btn btn-outline-primary w-100" type="button" :disabled="busyId === item.finalBidItemId" @click="updateMapping(item)">{{ selectedMaterial[item.finalBidItemId] === '__NEW__' ? '新增標準材料' : item.mappingStatus === 'Pending' ? '人工對應' : '修改對應' }}</button></div>
+            <div class="col-md-4"><label class="form-label small fw-bold">材料分類</label><select v-model="selectedCategory[item.finalBidItemId]" class="form-select" :disabled="isHistoryLocked" @change="changeCategory(item)"><option value="">請選擇材料分類</option><option v-for="entry in filterOptions.categories" :key="entry" :value="entry">{{ entry }}</option></select></div>
+            <div class="col-md-5"><label class="form-label small fw-bold">標準材料</label><select v-model="selectedMaterial[item.finalBidItemId]" class="form-select" :disabled="isHistoryLocked || !selectedCategory[item.finalBidItemId]"><option :value="null">請選擇標準材料</option><option v-for="material in materialsFor(item)" :key="material.materialId" :value="material.materialId">{{ material.materialName }} ({{ material.unitName }})</option><option value="__NEW__">＋ 新增標準材料</option></select></div>
+            <div class="col-md-3"><label class="form-label small fw-bold">&nbsp;</label><button class="btn btn-outline-primary w-100" type="button" :disabled="isHistoryLocked || busyId === item.finalBidItemId" @click="updateMapping(item)">{{ selectedMaterial[item.finalBidItemId] === '__NEW__' ? '新增標準材料' : item.mappingStatus === 'Pending' ? '人工對應' : '修改對應' }}</button></div>
           </div>
         </div>
       </article>
@@ -399,8 +672,8 @@ onMounted(async () => {
       <div v-if="!historyItems.length" class="p-4 text-muted">目前沒有可供模型使用的歷史資料</div>
       <div v-else class="table-responsive">
         <table class="table table-hover mb-0">
-          <thead><tr><th>材料分類</th><th>標準材料</th><th>工項筆數</th><th>標準化總用量</th><th>平均單價</th></tr></thead>
-          <tbody><tr v-for="item in historyItems" :key="item.materialId"><td>{{ item.category }}</td><td>{{ item.materialName }}</td><td>{{ item.transactionCount }}</td><td>{{ formatNumber(item.totalQuantity, 4) }} {{ item.unitName }}</td><td>{{ formatNumber(item.averageUnitPrice) }} 元/{{ item.unitName }}</td></tr></tbody>
+          <thead><tr><th>材料分類</th><th>偵錯材料</th><th>來源工項筆數</th><th>標準化歷史總量</th></tr></thead>
+          <tbody><tr v-for="item in historyItems" :key="item.materialId"><td>{{ item.category }}</td><td>{{ item.materialName }}</td><td>{{ item.transactionCount }}</td><td>{{ formatNumber(item.totalQuantity, 4) }} {{ item.unitName }}</td></tr></tbody>
         </table>
       </div>
     </section>
@@ -442,4 +715,5 @@ onMounted(async () => {
 .item-menu .dropdown-menu { position: absolute; top: 100%; right: 0; left: auto; z-index: 20; }
 .modal-backdrop-custom { position: fixed; inset: 0; z-index: 1080; display: grid; place-items: center; padding: 1.5rem; background: rgba(0,0,0,.5); }
 .modal-backdrop-custom .modal-dialog { width: min(500px, 100%); margin: auto; }
+.basic-stack{display:grid;gap:16px}.baseline-card{overflow:hidden}.baseline-status{display:flex;gap:10px;align-items:center;padding:11px 18px;border-bottom:1px solid #edf0f4;font-size:12px}.baseline-status span{color:#5f6b7a}.baseline-status.approved,.baseline-status.ready{background:#eefaf4;color:#176e50}.baseline-status.draft{background:#fff8e3;color:#8a6511}.baseline-header{display:flex;align-items:flex-start;justify-content:space-between;gap:16px;padding:16px 18px;background:#f8f9fa;border-bottom:1px solid #e3e5e8}.baseline-header h5{margin:0 0 4px;font-size:15px;font-weight:800;color:#321fdb}.baseline-grid{display:grid;grid-template-columns:repeat(4,1fr)}.baseline-cell{padding:18px;border-right:1px solid #edf0f4}.baseline-cell:last-child{border-right:0}.baseline-cell>span{display:block;color:#6c757d;font-size:12px}.baseline-cell>strong{display:block;margin-top:7px;font-size:20px;font-variant-numeric:tabular-nums}.baseline-cell>small{display:block;margin-top:6px;font-size:11px}.qualification-grid{display:grid;grid-template-columns:repeat(3,1fr);border-top:1px solid #edf0f4}.qualification-grid>div{padding:14px 18px;border-right:1px solid #edf0f4;border-bottom:1px solid #edf0f4}.qualification-grid>div:nth-child(3n){border-right:0}.qualification-grid>div:nth-last-child(-n+3){border-bottom:0}.qualification-grid span,.qualification-grid small{display:block}.qualification-grid span{color:#6c757d;font-size:11px}.qualification-grid strong{display:block;margin:5px 0;font-size:18px}.qualification-grid small{color:#6c757d;font-size:10px;line-height:1.4}.baseline-foot{display:flex;justify-content:space-between;gap:18px;padding:11px 18px;background:#fbfcfd;border-top:1px solid #edf0f4;color:#6c757d;font-size:11px}@media(max-width:1000px){.qualification-grid{grid-template-columns:repeat(2,1fr)}.qualification-grid>div{border-right:1px solid #edf0f4!important;border-bottom:1px solid #edf0f4!important}.qualification-grid>div:nth-child(2n){border-right:0!important}.qualification-grid>div:nth-last-child(-n+2){border-bottom:0!important}.baseline-grid{grid-template-columns:repeat(2,1fr)}.baseline-cell:nth-child(2){border-right:0}.baseline-cell:nth-child(-n+2){border-bottom:1px solid #edf0f4}.baseline-foot{flex-direction:column}}@media(max-width:600px){.qualification-grid{grid-template-columns:1fr}.qualification-grid>div{border-right:0!important;border-bottom:1px solid #edf0f4!important}.qualification-grid>div:last-child{border-bottom:0!important}.baseline-grid{grid-template-columns:1fr}.baseline-cell{border-right:0;border-bottom:1px solid #edf0f4}.baseline-cell:last-child{border-bottom:0}}
 </style>

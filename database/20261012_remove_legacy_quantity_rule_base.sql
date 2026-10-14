@@ -1,0 +1,1 @@
+DROP TABLE IF EXISTS quantity_rule_base CASCADE;

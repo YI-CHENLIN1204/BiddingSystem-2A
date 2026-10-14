@@ -15,6 +15,8 @@ namespace 崴正.Models
 
         public decimal? TotalFloorArea { get; set; }
 
+        public decimal? SiteArea { get; set; }
+
         public int? FloorCount { get; set; }
 
         public int? BasementFloorCount { get; set; }
@@ -26,6 +28,85 @@ namespace 崴正.Models
         public int FinalBidItemCount { get; set; }
 
         public int HistoricalTransactionCount { get; set; }
+
+        public string HistoryStatus { get; set; } =
+            "Draft";
+
+        public DateTime? HistoryApprovedAt { get; set; }
+
+        public string? HistoryApprovedBy { get; set; }
+    }
+
+
+    public class ProjectTwoASummaryDto
+    {
+        public int ProjectId { get; set; }
+
+        public string HistoryStatus { get; set; } =
+            "Draft";
+
+        public DateTime? HistoryApprovedAt { get; set; }
+
+        public string? HistoryApprovedBy { get; set; }
+
+        public string MajorCategory { get; set; } =
+            "結構體工程";
+
+        public int StructuralItemCount { get; set; }
+
+        public int StructuralPricedItemCount { get; set; }
+
+        public int StructuralUnpricedItemCount { get; set; }
+
+        public int UnclassifiedItemCount { get; set; }
+
+        public int ManualMajorCategoryCount { get; set; }
+
+        public int StructuralUnmappedItemCount { get; set; }
+
+        public int RebarSourceItemCount { get; set; }
+
+        public int RebarCandidateItemCount { get; set; }
+
+        public int RebarExcludedItemCount { get; set; }
+
+        public int ConcreteSourceItemCount { get; set; }
+
+        public int ConcreteCandidateItemCount { get; set; }
+
+        public int ConcreteExcludedItemCount { get; set; }
+
+        public bool PublishReady { get; set; }
+
+        public List<string> PublishBlockingIssues { get; set; } =
+            new();
+
+        public decimal StructuralAmount { get; set; }
+
+        public decimal? StructuralPricePerPing { get; set; }
+
+        public decimal? RebarQuantity { get; set; }
+
+        public string RebarUnit { get; set; } =
+            "kg";
+
+        public int RebarTransactionCount { get; set; }
+
+        public bool ContributesRebarHistory { get; set; }
+
+        public decimal? ConcreteQuantity { get; set; }
+
+        public string ConcreteUnit { get; set; } =
+            "立方公尺";
+
+        public int ConcreteTransactionCount { get; set; }
+
+        public bool ContributesConcreteHistory { get; set; }
+
+        public int OtherStructuralItemCount { get; set; }
+
+        public string Message { get; set; } =
+            string.Empty;
     }
 
 
@@ -44,6 +125,8 @@ namespace 崴正.Models
             string.Empty;
 
         public decimal? TotalFloorArea { get; set; }
+
+        public decimal? SiteArea { get; set; }
 
         public int? FloorCount { get; set; }
 

@@ -21,6 +21,7 @@ namespace 崴正.Services
             string status,
             string? search,
             string? issueCode,
+            string? majorCategory,
             string? category,
             string? unit,
             int page,
@@ -152,6 +153,81 @@ namespace 崴正.Services
                 }
             }
 
+            if (!string.IsNullOrWhiteSpace(
+                    majorCategory) &&
+                !string.Equals(
+                    majorCategory,
+                    "All",
+                    StringComparison.OrdinalIgnoreCase))
+            {
+                string selectedMajorCategory =
+                    majorCategory.Trim();
+
+                if (string.Equals(
+                        selectedMajorCategory,
+                        "Unclassified",
+                        StringComparison.OrdinalIgnoreCase))
+                {
+                    var knownMajorCategories =
+                        TwoAScopePolicy
+                            .GetKnownMajorCategories()
+                            .ToArray();
+
+                    query = query.Where(x =>
+                        (
+                            x.MajorCategoryOverride == null ||
+                            x.MajorCategoryOverride == ""
+                        ) &&
+                        (
+                            x.Category1 == null ||
+                            !knownMajorCategories.Contains(
+                                x.Category1)
+                        ) &&
+                        (
+                            x.Category2 == null ||
+                            !knownMajorCategories.Contains(
+                                x.Category2)
+                        ) &&
+                        (
+                            x.Category3 == null ||
+                            !knownMajorCategories.Contains(
+                                x.Category3)
+                        )
+                    );
+                }
+                else
+                {
+                    if (!TwoAScopePolicy
+                        .IsKnownMajorCategory(
+                            selectedMajorCategory))
+                    {
+                        return ServiceResult.Validation(
+                            "不支援的工程大項篩選條件"
+                        );
+                    }
+
+                    query = query.Where(x =>
+                        x.MajorCategoryOverride ==
+                            selectedMajorCategory ||
+                        (
+                            (
+                                x.MajorCategoryOverride == null ||
+                                x.MajorCategoryOverride == ""
+                            ) &&
+                            (
+                                x.Category1 ==
+                                    selectedMajorCategory ||
+                                x.Category2 ==
+                                    selectedMajorCategory ||
+                                x.Category3 ==
+                                    selectedMajorCategory
+                            )
+                        )
+                    );
+                }
+            }
+
+
             if (!string.IsNullOrWhiteSpace(category) &&
                 !string.Equals(
                     category,
@@ -257,6 +333,18 @@ namespace 崴正.Services
                     itemCode =
                         x.ItemCode,
 
+                    category1 =
+                        x.Category1,
+
+                    category2 =
+                        x.Category2,
+
+                    category3 =
+                        x.Category3,
+
+                    majorCategoryOverride =
+                        x.MajorCategoryOverride,
+
                     itemName =
                         x.ItemName,
 
@@ -271,6 +359,9 @@ namespace 崴正.Services
 
                     unitPrice =
                         x.UnitPrice,
+
+                    amount =
+                        x.Amount,
 
                     materialId =
                         x.MaterialId,
@@ -331,11 +422,120 @@ namespace 崴正.Services
                     x.sheetName,
                     x.rowNumber,
                     x.itemCode,
+                    x.category1,
+                    x.category2,
+                    x.category3,
+                    x.majorCategoryOverride,
+
+                    effectiveMajorCategory =
+                        TwoAScopePolicy
+                            .ResolveEffectiveMajorCategory(
+                                x.majorCategoryOverride,
+                                x.category1,
+                                x.category2,
+                                x.category3
+                            ),
+
+                    contributesStructuralPrice =
+                        !x.isIgnored &&
+                        string.Equals(
+                            TwoAScopePolicy
+                                .ResolveEffectiveMajorCategory(
+                                    x.majorCategoryOverride,
+                                    x.category1,
+                                    x.category2,
+                                    x.category3
+                                ),
+                            "結構體工程",
+                            StringComparison.OrdinalIgnoreCase
+                        ) &&
+                        (
+                            (
+                                x.amount.HasValue &&
+                                x.amount.Value > 0
+                            ) ||
+                            (
+                                x.qty.HasValue &&
+                                x.qty.Value > 0 &&
+                                x.unitPrice.HasValue &&
+                                x.unitPrice.Value > 0
+                            )
+                        ),
+
+                    contributesQuantityHistory =
+                        !x.isIgnored &&
+                        string.Equals(
+                            TwoAScopePolicy
+                                .ResolveEffectiveMajorCategory(
+                                    x.majorCategoryOverride,
+                                    x.category1,
+                                    x.category2,
+                                    x.category3
+                                ),
+                            "結構體工程",
+                            StringComparison.OrdinalIgnoreCase
+                        ) &&
+                        (
+                            string.Equals(
+                                x.materialName,
+                                "鋼筋",
+                                StringComparison.OrdinalIgnoreCase
+                            ) ||
+                            string.Equals(
+                                x.materialName,
+                                "混凝土",
+                                StringComparison.OrdinalIgnoreCase
+                            )
+                        ) &&
+                        x.qty.HasValue &&
+                        x.qty.Value > 0 &&
+                        x.materialUnitId.HasValue &&
+                        _unitConversionService.CanConvert(
+                            x.unit,
+                            x.materialUnitId.Value
+                        ),
+
+                    quantityHistoryCategory =
+                        !x.isIgnored &&
+                        string.Equals(
+                            TwoAScopePolicy
+                                .ResolveEffectiveMajorCategory(
+                                    x.majorCategoryOverride,
+                                    x.category1,
+                                    x.category2,
+                                    x.category3
+                                ),
+                            "結構體工程",
+                            StringComparison.OrdinalIgnoreCase
+                        ) &&
+                        (
+                            string.Equals(
+                                x.materialName,
+                                "鋼筋",
+                                StringComparison.OrdinalIgnoreCase
+                            ) ||
+                            string.Equals(
+                                x.materialName,
+                                "混凝土",
+                                StringComparison.OrdinalIgnoreCase
+                            )
+                        ) &&
+                        x.qty.HasValue &&
+                        x.qty.Value > 0 &&
+                        x.materialUnitId.HasValue &&
+                        _unitConversionService.CanConvert(
+                            x.unit,
+                            x.materialUnitId.Value
+                        )
+                            ? x.materialName
+                            : null,
+
                     x.itemName,
                     x.spec,
                     x.unit,
                     x.qty,
                     x.unitPrice,
+                    x.amount,
                     x.materialId,
                     x.materialName,
                     x.materialCategory,
@@ -379,6 +579,7 @@ namespace 崴正.Services
                     status,
                     search,
                     issueCode,
+                    majorCategory,
                     category,
                     unit
                 },

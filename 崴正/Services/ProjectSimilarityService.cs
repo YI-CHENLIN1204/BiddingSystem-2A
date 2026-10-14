@@ -89,6 +89,7 @@ namespace 崴正.Services
             decimal maximumRawScore =
                 settings.StructureWeight +
                 settings.AreaWeight +
+                settings.SiteAreaWeight +
                 settings.FloorWeight +
                 settings.YearWeight +
                 settings.CityWeight;
@@ -119,6 +120,13 @@ namespace 崴正.Services
                         settings
                     );
 
+                decimal siteAreaScore =
+                    CalculateSiteAreaScore(
+                        target,
+                        candidate,
+                        settings
+                    );
+
                 decimal floorScore =
                     CalculateFloorScore(
                         target,
@@ -143,6 +151,7 @@ namespace 崴正.Services
                 decimal rawScore =
                     structureScore +
                     areaScore +
+                    siteAreaScore +
                     floorScore +
                     yearScore +
                     cityScore;
@@ -181,6 +190,9 @@ namespace 崴正.Services
                         TotalFloorArea =
                             candidate.TotalFloorArea,
 
+                        SiteArea =
+                            candidate.SiteArea,
+
                         FloorCount =
                             candidate.FloorCount,
 
@@ -207,6 +219,12 @@ namespace 崴正.Services
                         AreaScore =
                             Math.Round(
                                 (double)areaScore,
+                                2
+                            ),
+
+                        SiteAreaScore =
+                            Math.Round(
+                                (double)siteAreaScore,
                                 2
                             ),
 
@@ -274,6 +292,7 @@ namespace 崴正.Services
                 string.IsNullOrWhiteSpace(
                     targetProject.City) ||
                 !targetProject.TotalFloorArea.HasValue ||
+                !targetProject.SiteArea.HasValue ||
                 !targetProject.FloorCount.HasValue ||
                 !targetProject.BasementFloorCount.HasValue ||
                 !targetProject.StartDate.HasValue
@@ -296,6 +315,9 @@ namespace 崴正.Services
 
                     TotalFloorArea =
                         targetProject.TotalFloorArea.Value,
+
+                    SiteArea =
+                        targetProject.SiteArea.Value,
 
                     FloorCount =
                         targetProject.FloorCount.Value,
@@ -341,6 +363,7 @@ namespace 崴正.Services
                     .AsNoTracking()
                     .Where(p =>
                         !p.IsDeleted &&
+                        p.HistoryStatus == "Approved" &&
                         p.ProjectType ==
                             target.ProjectType
                     )
@@ -353,25 +376,6 @@ namespace 崴正.Services
             );
         }
 
-        public Task<List<ProjectSimilarityDto>>
-            GetScoredCandidateProjectsAsync(
-                ResolvedEstimationTarget target)
-        {
-            if (
-                target.SourceMode ==
-                    EstimationTargetMode.HistoricalProject &&
-                target.HistoricalProjectId.HasValue
-            )
-            {
-                return GetScoredCandidateProjectsAsync(
-                    target.HistoricalProjectId.Value
-                );
-            }
-
-            return GetScoredCandidateProjectsAsync(
-                target.SimilarityTarget
-            );
-        }
 
 
         // ==========================================
@@ -450,6 +454,52 @@ namespace 崴正.Services
 
             return
                 settings.AreaWeight *
+                scoreRatio;
+        }
+
+
+        // ==========================================
+        // 基地面積
+        // ==========================================
+        private static decimal CalculateSiteAreaScore(
+            ProjectSimilarityTargetDto target,
+            ProjectMaster candidate,
+            EstimationSetting settings)
+        {
+            if (
+                target.SiteArea <= 0 ||
+                !candidate.SiteArea.HasValue ||
+                candidate.SiteArea.Value <= 0
+            )
+            {
+                return 0m;
+            }
+
+            decimal differenceRatio =
+                Math.Abs(
+                    candidate.SiteArea.Value -
+                    target.SiteArea
+                )
+                /
+                target.SiteArea;
+
+            if (
+                differenceRatio >=
+                settings.SiteAreaDifferenceCutoffRatio
+            )
+            {
+                return 0m;
+            }
+
+            decimal scoreRatio =
+                1m -
+                (
+                    differenceRatio /
+                    settings.SiteAreaDifferenceCutoffRatio
+                );
+
+            return
+                settings.SiteAreaWeight *
                 scoreRatio;
         }
 
@@ -627,6 +677,13 @@ namespace 崴正.Services
             {
                 throw new ArgumentException(
                     "總樓地板面積必須大於 0"
+                );
+            }
+
+            if (target.SiteArea <= 0)
+            {
+                throw new ArgumentException(
+                    "基地面積必須大於 0"
                 );
             }
 

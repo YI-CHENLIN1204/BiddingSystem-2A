@@ -7,7 +7,6 @@ const emptyOptions: SystemOptions = {
   structureTypes: [],
   cities: [],
   materials: [],
-  coreMaterials: [],
 }
 
 let cached: SystemOptions | null = null

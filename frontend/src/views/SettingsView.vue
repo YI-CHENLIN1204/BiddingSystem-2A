@@ -1,11 +1,9 @@
 <script setup lang="ts">
 import { computed, onMounted, ref } from 'vue'
 import { api, apiForm, queryString } from '../services/api'
-import type { CoreMaterial } from '../types'
 
-type Tab = 'model' | 'core' | 'masters'
+type Tab = 'model' | 'masters'
 type MasterTab = 'categories' | 'materials' | 'units'
-type CoreSortKey = 'materialName' | 'category' | 'projectType' | 'structureType' | 'validProjectCount' | 'historyRowCount' | 'coreEnabled'
 interface SettingsRecord { [key: string]: number | string | null }
 interface Category { categoryId: number; categoryName: string; isActive: boolean; sortOrder: number; materialCount: number }
 interface Material { materialId: number; materialName: string; categoryId: number; categoryName: string; unitId: number; unitName: string; isActive: boolean; dictionaryCount: number; historicalCount: number; finalBidItemCount: number }
@@ -18,7 +16,6 @@ const settings = ref<SettingsRecord>({})
 const form = ref<Record<string, number>>({})
 const updatedAt = ref('')
 const updatedBy = ref('')
-const coreMaterials = ref<CoreMaterial[]>([])
 const categories = ref<Category[]>([])
 const materials = ref<Material[]>([])
 const units = ref<Unit[]>([])
@@ -27,8 +24,6 @@ const loading = ref(false)
 const error = ref('')
 const message = ref('')
 
-const coreFilter = ref({ projectType: '', structureType: '', category: '', dataStatus: 'available', search: '' })
-const coreSort = ref<{ key: CoreSortKey; direction: 'asc' | 'desc' }>({ key: 'validProjectCount', direction: 'desc' })
 const categorySearch = ref('')
 const materialFilter = ref({ search: '', categoryId: '', unitId: '', active: '' })
 const unitFilter = ref({ search: '', unitCategoryId: '', active: '' })
@@ -49,28 +44,7 @@ const activeUnits = computed(() => units.value.filter(x => x.isActive))
 const filteredCategories = computed(() => categories.value.filter(item => !categorySearch.value || item.categoryName.toLowerCase().includes(categorySearch.value.toLowerCase())))
 const selectedCreateUnitCategory = computed(() => unitCategories.value.find(item => item.unitCategoryId === newUnit.value.unitCategoryId))
 const selectedEditUnitCategory = computed(() => unitCategories.value.find(item => item.unitCategoryId === editingUnit.value?.unitCategoryId))
-const projectTypes = computed(() => [...new Set(coreMaterials.value.map(x => x.projectType).filter(Boolean))].sort())
-const structureTypes = computed(() => [...new Set(coreMaterials.value.map(x => x.structureType).filter(Boolean))].sort())
-const coreCategories = computed(() => [...new Set(coreMaterials.value.map(x => x.category).filter(Boolean))].sort())
-const weightTotal = computed(() => ['structureWeight', 'areaWeight', 'floorWeight', 'cityWeight', 'yearWeight'].reduce((sum, key) => sum + Number(form.value[key] ?? 0), 0))
-
-const filteredCore = computed(() => {
-  const items = coreMaterials.value.filter(item => {
-    if (coreFilter.value.projectType && item.projectType !== coreFilter.value.projectType) return false
-    if (coreFilter.value.structureType && item.structureType !== coreFilter.value.structureType) return false
-    if (coreFilter.value.category && item.category !== coreFilter.value.category) return false
-    if (coreFilter.value.dataStatus === 'available' && !(item.validProjectCount ?? 0)) return false
-    if (coreFilter.value.dataStatus === 'empty' && (item.validProjectCount ?? 0) > 0) return false
-    return !coreFilter.value.search || item.materialName.toLowerCase().includes(coreFilter.value.search.toLowerCase())
-  })
-  const factor = coreSort.value.direction === 'asc' ? 1 : -1
-  return items.sort((a, b) => {
-    const key = coreSort.value.key
-    if (key === 'validProjectCount' || key === 'historyRowCount') return ((a[key] ?? 0) - (b[key] ?? 0)) * factor
-    if (key === 'coreEnabled') return (Number(a.isCoreEstimation) - Number(b.isCoreEstimation)) * factor
-    return String(a[key] ?? '').localeCompare(String(b[key] ?? ''), 'zh-Hant') * factor
-  })
-})
+const weightTotal = computed(() => ['structureWeight', 'areaWeight', 'siteAreaWeight', 'floorWeight', 'cityWeight', 'yearWeight'].reduce((sum, key) => sum + Number(form.value[key] ?? 0), 0))
 
 const filteredMaterials = computed(() => materials.value.filter(item => {
   if (materialFilter.value.search && !`${item.materialName} ${item.categoryName}`.toLowerCase().includes(materialFilter.value.search.toLowerCase())) return false
@@ -97,27 +71,17 @@ function formatDate(value: string) {
   return value ? new Date(value).toLocaleString('zh-TW') : '尚無紀錄'
 }
 
-function sortCore(key: CoreSortKey) {
-  coreSort.value = coreSort.value.key === key
-    ? { key, direction: coreSort.value.direction === 'asc' ? 'desc' : 'asc' }
-    : { key, direction: key === 'validProjectCount' ? 'desc' : 'asc' }
-}
-
-function coreSortIndicator(key: CoreSortKey) {
-  return coreSort.value.key === key ? (coreSort.value.direction === 'asc' ? '↑' : '↓') : '↕'
-}
-
 async function loadSettings() {
-  const response = await api<{ settings: SettingsRecord; coreMaterials: CoreMaterial[] }>('/settings')
+  const response = await api<{ settings: SettingsRecord }>('/settings')
   settings.value = response.settings
-  coreMaterials.value = response.coreMaterials
   const s = response.settings
   form.value = {
     topK: Number(s.topK), minimumSampleCount: Number(s.minimumSampleCount),
     lowerQuantilePercent: Number(s.lowerQuantile) * 100, medianQuantilePercent: Number(s.medianQuantile) * 100, upperQuantilePercent: Number(s.upperQuantile) * 100,
     similarityExponent: Number(s.similarityExponent), timeHalfLifeYears: Number(s.timeHalfLifeYears), minimumSimilarityScore: Number(s.minimumSimilarityScore),
-    structureWeight: Number(s.structureWeight), areaWeight: Number(s.areaWeight), floorWeight: Number(s.floorWeight), yearWeight: Number(s.yearWeight), cityWeight: Number(s.cityWeight),
+    structureWeight: Number(s.structureWeight), areaWeight: Number(s.areaWeight), siteAreaWeight: Number(s.siteAreaWeight), floorWeight: Number(s.floorWeight), yearWeight: Number(s.yearWeight), cityWeight: Number(s.cityWeight),
     areaDifferenceCutoffPercent: Number(s.areaDifferenceCutoffRatio) * 100,
+    siteAreaDifferenceCutoffPercent: Number(s.siteAreaDifferenceCutoffRatio) * 100,
     groundFloorPenaltyPercent: Number(s.groundFloorPenaltyRatio) * 100,
     basementFloorPenaltyPercent: Number(s.basementFloorPenaltyRatio) * 100,
     yearDifferenceCutoffYears: Number(s.yearDifferenceCutoffYears),
@@ -157,18 +121,13 @@ async function saveSettings() {
     topK: f.topK, minimumSampleCount: f.minimumSampleCount,
     lowerQuantile: f.lowerQuantilePercent / 100, medianQuantile: f.medianQuantilePercent / 100, upperQuantile: f.upperQuantilePercent / 100,
     similarityExponent: f.similarityExponent, timeHalfLifeYears: f.timeHalfLifeYears, minimumSimilarityScore: f.minimumSimilarityScore,
-    structureWeight: f.structureWeight, areaWeight: f.areaWeight, floorWeight: f.floorWeight, yearWeight: f.yearWeight, cityWeight: f.cityWeight,
+    structureWeight: f.structureWeight, areaWeight: f.areaWeight, siteAreaWeight: f.siteAreaWeight, floorWeight: f.floorWeight, yearWeight: f.yearWeight, cityWeight: f.cityWeight,
     areaDifferenceCutoffRatio: f.areaDifferenceCutoffPercent / 100,
+    siteAreaDifferenceCutoffRatio: f.siteAreaDifferenceCutoffPercent / 100,
     groundFloorPenaltyRatio: f.groundFloorPenaltyPercent / 100,
     basementFloorPenaltyRatio: f.basementFloorPenaltyPercent / 100,
     yearDifferenceCutoffYears: f.yearDifferenceCutoffYears,
   }) }), '模型參數已更新。', 'settings')
-}
-
-async function toggleCore(item: CoreMaterial) {
-  await run(() => api('/settings/core-material', { method: 'PUT', body: JSON.stringify({
-    materialId: item.materialId, projectType: item.projectType, structureType: item.structureType, isCoreEstimation: !item.isCoreEstimation,
-  }) }), '核心材料狀態已更新。', 'settings')
 }
 
 async function createCategory() { if (await run(() => apiForm('/material-category/create', formData({ categoryName: newCategory.value })), '材料分類已新增。', 'masters')) { newCategory.value = ''; showCreateCategory.value = false } }
@@ -202,32 +161,24 @@ onMounted(async () => {
 <template>
   <div class="settings-page mt-4">
     <h2 class="page-title">參數管理</h2>
-    <div class="page-description">管理估算與異常模型、核心材料及材料主檔設定。</div>
+    <div class="page-description">管理相似建案、合理區間與材料／單位主檔設定。</div>
     <div v-if="error" class="alert alert-danger"><strong>注意：</strong> {{ error }}</div>
     <div v-if="message" class="alert alert-success alert-dismissible"><strong>成功：</strong> {{ message }}<button type="button" class="btn-close" @click="message = ''"></button></div>
 
     <div class="settings-card">
       <ul class="nav nav-tabs">
         <li class="nav-item"><button class="nav-link" :class="{ active: tab === 'model' }" @click="tab = 'model'">估算與異常模型</button></li>
-        <li class="nav-item"><button class="nav-link" :class="{ active: tab === 'core' }" @click="tab = 'core'">核心材料設定</button></li>
         <li class="nav-item"><button class="nav-link" :class="{ active: tab === 'masters' }" @click="tab = 'masters'">材料主檔管理</button></li>
       </ul>
 
       <div class="tab-content-area">
         <form v-if="tab === 'model'" @submit.prevent="saveSettings">
           <section class="model-section"><header><div class="section-title">樣本與合理區間</div><div class="section-description">設定每項材料採用的歷史案件數，以及 P15 / P50 / P85 合理用量區間。</div></header><div class="section-body"><div class="parameter-grid cols-2"><label><span>每項材料參考上限（Top K）</span><input v-model.number="form.topK" type="number" min="1" required /><small>每項材料最多採用多少個相似歷史建案。</small></label><label><span>最低有效樣本數</span><input v-model.number="form.minimumSampleCount" type="number" min="1" required /><small>低於此數量時，不進行合理區間與異常判定。</small></label></div><div class="parameter-grid cols-3 mt-3"><label v-for="entry in [['lowerQuantilePercent','合理區間下界（P15）'],['medianQuantilePercent','參考中位數（P50）'],['upperQuantilePercent','合理區間上界（P85）']]" :key="entry[0]"><span>{{ entry[1] }}</span><div class="input-group"><input v-model.number="form[entry[0]]" type="number" min="0" max="100" step="0.1" required /><span class="input-group-text">%</span></div></label></div></div></section>
-          <section class="model-section"><header class="between"><div><div class="section-title">相似建案權重</div><div class="section-description">控制結構、面積、樓層、縣市與年份對建案相似度的影響。</div></div><div class="weight-total">權重合計 <strong>{{ weightTotal }}</strong></div></header><div class="section-body"><div class="parameter-grid cols-5"><label v-for="entry in [['structureWeight','結構權重'],['areaWeight','面積權重'],['floorWeight','樓層權重'],['cityWeight','縣市權重'],['yearWeight','年份權重']]" :key="entry[0]"><span>{{ entry[1] }}</span><input v-model.number="form[entry[0]]" type="number" min="0" step="0.1" required /></label></div></div></section>
+          <section class="model-section"><header class="between"><div><div class="section-title">相似建案權重</div><div class="section-description">控制結構、總樓地板面積、基地面積、樓層、縣市與年份對建案相似度的影響。</div></div><div class="weight-total">權重合計 <strong>{{ weightTotal }}</strong></div></header><div class="section-body"><div class="parameter-grid cols-3"><label v-for="entry in [['structureWeight','結構權重'],['areaWeight','樓地板面積權重'],['siteAreaWeight','基地面積權重'],['floorWeight','樓層權重'],['cityWeight','縣市權重'],['yearWeight','年份權重']]" :key="entry[0]"><span>{{ entry[1] }}</span><input v-model.number="form[entry[0]]" type="number" min="0" step="0.1" required /></label></div></div></section>
           <section class="model-section"><header><div class="section-title">相似度與時間控制</div><div class="section-description">設定相似案件門檻、高相似案件的加權程度與歷史資料的時間衰減。</div></header><div class="section-body"><div class="parameter-grid cols-4"><label><span>相似度強化指數</span><input v-model.number="form.similarityExponent" type="number" min="0.1" step="0.1" required /></label><label><span>最低相似度</span><div class="input-group"><input v-model.number="form.minimumSimilarityScore" type="number" min="0" max="100" step="0.1" required /><span class="input-group-text">分</span></div></label><label><span>時間半衰期</span><div class="input-group"><input v-model.number="form.timeHalfLifeYears" type="number" min="0.1" step="0.1" required /><span class="input-group-text">年</span></div></label><label><span>年份差距截止</span><div class="input-group"><input v-model.number="form.yearDifferenceCutoffYears" type="number" min="1" required /><span class="input-group-text">年</span></div></label></div></div></section>
-          <section class="model-section"><header><div class="section-title">差距懲罰</div><div class="section-description">控制面積與樓層差異造成的相似度扣分程度。</div></header><div class="section-body"><div class="parameter-grid cols-3"><label v-for="entry in [['areaDifferenceCutoffPercent','面積差距截止比例'],['groundFloorPenaltyPercent','地上樓層懲罰比例'],['basementFloorPenaltyPercent','地下樓層懲罰比例']]" :key="entry[0]"><span>{{ entry[1] }}</span><div class="input-group"><input v-model.number="form[entry[0]]" type="number" min="0" max="100" step="0.1" required /><span class="input-group-text">%</span></div></label></div></div></section>
+          <section class="model-section"><header><div class="section-title">差距懲罰</div><div class="section-description">控制樓地板面積、基地面積與樓層差異造成的相似度扣分程度。</div></header><div class="section-body"><div class="parameter-grid cols-4"><label v-for="entry in [['areaDifferenceCutoffPercent','樓地板面積差距截止比例'],['siteAreaDifferenceCutoffPercent','基地面積差距截止比例'],['groundFloorPenaltyPercent','地上樓層懲罰比例'],['basementFloorPenaltyPercent','地下樓層懲罰比例']]" :key="entry[0]"><span>{{ entry[1] }}</span><div class="input-group"><input v-model.number="form[entry[0]]" type="number" min="0" max="100" step="0.1" required /><span class="input-group-text">%</span></div></label></div></div></section>
           <div class="save-bar"><div class="text-muted small">最後更新：{{ formatDate(updatedAt) }}<span v-if="updatedBy"> ／ {{ updatedBy }}</span></div><button class="btn-save" type="submit" :disabled="loading">{{ loading ? '儲存中...' : '儲存模型參數' }}</button></div>
         </form>
-
-        <div v-else-if="tab === 'core'">
-          <div class="mb-3"><div class="fw-bold">核心材料快速估算設定</div><div class="text-muted small">依建案類型與結構篩選材料；有效建案數才是模型可使用的樣本數。</div></div>
-          <section class="section-card"><header><div class="section-title">材料篩選</div><div class="section-description">建議先選擇建案類型與結構，再依有效歷史建案數挑選核心材料。</div></header><div class="section-body"><div class="row g-3"><div class="col-lg-3 col-md-6"><label class="form-label fw-bold">建案類型</label><select v-model="coreFilter.projectType" class="form-select"><option value="">全部</option><option v-for="entry in projectTypes" :key="entry" :value="entry">{{ entry }}</option></select></div><div class="col-lg-3 col-md-6"><label class="form-label fw-bold">結構類型</label><select v-model="coreFilter.structureType" class="form-select"><option value="">全部</option><option v-for="entry in structureTypes" :key="entry" :value="entry">{{ entry }}</option></select></div><div class="col-lg-3 col-md-6"><label class="form-label fw-bold">材料類別</label><select v-model="coreFilter.category" class="form-select"><option value="">全部</option><option v-for="entry in coreCategories" :key="entry" :value="entry">{{ entry }}</option></select></div><div class="col-lg-3 col-md-6"><label class="form-label fw-bold">資料狀態</label><select v-model="coreFilter.dataStatus" class="form-select"><option value="available">有歷史資料</option><option value="">全部</option><option value="empty">尚無歷史資料</option></select></div><div class="col-12"><label class="form-label fw-bold">搜尋材料</label><input v-model="coreFilter.search" class="form-control" placeholder="輸入材料名稱，例如：SD420、混凝土、模板..." /></div></div></div></section>
-          <div class="d-flex justify-content-between mb-2 text-muted small"><span>目前顯示 <strong>{{ filteredCore.length }}</strong> 筆材料情境</span><span>※ 同一材料在不同「建案類型 × 結構」會分開統計</span></div>
-          <div class="admin-table-wrapper"><table class="admin-table"><thead><tr><th v-for="entry in ([['materialName','材料'],['category','類別'],['projectType','建案類型'],['structureType','結構'],['validProjectCount','有效建案數'],['historyRowCount','歷史筆數'],['coreEnabled','核心估算']] as const)" :key="entry[0]" class="sortable-th" @click="sortCore(entry[0])">{{ entry[1] }} <span class="sort-indicator">{{ coreSortIndicator(entry[0]) }}</span></th></tr></thead><tbody><tr v-for="item in filteredCore" :key="`${item.materialId}-${item.projectType}-${item.structureType}`"><td>{{ item.materialName }} <span class="text-muted">({{ item.unitName }})</span></td><td>{{ item.category || '未分類' }}</td><td><span class="badge bg-secondary">{{ item.projectType || '通用' }}</span></td><td><span class="badge bg-secondary">{{ item.structureType || '通用' }}</span></td><td><strong>{{ item.validProjectCount ?? 0 }}</strong> 案</td><td>{{ item.historyRowCount ?? 0 }} 筆</td><td><div class="form-check form-switch d-inline-block"><input class="form-check-input" type="checkbox" :checked="item.isCoreEstimation" @change="toggleCore(item)" /></div></td></tr><tr v-if="!filteredCore.length"><td colspan="7" class="text-muted py-4">目前沒有符合條件的材料資料</td></tr></tbody></table></div>
-        </div>
 
         <div v-else>
           <ul class="nav nav-tabs mb-3"><li class="nav-item" v-for="entry in ([['categories','材料分類'],['units','標準單位'],['materials','標準材料']] as const)" :key="entry[0]"><button class="nav-link" :class="{ active: masterTab === entry[0] }" @click="masterTab = entry[0]">{{ entry[1] }}</button></li></ul>
@@ -280,7 +231,6 @@ onMounted(async () => {
 .weight-total { background: #ebe8ff; color: #321fdb; border: 1px solid #d9d4ff; border-radius: 6px; padding: 6px 10px; font-size: 12px; white-space: nowrap; }
 .save-bar { display: flex; justify-content: space-between; align-items: center; gap: 16px; padding: 12px 2px 0; }.btn-save { background: #321fdb; color: #fff; border: 0; border-radius: 6px; padding: 9px 22px; font-weight: 800; }
 .admin-table-wrapper { overflow-x: auto; }.admin-table { width: 100%; border-collapse: collapse; font-size: 14px; }.admin-table thead th { background: #5b5f63; color: #fff; padding: 11px 14px; text-align: center; white-space: nowrap; }.admin-table tbody td { padding: 11px 14px; border-bottom: 1px solid #e5e7eb; text-align: center; vertical-align: middle; }.admin-table tbody tr:hover { background: #f8f9fa; }
-.sortable-th { cursor: pointer; user-select: none; }.sort-indicator { display: inline-block; min-width: 1em; margin-left: 3px; }
 .modal-layer { position: fixed; inset: 0; z-index: 1080; display: grid; place-items: center; padding: 1.5rem; background: rgba(0,0,0,.5); }.modal-layer .modal-dialog { width: min(500px,100%); margin: auto; }
 @media (max-width: 1200px) { .parameter-grid.cols-5 { grid-template-columns: repeat(3,1fr); }.parameter-grid.cols-4 { grid-template-columns: repeat(2,1fr); } }
 @media (max-width: 760px) { .parameter-grid.cols-2,.parameter-grid.cols-3,.parameter-grid.cols-4,.parameter-grid.cols-5 { grid-template-columns: 1fr; }.model-section header.between,.save-bar { align-items: stretch; flex-direction: column; } }
