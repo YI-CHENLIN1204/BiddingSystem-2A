@@ -103,6 +103,7 @@ namespace 崴正.Services
                 int qtyCol = -1;       // 數量
                 int priceCol = -1;     // 單價
                 int amountCol = -1;    // 複價 / 金額
+                int explicitMajorCategoryCol = -1; // 來源表中的逐列工程大項/工種分類
                 bool headerDetected = false;
 
                 for (int row = 1; row <= lastRow; row++)
@@ -129,6 +130,9 @@ namespace 崴正.Services
                     {
                         headerDetected = true;
                    
+
+                        explicitMajorCategoryCol = values.FindIndex(v =>
+                            NormalizeText(v) is "工種分類" or "工程大項" or "大項分類");
 
                         DetectColumns(
                             values,
@@ -242,7 +246,9 @@ namespace 崴正.Services
                         SheetName = ws.Name,
                         RowNumber = row,
                         ItemCode = col1,
-                        Category1 = currentCategory1,
+                        Category1 = !string.IsNullOrWhiteSpace(GetCell(values, explicitMajorCategoryCol))
+                            ? GetCell(values, explicitMajorCategoryCol)
+                            : currentCategory1,
                         Category2 = currentCategory2,
                         Category3 = currentCategory3,
                         ItemName = itemName,
