@@ -90,8 +90,19 @@ if (string.IsNullOrWhiteSpace(connectionString))
     );
 }
 
+// 暫時性診斷設定：避免重用 Supabase Pooler 已關閉的連線。
+// 驗證連線穩定後，再依實測恢復連線池與調校效能。
+var diagnosticConnectionString = new Npgsql.NpgsqlConnectionStringBuilder(connectionString)
+{
+    Pooling = false
+}.ConnectionString;
+
 builder.Services.AddDbContext<ApplicationDbContext>(options =>
-    options.UseNpgsql(connectionString));
+    options.UseNpgsql(diagnosticConnectionString, npgsql =>
+        npgsql.EnableRetryOnFailure(
+            maxRetryCount: 2,
+            maxRetryDelay: TimeSpan.FromSeconds(3),
+            errorCodesToAdd: null)));
 
 builder.Services.AddEndpointsApiExplorer();
 builder.Services.AddSwaggerGen();
