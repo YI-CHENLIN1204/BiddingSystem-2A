@@ -137,67 +137,8 @@ app.UseRouting();
 app.UseCors("Frontend");
 
 
-// ==========================================
-// 資料密集型 Request 共用同一條 DB Connection
-// ==========================================
-
-app.Use(async (context, next) =>
-{
-    var path =
-        context.Request.Path;
-
-    bool useSharedDbConnection =
-        path.StartsWithSegments("/api/Estimation") ||
-        path.StartsWithSegments("/api/detection-category") ||
-        path.StartsWithSegments("/api/major-category-price") ||
-        path.StartsWithSegments("/api/analysis-cases");
-
-    if (!useSharedDbConnection)
-    {
-        await next();
-        return;
-    }
-
-
-    var db =
-        context.RequestServices
-            .GetRequiredService<ApplicationDbContext>();
-
-
-    var connection =
-        db.Database
-            .GetDbConnection();
-
-
-    bool connectionWasOpen =
-        connection.State ==
-        ConnectionState.Open;
-
-
-    if (!connectionWasOpen)
-    {
-
-        await db.Database
-            .OpenConnectionAsync();
-    }
-
-
-    try
-    {
-        await next();
-    }
-    finally
-    {
-        if (!connectionWasOpen)
-        {
-
-            await db.Database
-                .CloseConnectionAsync();
-
-        }
-    }
-});
-
+// 資料庫連線由 EF Core / Npgsql 依照查詢與交易生命週期管理。
+// 不在每個 HTTP request 手動保持長連線，避免 pooler 中斷造成後續查詢失敗。
 
 app.MapControllers();
 
