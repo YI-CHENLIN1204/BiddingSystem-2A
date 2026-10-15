@@ -292,6 +292,23 @@ async function updateMapping(item: BidItem) {
   }
 }
 
+async function excludeQuantityHistory(item: BidItem) {
+  openMenuId.value = null
+  if (!window.confirm(`確定保留「${item.itemName}」的工程價格，僅排除鋼筋／混凝土數量歷史嗎？`)) return
+  busyId.value = item.finalBidItemId
+  error.value = ''
+  try {
+    const form = new FormData()
+    form.append('finalBidItemId', String(item.finalBidItemId))
+    await apiForm('/Estimation/exclude-quantity-history', form)
+    await reloadRelated('已保留工程價格，並排除材料數量歷史。')
+  } catch (caught) {
+    error.value = caught instanceof Error ? caught.message : '排除數量歷史失敗'
+  } finally {
+    busyId.value = null
+  }
+}
+
 async function setIgnored(item: BidItem, ignored: boolean) {
   openMenuId.value = null
   const prompt = ignored
@@ -623,6 +640,7 @@ onMounted(async () => {
                 <button class="btn btn-sm btn-light border" type="button" :disabled="isHistoryLocked" @click="openMenuId = openMenuId === item.finalBidItemId ? null : item.finalBidItemId">⋯</button>
                 <div v-if="openMenuId === item.finalBidItemId" class="dropdown-menu dropdown-menu-end show">
                   <button class="dropdown-item" type="button" @click="openEdit(item)">編輯工項</button>
+                  <button v-if="!isHistoryLocked" class="dropdown-item text-primary" type="button" :disabled="busyId === item.finalBidItemId" @click="excludeQuantityHistory(item)">{{ item.isIgnored ? "恢復價格／排除數量歷史" : "僅排除數量歷史" }}</button>
                   <button v-if="item.isIgnored" class="dropdown-item" type="button" @click="setIgnored(item, false)">取消忽略</button>
                   <button v-else class="dropdown-item text-danger" type="button" @click="setIgnored(item, true)">忽略此工項</button>
                 </div>
