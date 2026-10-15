@@ -246,6 +246,58 @@ namespace 崴正.Services
             }
         }
 
+        // 僅移除「材料數量歷史」對應；保留原始明細與結構體工程價格。
+        public ServiceResult ExcludeQuantityHistory(long finalBidItemId, string actionUser)
+        {
+            using var transaction = _context.Database.BeginTransaction();
+            try
+            {
+                var bidItem = _context.FinalBidItems
+                    .Include(x => x.ProjectMaster)
+                    .FirstOrDefault(x => x.FinalBidItemId == finalBidItemId);
+                if (bidItem == null) return ServiceResult.NotFound("找不到此工項");
+                if (IsProjectHistoryApproved(bidItem))
+                    return ServiceResult.Conflict("已核准歷史必須先 Reopen History Review 才能修改。");
+
+                int? previousMaterialId = bidItem.MaterialId;
+                bidItem.MaterialId = null;
+                bidItem.Material = null;
+                bidItem.MappingStatus = "Pending";
+                bidItem.MappingIssueCode = "EXCLUDED_FROM_QUANTITY_HISTORY";
+                bidItem.MappingIssueMessage = "人工確認為施工、試驗或其他非材料數量工項；保留大項價格。";
+                bidItem.MatchedKeyword = null;
+                bidItem.IsIgnored = false;
+                var issue = EvaluateDataIssues(bidItem.Qty, bidItem.UnitPrice, bidItem.Unit, null);
+                bidItem.DataIssueCode = issue.Code;
+                bidItem.DataIssueMessage = issue.Message;
+                bidItem.UpdatedAt = DateTime.UtcNow;
+
+                var oldTransactions = _context.HistoricalTransactions
+                    .Where(x => x.FinalBidItemId == finalBidItemId).ToList();
+                foreach (var history in oldTransactions) history.IsDeleted = true;
+
+                _auditLogService.AddLog(
+                    module: "決標工項",
+                    actionType: "ExcludeQuantityHistory",
+                    entityType: "FinalBidItem",
+                    entityId: bidItem.FinalBidItemId,
+                    description: $"工項「{bidItem.ItemName}」保留結構體價格，僅排除材料數量歷史",
+                    actionUser: actionUser,
+                    projectId: bidItem.ProjectMasterId,
+                    oldValue: new { materialId = previousMaterialId },
+                    newValue: new { quantityHistoryExcluded = true, isIgnored = false });
+
+                _context.SaveChanges();
+                transaction.Commit();
+                return ServiceResult.Ok(new { message = "已保留工程價格並排除材料數量歷史" });
+            }
+            catch
+            {
+                transaction.Rollback();
+                throw;
+            }
+        }
+
         public ServiceResult IgnoreBidItem(
             long finalBidItemId,string actionUser)
         {
