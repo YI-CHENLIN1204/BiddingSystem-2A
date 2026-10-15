@@ -282,6 +282,13 @@ namespace 崴正.Controllers
             return ToActionResult(result);
         }
 
+        [HttpPost("exclude-quantity-history")]
+        public IActionResult ExcludeQuantityHistory([FromForm] long finalBidItemId)
+        {
+            string actionUser = User?.Identity?.Name ?? "Estimator_Staff";
+            return ToActionResult(_finalBidService.ExcludeQuantityHistory(finalBidItemId, actionUser));
+        }
+
         [HttpPost("ignore-bid-item")]
         public IActionResult IgnoreBidItem(
             [FromForm] long finalBidItemId)
