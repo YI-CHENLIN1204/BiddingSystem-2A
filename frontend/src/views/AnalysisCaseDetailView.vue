@@ -764,9 +764,13 @@ onMounted(loadCase)
 .current-mark { padding: 2px 5px; color: #176e50; background: #e8f8f1; border-radius: 5px; font-size: 10px; }
 .version-header { align-items: flex-start; }
 .version-note { max-width: 42%; padding: 7px 10px; color: #526079; background: #f7f9fc; border-radius: 6px; font-size: 12px; }
-.analysis-actions { display: flex; justify-content: space-between; align-items: end; gap: 18px; }
-.action-controls { display: grid; grid-template-columns: 120px auto minmax(180px, 230px) auto; gap: 8px; align-items: end; }
+.analysis-actions { display: flex; flex-direction: column; align-items: stretch; gap: 16px; }
+.analysis-actions > div { min-width: 0; }
+.action-controls { display: grid; width: 100%; grid-template-columns: minmax(0, 1fr) minmax(0, 1fr); gap: 12px; align-items: end; }
+.action-controls > * { min-width: 0; width: 100%; }
 .action-controls label span { display: block; margin-bottom: 5px; color: var(--muted); font-size: 11px; font-weight: 700; }
+.action-controls .btn, .action-controls .form-control, .action-controls .form-select { min-height: 44px; width: 100%; }
+.action-controls .btn { display: flex; align-items: center; justify-content: center; padding: 9px 14px; line-height: 1.35; white-space: normal; text-align: center; }
 .item-name { font-weight: 700; }
 .number { text-align: right; font-variant-numeric: tabular-nums; }
 .major-tag { display: inline-block; padding: 4px 7px; color: #34425d; background: #eef1f5; border-radius: 5px; font-size: 12px; font-weight: 700; }
