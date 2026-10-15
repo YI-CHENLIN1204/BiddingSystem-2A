@@ -97,12 +97,11 @@ var diagnosticConnectionString = new Npgsql.NpgsqlConnectionStringBuilder(connec
     Pooling = false
 }.ConnectionString;
 
+// 暫時保留停用用戶端 pooling 的連線診斷設定。
+// 不啟用全域 EnableRetryOnFailure：既有匯入、審核和發布流程使用明確交易，
+ // 必須先逐一改為 execution strategy 包裹整筆交易，才能安全重試。
 builder.Services.AddDbContext<ApplicationDbContext>(options =>
-    options.UseNpgsql(diagnosticConnectionString, npgsql =>
-        npgsql.EnableRetryOnFailure(
-            maxRetryCount: 2,
-            maxRetryDelay: TimeSpan.FromSeconds(3),
-            errorCodesToAdd: null)));
+    options.UseNpgsql(diagnosticConnectionString));
 
 builder.Services.AddEndpointsApiExplorer();
 builder.Services.AddSwaggerGen();
