@@ -277,7 +277,7 @@ async function saveItem() {
 }
 
 async function excludeQuantityHistory(item: BidItem) {
-  if (!window.confirm(`確定「${item.itemName}」只排除鋼筋／混凝土數量歷史？\\n工程大項價格與原始工項仍保留。`)) return
+  if (!window.confirm(`確定「${item.itemName}」只排除鋼筋／混凝土數量歷史？\n工程大項價格與原始工項仍保留。`)) return
   busyId.value = item.finalBidItemId
   try {
     const form = new FormData()
