@@ -786,7 +786,20 @@ namespace 崴正.Services
             }
             catch (Exception ex)
             {
-                transaction.Rollback();
+                // 若 Npgsql 連線已中斷，Rollback 本身也可能拋出例外。
+                // 不能讓第二個例外覆蓋原始寫入失敗原因。
+                try
+                {
+                    transaction.Rollback();
+                }
+                catch (Exception rollbackEx)
+                {
+                    Console.Error.WriteLine(
+                        "[FinalBidImport] Rollback failed: " + rollbackEx);
+                }
+
+                Console.Error.WriteLine(
+                    "[FinalBidImport] Import failed: " + ex);
 
                 return ServiceResult.Validation(
                     "決標標單回寫失敗：" +
