@@ -700,9 +700,17 @@ namespace 崴正.Services
                     }
                 );
             }
-            catch
+            catch (Exception ex)
             {
-                await transaction.RollbackAsync();
+                Console.Error.WriteLine("[PublishHistory] Original failure: " + ex);
+                try
+                {
+                    await transaction.RollbackAsync();
+                }
+                catch (Exception rollbackEx)
+                {
+                    Console.Error.WriteLine("[PublishHistory] Rollback failed: " + rollbackEx);
+                }
                 throw;
             }
         }
