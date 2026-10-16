@@ -238,10 +238,14 @@ namespace 崴正.Services
                     historyAction
                 });
             }
-            catch
+            catch (Exception ex)
             {
-                transaction.Rollback();
-
+                Console.Error.WriteLine("[FinalBidTransaction] Operation failed: " + ex);
+                try { transaction.Rollback(); }
+                catch (Exception rollbackEx)
+                {
+                    Console.Error.WriteLine("[FinalBidTransaction] Rollback also failed: " + rollbackEx);
+                }
                 throw;
             }
         }
@@ -291,9 +295,14 @@ namespace 崴正.Services
                 transaction.Commit();
                 return ServiceResult.Ok(new { message = "已保留工程價格並排除材料數量歷史" });
             }
-            catch
+            catch (Exception ex)
             {
-                transaction.Rollback();
+                Console.Error.WriteLine("[FinalBidTransaction] Operation failed: " + ex);
+                try { transaction.Rollback(); }
+                catch (Exception rollbackEx)
+                {
+                    Console.Error.WriteLine("[FinalBidTransaction] Rollback also failed: " + rollbackEx);
+                }
                 throw;
             }
         }
@@ -394,9 +403,14 @@ namespace 崴正.Services
                         $"已忽略「{bidItem.ItemName}」"
                 });
             }
-            catch
+            catch (Exception ex)
             {
-                transaction.Rollback();
+                Console.Error.WriteLine("[FinalBidTransaction] Operation failed: " + ex);
+                try { transaction.Rollback(); }
+                catch (Exception rollbackEx)
+                {
+                    Console.Error.WriteLine("[FinalBidTransaction] Rollback also failed: " + rollbackEx);
+                }
                 throw;
             }
         }
@@ -517,9 +531,14 @@ namespace 崴正.Services
                     historyAction
                 });
             }
-            catch
+            catch (Exception ex)
             {
-                transaction.Rollback();
+                Console.Error.WriteLine("[FinalBidTransaction] Operation failed: " + ex);
+                try { transaction.Rollback(); }
+                catch (Exception rollbackEx)
+                {
+                    Console.Error.WriteLine("[FinalBidTransaction] Rollback also failed: " + rollbackEx);
+                }
                 throw;
             }
         }
@@ -1043,9 +1062,14 @@ namespace 崴正.Services
                     }
                 );
             }
-            catch
+            catch (Exception ex)
             {
-                transaction.Rollback();
+                Console.Error.WriteLine("[FinalBidTransaction] Operation failed: " + ex);
+                try { transaction.Rollback(); }
+                catch (Exception rollbackEx)
+                {
+                    Console.Error.WriteLine("[FinalBidTransaction] Rollback also failed: " + rollbackEx);
+                }
                 throw;
             }
         }
