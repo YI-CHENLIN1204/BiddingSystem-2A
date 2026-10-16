@@ -840,9 +840,14 @@ namespace 崴正.Services
                     }
                 );
             }
-            catch
+            catch (Exception ex)
             {
-                await transaction.RollbackAsync();
+                Console.Error.WriteLine("[DatabaseTransaction] Operation failed: " + ex);
+                try { await transaction.RollbackAsync(); }
+                catch (Exception rollbackEx)
+                {
+                    Console.Error.WriteLine("[DatabaseTransaction] Rollback also failed: " + rollbackEx);
+                }
                 throw;
             }
         }
@@ -945,9 +950,14 @@ namespace 崴正.Services
                         $"已刪除建案「{project.ProjectName}」"
                 });
             }
-            catch
+            catch (Exception ex)
             {
-                await transaction.RollbackAsync();
+                Console.Error.WriteLine("[DatabaseTransaction] Operation failed: " + ex);
+                try { await transaction.RollbackAsync(); }
+                catch (Exception rollbackEx)
+                {
+                    Console.Error.WriteLine("[DatabaseTransaction] Rollback also failed: " + rollbackEx);
+                }
                 throw;
             }
         }
