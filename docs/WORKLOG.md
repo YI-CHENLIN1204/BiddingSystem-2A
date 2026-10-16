@@ -214,3 +214,23 @@ Draft 建案不會參與模型。
 - **此批 Approved 不代表人工審核或真實標單，屬開發展示例外，不得供真實工程決策使用。**
 - 詳情見 `docs/DEMO_DATA_20261015.md`，清理腳本見 `scripts/cleanup_demo_2a_20261015.sql`。
 - 正式待辦：測歷史 Draft／Publish／Reopen 的完整操作，展示完先清除合成歷史，之後才進行真實歷史資料驗證。
+
+## 2026-10-16 — 資料庫交易穩定性集中修正（待整合驗證）
+
+觀察到的故障：Supabase Session Pooler 5432 間歇性 `NpgsqlException: Exception while reading from stream`、HTTP 500/504；發布批次寫入時連線中斷，Rollback 可能拋出次生例外。另全域 `EnableRetryOnFailure` 與既有顯式交易不相容，已撤回。
+
+本次修改：
+- `ProjectManagementService` 中 Publish 以外的明確交易也保護 Rollback，保留原始例外；Publish 原有的保護保持不變。
+- `FinalBidService` 五處交易全面保護 Rollback，原始例外寫入後端診斷記錄。
+- `FinalBidImportService` 原已保護 Rollback，未重複更動。
+- `ProjectDetailView.vue` 發布／重新開啟請求若 HTTP 回應失敗，先重新讀取建案狀態及歷史摘要；結果不明時警告不要連續重試，避免網路逾時誤認為資料未提交。
+- 未直接變更資料庫、未合併 main；仍保留 `Pooling=false` 作為暫時診斷，不視為長期效能調校。
+
+**未完成、不可宣稱正式修復**：尚未於使用者的本地 Docker 編譯／執行完整迴歸；Supabase Pooler 中斷的網路根因仍待定位。不可對顯式交易啟用未包裹完整交易的自動重試，避免重複寫入。
+
+整合驗證順序：
+1. `git status` / `git pull --ff-only`、`docker compose up -d --build`、`docker compose ps`，確認 dotnet 與 Vite Build 都通過。
+2. 讀取 Project #11 並確認 Approved／有效歷史交易 7 筆及總價 12,063,350，作為測試前狀態。
+3. 先驗證核准期間修改被拒絕，再做一次 Reopen，核對 Draft／有效交易 0 筆／保留完整 FinalBidItem。
+4. 修改非核心 Draft 工項後再 Publish，核對 Approved／有效交易不重複、結構體價格與試體試驗排除邏輯。
+5. 用操作紀錄及資料庫查詢比對每次交易，壓力測試連續查詢與短暫斷線；發生 500/504 應先回查資料庫狀態，不要直接重試寫入。
