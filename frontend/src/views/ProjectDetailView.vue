@@ -200,20 +200,46 @@ async function loadTwoASummary() {
   twoASummary.value = await api<ProjectTwoASummary>(`/projects/${projectId}/2a-summary`)
 }
 
+// Timeout or a broken connection does not prove that a write was rolled back.
+// Query the authoritative project state before reporting a failed publish/reopen.
+async function reconcileHistoryWrite(expectedStatus: 'Approved' | 'Draft', failure: unknown) {
+  const reason = failure instanceof Error ? failure.message : '伺服器連線失敗'
+  try {
+    await loadProject()
+    await Promise.all([loadHistory(), loadTwoASummary(), loadBidItems()])
+    if (project.value?.historyStatus === expectedStatus) {
+      message.value = expectedStatus === 'Approved'
+        ? '請求回應異常，但已重新查證資料庫：歷史基準目前為 Approved。'
+        : '請求回應異常，但已重新查證資料庫：歷史審核目前為 Draft。'
+      return
+    }
+    error.value = reason + '；重新查證後狀態未變更，請勿連續重試。'
+  } catch {
+    error.value = reason + '；目前無法確認資料庫是否已完成交易，請重新載入確認狀態後再操作，勿連續重試。'
+  }
+}
+
 async function publishHistory() {
   if (!project.value) return
   if (!window.confirm(
-    '確認將此建案納入 2A 歷史基準嗎？\n\n系統會依目前工程大項、材料對應、數量與單位建立鋼筋／混凝土歷史交易，並讓本案參與後續相似建案與結構體價格估算。'
+    '確認將此建案納入 2A 歷史基準嗎？\\n\\n系統會依目前工程大項、材料對應、數量與單位建立鋼筋／混凝土歷史交易，並讓本案參與後續相似建案與結構體價格估算。'
   )) return
 
   publishingHistory.value = true
   error.value = ''
+  message.value = ''
   try {
     await api(`/projects/${projectId}/publish-history`, { method: 'POST' })
+  } catch (caught) {
+    await reconcileHistoryWrite('Approved', caught)
+    publishingHistory.value = false
+    return
+  }
+  try {
     await Promise.all([loadProject(), loadHistory(), loadTwoASummary(), loadBidItems()])
     message.value = '此建案已確認並納入 2A 歷史基準。'
   } catch (caught) {
-    error.value = caught instanceof Error ? caught.message : '發布歷史基準失敗'
+    await reconcileHistoryWrite('Approved', caught)
   } finally {
     publishingHistory.value = false
   }
@@ -222,17 +248,24 @@ async function publishHistory() {
 async function reopenHistoryReview() {
   if (!project.value) return
   if (!window.confirm(
-    '確定重新開啟審核嗎？\n\n此建案會暫時退出 2A 模型，既有數量歷史交易會停用，修正完成後可再次發布。'
+    '確定重新開啟審核嗎？\\n\\n此建案會暫時退出 2A 模型，既有數量歷史交易會停用，修正完成後可再次發布。'
   )) return
 
   publishingHistory.value = true
   error.value = ''
+  message.value = ''
   try {
     await api(`/projects/${projectId}/reopen-history-review`, { method: 'POST' })
+  } catch (caught) {
+    await reconcileHistoryWrite('Draft', caught)
+    publishingHistory.value = false
+    return
+  }
+  try {
     await Promise.all([loadProject(), loadHistory(), loadTwoASummary(), loadBidItems()])
     message.value = '已重新開啟歷史基準審核。'
   } catch (caught) {
-    error.value = caught instanceof Error ? caught.message : '重新開啟審核失敗'
+    await reconcileHistoryWrite('Draft', caught)
   } finally {
     publishingHistory.value = false
   }
