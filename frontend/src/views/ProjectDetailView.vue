@@ -220,7 +220,7 @@ async function reconcileHistoryWrite(expectedStatus: 'Approved' | 'Draft', failu
 }
 
 async function publishHistory() {
-  if (!project.value) return
+  if (publishingHistory.value || !project.value) return
   if (!window.confirm(
     '確認將此建案納入 2A 歷史基準嗎？\\n\\n系統會依目前工程大項、材料對應、數量與單位建立鋼筋／混凝土歷史交易，並讓本案參與後續相似建案與結構體價格估算。'
   )) return
@@ -246,7 +246,7 @@ async function publishHistory() {
 }
 
 async function reopenHistoryReview() {
-  if (!project.value) return
+  if (publishingHistory.value || !project.value) return
   if (!window.confirm(
     '確定重新開啟審核嗎？\\n\\n此建案會暫時退出 2A 模型，既有數量歷史交易會停用，修正完成後可再次發布。'
   )) return
