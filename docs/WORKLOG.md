@@ -268,3 +268,17 @@ Draft 建案不會參與模型。
 ## 2026-10-17 — 正式 API 故障處理盤點及前端重入保護
 
 核對 ProjectsApiController、ProjectManagementService 與 ProjectDetailView：正式 Publish/Reopen 已有 PostgreSQL 建案級 advisory transaction lock 與 Approved/Draft 狀態檢查；因此相同建案的同步重複請求已有基於狀態的防護，但**尚未具備持久化 Idempotency-Key**。前端加入 publishingHistory 執行中直接拒絕再次觸發，可避免 UI 雙擊造成並行請求；不等於網路斷線重試的真正冪等保護。此階段未新增資料庫 schema、未更動 Project #8/#11。根因目前只能定位為曾發生連線讀取中斷與多處交易錯誤處理問題，尚無證據可單一定因於 Supabase、Npgsql 或 Nginx。待辦：設計包含唯一操作 ID、持久化狀態與唯一限制的寫入協定，使用獨立應用程式資料庫驗證，再部署至共用開發資料庫；勿在正式資料庫進行故障注入。新增前端變更尚待本機 Build。
+
+## 2026-10-17 — 正式 Publish/Reopen 持久操作收據（待部署/驗證）
+
+此次集中實作（尚未部署）：
+- scripts/migrations/20261017_history_operation_receipt.sql：新增 public.history_operation_receipt，operation_id UUID 主鍵、project_id/action_type/result_json/created_at，保留成功操作的持久化紀錄。**尚未在 Supabase 執行**。
+- 崴正/Models/HistoryOperationReceipt.cs + ApplicationDbContext：新增 EF Core 對應。
+- ProjectManagementService：在同建案 advisory transaction lock 取得後，若 Idempotency-Key 已有同建案同動作收據則回傳原結果；首次成功則將操作收據寫在同一個資料庫交易內，隨工項歷史與稽核一起 Commit。操作 ID 被不同建案/動作複用時回傳 Conflict。
+- ProjectsApiController：Publish/Reopen 接受可選 Idempotency-Key UUID header；新增 GET /api/projects/{projectId}/history-operation/{operationId} 提供成功收據查詢。
+- ProjectDetailView：使用 sessionStorage 保存尚未確定結果的操作 ID；首次成功清除，連線逾時後先讀成功收據，若查不到則保留識別碼、不斷言提交結果。UI 同時有 busy guard。
+- scripts/test-demo-history-idempotency.ps1：使用 DEMO #8 對同一動作以相同 key 重送，驗證結果與收據，再做 Reopen 並回到 Draft；資料庫交易數及稽核需後續人工 SQL 核對。
+
+**部署順序不可顛倒**：先備份/確認環境、在目標開發 Supabase 執行 migration，確認 schema；再更新程式碼和 Docker Build，最後執行 DEMO #8 測試、核對稽核；完成前不得把新前端搭配舊後端或反之視為穩定版本。舊第三方無 header 請求仍使用狀態鎖，但沒有持久鍵回放保障；正式全面冪等需另行決定是否強制要求 header。
+
+**本輪尚未在使用者本機 dotnet build / npm build、未執行 SQL migration、未實測 API；所有功能標註「待驗證」**。切勿在驗證之前宣稱正式修復。失敗時需保留 DB schema 並回滾應用版本，不應直接 drop receipt 表，以免丟失提交證據。
