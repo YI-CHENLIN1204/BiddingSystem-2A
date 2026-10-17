@@ -444,6 +444,10 @@ namespace 崴正.Services
 
             try
             {
+                // Serialize all history-state transitions per project, including across API instances.
+                // Advisory XACT lock automatically releases on commit/rollback/disconnect.
+                await _context.Database.ExecuteSqlInterpolatedAsync(
+                    $@"SELECT pg_advisory_xact_lock(2202, {projectId})");
                 var project =
                     await _context.ProjectMasters
                         .FirstOrDefaultAsync(x =>
@@ -664,8 +668,6 @@ namespace 崴正.Services
                 );
 
                 await _context.SaveChangesAsync();
-                await transaction.CommitAsync();
-
                 int activeHistoryCount =
                     await _context
                         .HistoricalTransactions
@@ -675,6 +677,8 @@ namespace 崴正.Services
                                 projectId &&
                             !x.IsDeleted
                         );
+
+                                await transaction.CommitAsync();
 
                 return ServiceResult.Ok(
                     new
@@ -727,6 +731,10 @@ namespace 崴正.Services
 
             try
             {
+                // Serialize all history-state transitions per project, including across API instances.
+                // Advisory XACT lock automatically releases on commit/rollback/disconnect.
+                await _context.Database.ExecuteSqlInterpolatedAsync(
+                    $@"SELECT pg_advisory_xact_lock(2202, {projectId})");
                 var project =
                     await _context.ProjectMasters
                         .FirstOrDefaultAsync(x =>
