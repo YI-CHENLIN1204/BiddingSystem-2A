@@ -294,3 +294,9 @@ Draft 建案不會參與模型。
 ## 2026-10-17 — 收據回查的非破壞性迴歸測試
 
 已檢查正式 API 與前端的持久操作收據回查邏輯，新增 `scripts/test-history-receipts-readonly.ps1`，讀取前次 DEMO #8 成功交易留下的 PublishHistory/ReopenHistoryReview UUID 收據，核對操作種類與建案 ID，另外確認 #8 Draft、#11 Approved。腳本只送 GET，不修改 Supabase，不需要 Docker rebuild。**尚待使用者本機執行**。剩餘風險：尚未注入正式 API 真實網路斷線／Commit 回應遺失；前端目前在無法查到收據時保留原操作 ID 並回報結果不明，不能因此認定交易成功或失敗。既有 API header 為可選，無 key 的非 UI 客戶端仍無跨請求重放保護。
+
+## 2026-10-17 — 操作收據唯讀迴歸已通過
+
+使用者於本機執行 `scripts/test-history-receipts-readonly.ps1`，回傳 `PASS: receipt PublishHistory`、`PASS: receipt ReopenHistoryReview`、`PASS: DEMO #8 Draft; Project #11 Approved. No writes issued.`。這項驗證確定先前提交的兩筆成功收據可由正式 API 再次讀取，並且本輪沒有資料庫寫入；不代表已完成正式 API 的連線斷線故障注入。
+
+程式碼檢查發現 PublishHistoryAsync/ReopenHistoryReviewAsync 在已開始的資料庫交易中有提前 return 的分支（成功收據重播、狀態衝突等），由 using Dispose 進行交易清理；未來可改為顯式早期分支處理並設計獨立故障注入，以降低例外處理和連線生命週期的歧義。尚未執行更動。
