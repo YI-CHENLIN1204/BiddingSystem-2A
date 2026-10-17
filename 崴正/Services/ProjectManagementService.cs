@@ -436,7 +436,8 @@ namespace 崴正.Services
         public async Task<ServiceResult>
             PublishHistoryAsync(
                 int projectId,
-                string? actionUser)
+                string? actionUser,
+                Guid? operationId = null)
         {
             using var transaction =
                 await _context.Database
@@ -448,6 +449,21 @@ namespace 崴正.Services
                 // Advisory XACT lock automatically releases on commit/rollback/disconnect.
                 await _context.Database.ExecuteSqlInterpolatedAsync(
                     $@"SELECT pg_advisory_xact_lock(2202, {projectId})");
+                                if (operationId.HasValue)
+                {
+                    var receipt = await _context.HistoryOperationReceipts
+                        .AsNoTracking()
+                        .FirstOrDefaultAsync(x => x.OperationId == operationId.Value);
+                    if (receipt != null)
+                    {
+                        if (receipt.ProjectId != projectId || receipt.ActionType != "PublishHistory")
+                            return ServiceResult.Conflict("此操作識別碼已被其他操作使用");
+                        return ServiceResult.Ok(
+                            System.Text.Json.JsonSerializer.Deserialize<System.Text.Json.JsonElement>(
+                                receipt.ResultJson));
+                    }
+                }
+
                 var project =
                     await _context.ProjectMasters
                         .FirstOrDefaultAsync(x =>
@@ -678,9 +694,9 @@ namespace 崴正.Services
                             !x.IsDeleted
                         );
 
-                await transaction.CommitAsync();
+                
 
-                return ServiceResult.Ok(
+                var resultPayload =
                     new
                     {
                         message =
@@ -702,8 +718,21 @@ namespace 崴正.Services
 
                         activeHistoryCount
                     }
-                );
-            }
+                ;
+                if (operationId.HasValue)
+                {
+                    _context.HistoryOperationReceipts.Add(new 崴正.Models.HistoryOperationReceipt
+                    {
+                        OperationId = operationId.Value,
+                        ProjectId = projectId,
+                        ActionType = "PublishHistory",
+                        ResultJson = System.Text.Json.JsonSerializer.Serialize(resultPayload),
+                        CreatedAt = DateTime.UtcNow
+                    });
+                    await _context.SaveChangesAsync();
+                }
+                await transaction.CommitAsync();
+                return ServiceResult.Ok(resultPayload);            }
             catch (Exception ex)
             {
                 Console.Error.WriteLine("[PublishHistory] Original failure: " + ex);
@@ -723,7 +752,8 @@ namespace 崴正.Services
         public async Task<ServiceResult>
             ReopenHistoryReviewAsync(
                 int projectId,
-                string? actionUser)
+                string? actionUser,
+                Guid? operationId = null)
         {
             using var transaction =
                 await _context.Database
@@ -735,6 +765,21 @@ namespace 崴正.Services
                 // Advisory XACT lock automatically releases on commit/rollback/disconnect.
                 await _context.Database.ExecuteSqlInterpolatedAsync(
                     $@"SELECT pg_advisory_xact_lock(2202, {projectId})");
+                                if (operationId.HasValue)
+                {
+                    var receipt = await _context.HistoryOperationReceipts
+                        .AsNoTracking()
+                        .FirstOrDefaultAsync(x => x.OperationId == operationId.Value);
+                    if (receipt != null)
+                    {
+                        if (receipt.ProjectId != projectId || receipt.ActionType != "ReopenHistoryReview")
+                            return ServiceResult.Conflict("此操作識別碼已被其他操作使用");
+                        return ServiceResult.Ok(
+                            System.Text.Json.JsonSerializer.Deserialize<System.Text.Json.JsonElement>(
+                                receipt.ResultJson));
+                    }
+                }
+
                 var project =
                     await _context.ProjectMasters
                         .FirstOrDefaultAsync(x =>
@@ -829,9 +874,9 @@ namespace 崴正.Services
                 );
 
                 await _context.SaveChangesAsync();
-                await transaction.CommitAsync();
+                
 
-                return ServiceResult.Ok(
+                var resultPayload =
                     new
                     {
                         message =
@@ -846,8 +891,21 @@ namespace 崴正.Services
                         disabledHistoricalTransactionCount =
                             histories.Count
                     }
-                );
-            }
+                ;
+                if (operationId.HasValue)
+                {
+                    _context.HistoryOperationReceipts.Add(new 崴正.Models.HistoryOperationReceipt
+                    {
+                        OperationId = operationId.Value,
+                        ProjectId = projectId,
+                        ActionType = "ReopenHistoryReview",
+                        ResultJson = System.Text.Json.JsonSerializer.Serialize(resultPayload),
+                        CreatedAt = DateTime.UtcNow
+                    });
+                    await _context.SaveChangesAsync();
+                }
+                await transaction.CommitAsync();
+                return ServiceResult.Ok(resultPayload);            }
             catch (Exception ex)
             {
                 Console.Error.WriteLine("[DatabaseTransaction] Operation failed: " + ex);
