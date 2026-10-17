@@ -248,3 +248,7 @@ Draft 建案不會參與模型。
 ## 2026-10-17 — DEMO #8 併發測試完成
 
 使用本機重建後 API 執行 scripts/test-demo-history-concurrent.ps1。雙重 Publish 回應 200/409，雙重 Reopen 回應 409/200；Supabase 核查 Project #8 最終 Draft、有效歷史交易 0、停用歷史交易 2，該測試時段 PublishHistoryBaseline 與 ReopenHistoryReview 稽核紀錄各 1 筆。Project #11 保持 Approved、7 筆有效交易。此結果證明本輪雙請求衝突保護有效，但不代表斷線故障注入、長時間高併發及端到端連線根因已完成驗證。
+
+## 2026-10-17 — 隔離資料庫故障測試（待執行）
+
+新增 scripts/test-isolated-postgres-failure.ps1：以 Docker 啟動獨立 postgres:17 容器（無對外 port、network none），在顯式交易先 INSERT 再強制 statement_timeout，確認失敗後不留部分提交，finally 清除容器。此為 PostgreSQL 原子性基礎測試，**不會測到本專案 Npgsql/EF Core 的連線中斷、Commit 回應遺失或應用程式重試安全性**。尚未在使用者本機執行，不能視為完成故障復原驗收。DEMO #8／Project #11 均不參與此測試。
