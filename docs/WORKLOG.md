@@ -244,3 +244,7 @@ Draft 建案不會參與模型。
 發現同一建案兩個並行請求可能通過狀態檢查。已在 PublishHistoryAsync、ReopenHistoryReviewAsync 的顯式交易起點使用 PostgreSQL pg_advisory_xact_lock(2202, projectId) 序列化相同建案的操作；交易結束或連線失效時自動解鎖。發布後的有效歷史交易計數移至 Commit 前，避免提交成功後再查詢失敗造成成功被誤報。
 
 新增 scripts/test-demo-history-concurrent.ps1，限制 DEMO #8，預期兩個同時 Publish 一個成功、另一個 409，Reopen 亦然；結束時回到 Draft。**尚未執行本機 Build 或併發測試，不能宣稱正式驗證通過**；須核對稽核紀錄與有效歷史交易，若錯誤立即停止，不能自動重試寫入。
+
+## 2026-10-17 — DEMO #8 併發測試完成
+
+使用本機重建後 API 執行 scripts/test-demo-history-concurrent.ps1。雙重 Publish 回應 200/409，雙重 Reopen 回應 409/200；Supabase 核查 Project #8 最終 Draft、有效歷史交易 0、停用歷史交易 2，該測試時段 PublishHistoryBaseline 與 ReopenHistoryReview 稽核紀錄各 1 筆。Project #11 保持 Approved、7 筆有效交易。此結果證明本輪雙請求衝突保護有效，但不代表斷線故障注入、長時間高併發及端到端連線根因已完成驗證。
