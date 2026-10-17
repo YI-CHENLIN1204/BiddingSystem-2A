@@ -200,22 +200,75 @@ async function loadTwoASummary() {
   twoASummary.value = await api<ProjectTwoASummary>(`/projects/${projectId}/2a-summary`)
 }
 
-// Timeout or a broken connection does not prove that a write was rolled back.
-// Query the authoritative project state before reporting a failed publish/reopen.
-async function reconcileHistoryWrite(expectedStatus: 'Approved' | 'Draft', failure: unknown) {
+// Persist a pending operation ID across page reloads. Never create a fresh
+// ID to retry a request whose commit outcome remains unknown.
+type HistoryAction = 'publish-history' | 'reopen-history-review'
+const pendingHistoryKey = (action: HistoryAction) => `history-operation:${projectId}:${action}`
+
+function getOrCreateHistoryOperation(action: HistoryAction): string {
+  const key = pendingHistoryKey(action)
+  let id = sessionStorage.getItem(key)
+  if (!id) {
+    id = crypto.randomUUID()
+    sessionStorage.setItem(key, id)
+  }
+  return id
+}
+function clearHistoryOperation(action: HistoryAction): void {
+  sessionStorage.removeItem(pendingHistoryKey(action))
+}
+async function reconcileHistoryWrite(
+  action: HistoryAction, operationId: string, expectedStatus: 'Approved' | 'Draft', failure: unknown,
+) {
   const reason = failure instanceof Error ? failure.message : '伺服器連線失敗'
   try {
-    await loadProject()
-    await Promise.all([loadHistory(), loadTwoASummary(), loadBidItems()])
-    if (project.value?.historyStatus === expectedStatus) {
-      message.value = expectedStatus === 'Approved'
-        ? '請求回應異常，但已重新查證資料庫：歷史基準目前為 Approved。'
-        : '請求回應異常，但已重新查證資料庫：歷史審核目前為 Draft。'
-      return
-    }
-    error.value = reason + '；重新查證後狀態未變更，請勿連續重試。'
+    // The receipt is committed in the SAME transaction as the history changes.
+    // A matching status by itself does not prove which request committed.
+    const receipt = await api<{ actionType: string }>(
+      `/projects/${projectId}/history-operation/${operationId}`,
+    )
+    const expectedAction = action === 'publish-history' ? 'PublishHistory' : 'ReopenHistoryReview'
+    if (receipt.actionType !== expectedAction) throw new Error('操作收據內容不符')
+    clearHistoryOperation(action)
+    await Promise.all([loadProject(), loadHistory(), loadTwoASummary(), loadBidItems()])
+    message.value = '原始請求已由資料庫操作收據確認成功；未重新執行寫入。'
+    return
   } catch {
-    error.value = reason + '；目前無法確認資料庫是否已完成交易，請重新載入確認狀態後再操作，勿連續重試。'
+    // The receipt endpoint can also fail transiently. Preserve the key.
+    try {
+      await loadProject()
+      await Promise.all([loadHistory(), loadTwoASummary(), loadBidItems()])
+      error.value = reason +
+        `；目前狀態為 ${project.value?.historyStatus ?? '未知'}，但尚未確認這次操作是否提交。已保留原操作識別碼，請勿重新建立新操作。`
+    } catch {
+      error.value = reason + '；操作結果尚未確認，原操作識別碼已保留，請勿連續重試。'
+    }
+  }
+}
+
+async function runHistoryTransition(
+  action: HistoryAction, expectedStatus: 'Approved' | 'Draft', successMessage: string,
+) {
+  publishingHistory.value = true
+  error.value = ''
+  message.value = ''
+  const operationId = getOrCreateHistoryOperation(action)
+  try {
+    await api(`/projects/${projectId}/${action}`, {
+      method: 'POST', headers: { 'Idempotency-Key': operationId },
+    })
+    clearHistoryOperation(action)
+    try {
+      await Promise.all([loadProject(), loadHistory(), loadTwoASummary(), loadBidItems()])
+      message.value = successMessage
+    } catch (caught) {
+      error.value = '資料庫操作已確認成功，但重新載入畫面失敗：' +
+        (caught instanceof Error ? caught.message : '未知錯誤')
+    }
+  } catch (caught) {
+    await reconcileHistoryWrite(action, operationId, expectedStatus, caught)
+  } finally {
+    publishingHistory.value = false
   }
 }
 
@@ -224,25 +277,7 @@ async function publishHistory() {
   if (!window.confirm(
     '確認將此建案納入 2A 歷史基準嗎？\\n\\n系統會依目前工程大項、材料對應、數量與單位建立鋼筋／混凝土歷史交易，並讓本案參與後續相似建案與結構體價格估算。'
   )) return
-
-  publishingHistory.value = true
-  error.value = ''
-  message.value = ''
-  try {
-    await api(`/projects/${projectId}/publish-history`, { method: 'POST' })
-  } catch (caught) {
-    await reconcileHistoryWrite('Approved', caught)
-    publishingHistory.value = false
-    return
-  }
-  try {
-    await Promise.all([loadProject(), loadHistory(), loadTwoASummary(), loadBidItems()])
-    message.value = '此建案已確認並納入 2A 歷史基準。'
-  } catch (caught) {
-    await reconcileHistoryWrite('Approved', caught)
-  } finally {
-    publishingHistory.value = false
-  }
+  await runHistoryTransition('publish-history', 'Approved', '此建案已確認並納入 2A 歷史基準。')
 }
 
 async function reopenHistoryReview() {
@@ -250,25 +285,7 @@ async function reopenHistoryReview() {
   if (!window.confirm(
     '確定重新開啟審核嗎？\\n\\n此建案會暫時退出 2A 模型，既有數量歷史交易會停用，修正完成後可再次發布。'
   )) return
-
-  publishingHistory.value = true
-  error.value = ''
-  message.value = ''
-  try {
-    await api(`/projects/${projectId}/reopen-history-review`, { method: 'POST' })
-  } catch (caught) {
-    await reconcileHistoryWrite('Draft', caught)
-    publishingHistory.value = false
-    return
-  }
-  try {
-    await Promise.all([loadProject(), loadHistory(), loadTwoASummary(), loadBidItems()])
-    message.value = '已重新開啟歷史基準審核。'
-  } catch (caught) {
-    await reconcileHistoryWrite('Draft', caught)
-  } finally {
-    publishingHistory.value = false
-  }
+  await runHistoryTransition('reopen-history-review', 'Draft', '已重新開啟歷史基準審核。')
 }
 
 async function reloadRelated(messageText?: string) {
