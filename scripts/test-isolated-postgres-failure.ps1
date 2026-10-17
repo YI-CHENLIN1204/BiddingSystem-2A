@@ -19,7 +19,10 @@ try {
     if ($LASTEXITCODE -ne 0) { throw 'Failed to initialize disposable table.' }
     # Force a timeout INSIDE an explicit transaction after a successful insert.
     $sql = 'BEGIN; INSERT INTO fault_test VALUES (1); SET LOCAL statement_timeout = 100; SELECT pg_sleep(1); COMMIT;'
+    # Expected PostgreSQL error goes to stderr; PowerShell 5.1 must not treat it as a script-stopping error.
+    $ErrorActionPreference = 'Continue'
     $result = docker exec $name psql -U postgres -v ON_ERROR_STOP=0 -c $sql 2>&1
+    $ErrorActionPreference = 'Stop'
     $result | ForEach-Object { Write-Host $_ }
     $text = ($result | Out-String)
     if ($text -notmatch 'statement timeout') { throw 'Expected statement timeout was not observed.' }
