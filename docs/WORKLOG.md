@@ -286,3 +286,7 @@ Draft 建案不會參與模型。
 ## 2026-10-17 — 開發 Supabase 操作收據 schema 已部署
 
 使用者本機回報 docker compose build backend frontend 皆 Built（尚未 up）。已在 Supabase 開發專案 sbykuwypriudrgurmssb 查證 history_operation_receipt 原不存在，執行 scripts/migrations/20261017_history_operation_receipt.sql 對應的 BEGIN/CREATE TABLE/INDEX/COMMENT/COMMIT，成功建立並核對欄位 operation_id uuid、project_id integer、action_type varchar、result_json jsonb、created_at timestamptz，初始 0 筆。此遷移未改動 project_master、final_bid_item、historical_transaction 既有資料。**新版容器尚未啟動，正式 API 同 key 重送尚未驗證。** 下一步部署本機新版並只以 DEMO #8 測試，確認操作收據及稽核各僅一筆；保留 Project #11 Approved。不要因舊版 API 還能啟動就假定新收據流程可用。
+
+## 2026-10-17 — 正式 API 持久化冪等驗證通過
+
+本機新版容器啟動後，`scripts/test-demo-history-idempotency.ps1` 在 DEMO #8 成功執行：Publish 使用同一 Idempotency-Key 重送成功，Reopen 使用另一相同 key 重送成功，最後 #8 回到 Draft。直接查 Supabase：history_operation_receipt 在 #8 有 2 筆（各一筆 PublishHistory/ReopenHistoryReview）；該測試期間 audit_log PublishHistoryBaseline 1 筆、ReopenHistoryReview 1 筆；#8 historical_transaction 有 2 筆停用、0 筆有效；#11 保留 Approved、7 筆有效。此驗證是正常環境同 key 重送，不代表已完成實際 Commit ACK 遺失的故障注入、長時間負載、跨瀏覽器重送。仍需要測無收據／不同 action 使用同 key、並行同 key 和例外處理、保留收據等測試。
