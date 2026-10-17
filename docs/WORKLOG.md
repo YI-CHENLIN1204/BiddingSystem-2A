@@ -256,3 +256,7 @@ Draft 建案不會參與模型。
 ## 2026-10-17 — 隔離 PostgreSQL 逾時回復測試通過
 
 使用者本機執行 scripts/test-isolated-postgres-failure.ps1：CREATE TABLE 成功、BEGIN/INSERT 成功、強制 statement_timeout 出現 expected error，最後顯示 PASS: transaction was rolled back; no partial row exists。此為獨立 PostgreSQL 的回滾原子性驗證，不涉及 Supabase、DEMO #8、Project #11，也不構成 Npgsql/EF Core 斷線或 Commit 回應遺失驗收。
+
+## 2026-10-17 — 隔離 Npgsql 故障測試程式（待本機執行）
+
+新增 tests/ConnectionFaultHarness（.NET 10 / Npgsql）及 scripts/test-isolated-npgsql-failures.ps1。腳本以 Docker 建立一次性私有網路和 postgres:17，使用 dotnet/sdk:10.0 執行兩種情境：(1) 交易 INSERT 後，透過另一路連線 pg_terminate_backend 中斷提交前的 writer，檢查無殘留資料；(2) Commit 已成功但模擬應用層 HTTP 回應遺失，透過持久操作鍵與 unique constraint 避免重覆插入。finally 清除測試 DB 和網路；絕不使用 Supabase。需於 Windows PowerShell/Docker 本機驗證，**不是實際 ProjectManagementService 的斷線整合測試，也不代表目前 Publish API 已具備完整請求冪等保護**。
