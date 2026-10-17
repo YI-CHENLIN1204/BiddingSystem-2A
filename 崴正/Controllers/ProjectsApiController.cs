@@ -35,6 +35,12 @@ public class ProjectsApiController : ControllerBase
             request,
             User.Identity?.Name ?? "System"));
 
+    [HttpGet("{projectId:int}/history-operation/{operationId:guid}")]
+    public async Task<IActionResult> HistoryOperation(
+        int projectId, Guid operationId) =>
+        ToActionResult(await _service.GetHistoryOperationReceiptAsync(
+            projectId, operationId));
+
     [HttpPost("{projectId:int}/publish-history")]
     public async Task<IActionResult> PublishHistory(
         int projectId,
