@@ -290,3 +290,7 @@ Draft 建案不會參與模型。
 ## 2026-10-17 — 正式 API 持久化冪等驗證通過
 
 本機新版容器啟動後，`scripts/test-demo-history-idempotency.ps1` 在 DEMO #8 成功執行：Publish 使用同一 Idempotency-Key 重送成功，Reopen 使用另一相同 key 重送成功，最後 #8 回到 Draft。直接查 Supabase：history_operation_receipt 在 #8 有 2 筆（各一筆 PublishHistory/ReopenHistoryReview）；該測試期間 audit_log PublishHistoryBaseline 1 筆、ReopenHistoryReview 1 筆；#8 historical_transaction 有 2 筆停用、0 筆有效；#11 保留 Approved、7 筆有效。此驗證是正常環境同 key 重送，不代表已完成實際 Commit ACK 遺失的故障注入、長時間負載、跨瀏覽器重送。仍需要測無收據／不同 action 使用同 key、並行同 key 和例外處理、保留收據等測試。
+
+## 2026-10-17 — 收據回查的非破壞性迴歸測試
+
+已檢查正式 API 與前端的持久操作收據回查邏輯，新增 `scripts/test-history-receipts-readonly.ps1`，讀取前次 DEMO #8 成功交易留下的 PublishHistory/ReopenHistoryReview UUID 收據，核對操作種類與建案 ID，另外確認 #8 Draft、#11 Approved。腳本只送 GET，不修改 Supabase，不需要 Docker rebuild。**尚待使用者本機執行**。剩餘風險：尚未注入正式 API 真實網路斷線／Commit 回應遺失；前端目前在無法查到收據時保留原操作 ID 並回報結果不明，不能因此認定交易成功或失敗。既有 API header 為可選，無 key 的非 UI 客戶端仍無跨請求重放保護。
