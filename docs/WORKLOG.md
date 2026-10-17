@@ -300,3 +300,7 @@ Draft 建案不會參與模型。
 使用者於本機執行 `scripts/test-history-receipts-readonly.ps1`，回傳 `PASS: receipt PublishHistory`、`PASS: receipt ReopenHistoryReview`、`PASS: DEMO #8 Draft; Project #11 Approved. No writes issued.`。這項驗證確定先前提交的兩筆成功收據可由正式 API 再次讀取，並且本輪沒有資料庫寫入；不代表已完成正式 API 的連線斷線故障注入。
 
 程式碼檢查發現 PublishHistoryAsync/ReopenHistoryReviewAsync 在已開始的資料庫交易中有提前 return 的分支（成功收據重播、狀態衝突等），由 using Dispose 進行交易清理；未來可改為顯式早期分支處理並設計獨立故障注入，以降低例外處理和連線生命週期的歧義。尚未執行更動。
+
+## 2026-10-17 — Publish/Reopen 交易生命週期小幅加固（待本機編譯）
+
+重新檢查兩個正式 API，狀態衝突與成功收據重播都可能在交易開啟後提前 return。這些路徑原先透過 using Dispose 清理未提交交易，並非已發現資料損壞。已改成 `await using var transaction`，讓提早結束時非同步釋放交易／連線，避免 request thread 上同步處理 I/O；例外路徑仍保留捕捉原始錯誤並在 Rollback 失敗時記錄次要錯誤的防護。未更動資料庫 schema 或實際建案資料。需於本機重新 Build，並在隔離 DEMO 情境驗證，不宣稱因此解決 Supabase 曾發生的連線中斷根因。
