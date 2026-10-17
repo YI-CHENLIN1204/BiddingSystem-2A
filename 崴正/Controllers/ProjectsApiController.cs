@@ -37,21 +37,25 @@ public class ProjectsApiController : ControllerBase
 
     [HttpPost("{projectId:int}/publish-history")]
     public async Task<IActionResult> PublishHistory(
-        int projectId) =>
+        int projectId,
+        [FromHeader(Name = "Idempotency-Key")] Guid? operationId = null) =>
         ToActionResult(
             await _service.PublishHistoryAsync(
                 projectId,
-                User.Identity?.Name ?? "System"
+                User.Identity?.Name ?? "System",
+                operationId
             )
         );
 
     [HttpPost("{projectId:int}/reopen-history-review")]
     public async Task<IActionResult> ReopenHistoryReview(
-        int projectId) =>
+        int projectId,
+        [FromHeader(Name = "Idempotency-Key")] Guid? operationId = null) =>
         ToActionResult(
             await _service.ReopenHistoryReviewAsync(
                 projectId,
-                User.Identity?.Name ?? "System"
+                User.Identity?.Name ?? "System",
+                operationId
             )
         );
 
