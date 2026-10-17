@@ -11,6 +11,7 @@ namespace 崴正.Data
         }
 
         public DbSet<ProjectMaster> ProjectMasters { get; set; }
+        public DbSet<HistoryOperationReceipt> HistoryOperationReceipts { get; set; }
         public DbSet<MaterialMaster> MaterialMasters { get; set; }
         public DbSet<MaterialCategory> MaterialCategories { get; set; }
         public DbSet<HistoricalTransaction> HistoricalTransactions { get; set; }
@@ -30,6 +31,17 @@ namespace 崴正.Data
         protected override void OnModelCreating(ModelBuilder modelBuilder)
         {
             base.OnModelCreating(modelBuilder);
+
+            modelBuilder.Entity<HistoryOperationReceipt>(entity =>
+            {
+                entity.ToTable("history_operation_receipt");
+                entity.HasKey(x => x.OperationId);
+                entity.Property(x => x.OperationId).HasColumnName("operation_id");
+                entity.Property(x => x.ProjectId).HasColumnName("project_id");
+                entity.Property(x => x.ActionType).HasColumnName("action_type");
+                entity.Property(x => x.ResultJson).HasColumnName("result_json").HasColumnType("jsonb");
+                entity.Property(x => x.CreatedAt).HasColumnName("created_at");
+            });
 
             modelBuilder.Entity<MaterialCategory>(
             entity =>
