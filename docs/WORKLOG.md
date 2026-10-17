@@ -264,3 +264,7 @@ Draft 建案不會參與模型。
 ## 2026-10-17 — Npgsql 隔離斷線實測通過
 
 使用者本機執行 scripts/test-isolated-npgsql-failures.ps1，測試環境為一次性 PostgreSQL 17 與 .NET 10/Npgsql。實測輸出：Expected writer connection failure: PostgresException；PASS: connection dropped before commit; no partial row；Expected simulated lost response；PASS: lost response can be reconciled by durable operation key；PASS: isolated Npgsql integration harness completed。這證明隔離測試的交易前斷線回滾與持久操作鍵範例可行，不代表正式 PublishHistory／ReopenHistoryReview API 已具備端到端請求識別與冪等。後續優先調查正式 API 丟失 Commit 回應時的狀態回查，以及整合操作鍵或等價的重複提交防護，再於隔離 DB 做故障注入。
+
+## 2026-10-17 — 正式 API 故障處理盤點及前端重入保護
+
+核對 ProjectsApiController、ProjectManagementService 與 ProjectDetailView：正式 Publish/Reopen 已有 PostgreSQL 建案級 advisory transaction lock 與 Approved/Draft 狀態檢查；因此相同建案的同步重複請求已有基於狀態的防護，但**尚未具備持久化 Idempotency-Key**。前端加入 publishingHistory 執行中直接拒絕再次觸發，可避免 UI 雙擊造成並行請求；不等於網路斷線重試的真正冪等保護。此階段未新增資料庫 schema、未更動 Project #8/#11。根因目前只能定位為曾發生連線讀取中斷與多處交易錯誤處理問題，尚無證據可單一定因於 Supabase、Npgsql 或 Nginx。待辦：設計包含唯一操作 ID、持久化狀態與唯一限制的寫入協定，使用獨立應用程式資料庫驗證，再部署至共用開發資料庫；勿在正式資料庫進行故障注入。新增前端變更尚待本機 Build。
