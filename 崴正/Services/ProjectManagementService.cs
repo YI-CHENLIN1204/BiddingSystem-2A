@@ -433,6 +433,28 @@ namespace 崴正.Services
         }
 
 
+        public async Task<ServiceResult> GetHistoryOperationReceiptAsync(
+            int projectId, Guid operationId)
+        {
+            var receipt = await _context.HistoryOperationReceipts
+                .AsNoTracking()
+                .FirstOrDefaultAsync(x => x.OperationId == operationId &&
+                                          x.ProjectId == projectId);
+            if (receipt == null)
+                return ServiceResult.NotFound("尚無該次操作的成功收據");
+
+            return ServiceResult.Ok(new
+            {
+                receipt.OperationId,
+                receipt.ProjectId,
+                receipt.ActionType,
+                receipt.CreatedAt,
+                result = System.Text.Json.JsonSerializer.Deserialize<System.Text.Json.JsonElement>(
+                    receipt.ResultJson)
+            });
+        }
+
+
         public async Task<ServiceResult>
             PublishHistoryAsync(
                 int projectId,
@@ -449,7 +471,7 @@ namespace 崴正.Services
                 // Advisory XACT lock automatically releases on commit/rollback/disconnect.
                 await _context.Database.ExecuteSqlInterpolatedAsync(
                     $@"SELECT pg_advisory_xact_lock(2202, {projectId})");
-                                if (operationId.HasValue)
+                if (operationId.HasValue)
                 {
                     var receipt = await _context.HistoryOperationReceipts
                         .AsNoTracking()
@@ -717,8 +739,7 @@ namespace 崴正.Services
                         eligibleCandidateCount,
 
                         activeHistoryCount
-                    }
-                ;
+                    };
                 if (operationId.HasValue)
                 {
                     _context.HistoryOperationReceipts.Add(new 崴正.Models.HistoryOperationReceipt
@@ -732,7 +753,8 @@ namespace 崴正.Services
                     await _context.SaveChangesAsync();
                 }
                 await transaction.CommitAsync();
-                return ServiceResult.Ok(resultPayload);            }
+                return ServiceResult.Ok(resultPayload);
+            }
             catch (Exception ex)
             {
                 Console.Error.WriteLine("[PublishHistory] Original failure: " + ex);
@@ -765,7 +787,7 @@ namespace 崴正.Services
                 // Advisory XACT lock automatically releases on commit/rollback/disconnect.
                 await _context.Database.ExecuteSqlInterpolatedAsync(
                     $@"SELECT pg_advisory_xact_lock(2202, {projectId})");
-                                if (operationId.HasValue)
+                if (operationId.HasValue)
                 {
                     var receipt = await _context.HistoryOperationReceipts
                         .AsNoTracking()
