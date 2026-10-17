@@ -234,3 +234,7 @@ Draft 建案不會參與模型。
 3. 先驗證核准期間修改被拒絕，再做一次 Reopen，核對 Draft／有效交易 0 筆／保留完整 FinalBidItem。
 4. 修改非核心 Draft 工項後再 Publish，核對 Approved／有效交易不重複、結構體價格與試體試驗排除邏輯。
 5. 用操作紀錄及資料庫查詢比對每次交易，壓力測試連續查詢與短暫斷線；發生 500/504 應先回查資料庫狀態，不要直接重試寫入。
+
+## 2026-10-17 — DEMO #8 Publish/Reopen 寫入整合驗證
+
+執行 `scripts/test-demo-history-cycle.ps1`，DEMO Project #8 成功完成兩輪 Draft → Approved → Draft。Supabase 實際驗證：#8 最終 Draft、核准時間 NULL、有效歷史交易 0、已停用歷史交易 2；當天稽核紀錄 PublishHistoryBaseline 2 筆、ReopenHistoryReview 2 筆。Project #11 保持 Approved 與 7 筆有效歷史交易，沒有更動。此測試通過**正常寫入流程**，尚未驗證注入斷線、併發發布、重試冪等、長時間穩定性，不能稱為完整根因修復。
