@@ -304,3 +304,7 @@ Draft 建案不會參與模型。
 ## 2026-10-17 — Publish/Reopen 交易生命週期小幅加固（待本機編譯）
 
 重新檢查兩個正式 API，狀態衝突與成功收據重播都可能在交易開啟後提前 return。這些路徑原先透過 using Dispose 清理未提交交易，並非已發現資料損壞。已改成 `await using var transaction`，讓提早結束時非同步釋放交易／連線，避免 request thread 上同步處理 I/O；例外路徑仍保留捕捉原始錯誤並在 Rollback 失敗時記錄次要錯誤的防護。未更動資料庫 schema 或實際建案資料。需於本機重新 Build，並在隔離 DEMO 情境驗證，不宣稱因此解決 Supabase 曾發生的連線中斷根因。
+
+## 2026-10-17 — 正式 API 故障注入隔離環境骨架（尚未執行故障注入）
+
+新增 `compose.fault-test.yaml`：獨立 `bidding-2a-fault` 專案、本機 PostgreSQL 17 tmpfs、DB Host=db，後端僅映射 `127.0.0.1:18080`，Docker internal network 隔離，未引用 Supabase；絕不可與主 `compose.yaml` 合併啟動。新增 `scripts/test-fault-stack-preflight.ps1`，僅靜態檢查隔離邊界及 docker compose config，不啟動服務或觸及資料庫。需要先取得**經審查的 schema-only 與去識別化的獨立 DEMO fixture**，才能真正啟動 ProjectManagementService 執行 Publish/Reopen 故障注入；這階段未準備 fixture，亦未在本機執行 preflight / build / API 測試，因此不宣稱通過。正式開發 Supabase #8 Draft / #11 Approved 不應參與此隔離測試。
