@@ -252,3 +252,7 @@ Draft 建案不會參與模型。
 ## 2026-10-17 — 隔離資料庫故障測試（待執行）
 
 新增 scripts/test-isolated-postgres-failure.ps1：以 Docker 啟動獨立 postgres:17 容器（無對外 port、network none），在顯式交易先 INSERT 再強制 statement_timeout，確認失敗後不留部分提交，finally 清除容器。此為 PostgreSQL 原子性基礎測試，**不會測到本專案 Npgsql/EF Core 的連線中斷、Commit 回應遺失或應用程式重試安全性**。尚未在使用者本機執行，不能視為完成故障復原驗收。DEMO #8／Project #11 均不參與此測試。
+
+## 2026-10-17 — 隔離 PostgreSQL 逾時回復測試通過
+
+使用者本機執行 scripts/test-isolated-postgres-failure.ps1：CREATE TABLE 成功、BEGIN/INSERT 成功、強制 statement_timeout 出現 expected error，最後顯示 PASS: transaction was rolled back; no partial row exists。此為獨立 PostgreSQL 的回滾原子性驗證，不涉及 Supabase、DEMO #8、Project #11，也不構成 Npgsql/EF Core 斷線或 Commit 回應遺失驗收。
