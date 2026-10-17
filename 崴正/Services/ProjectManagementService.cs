@@ -461,7 +461,9 @@ namespace 崴正.Services
                 string? actionUser,
                 Guid? operationId = null)
         {
-            using var transaction =
+            // Uncommitted early-return branches dispose the transaction and roll back.
+            // Async disposal avoids synchronous network I/O on the request thread.
+            await using var transaction =
                 await _context.Database
                     .BeginTransactionAsync();
 
@@ -777,7 +779,9 @@ namespace 崴正.Services
                 string? actionUser,
                 Guid? operationId = null)
         {
-            using var transaction =
+            // Uncommitted early-return branches dispose the transaction and roll back.
+            // Async disposal avoids synchronous network I/O on the request thread.
+            await using var transaction =
                 await _context.Database
                     .BeginTransactionAsync();
 
