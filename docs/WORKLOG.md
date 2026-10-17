@@ -260,3 +260,7 @@ Draft 建案不會參與模型。
 ## 2026-10-17 — 隔離 Npgsql 故障測試程式（待本機執行）
 
 新增 tests/ConnectionFaultHarness（.NET 10 / Npgsql）及 scripts/test-isolated-npgsql-failures.ps1。腳本以 Docker 建立一次性私有網路和 postgres:17，使用 dotnet/sdk:10.0 執行兩種情境：(1) 交易 INSERT 後，透過另一路連線 pg_terminate_backend 中斷提交前的 writer，檢查無殘留資料；(2) Commit 已成功但模擬應用層 HTTP 回應遺失，透過持久操作鍵與 unique constraint 避免重覆插入。finally 清除測試 DB 和網路；絕不使用 Supabase。需於 Windows PowerShell/Docker 本機驗證，**不是實際 ProjectManagementService 的斷線整合測試，也不代表目前 Publish API 已具備完整請求冪等保護**。
+
+## 2026-10-17 — Npgsql 隔離斷線實測通過
+
+使用者本機執行 scripts/test-isolated-npgsql-failures.ps1，測試環境為一次性 PostgreSQL 17 與 .NET 10/Npgsql。實測輸出：Expected writer connection failure: PostgresException；PASS: connection dropped before commit; no partial row；Expected simulated lost response；PASS: lost response can be reconciled by durable operation key；PASS: isolated Npgsql integration harness completed。這證明隔離測試的交易前斷線回滾與持久操作鍵範例可行，不代表正式 PublishHistory／ReopenHistoryReview API 已具備端到端請求識別與冪等。後續優先調查正式 API 丟失 Commit 回應時的狀態回查，以及整合操作鍵或等價的重複提交防護，再於隔離 DB 做故障注入。
