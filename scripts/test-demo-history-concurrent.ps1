@@ -2,6 +2,8 @@
 # Requires the API version with per-project advisory transaction locking.
 param([string]$BaseUrl = "http://127.0.0.1:8081", [int]$ProjectId = 8)
 $ErrorActionPreference = 'Stop'
+# Windows PowerShell 5.1 does not load this assembly automatically.
+Add-Type -AssemblyName System.Net.Http
 if ($ProjectId -ne 8) { throw 'Safety guard: only DEMO project #8 is permitted.' }
 $base = $BaseUrl.TrimEnd('/')
 $uri = "$base/api/projects/$ProjectId"
