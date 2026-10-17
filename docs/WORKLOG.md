@@ -282,3 +282,7 @@ Draft 建案不會參與模型。
 **部署順序不可顛倒**：先備份/確認環境、在目標開發 Supabase 執行 migration，確認 schema；再更新程式碼和 Docker Build，最後執行 DEMO #8 測試、核對稽核；完成前不得把新前端搭配舊後端或反之視為穩定版本。舊第三方無 header 請求仍使用狀態鎖，但沒有持久鍵回放保障；正式全面冪等需另行決定是否強制要求 header。
 
 **本輪尚未在使用者本機 dotnet build / npm build、未執行 SQL migration、未實測 API；所有功能標註「待驗證」**。切勿在驗證之前宣稱正式修復。失敗時需保留 DB schema 並回滾應用版本，不應直接 drop receipt 表，以免丟失提交證據。
+
+## 2026-10-17 — 開發 Supabase 操作收據 schema 已部署
+
+使用者本機回報 docker compose build backend frontend 皆 Built（尚未 up）。已在 Supabase 開發專案 sbykuwypriudrgurmssb 查證 history_operation_receipt 原不存在，執行 scripts/migrations/20261017_history_operation_receipt.sql 對應的 BEGIN/CREATE TABLE/INDEX/COMMENT/COMMIT，成功建立並核對欄位 operation_id uuid、project_id integer、action_type varchar、result_json jsonb、created_at timestamptz，初始 0 筆。此遷移未改動 project_master、final_bid_item、historical_transaction 既有資料。**新版容器尚未啟動，正式 API 同 key 重送尚未驗證。** 下一步部署本機新版並只以 DEMO #8 測試，確認操作收據及稽核各僅一筆；保留 Project #11 Approved。不要因舊版 API 還能啟動就假定新收據流程可用。
