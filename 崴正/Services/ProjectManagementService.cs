@@ -756,13 +756,20 @@ namespace 崴正.Services
                 }
                 // Test-only failpoint: terminates the actual Npgsql connection after
                 // SaveChanges but BEFORE Commit. Never enabled on Supabase.
-                if (operationId.HasValue &&
-                    Environment.GetEnvironmentVariable("FAULT_TEST_DROP_BEFORE_COMMIT") == "1" &&
-                    _context.Database.GetDbConnection().DataSource == "db" &&
-                    _context.Database.GetDbConnection().Database == "bidding_fault" &&
-                    projectId == 1 &&
-                    project.ProjectName.StartsWith("[FAULT_FIXTURE_ONLY]", StringComparison.Ordinal))
+                if (Environment.GetEnvironmentVariable("FAULT_TEST_DROP_BEFORE_COMMIT") == "1")
                 {
+                    var connection = _context.Database.GetDbConnection();
+                    var settings = new Npgsql.NpgsqlConnectionStringBuilder(connection.ConnectionString);
+                    var isolated = operationId.HasValue &&
+                        string.Equals(settings.Host, "db", StringComparison.OrdinalIgnoreCase) &&
+                        settings.Port == 5432 &&
+                        string.Equals(settings.Database, "bidding_fault", StringComparison.Ordinal) &&
+                        string.Equals(settings.Username, "fault_user", StringComparison.Ordinal) &&
+                        projectId == 1 &&
+                        project.ProjectName.StartsWith("[FAULT_FIXTURE_ONLY]", StringComparison.Ordinal);
+                    if (!isolated)
+                        throw new InvalidOperationException("FAULT_TEST_DROP_BEFORE_COMMIT refused: isolated fixture guard failed. No commit permitted.");
+                    Console.Error.WriteLine("[FAULT_TEST_DROP_BEFORE_COMMIT] Triggering isolated precommit failure.");
                     await _context.Database.CloseConnectionAsync();
                     throw new InvalidOperationException("FAULT_TEST_DROP_BEFORE_COMMIT: isolated transaction interrupted.");
                 }
@@ -944,13 +951,20 @@ namespace 崴正.Services
                 }
                 // Test-only failpoint: terminates the actual Npgsql connection after
                 // SaveChanges but BEFORE Commit. Never enabled on Supabase.
-                if (operationId.HasValue &&
-                    Environment.GetEnvironmentVariable("FAULT_TEST_DROP_BEFORE_COMMIT") == "1" &&
-                    _context.Database.GetDbConnection().DataSource == "db" &&
-                    _context.Database.GetDbConnection().Database == "bidding_fault" &&
-                    projectId == 1 &&
-                    project.ProjectName.StartsWith("[FAULT_FIXTURE_ONLY]", StringComparison.Ordinal))
+                if (Environment.GetEnvironmentVariable("FAULT_TEST_DROP_BEFORE_COMMIT") == "1")
                 {
+                    var connection = _context.Database.GetDbConnection();
+                    var settings = new Npgsql.NpgsqlConnectionStringBuilder(connection.ConnectionString);
+                    var isolated = operationId.HasValue &&
+                        string.Equals(settings.Host, "db", StringComparison.OrdinalIgnoreCase) &&
+                        settings.Port == 5432 &&
+                        string.Equals(settings.Database, "bidding_fault", StringComparison.Ordinal) &&
+                        string.Equals(settings.Username, "fault_user", StringComparison.Ordinal) &&
+                        projectId == 1 &&
+                        project.ProjectName.StartsWith("[FAULT_FIXTURE_ONLY]", StringComparison.Ordinal);
+                    if (!isolated)
+                        throw new InvalidOperationException("FAULT_TEST_DROP_BEFORE_COMMIT refused: isolated fixture guard failed. No commit permitted.");
+                    Console.Error.WriteLine("[FAULT_TEST_DROP_BEFORE_COMMIT] Triggering isolated precommit failure.");
                     await _context.Database.CloseConnectionAsync();
                     throw new InvalidOperationException("FAULT_TEST_DROP_BEFORE_COMMIT: isolated transaction interrupted.");
                 }
