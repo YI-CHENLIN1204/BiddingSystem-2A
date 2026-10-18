@@ -1,0 +1,6 @@
+# Enable ONLY for the disposable fault-testing backend.
+# Compose alongside compose.fault-test.yaml and recreate backend with --no-deps.
+services:
+  backend:
+    environment:
+      FAULT_TEST_DROP_BEFORE_COMMIT: "1"
