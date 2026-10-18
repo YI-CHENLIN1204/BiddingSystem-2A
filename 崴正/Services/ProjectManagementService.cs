@@ -754,6 +754,18 @@ namespace 崴正.Services
                     });
                     await _context.SaveChangesAsync();
                 }
+                // Test-only failpoint: terminates the actual Npgsql connection after
+                // SaveChanges but BEFORE Commit. Never enabled on Supabase.
+                if (operationId.HasValue &&
+                    Environment.GetEnvironmentVariable("FAULT_TEST_DROP_BEFORE_COMMIT") == "1" &&
+                    _context.Database.GetDbConnection().DataSource == "db" &&
+                    _context.Database.GetDbConnection().Database == "bidding_fault" &&
+                    projectId == 1 &&
+                    project.ProjectName.StartsWith("[FAULT_FIXTURE_ONLY]", StringComparison.Ordinal))
+                {
+                    await _context.Database.CloseConnectionAsync();
+                    throw new InvalidOperationException("FAULT_TEST_DROP_BEFORE_COMMIT: isolated transaction interrupted.");
+                }
                 await transaction.CommitAsync();
                 return ServiceResult.Ok(resultPayload);
             }
@@ -929,6 +941,18 @@ namespace 崴正.Services
                         CreatedAt = DateTime.UtcNow
                     });
                     await _context.SaveChangesAsync();
+                }
+                // Test-only failpoint: terminates the actual Npgsql connection after
+                // SaveChanges but BEFORE Commit. Never enabled on Supabase.
+                if (operationId.HasValue &&
+                    Environment.GetEnvironmentVariable("FAULT_TEST_DROP_BEFORE_COMMIT") == "1" &&
+                    _context.Database.GetDbConnection().DataSource == "db" &&
+                    _context.Database.GetDbConnection().Database == "bidding_fault" &&
+                    projectId == 1 &&
+                    project.ProjectName.StartsWith("[FAULT_FIXTURE_ONLY]", StringComparison.Ordinal))
+                {
+                    await _context.Database.CloseConnectionAsync();
+                    throw new InvalidOperationException("FAULT_TEST_DROP_BEFORE_COMMIT: isolated transaction interrupted.");
                 }
                 await transaction.CommitAsync();
                 return ServiceResult.Ok(resultPayload);
