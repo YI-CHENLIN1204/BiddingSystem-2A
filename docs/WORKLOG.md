@@ -308,3 +308,7 @@ Draft 建案不會參與模型。
 ## 2026-10-17 — 正式 API 故障注入隔離環境骨架（尚未執行故障注入）
 
 新增 `compose.fault-test.yaml`：獨立 `bidding-2a-fault` 專案、本機 PostgreSQL 17 tmpfs、DB Host=db，後端僅映射 `127.0.0.1:18080`，Docker internal network 隔離，未引用 Supabase；絕不可與主 `compose.yaml` 合併啟動。新增 `scripts/test-fault-stack-preflight.ps1`，僅靜態檢查隔離邊界及 docker compose config，不啟動服務或觸及資料庫。需要先取得**經審查的 schema-only 與去識別化的獨立 DEMO fixture**，才能真正啟動 ProjectManagementService 執行 Publish/Reopen 故障注入；這階段未準備 fixture，亦未在本機執行 preflight / build / API 測試，因此不宣稱通過。正式開發 Supabase #8 Draft / #11 Approved 不應參與此隔離測試。
+
+## 2026-10-19 — 隔離正式 API 的 Commit 前斷線故障開關（待本機驗證）
+
+新增 ProjectManagementService 的 opt-in `FAULT_TEST_DROP_BEFORE_COMMIT=1` 故障點，僅在操作有 UUID、DbConnection.DataSource=db 且 Database=bidding_fault、projectId=1 與 `[FAULT_FIXTURE_ONLY]` 建案時，於 Publish/Reopen `SaveChanges` 後、Commit 前關閉真正的資料庫連線，再拋出測試例外。預設開關關閉，Supabase 的 DB host 不匹配。新增 `compose.fault-drop.yaml` 作為獨立 backend env override，以及唯讀驗證腳本 `scripts/check-fault-precommit-readonly.ps1`。此機制用於重現 Commit 前連線遺失的資料庫回滾，不包含真實 Commit 成功後 HTTP 回應遺失。尚未執行本機 build，也未故障注入。啟動時務必 `--no-deps`，避免重建含 tmpfs 的 db；故障測試前後保留並比對 audit/receipt/history baseline，完成後必須移除 override 並重新建立 backend。暫不以此測試證明長時間可靠性。
