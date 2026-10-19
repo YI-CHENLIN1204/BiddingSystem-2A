@@ -305,3 +305,18 @@ feature/1d-api-integration
 ```
 
 除非使用者明確要求，否則不要合併到 `main`。
+
+## 2026-10-19 — 故障測試收斂，優先回到真實資料開發
+
+使用者明確要求：在合理範圍內進行除錯驗證，不要為了非必要驗證耽誤開發。
+
+已在獨立 PostgreSQL、Project #1 合成資料上由使用者驗證：Publish／Reopen 正常交易、相同 Idempotency-Key 重送、Commit 前關閉 DB connection 後維持歷史／收據／稽核資料一致、故障後原 ID 安全重試、首次 HTTP 回應被客戶端忽略後原 ID 重送。參見 docs/FAULT_TEST_ACCEPTANCE.md。Release 與 fault-test Image 已分別編譯、標記，DLL SHA 不同；尚未做 DLL 指令層級的可執行差異驗證，**不構成目前開發阻擋**。真實 Commit 後網路斷線、壓力測試列為後期非阻擋驗收。不要再為了這兩項反覆停下開發。
+
+保留風險：受控斷線後 RollbackAsync 可能記錄 ObjectDisposedException（次要例外）；fault 測試 DB 現使用 tmpfs，重啟資料會消失；本機 compose.fault-test.yaml 有未提交的 api_access 網路修改，切勿強制覆蓋或重建 DB。故障注入已用 #if FAULT_INJECTION_TEST 包覆，正式 Docker build 預設不啟用；未來正式部署仍須核對建置設定及環境變數。不要誤宣稱全部正式環境已上線驗收。
+
+**下個開發優先序**：
+1. 停止進一步無必要的 fault tests、Docker image hash tests 與人工假資料迭代。
+2. 回到主系統 http://localhost:8081，進行真實 Excel 工作表預覽、唯讀解析比對、匯入阻擋檢查。
+3. 僅對具體可重現的使用者阻礙修 bug；改動時以最小相關編譯及回歸驗證確認。
+4. 經人工審核後才 Publish 真實已定案歷史資料；逐步驗證 P15/P50/P85 估價和鋼筋／混凝土數量異常。
+5. 保留目前 feature/1d-api-integration branch，不自行合併 main，亦不修改 Supabase 有效資料來製造測試結果。
