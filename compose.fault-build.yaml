@@ -1,0 +1,7 @@
+# Compose override ONLY for the disposable isolated backend build.
+# Usage: docker compose -f compose.fault-test.yaml -f compose.fault-build.yaml build backend
+services:
+  backend:
+    build:
+      args:
+        FAULT_INJECTION_TEST: "true"
