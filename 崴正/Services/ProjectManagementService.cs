@@ -756,6 +756,7 @@ namespace 崴正.Services
                 }
                 // Test-only failpoint: terminates the actual Npgsql connection after
                 // SaveChanges but BEFORE Commit. Never enabled on Supabase.
+#if FAULT_INJECTION_TEST
                 if (Environment.GetEnvironmentVariable("FAULT_TEST_DROP_BEFORE_COMMIT") == "1")
                 {
                     var connection = _context.Database.GetDbConnection();
@@ -773,6 +774,7 @@ namespace 崴正.Services
                     await _context.Database.CloseConnectionAsync();
                     throw new InvalidOperationException("FAULT_TEST_DROP_BEFORE_COMMIT: isolated transaction interrupted.");
                 }
+#endif
                 await transaction.CommitAsync();
                 return ServiceResult.Ok(resultPayload);
             }
@@ -951,6 +953,7 @@ namespace 崴正.Services
                 }
                 // Test-only failpoint: terminates the actual Npgsql connection after
                 // SaveChanges but BEFORE Commit. Never enabled on Supabase.
+#if FAULT_INJECTION_TEST
                 if (Environment.GetEnvironmentVariable("FAULT_TEST_DROP_BEFORE_COMMIT") == "1")
                 {
                     var connection = _context.Database.GetDbConnection();
@@ -968,6 +971,7 @@ namespace 崴正.Services
                     await _context.Database.CloseConnectionAsync();
                     throw new InvalidOperationException("FAULT_TEST_DROP_BEFORE_COMMIT: isolated transaction interrupted.");
                 }
+#endif
                 await transaction.CommitAsync();
                 return ServiceResult.Ok(resultPayload);
             }
