@@ -23,3 +23,12 @@ A separate compose override, `compose.fault-volume.yaml`, switches the disposabl
 6. Confirm restart persistence in the new stack and document recovery process.
 
 The override file alone does NOT set up new stack wiring, import seed, or guarantee safe parallel execution. No production data is used.
+
+## 2026-10-19 — Compile-time test isolation (unverified build)
+
+- Publish and Reopen failpoints are now inside `#if FAULT_INJECTION_TEST` blocks. Normal Release excludes the failpoint source from compilation.
+- `崴正/Dockerfile` accepts optional `FAULT_INJECTION_TEST=true`; default is false. The opt-in Docker Compose build override is `compose.fault-build.yaml`.
+- To build fault-enabled backend: `docker compose -f compose.fault-test.yaml -f compose.fault-build.yaml build backend`. Keep `compose.fault-drop.yaml` separate: it enables runtime injection after deploying a fault-enabled image.
+- **Do not deploy to the running test backend yet.** At present local Project #1 is Approved with 7 receipts and 7 audits; DB is tmpfs, so never recreate db merely to update backend.
+- Before concluding success, build both default and opt-in images and inspect the compiled output / test trigger behavior in a disposable environment. No such builds executed by the GitHub edits.
+- Existing local `compose.fault-test.yaml` contains necessary network modifications absent upstream. Avoid overwriting local changes; use `git status` before pulling.
