@@ -1,14 +1,25 @@
-# Read-only, fail-closed check of repo production and isolated test configuration.
+# Read-only static checks. These are NOT a substitute for inspecting built artifacts.
 $ErrorActionPreference = 'Stop'
-$root=(Resolve-Path (Join-Path $PSScriptRoot '..')).Path
-$production=Get-Content -Raw -LiteralPath (Join-Path $root 'compose.yaml')
-if($production -match 'FAULT_TEST_DROP_BEFORE_COMMIT|compose\.fault-drop|bidding_fault') {
-  throw 'Production compose references fault test functionality'
+$root = (Resolve-Path (Join-Path $PSScriptRoot '..')).Path
+$production = Get-Content -Raw -LiteralPath (Join-Path $root 'compose.yaml')
+if ($production -match 'FAULT_TEST_DROP_BEFORE_COMMIT|compose\.fault-drop|bidding_fault|FAULT_INJECTION_TEST') {
+    throw 'Production compose references fault testing'
 }
-$script=Get-Content -Raw -LiteralPath (Join-Path $root '崴正/Services/ProjectManagementService.cs')
-if($script -notmatch 'FAULT_TEST_DROP_BEFORE_COMMIT' -or $script -notmatch 'FAULT_TEST_DROP_BEFORE_COMMIT refused: isolated fixture guard failed') {
-  throw 'Failpoint guard missing or changed; manual review needed'
+$candidates = @(Get-ChildItem -Path $root -Filter 'ProjectManagementService.cs' -Recurse -File |
+    Where-Object { $_.FullName -match '[\\/]Services[\\/]' })
+if ($candidates.Count -ne 1) { throw "Expected one ProjectManagementService.cs, found $($candidates.Count)" }
+$source = Get-Content -Raw -LiteralPath $candidates[0].FullName
+$guards = ([regex]::Matches($source, '(?m)^#if FAULT_INJECTION_TEST\s*$')).Count
+$ends = ([regex]::Matches($source, '(?m)^#endif\s*$')).Count
+$failpoints = ([regex]::Matches($source, 'Environment.GetEnvironmentVariable\("FAULT_TEST_DROP_BEFORE_COMMIT"\)')).Count
+if ($guards -ne 2 -or $failpoints -ne 2 -or $ends -lt 2) {
+    throw 'Compile guards or fault injection count changed. Review manually.'
 }
-Write-Host 'PASS: static production compose check and presence of fail-closed guard'
-Write-Host 'LIMIT: static checks DO NOT prove other deployment manifests or runtime env are safe.'
-Write-Host 'RELEASE GATE: remove or compile-exclude fault-injection logic from production artifact before release.'
+$dockerFiles = @(Get-ChildItem -Path $root -Filter 'Dockerfile' -Recurse -File)
+$docker = $dockerFiles | Where-Object { $_.FullName -match '[\\/]Dockerfile$' -and $_.FullName -notmatch 'node_modules' } |
+    Where-Object { (Get-Content -Raw $_.FullName) -match 'ARG FAULT_INJECTION_TEST=false' } | Select-Object -First 1
+if (-not $docker) { throw 'Expected fault-safe backend Dockerfile not found' }
+$override = Get-Content -Raw -LiteralPath (Join-Path $root 'compose.fault-build.yaml')
+if ($override -notmatch 'FAULT_INJECTION_TEST') { throw 'Fault test build override not found' }
+Write-Host 'PASS: default backend Docker build has opt-in fault compilation; static guard and production compose checks passed.'
+Write-Host 'LIMIT: static checks do not prove compiled DLL contents, other manifests, or runtime configuration.'
