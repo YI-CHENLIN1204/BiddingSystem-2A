@@ -188,6 +188,51 @@ namespace 崴正.Services
 
 
         // Read-only diagnostic for currently blocked in-scope material items.
+        // Read-only inspection of qualified quantity candidates, not an approval.
+        public async Task<ServiceResult> GetEligibleMaterialItemsAsync(int projectId)
+        {
+            var exists = await _context.ProjectMasters.AsNoTracking()
+                .AnyAsync(x => x.ProjectId == projectId && !x.IsDeleted);
+            if (!exists) return ServiceResult.NotFound("找不到指定建案");
+
+            var items = await _context.FinalBidItems.AsNoTracking()
+                .Include(x => x.Material).Include(x => x.ProjectMaster)
+                .Where(x => x.ProjectMasterId == projectId && !x.IsIgnored)
+                .ToListAsync();
+
+            var eligible = items
+                .Where(x => !TwoAScopePolicy.IsExplicitNonMaterialCharge(x.ItemName))
+                .Where(x => string.Equals(
+                    TwoAScopePolicy.ResolveEffectiveMajorCategory(
+                        x.MajorCategoryOverride, x.Category1, x.Category2, x.Category3),
+                    "結構體工程", StringComparison.OrdinalIgnoreCase))
+                .Where(x => TwoAScopePolicy.IsQuantityHistoryMaterial(x.Material?.MaterialName))
+                .Where(x => _finalBidService.CanBecomeHistoricalTransaction(x))
+                .Select(x => new
+                {
+                    x.FinalBidItemId, x.ItemName, x.Spec, x.Qty, x.Unit,
+                    x.UnitPrice, x.Amount, x.SheetName, x.RowNumber,
+                    x.MappingStatus, MaterialName = x.Material?.MaterialName,
+                    Warning = x.ItemName.Contains("組立", StringComparison.OrdinalIgnoreCase) ||
+                              x.ItemName.Contains("彎紮", StringComparison.OrdinalIgnoreCase) ||
+                              x.ItemName.Contains("壓送", StringComparison.OrdinalIgnoreCase) ||
+                              x.ItemName.Contains("澆築", StringComparison.OrdinalIgnoreCase)
+                        ? "複合計價或施工項：應人工確認是否為實際材料用量；單價不可直接視為純材料價格"
+                        : "仍須核對來源與有無重複計量"
+                })
+                .OrderBy(x => x.MaterialName).ThenBy(x => x.RowNumber)
+                .ToArray();
+
+            return ServiceResult.Ok(new
+            {
+                ProjectId = projectId,
+                Count = eligible.Length,
+                Items = eligible,
+                Notice = "僅代表符合現有數量及單位資格；未完成材料性質、重複計量及價格組成之人工審核"
+            });
+        }
+
+
         public async Task<ServiceResult> GetBlockedMaterialItemsAsync(int projectId)
         {
             var project = await _context.ProjectMasters.AsNoTracking()
