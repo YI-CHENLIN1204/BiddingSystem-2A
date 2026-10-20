@@ -74,6 +74,31 @@ namespace 崴正.Services
                 );
 
 
+        // Explicit source-heading aliases observed in real final tender spreadsheets.
+        // Keep unknown headings unresolved rather than guessing an estimable scope.
+        private static readonly Dictionary<string, string> MajorCategoryAliases =
+            new(StringComparer.OrdinalIgnoreCase)
+            {
+                ["土方工程"] = "土方及基礎工程",
+                ["基礎工程(擋土柱及安全支撐工程)"] = "土方及基礎工程",
+                ["平頂裝修工程"] = "天花板裝修工程",
+                ["牆面裝修工程"] = "內外牆裝修工程"
+            };
+
+        private static string? NormalizeMajorCategory(string? category)
+        {
+            if (string.IsNullOrWhiteSpace(category))
+                return null;
+
+            var normalized = category.Trim();
+            if (KnownMajorCategories.Contains(normalized))
+                return normalized;
+
+            return MajorCategoryAliases.TryGetValue(normalized, out var canonical)
+                ? canonical
+                : null;
+        }
+
         public static IReadOnlyCollection<string>
             GetKnownMajorCategories()
         {
@@ -220,16 +245,9 @@ namespace 崴正.Services
             if (!string.IsNullOrWhiteSpace(
                     overrideCategory))
             {
-                string normalizedOverride =
-                    overrideCategory.Trim();
-
-                if (KnownMajorCategories
-                    .Contains(
-                        normalizedOverride
-                    ))
-                {
-                    return normalizedOverride;
-                }
+                var resolvedOverride = NormalizeMajorCategory(overrideCategory);
+                if (resolvedOverride != null)
+                    return resolvedOverride;
             }
 
             return ResolveMajorCategory(
@@ -251,14 +269,9 @@ namespace 崴正.Services
                     continue;
                 }
 
-                string normalized =
-                    category.Trim();
-
-                if (KnownMajorCategories
-                    .Contains(normalized))
-                {
+                var normalized = NormalizeMajorCategory(category);
+                if (normalized != null)
                     return normalized;
-                }
             }
 
             return null;
