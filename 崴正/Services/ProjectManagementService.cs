@@ -1527,10 +1527,25 @@ namespace 崴正.Services
                 structuralItems.Count -
                 structuralPricedItemCount;
 
-            if (structuralUnpricedItemCount > 0)
+            // Keep the all-in structural-price completeness metric informational.
+            // Publish validates price only for in-scope rebar/concrete material rows.
+            int materialUnpricedItemCount =
+                reviewEntities.Count(x =>
+                    !x.IsIgnored &&
+                    !TwoAScopePolicy.IsExplicitNonMaterialCharge(x.ItemName) &&
+                    string.Equals(
+                        TwoAScopePolicy.ResolveEffectiveMajorCategory(
+                            x.MajorCategoryOverride, x.Category1, x.Category2, x.Category3),
+                        "結構體工程", StringComparison.OrdinalIgnoreCase) &&
+                    TwoAScopePolicy.IsQuantityHistoryMaterial(x.Material?.MaterialName) &&
+                    !(x.Amount.HasValue && x.Amount.Value > 0) &&
+                    !(x.Qty.HasValue && x.Qty.Value > 0 &&
+                      x.UnitPrice.HasValue && x.UnitPrice.Value > 0));
+
+            if (materialUnpricedItemCount > 0)
             {
                 publishBlockingIssues.Add(
-                    $"結構體無有效價格 {structuralUnpricedItemCount} 筆"
+                    $"目標建材無有效價格 {materialUnpricedItemCount} 筆"
                 );
             }
 
