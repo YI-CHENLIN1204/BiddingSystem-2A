@@ -563,8 +563,12 @@ namespace 崴正.Services
                             ))
                         .ToList();
 
+                // Non-material construction/labor items remain in the final bid,
+                // but missing their standalone price cannot block material baselines.
                 int structuralUnpricedItemCount =
                     structuralReviewItems.Count(x =>
+                        !TwoAScopePolicy.IsExplicitNonMaterialCharge(x.ItemName) &&
+                        TwoAScopePolicy.IsQuantityHistoryMaterial(x.Material?.MaterialName) &&
                         !(
                             x.Amount.HasValue &&
                             x.Amount.Value > 0
@@ -578,6 +582,7 @@ namespace 崴正.Services
 
                 int invalidQuantityBaselineCount =
                     structuralReviewItems.Count(x =>
+                        !TwoAScopePolicy.IsExplicitNonMaterialCharge(x.ItemName) &&
                         TwoAScopePolicy
                             .IsQuantityHistoryMaterial(
                                 x.Material?.MaterialName
