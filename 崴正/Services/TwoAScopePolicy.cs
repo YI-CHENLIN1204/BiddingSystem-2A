@@ -107,7 +107,12 @@ namespace 崴正.Services
         public static bool IsExplicitNonMaterialCharge(string? itemName)
         {
             return !string.IsNullOrWhiteSpace(itemName) &&
-                itemName.Contains("鋼筋不足噸數運費補貼", StringComparison.OrdinalIgnoreCase);
+                (itemName.Contains("鋼筋不足噸數運費補貼", StringComparison.OrdinalIgnoreCase) ||
+                 (itemName.Contains("鋼筋組立用", StringComparison.OrdinalIgnoreCase) &&
+                  (itemName.Contains("室內架", StringComparison.OrdinalIgnoreCase) ||
+                   itemName.Contains("中欄杆", StringComparison.OrdinalIgnoreCase) ||
+                   itemName.Contains("安全母索", StringComparison.OrdinalIgnoreCase) ||
+                   itemName.Contains("鐵爬梯", StringComparison.OrdinalIgnoreCase))));
         }
 
         public static IReadOnlyCollection<string>
