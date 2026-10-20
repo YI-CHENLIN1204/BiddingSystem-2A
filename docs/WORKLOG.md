@@ -312,3 +312,7 @@ Draft 建案不會參與模型。
 ## 2026-10-19 — 隔離正式 API 的 Commit 前斷線故障開關（待本機驗證）
 
 新增 ProjectManagementService 的 opt-in `FAULT_TEST_DROP_BEFORE_COMMIT=1` 故障點，僅在操作有 UUID、DbConnection.DataSource=db 且 Database=bidding_fault、projectId=1 與 `[FAULT_FIXTURE_ONLY]` 建案時，於 Publish/Reopen `SaveChanges` 後、Commit 前關閉真正的資料庫連線，再拋出測試例外。預設開關關閉，Supabase 的 DB host 不匹配。新增 `compose.fault-drop.yaml` 作為獨立 backend env override，以及唯讀驗證腳本 `scripts/check-fault-precommit-readonly.ps1`。此機制用於重現 Commit 前連線遺失的資料庫回滾，不包含真實 Commit 成功後 HTTP 回應遺失。尚未執行本機 build，也未故障注入。啟動時務必 `--no-deps`，避免重建含 tmpfs 的 db；故障測試前後保留並比對 audit/receipt/history baseline，完成後必須移除 override 並重新建立 backend。暫不以此測試證明長時間可靠性。
+
+## 2026-10-20 — 立彩真實標單工程大項別名修正（待本機 Build）
+
+檢視立彩原始 Excel 的「標單」工作表，實際存在「一 假設工程」「二 土方工程」「三 基礎工程(擋土柱及安全支撐工程)」「五 結構體工程」「八 平頂裝修工程」「九 牆面裝修工程」等分類標題。2A 原本只接受標準名稱精確匹配，造成部分非結構體項目列為未辨識。TwoAScopePolicy 新增**明確且保守**的工程大項別名：土方／上述基礎 -> 土方及基礎工程、平頂 -> 天花板裝修工程、牆面 -> 內外牆裝修工程。不猜測安全觀測、輕隔間、配合使照等分類，也不擴大目前僅針對結構體的模型範圍。不更改資料表、歷史交易或既有分類 override；**已匯入的 Draft 工項不會自動更新**。尚待本機 dotnet build 與新預覽結果驗證，不聲稱 194 筆會全數解決。下一步重點應針對已存在 Draft 的分類核對與審核效率，避免反覆匯入造成重複建案。
