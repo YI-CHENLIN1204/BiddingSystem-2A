@@ -187,6 +187,57 @@ namespace 崴正.Services
         }
 
 
+        // Read-only diagnostic for currently blocked in-scope material items.
+        public async Task<ServiceResult> GetBlockedMaterialItemsAsync(int projectId)
+        {
+            var project = await _context.ProjectMasters.AsNoTracking()
+                .FirstOrDefaultAsync(x => x.ProjectId == projectId && !x.IsDeleted);
+            if (project == null)
+                return ServiceResult.NotFound("找不到指定建案");
+
+            var items = await _context.FinalBidItems.AsNoTracking()
+                .Include(x => x.Material)
+                .Include(x => x.ProjectMaster)
+                .Where(x => x.ProjectMasterId == projectId && !x.IsIgnored)
+                .ToListAsync();
+
+            var blocked = items
+                .Where(x => !TwoAScopePolicy.IsExplicitNonMaterialCharge(x.ItemName))
+                .Where(x => string.Equals(
+                    TwoAScopePolicy.ResolveEffectiveMajorCategory(
+                        x.MajorCategoryOverride, x.Category1, x.Category2, x.Category3),
+                    "結構體工程", StringComparison.OrdinalIgnoreCase))
+                .Where(x => TwoAScopePolicy.IsQuantityHistoryMaterial(x.Material?.MaterialName))
+                .Where(x => !_finalBidService.CanBecomeHistoricalTransaction(x))
+                .Select(x => new
+                {
+                    x.FinalBidItemId,
+                    x.ItemName,
+                    x.Spec,
+                    x.Qty,
+                    x.Unit,
+                    x.UnitPrice,
+                    x.Amount,
+                    x.MappingStatus,
+                    x.MaterialId,
+                    MaterialName = x.Material?.MaterialName,
+                    x.Category1,
+                    x.Category2,
+                    x.Category3,
+                    x.MajorCategoryOverride,
+                    Reason = !x.MaterialId.HasValue ? "材料尚未對應"
+                        : x.MappingStatus != "Auto" && x.MappingStatus != "Manual"
+                            ? "材料對應狀態尚未確認"
+                        : !x.Qty.HasValue || x.Qty.Value <= 0
+                            ? "數量無效"
+                        : "材料單位無法安全換算或其他資格限制"
+                })
+                .ToArray();
+
+            return ServiceResult.Ok(new { ProjectId = projectId, Count = blocked.Length, Items = blocked });
+        }
+
+
         public async Task<ServiceResult>
             GetProjectAsync(
                 int projectId)
