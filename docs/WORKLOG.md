@@ -345,3 +345,7 @@ ProjectTwoASummary 的發布阻擋原本將「結構體全工項無有效價格�
 ## 2026-10-21 — 建案 #12 四筆鋼筋組立用施工輔助設施排除
 
 唯讀 API /api/projects/12/blocked-material-items 確認 ID 191–194 均屬「室內架／中欄杆／安全母索／鐵爬梯（鋼筋組立用）」，原本因名稱含「鋼筋」自動對應到鋼筋 materialId=1，數量單位 m²、M、M、支不能換算為 kg。TwoAScopePolicy.IsExplicitNonMaterialCharge 加入**狹義、名稱明確**的施工輔助項排除條件；FinalBidService.IsInTwoAHistoryScope 及摘要／Publish 資格檢查皆使用此條件。保留原始資料、不修改已有對應記錄；此提交未修正通用自動對應引擎，因此未來匯入可能仍顯示錯誤對應，後續再視具體情形阻止自動對應。待本機 Build 驗證摘要與 API 不再將四筆視為材料，發布前仍需確認其他有資格材料的價格真實性。不得把結構體總價當成純材料成本。
+
+## 2026-10-21 — 發布前 7 筆建材候選唯讀來源核對（待本機 Build）
+
+新增 GET /api/projects/{projectId}/eligible-material-items，以現有 Publish 可用的量與單位資格判斷列出鋼筋／混凝土合格候選，包含來源 Sheet/Row、Qty/Unit、原始價格、材料對應及對「組立、彎紮、壓送、澆築」的保守人工確認提醒。只是唯讀資訊，**不能把資格通過解釋成已審核實際材料量或純材料單價**。無 schema 或模型擴張；待本機 Build 與建案 #12 七筆查詢確認。後續發布前必須由人確認材料量、重複計量與價格性質；禁止僅因 3/3、4/4 就直接發布。
