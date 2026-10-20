@@ -102,6 +102,14 @@ namespace 崴正.Services
                 : null;
         }
 
+        // Explicit non-material charge: an accidentally matched rebar material
+        // must never turn this transportation subsidy into a quantity baseline.
+        public static bool IsExplicitNonMaterialCharge(string? itemName)
+        {
+            return !string.IsNullOrWhiteSpace(itemName) &&
+                itemName.Contains("鋼筋不足噸數運費補貼", StringComparison.OrdinalIgnoreCase);
+        }
+
         public static IReadOnlyCollection<string>
             GetKnownMajorCategories()
         {
