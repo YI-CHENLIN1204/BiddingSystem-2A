@@ -1419,67 +1419,40 @@ namespace 崴正.Services
                 structuralItems.Count(x =>
                     !x.MaterialId.HasValue);
 
-            int rebarSourceItemCount =
-                structuralItems.Count(x =>
+            // Use the same reviewed, in-scope material set as Publish.
+            // An explicit freight charge is never a rebar quantity baseline,
+            // even if a previous material match still points at rebar.
+            var quantityMaterialItems = reviewEntities
+                .Where(x =>
+                    !TwoAScopePolicy.IsExplicitNonMaterialCharge(x.ItemName) &&
                     string.Equals(
-                        x.MaterialName,
-                        "鋼筋",
-                        StringComparison.OrdinalIgnoreCase
-                    ));
+                        TwoAScopePolicy.ResolveEffectiveMajorCategory(
+                            x.MajorCategoryOverride, x.Category1, x.Category2, x.Category3),
+                        "結構體工程", StringComparison.OrdinalIgnoreCase) &&
+                    TwoAScopePolicy.IsQuantityHistoryMaterial(x.Material?.MaterialName))
+                .ToList();
+
+            int rebarSourceItemCount =
+                quantityMaterialItems.Count(x =>
+                    string.Equals(x.Material?.MaterialName, "鋼筋",
+                        StringComparison.OrdinalIgnoreCase));
 
             int concreteSourceItemCount =
-                structuralItems.Count(x =>
-                    string.Equals(
-                        x.MaterialName,
-                        "混凝土",
-                        StringComparison.OrdinalIgnoreCase
-                    ));
+                quantityMaterialItems.Count(x =>
+                    string.Equals(x.Material?.MaterialName, "混凝土",
+                        StringComparison.OrdinalIgnoreCase));
 
             int rebarCandidateItemCount =
-                reviewEntities.Count(x =>
-                    string.Equals(
-                        TwoAScopePolicy
-                            .ResolveEffectiveMajorCategory(
-                                x.MajorCategoryOverride,
-                                x.Category1,
-                                x.Category2,
-                                x.Category3
-                            ),
-                        "結構體工程",
-                        StringComparison.OrdinalIgnoreCase
-                    ) &&
-                    string.Equals(
-                        x.Material?.MaterialName,
-                        "鋼筋",
-                        StringComparison.OrdinalIgnoreCase
-                    ) &&
-                    _finalBidService
-                        .CanBecomeHistoricalTransaction(
-                            x
-                        ));
+                quantityMaterialItems.Count(x =>
+                    string.Equals(x.Material?.MaterialName, "鋼筋",
+                        StringComparison.OrdinalIgnoreCase) &&
+                    _finalBidService.CanBecomeHistoricalTransaction(x));
 
             int concreteCandidateItemCount =
-                reviewEntities.Count(x =>
-                    string.Equals(
-                        TwoAScopePolicy
-                            .ResolveEffectiveMajorCategory(
-                                x.MajorCategoryOverride,
-                                x.Category1,
-                                x.Category2,
-                                x.Category3
-                            ),
-                        "結構體工程",
-                        StringComparison.OrdinalIgnoreCase
-                    ) &&
-                    string.Equals(
-                        x.Material?.MaterialName,
-                        "混凝土",
-                        StringComparison.OrdinalIgnoreCase
-                    ) &&
-                    _finalBidService
-                        .CanBecomeHistoricalTransaction(
-                            x
-                        ));
+                quantityMaterialItems.Count(x =>
+                    string.Equals(x.Material?.MaterialName, "混凝土",
+                        StringComparison.OrdinalIgnoreCase) &&
+                    _finalBidService.CanBecomeHistoricalTransaction(x));
 
 
             decimal structuralAmount =
