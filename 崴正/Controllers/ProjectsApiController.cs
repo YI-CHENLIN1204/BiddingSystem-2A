@@ -92,6 +92,10 @@ public class ProjectsApiController : ControllerBase
             )
         );
 
+    [HttpGet("{projectId:int}/blocked-material-items")]
+    public async Task<IActionResult> BlockedMaterialItems(int projectId) =>
+        ToActionResult(await _service.GetBlockedMaterialItemsAsync(projectId));
+
     [HttpGet("{projectId:int}/historical-data")]
     public async Task<IActionResult> HistoricalData(int projectId) =>
         ToActionResult(await _service.GetHistoricalDataAsync(projectId));
