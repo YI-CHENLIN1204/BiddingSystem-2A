@@ -92,6 +92,10 @@ public class ProjectsApiController : ControllerBase
             )
         );
 
+    [HttpGet("{projectId:int}/eligible-material-items")]
+    public async Task<IActionResult> EligibleMaterialItems(int projectId) =>
+        ToActionResult(await _service.GetEligibleMaterialItemsAsync(projectId));
+
     [HttpGet("{projectId:int}/blocked-material-items")]
     public async Task<IActionResult> BlockedMaterialItems(int projectId) =>
         ToActionResult(await _service.GetBlockedMaterialItemsAsync(projectId));
