@@ -75,7 +75,22 @@ interface RunSummary {
   createdAt: string
 }
 
+interface QuantityReference {
+  projectId: number
+  projectName: string
+  projectDate: string
+  floorArea: number
+  actualQuantity: number
+  usagePerArea: number
+  similarityScore: number
+  ageYears: number
+  similarityWeight: number
+  timeWeight: number
+  finalWeight: number
+}
+
 interface QuantityRange {
+  references?: QuantityReference[]
   lowerQuantity?: number | null
   medianQuantity?: number | null
   upperQuantity?: number | null
@@ -650,6 +665,32 @@ onMounted(loadCase)
                 </tr>
               </tbody>
             </table>
+          </div>
+          <div v-for="item in quantityResult.result.items" :key="'reference-' + item.detectionCategoryName" style="margin: 12px 20px;">
+            <details v-if="item.range?.references?.length">
+              <summary style="cursor: pointer; font-weight: 600;">
+                查看 {{ item.detectionCategoryName }} 歷史參考案件明細（{{ item.range.references.length }} 案）
+              </summary>
+              <p class="text-muted small mt-2">實際採用的歷史案例與權重；每案先換算為單位面積用量，再依相似度及時間權重計算分位數。此表只供來源核對，不會更改既有分析結果。</p>
+              <div class="table-wrap">
+                <table>
+                  <thead><tr><th>建案</th><th>日期</th><th>樓地板面積 m²</th><th>材料數量</th><th>單位用量</th><th>相似度 %</th><th>相似權重</th><th>時間權重</th><th>最終權重</th></tr></thead>
+                  <tbody>
+                    <tr v-for="reference in item.range.references" :key="reference.projectId">
+                      <td>{{ reference.projectName }} (#{{ reference.projectId }})</td>
+                      <td>{{ reference.projectDate?.slice(0, 10) }}</td>
+                      <td class="number">{{ formatNumber(reference.floorArea, 2) }}</td>
+                      <td class="number">{{ formatNumber(reference.actualQuantity, 2) }} {{ item.unitName ?? '' }}</td>
+                      <td class="number">{{ formatNumber(reference.usagePerArea, 6) }} {{ item.unitName ?? '' }}/m²</td>
+                      <td class="number">{{ formatNumber(reference.similarityScore, 2) }}</td>
+                      <td class="number">{{ formatNumber(reference.similarityWeight, 6) }}</td>
+                      <td class="number">{{ formatNumber(reference.timeWeight, 6) }}</td>
+                      <td class="number">{{ formatNumber(reference.finalWeight, 6) }}</td>
+                    </tr>
+                  </tbody>
+                </table>
+              </div>
+            </details>
           </div>
         </template>
 
