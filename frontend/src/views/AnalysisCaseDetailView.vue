@@ -617,6 +617,7 @@ onMounted(loadCase)
               </div>
             </div>
           </div>
+          <div class="notice info" style="margin: 12px 20px;">歷史案例先按樓地板面積換算單位用量，再以本案面積轉成 P15／P50／P85 預估總量；異常判定比較的是同一單位的材料總數量。區間是歷史統計參考，並非工程設計上限。</div>
           <div class="table-wrap">
             <table>
               <thead>
@@ -624,10 +625,10 @@ onMounted(loadCase)
                   <th>工程大項</th>
                   <th>偵錯細項</th>
                   <th>實際數量</th>
-                  <th>單位用量 / m²</th>
-                  <th>P15</th>
-                  <th>P50</th>
-                  <th>P85</th>
+                  <th>本案單位用量（材料單位/m²）</th>
+                  <th>P15 預估總量</th>
+                  <th>P50 預估總量</th>
+                  <th>P85 預估總量</th>
                   <th>參考案</th>
                   <th>判定</th>
                 </tr>
@@ -638,9 +639,9 @@ onMounted(loadCase)
                   <td><strong>{{ item.detectionCategoryName }}</strong></td>
                   <td class="number">{{ formatNumber(item.observedQuantity, 4) }} {{ item.unitName ?? '' }}</td>
                   <td class="number">{{ formatNumber(item.observedUsagePerArea, 6) }}</td>
-                  <td class="number">{{ formatNumber(item.range?.lowerQuantity, 2) }}</td>
-                  <td class="number">{{ formatNumber(item.range?.medianQuantity, 2) }}</td>
-                  <td class="number">{{ formatNumber(item.range?.upperQuantity, 2) }}</td>
+                  <td class="number">{{ formatNumber(item.range?.lowerQuantity, 2) }} {{ item.unitName ?? '' }}</td>
+                  <td class="number">{{ formatNumber(item.range?.medianQuantity, 2) }} {{ item.unitName ?? '' }}</td>
+                  <td class="number">{{ formatNumber(item.range?.upperQuantity, 2) }} {{ item.unitName ?? '' }}</td>
                   <td>{{ item.range?.referenceProjectCount ?? 0 }}</td>
                   <td>
                     <span :class="trafficClass(item.trafficLight)"></span>
