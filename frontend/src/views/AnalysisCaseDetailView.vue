@@ -230,6 +230,10 @@ const majorCategories = computed(() => {
   return [...values].sort((a, b) => a.localeCompare(b, 'zh-Hant'))
 })
 
+function isRecognizableDemoName(name: string | null | undefined) {
+  return /DEMO|模擬|測試資料|測試案件|測試建案/i.test(name ?? '')
+}
+
 function formatNumber(value: number | null | undefined, digits = 2, empty = '-') {
   if (value == null || !Number.isFinite(Number(value))) return empty
   return Number(value).toLocaleString('zh-TW', { maximumFractionDigits: digits })
@@ -672,12 +676,16 @@ onMounted(loadCase)
                 查看 {{ item.detectionCategoryName }} 歷史參考案件明細（{{ item.range.references.length }} 案）
               </summary>
               <p class="text-muted small mt-2">實際採用的歷史案例與權重；每案先換算為單位面積用量，再依相似度及時間權重計算分位數。此表只供來源核對，不會更改既有分析結果。</p>
+              <div v-if="item.range.references.some(reference => isRecognizableDemoName(reference.projectName))" class="notice info" style="margin: 10px 0;">
+                <strong>參考資料包含名稱可辨識的模擬／測試建案。</strong>
+                此分析可用於流程驗證，但尚不能視為真實工程數量模型的有效性驗證。建案是否涵蓋完整工程範圍也尚未有獨立欄位可查；此提醒不會變更既有 Run 結果。
+              </div>
               <div class="table-wrap">
                 <table>
                   <thead><tr><th>建案</th><th>日期</th><th>樓地板面積 m²</th><th>材料數量</th><th>單位用量</th><th>相似度 %</th><th>相似權重</th><th>時間權重</th><th>最終權重</th></tr></thead>
                   <tbody>
                     <tr v-for="reference in item.range.references" :key="reference.projectId">
-                      <td>{{ reference.projectName }} (#{{ reference.projectId }})</td>
+                      <td>{{ reference.projectName }} (#{{ reference.projectId }}) <span v-if="isRecognizableDemoName(reference.projectName)" class="text-danger">〔疑似模擬／測試〕</span></td>
                       <td>{{ reference.projectDate?.slice(0, 10) }}</td>
                       <td class="number">{{ formatNumber(reference.floorArea, 2) }}</td>
                       <td class="number">{{ formatNumber(reference.actualQuantity, 2) }} {{ item.unitName ?? '' }}</td>
