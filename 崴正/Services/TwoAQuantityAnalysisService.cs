@@ -75,6 +75,23 @@ namespace 崴正.Services
                             group.DetectionCategory
                     };
 
+                // Only categories supported by current basic project data
+                // may receive a formal quantity anomaly judgement.
+                // New database categories must not silently enable new models.
+                if (!TwoAScopePolicy.IsQuantityEstimableMajorCategory(
+                        group.MajorCategory) ||
+                    !TwoAScopePolicy.IsQuantityDetectionCategory(
+                        group.DetectionCategory))
+                {
+                    item.AnalysisStatus = "NotApplicable";
+                    item.TrafficLight = "Gray";
+                    item.Message =
+                        "此工程類別尚未核定可僅憑建案基本資料進行正式數量異常判定。";
+                    result.SkippedGroupCount++;
+                    result.Items.Add(item);
+                    continue;
+                }
+
                 var category =
                     configuredCategories
                         .FirstOrDefault(x =>
