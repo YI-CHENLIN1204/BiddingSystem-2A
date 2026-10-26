@@ -349,3 +349,9 @@ ProjectTwoASummary 的發布阻擋原本將「結構體全工項無有效價格�
 ## 2026-10-21 — 發布前 7 筆建材候選唯讀來源核對（待本機 Build）
 
 新增 GET /api/projects/{projectId}/eligible-material-items，以現有 Publish 可用的量與單位資格判斷列出鋼筋／混凝土合格候選，包含來源 Sheet/Row、Qty/Unit、原始價格、材料對應及對「組立、彎紮、壓送、澆築」的保守人工確認提醒。只是唯讀資訊，**不能把資格通過解釋成已審核實際材料量或純材料單價**。無 schema 或模型擴張；待本機 Build 與建案 #12 七筆查詢確認。後續發布前必須由人確認材料量、重複計量與價格性質；禁止僅因 3/3、4/4 就直接發布。
+
+## 2026-10-26 — 基本建案資料即可分析的量價範圍（待本機建置）
+
+依最新需求，五級設計敏感度只作內部研究規範；目前不新增施工範圍／防水面積／牆面面積／門窗開口等輸入。閱讀現有 AnalysisCaseService：已設雙入口 CreateFromOneD/CreateFromUpload、多版本 AddVersion、RunQuantityAnalysis、RunMajorPriceAnalysis；資料模型具 AnalysisCase、AnalysisBidVersion、AnalysisBidItem、AnalysisRun。不能將這些介面直接等同整條功能已通過驗收。
+
+TwoAQuantityAnalysisService.AnalyzeAsync 現新增執行時 fail-closed：僅 TwoAScopePolicy 核准的工程大項＋偵錯類別才可產生正式數量異常；不符合者回傳 NotApplicable／Gray 並說明原因，即使 DB 另增 DetectionCategory 也不會自行開啟未研究模型。目前核准組合仍為結構體工程之鋼筋、混凝土。保留既有不足樣本 InsufficientData 顯示、單位失敗防護，不重引 Z-score/LSTM。新增模板與鋼骨前必須先用現有基本資料、歷史案件及正確材料量核對可行性；價格比較亦須獨立查核同類工程的價格範圍一致性。沒有資料表遷移；待本機 dotnet build 和一批流程驗證。
