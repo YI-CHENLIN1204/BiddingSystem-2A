@@ -4,6 +4,15 @@ import { useRoute } from 'vue-router'
 
 const route = useRoute()
 const menuOpen = ref(false)
+const sidebarCollapsed = ref(false)
+
+function toggleNavigation() {
+  if (window.matchMedia('(max-width: 960px)').matches) {
+    menuOpen.value = !menuOpen.value
+  } else {
+    sidebarCollapsed.value = !sidebarCollapsed.value
+  }
+}
 const pageTitle = computed(() => String(route.meta.title ?? '系統'))
 const sectionTitle = computed(() => route.name === 'audit-logs' ? '系統' : '工程類')
 
@@ -22,7 +31,7 @@ const systemNavigation = navigation.filter((item) => item.section === '系統')
 </script>
 
 <template>
-  <div class="app-shell">
+  <div class="app-shell" :class="{ 'sidebar-collapsed': sidebarCollapsed }">
     <aside id="main-navigation" class="sidebar" :class="{ open: menuOpen }">
       <div class="sidebar-brand"><span class="brand-title">崴正營造</span></div>
       <div class="brand-user">估算系統</div>
@@ -59,10 +68,10 @@ const systemNavigation = navigation.filter((item) => item.section === '系統')
         <button
           class="topbar-menu"
           type="button"
-          aria-label="開啟或關閉主選單"
+          aria-label="展開或收合主選單"
           aria-controls="main-navigation"
-          :aria-expanded="menuOpen"
-          @click="menuOpen = !menuOpen"
+          :aria-expanded="menuOpen || !sidebarCollapsed"
+          @click="toggleNavigation"
         >≡</button>
         <div class="topbar-user" aria-hidden="true"></div>
       </header>
