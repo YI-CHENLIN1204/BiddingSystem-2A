@@ -404,7 +404,8 @@ namespace 崴正.Services
                 settings.MinimumSampleCount)
             {
                 result.StatusMessage =
-                    $"樣本不足：目前只有 {references.Count} 個有效參考建案，最低需要 {settings.MinimumSampleCount} 個。";
+                    $"樣本不足：目前只有 {references.Count} 個有效參考建案，最低需要 {settings.MinimumSampleCount} 個。" +
+                    " " + GetNormalDistributionResearchNote(references);
 
                 RoundReferences(
                     result.References
@@ -476,7 +477,8 @@ namespace 崴正.Services
                 true;
 
             result.StatusMessage =
-                "偵錯細項合理用量區間估算完成";
+                "偵錯細項合理用量區間估算完成。 " +
+                GetNormalDistributionResearchNote(references);
 
             RoundReferences(
                 result.References
@@ -485,6 +487,29 @@ namespace 崴正.Services
             return ServiceResult.Ok(
                 result
             );
+        }
+
+
+        // Diagnostic only: sparse observations do not justify assuming a Gaussian distribution.
+        // This does not change the published quantiles or anomaly classification.
+        private static string GetNormalDistributionResearchNote(
+            List<DetectionCategoryRangeReferenceDto> references)
+        {
+            var values = references.Select(x => (double)x.UsagePerArea)
+                .Where(x => double.IsFinite(x) && x > 0).ToArray();
+            if (values.Length < 8)
+                return "常態分布候選研究：有效案件少於 8 件，無法可靠檢查分布形態；不可用常態假設補足樣本或直接正式判定。";
+
+            double mean = values.Average();
+            double variance = values.Sum(x => (x - mean) * (x - mean)) / (values.Length - 1);
+            double sd = Math.Sqrt(variance);
+            if (mean <= 0 || sd <= 1e-12)
+                return "常態分布候選研究：數據變異過低，暫不適用以標準差推導區間。";
+
+            double skewness = values.Sum(x => Math.Pow((x - mean) / sd, 3))
+                * values.Length / ((values.Length - 1.0) * (values.Length - 2.0));
+            double cv = sd / mean;
+            return $"常態分布候選研究（僅描述統計，未套用模型）：樣本 {values.Length}，變異係數 {cv:F3}，偏態係數 {skewness:F3}；樣本仍須檢查來源真實性、獨立性及分布形態，不代表已符合常態假設。";
         }
 
 
