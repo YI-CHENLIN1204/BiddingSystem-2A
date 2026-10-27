@@ -560,14 +560,14 @@ onMounted(loadCase)
               <input v-model.number="topCount" type="number" min="1" class="form-control" placeholder="系統預設" />
             </label>
             <button class="btn btn-primary" type="button" :disabled="analyzing" @click="runQuantity">
-              {{ analyzing ? '分析中...' : '鋼筋／混凝土數量偵錯' }}
+              {{ analyzing ? '分析中...' : '數量偵錯' }}
             </button>
             <select v-model="selectedMajorCategory" class="form-select" :disabled="!majorCategories.length">
               <option value="">選擇估算大項</option>
               <option v-for="category in majorCategories" :key="category" :value="category">{{ category }}</option>
             </select>
             <button class="btn btn-outline-primary" type="button" :disabled="analyzing || !selectedMajorCategory" @click="runPrice">
-              結構體工程估算／價格異常
+              價格異常
             </button>
           </div>
         </div>
@@ -628,7 +628,7 @@ onMounted(loadCase)
         <template v-if="quantityResult">
           <div class="card-header">
             <div>
-              <h3>細項數量偵錯：鋼筋／混凝土</h3>
+              <h3>數量偵錯</h3>
               <div class="text-muted small mt-1">
                 可分析 {{ quantityResult.result.analyzedGroupCount }} 組 ・
                 樣本不足 {{ quantityResult.result.insufficientDataCount }} 組 ・
@@ -705,7 +705,7 @@ onMounted(loadCase)
         <template v-if="priceResult">
           <div class="card-header">
             <div>
-              <h3>大項價格異常：{{ priceResult.result.majorCategory }}</h3>
+              <h3>價格異常：{{ priceResult.result.majorCategory }}</h3>
               <div class="text-muted small mt-1">{{ priceResult.result.statusMessage }}</div>
             </div>
             <div class="result-status">
@@ -733,7 +733,7 @@ onMounted(loadCase)
               <tr v-for="run in runs" :key="run.analysisRunId">
                 <td>#{{ run.analysisRunId }}</td>
                 <td>V{{ run.versionNo }}</td>
-                <td>{{ run.runType === 'Quantity' ? '鋼筋／混凝土數量偵錯' : run.runType.replace('MajorPrice:', '大項估算／價格：') }}</td>
+                <td>{{ run.runType === 'Quantity' ? '數量偵錯' : run.runType.replace('MajorPrice:', '大項估算／價格：') }}</td>
                 <td>{{ run.status }}</td>
                 <td>{{ formatDate(run.createdAt) }}</td>
                 <td>
