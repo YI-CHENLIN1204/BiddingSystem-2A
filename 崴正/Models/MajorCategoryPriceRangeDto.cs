@@ -25,6 +25,10 @@ namespace 崴正.Models
 
         public int ReferenceProjectCount { get; set; }
 
+        // Descriptive diagnostics only; neither is a prediction confidence rate.
+        public decimal EffectiveSampleSize { get; set; }
+        public decimal LargestWeightSharePercent { get; set; }
+
         public bool HasEnoughSamples { get; set; }
 
         public string StatusMessage { get; set; }
