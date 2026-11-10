@@ -90,6 +90,8 @@ interface QuantityReference {
 }
 
 interface QuantityRange {
+  effectiveSampleSize?: number
+  largestWeightSharePercent?: number
   references?: QuantityReference[]
   lowerQuantity?: number | null
   medianQuantity?: number | null
@@ -132,6 +134,8 @@ interface QuantityRunResponse {
 }
 
 interface PriceAnalysis {
+  effectiveSampleSize?: number
+  largestWeightSharePercent?: number
   majorCategory: string
   candidateProjectCount: number
   availableProjectCount: number
@@ -676,6 +680,7 @@ onMounted(loadCase)
                 查看 {{ item.detectionCategoryName }} 歷史參考案件明細（{{ item.range.references.length }} 案）
               </summary>
               <p class="text-muted small mt-2">實際採用的歷史案例與權重；每案先換算為單位面積用量，再依相似度及時間權重計算分位數。此表只供來源核對，不會更改既有分析結果。</p>
+              <p class="text-muted small">權重有效樣本數 ESS：<strong>{{ formatNumber(item.range.effectiveSampleSize, 2) }}</strong>；最大單一案例權重占比：<strong>{{ formatNumber(item.range.largestWeightSharePercent, 2) }}%</strong>。這兩項描述樣本權重集中情況，不代表異常判定正確率。</p>
               <p v-if="item.range.statusMessage" class="text-muted small">{{ item.range.statusMessage }}</p>
               <div v-if="item.range.references.some(reference => isRecognizableDemoName(reference.projectName))" class="notice info" style="margin: 10px 0;">
                 <strong>參考資料包含名稱可辨識的模擬／測試建案。</strong>
@@ -721,6 +726,8 @@ onMounted(loadCase)
             <div><span>P50 每坪單價</span><strong>{{ formatNumber(priceResult.result.medianPricePerPing) }}</strong></div>
             <div><span>P85 每坪單價</span><strong>{{ formatNumber(priceResult.result.upperPricePerPing) }}</strong></div>
             <div><span>有效參考案</span><strong>{{ priceResult.result.referenceProjectCount }}</strong></div>
+            <div><span>權重有效樣本數 ESS</span><strong>{{ formatNumber(priceResult.result.effectiveSampleSize, 2) }}</strong></div>
+            <div><span>最大案例權重占比</span><strong>{{ formatNumber(priceResult.result.largestWeightSharePercent, 2) }}%</strong></div>
           </div>
         </template>
       </section>
