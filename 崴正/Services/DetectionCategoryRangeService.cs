@@ -397,6 +397,12 @@ namespace 崴正.Services
             result.ReferenceProjectCount =
                 references.Count;
 
+            // Diagnostic only: keep legacy minimum-count gates and anomaly output unchanged.
+            var weightDiagnostic = ReferenceWeightDiagnostics.Calculate(
+                references.Select(x => x.FinalWeight));
+            result.EffectiveSampleSize = weightDiagnostic.EffectiveSampleSize;
+            result.LargestWeightSharePercent = weightDiagnostic.LargestWeightShare;
+
             result.References =
                 references;
 
