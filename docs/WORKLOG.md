@@ -355,3 +355,13 @@ ProjectTwoASummary 的發布阻擋原本將「結構體全工項無有效價格�
 依最新需求，五級設計敏感度只作內部研究規範；目前不新增施工範圍／防水面積／牆面面積／門窗開口等輸入。閱讀現有 AnalysisCaseService：已設雙入口 CreateFromOneD/CreateFromUpload、多版本 AddVersion、RunQuantityAnalysis、RunMajorPriceAnalysis；資料模型具 AnalysisCase、AnalysisBidVersion、AnalysisBidItem、AnalysisRun。不能將這些介面直接等同整條功能已通過驗收。
 
 TwoAQuantityAnalysisService.AnalyzeAsync 現新增執行時 fail-closed：僅 TwoAScopePolicy 核准的工程大項＋偵錯類別才可產生正式數量異常；不符合者回傳 NotApplicable／Gray 並說明原因，即使 DB 另增 DetectionCategory 也不會自行開啟未研究模型。目前核准組合仍為結構體工程之鋼筋、混凝土。保留既有不足樣本 InsufficientData 顯示、單位失敗防護，不重引 Z-score/LSTM。新增模板與鋼骨前必須先用現有基本資料、歷史案件及正確材料量核對可行性；價格比較亦須獨立查核同類工程的價格範圍一致性。沒有資料表遷移；待本機 dotnet build 和一批流程驗證。
+
+## 2026-11-10 — 外部研究資料與崴正歷史基準分層策略（研究決策，尚未啟用）
+
+需求：若企業可比較歷史標單不足，評估可合法使用的公開數量／價格資料集；研究資料不得直接寫入正式 FinalBidItem／HistoricalTransaction，也不得將公開資料稱作崴正的實際決標紀錄。
+
+目前實際執行的 DetectionCategoryRangeService 只從已核准的歷史交易取得候選，對每件計算 (SimilarityScore/100)^SimilarityExponent × 0.5^(AgeYears/TimeHalfLifeYears)。尚無來源可信度權重與獨立外部模型流程，不能宣稱企業歷史已加權優先於公開資料。
+
+預備方案（不改生產判定）：1) 建立研究用外部資料來源清單與版本／授權／工程類型／材料數量涵蓋範圍；2) 區分台灣公共工程價格（適合價格外部對照）、公開 BIM QTO（適合擷取測試，非真實決標）、材料強度區域估算（不應冒充獨立真實建案）；3) 以同一批未參與訓練的真實崴正案進行企業-only、外部-only、分層／收縮三組比較；4) 企業資料是否加重權重，應由留案測試的誤差、區間涵蓋率與穩定性決定，不設定任意固定倍率；5) 權重有效樣本數 ESS = (sum w)^2/sum(w^2)，並追蹤標準工項口徑與完整／部分工程範圍；6) 交付前將結果標示分為「可正式判定／僅供參考／資料不足」，對信心度不宣稱未校準的正確率百分比。
+
+正式基準繼續使用企業已核准歷史資料；公開資料若經研究可用，預設只在獨立外部參考通道提供結果，未經明確驗收不得參與正式異常判定。此記錄為設計與研究門檻，非功能完成或資料庫變更。
