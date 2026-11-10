@@ -73,3 +73,14 @@ DB 中未刪除的 project_master 目前只有 10 件：8 件 Approved、2 件 D
 ## 結論
 
 **程式能執行 ≠ 權重經驗證 ≠ 異常結果可靠。** 目前已查得兩項最急迫風險：異結構未硬排除且相似度門檻 0、模擬案在 Approved 候選中。正式調整權重之前先解決來源與可比條件；不再對 8 件模擬案過度調參。
+
+## 2026-11-10 第二輪：權重集中度診斷（唯讀）
+
+已新增 `ReferenceWeightDiagnostics.Calculate`：有效樣本數 `ESS=(sum w)^2/sum(w^2)`，最大單一案件權重占比 `max(w)/sum(w)*100`；同時納入數量 `DetectionCategoryRangeResultDto`、價格 `MajorCategoryPriceRangeResultDto`，顯示於 `AnalysisCaseDetailView.vue`。**數量／價格歷史樣本門檻及紅綠燈判定不變，沒有新增資料庫欄位。**
+
+用 Supabase 對既有 Run 快照作唯讀 SQL 診斷：
+- Run #18 混凝土：名義 8 件、ESS 7.34、最大單案權重 18.30%。
+- Run #18 鋼筋：名義 8 件、ESS 7.34、最大單案權重 18.30%。
+- Run #19 結構體價格：名義 8 件、ESS 7.34、最大單案權重 18.30%。
+
+這批用相同的 8 件參考案與相似／時間權重，故結果一致；**ESS 7.34 只代表權重並未嚴重集中，不代表 8 件資料真實或足夠推廣**。至少 7 件名稱指向模擬，仍不能據此驗證工程估算有效性。歷史 Run 快照不回填這些新欄位，更新後須新執行 Run 才會顯示指標。程式變更目前尚待使用者本機 Docker 編譯與 UI 驗證。
