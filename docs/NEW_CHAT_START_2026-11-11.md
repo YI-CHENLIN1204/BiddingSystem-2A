@@ -60,3 +60,17 @@ docs/RESEARCH_TRACEABILITY_2026-11-11.md 與 docs/WORKLOG.md，寫明最新 SHA�
 GitHub 已保存程式／決策／變更與交接檔案，但**不能存取你目前 PC 上未 push 的研究輸出**。`research/2a_synthetic/output/` 受 gitignore 管理；要讓新對話直接判讀實驗，請將 `production_weight_summary.csv`、`production_weight_detail.csv` 和 manifest 附上（或由新對話按固定 seed 重跑）。
 
 完整 100% 文字上下文在不同對話中無法保證；本專案改用 Git SHA、固定 seed、研究輸出與文件來建立**可檢查／可重現的交接**。
+
+
+## 新對話：先啟用專案交接守門規則
+
+**請在貼上上面的交接提示後，明確附加這句：**
+
+```text
+在任何程式／研究／文件變更前，請先讀 GitHub 中的 AGENTS.md 與
+.agents/skills/waizheng-2a-handoff-guardian/SKILL.md，
+並在每輪修改後重新審查是否需更新交接，
+向 docs/HANDOFF_CHANGE_REVIEWS.jsonl 記錄更新或免更新理由，
+執行 python scripts/check_handoff_review.py --base <變更前 SHA>。
+這是本專案每輪都必做的開發規則；不要只更新程式卻忘記交接。
+```
