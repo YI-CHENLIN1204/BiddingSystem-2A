@@ -202,3 +202,13 @@ research/2a_synthetic/README.md、docs/2A_MODEL_AUDIT_2026-11-10.md，
 - 使用者在本機 `C:\Users\User\Desktop\BiddingSystem-2A` 執行第五輪：`factorial_weight_review.py --first-seed 20261111 --seeds 5 --cases-per-combo 30 --train-sizes 3 5 8`，終端顯示 **4320 group runs、144 summaries、192 pairwise rows**；13/13 tests OK；交接審查 9 files / 1 review OK。這些是**程式執行驗證**，不是對實驗配對 MAPE 勝負的判定，因 `factorial_weight_report.md` 仍未提供。
 - 新增第六輪 `research/2a_synthetic/sparse_structure_review.py`，刻意測試每個相同結構只有 0/1/2/3 件可比較歷史的情形。區分數學上能輸出結果、達到名義最低 5 件門檻、跨結構混用比例、模擬 MAPE。新工具／新增測試已提交，**尚未取得用戶實測輸出**。
 - 下一輪請先保留並上傳 `output/factorial_weight_report.md`，及新 `output/sparse_structure_report.md`；完整指令見研究 README。交接資料與研究結果只用於專題，正式 .NET 判定與 Supabase 均未修改。
+
+
+## 14. 2026-11-11：第五／六輪報告已收到，正式結論轉向「可比性」
+
+使用者已上傳 `factorial_weight_report.md` 與 `sparse_structure_report.md`，詳細數據及限制**已永久記錄**在 `docs/2A_FACTORIAL_SPARSE_RESULTS_2026-11-11.md`。
+
+- 第五輪：權重重新分配（固定其他條件）在模擬中平均改善約 0.165～0.180 MAPE 百分點；基地面積直接去權重約改善 0.102～0.131 百分點；結構硬門檻在同結構資源充裕情況僅改善約 0.029 百分點。均不足直接修改產學正式權重。
+- 第六輪：同結構歷史僅 0～3 件時，現行無硬門檻在假設其他結構案例充足的模擬條件下，仍 100% 通過名義最低五案，但跨結構參考占比分別 100%、87.5%、75%、62.5%。以模擬情境四組簡單平均，無硬門檻 MAPE 約 73.82%、59.67%、47.90%、35.03%；硬門檻 0/1 件無可計算，2/3 件僅技術可算，**沒有一組達到五件門檻**。
+- 工程實務不可直接使用上述 MAPE；生成器先人為設定不同結構有不同材料強度，且其他結構每類有 20 件虛構候選。結論是「名義樣本數可合格而同結構可比性不足」，**不是**「已證明正式 2A 跨結構錯誤率」。
+- **新開發優先順序**：先研究可比性／同結構樣本資格診斷與跨結構材料差異敏感度，其次時間前推／同涵蓋率公平比較。第五／六輪結果已分析完畢，不要重複做一模一樣的權重實驗。產學 .NET 及 Supabase 不變。
