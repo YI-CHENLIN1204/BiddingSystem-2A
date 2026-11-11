@@ -193,3 +193,12 @@ python -m unittest discover -s research/2a_synthetic -p "test_*.py" -v
 完整對照見 `docs/2A_REFERENCE_ELIGIBILITY_MAPPING_2026-11-12.md`：C# `ProjectMaster` 有用途／結構／Approved、`HistoricalTransaction` 有 MaterialId、`MaterialMaster` 和 `UnitMaster` 支援標準單位資訊；但是已讀模型中缺少可直接確認真實來源認證、整體工程範圍完整性的權威欄位。**不能只憑檔名、Hash、Approved 就說資料是真實完整的最終標單。**
 
 新增 `research/2a_synthetic/reference_schema_readonly.sql` 供使用者在確認正確開發 DB 後執行，只查 `information_schema.columns`，不含工程資料列、機密或更新；尚未執行，不能宣稱 DB schema 已驗證。此輪未修改正式 C# 或資料表。
+
+
+## 2026-11-12：已取得正式資料表 Schema，進入唯讀品質聚合
+
+使用者已執行 `reference_schema_readonly.sql` 並提交 PostgreSQL 的 86 欄位查核資料。研究證據與正式欄位缺口：`docs/2A_VERIFIED_DB_SCHEMA_GAPS_2026-11-12.md`。
+
+下一步在核實正確 Supabase 開發 DB 後，開啟 `research/2a_synthetic/reference_quality_counts_readonly.sql`，查詢四組**聚合**結果：Approved/用途/結構案數、缺失重要基礎資料或來源檔案欄位案數、歷史交易連結品質、各用途/結構/材料的**獨立案數**。它是 `BEGIN READ ONLY` 且只輸出匯總、不輸出建案名稱或單價明細，也不會寫 DB。**腳本尚未執行，任何準備率與合格案數仍未驗證。**
+
+`project_master` 之 `project_type`、`structure_type`、`total_floor_area` 可為 NULL；`historical_transaction.project_master_id`、`final_bid_item_id` 可為 NULL；`Approved` 不證明企業來源真實。資料品質聚合結果即使全部通過，仍不是工程範圍完整性與來源真實的正式證明。
