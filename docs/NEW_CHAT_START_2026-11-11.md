@@ -79,3 +79,8 @@ GitHub 已保存程式／決策／變更與交接檔案，但**不能存取你�
 ## 2026-11-11 第四輪接手補充
 
 最新加入 `research/2a_synthetic/report_weights.py`，它從本機第三輪權重比較 CSV 真實產出 `research/2a_synthetic/output/production_weight_report.md`，用以比較三組六因素權重。**尚未收到 CSV，也沒有正式模擬 MAPE 勝負結論**。新對話優先讀報告（若無就提供 `python research/2a_synthetic/report_weights.py` 指令），再決定下一輪研究。不把報告當實際建案驗證。
+
+
+## 最新 2026-11-11：第三輪結果已分析
+
+已收到第三輪 `production_weight_report.md`，證據與數字見 `docs/2A_SYNTHETIC_WEIGHT_RESULT_REVIEW_2026-11-11.md`：A 17.10%、B 17.07%、C 16.91%，差距很小且被多因子同時變更干擾。已建立下一輪 `research/2a_synthetic/factorial_weight_review.py` 供結構門檻 × 面積權重獨立比較。新對話下一件事：取得本機 `research/2a_synthetic/output/factorial_weight_report.md`，解析結果並依交接 Skill 更新文件；不要重做第三輪或擅改正式權重。
