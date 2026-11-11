@@ -394,3 +394,12 @@ TwoAQuantityAnalysisService.AnalyzeAsync 現新增執行時 fail-closed：僅 Tw
 - `test_research.py` 補上由彙總資料生成報告、缺比較設定拒絕的測試。
 - 下一步使用者本機執行後，上傳 `production_weight_report.md` 或 `production_weight_summary.csv`／manifest，以確切指標分析結果。正式 2A 生產模型／DB 未動。
 - 交接審查：模型研究流程與下個任務改變，**須更新主交接／研究回溯／研究 README／WORKLOG／新對話提示**；本輪已有對應更新並記錄 JSONL。
+
+
+## 2026-11-11 — 第三輪結果分析與第五輪配對因子拆解
+
+- 收到使用者上傳 `production_weight_report.md`，解析 24 組情境 MAPE：A 約 17.10%、B 約 17.07%、C 約 16.91%。B 與 C 相對 A 的平均差距分別約 0.03、0.19 百分點；沒有足夠數據證明統計顯著或實務效益。
+- 現行配置跨結構混入平均僅 0.18%，硬門檻改善非常有限；C 同時修改多因子，無法直接歸因基地面積權重。詳細證據存於 `docs/2A_SYNTHETIC_WEIGHT_RESULT_REVIEW_2026-11-11.md`。
+- 新增 `factorial_weight_review.py` 六配置交叉對照，將結構硬門檻與「直接去掉基地面積」／「將權重挪給總樓地板面積及樓層」分開分析；`production_weight_review.run/predict` 可注入研究設定，原正式服務未變；新增配對完整性單元測試。
+- 交接審查判定：**必須更新**主交接、研究回溯、研究 README、新對話指引及 WORKLOG；已同步，且將本輪檔案列入 `docs/HANDOFF_CHANGE_REVIEWS.jsonl`。
+- 新腳本需使用者 Windows 執行；不得把程式提交視為測試成功。下一步上傳 `factorial_weight_report.md` 判讀。
