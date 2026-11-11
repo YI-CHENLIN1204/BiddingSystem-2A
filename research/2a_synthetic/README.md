@@ -154,3 +154,10 @@ python -m unittest discover -s research/2a_synthetic -p "test_*.py" -v
 輸出：`output/sparse_structure_detail.csv`、`sparse_structure_summary.csv`、`sparse_structure_report.md`、`sparse_structure_manifest.json`。預計 4 情境 × 5 seeds × 6 類型 × 2 材料 × 4 稀疏度 × 2 結構 gate = **960 組比較**，彙整 4×4×2 = 32 行。
 
 此設計的人為「其他結構約 20 件候選」並非崴正實際情形；缺少真實同質案的研究結果只能幫助**辨識資料不足時的演算法行為**，不能證明 5 件門檻是足夠的真實統計可靠度或跨結構估算可用。正式產學 DB 不會讀研究輸出。
+
+
+## 第五／六輪結果回收（2026-11-11）
+
+第五輪 `factorial_weight_report.md` 與第六輪 `sparse_structure_report.md` 已由使用者上傳並分析。完整原始表的摘要、解讀、可比性風險、不可外推限制及後續研究優先序，已整理到 `docs/2A_FACTORIAL_SPARSE_RESULTS_2026-11-11.md`。
+
+重要觀察：五輪權重微調平均改善約 0.1～0.18 MAPE 百分點；六輪同結構僅 0～3 案時，無硬門檻的參考資料可大量跨結構混用，雖通過總數最低 5 案門檻，卻不能證明符合工程口徑。**下一輪應優先驗證資料來源與可比性門檻，而非再繼續盲目調權重。** 目前不變更生產服務、DB 或既有模擬腳本。
