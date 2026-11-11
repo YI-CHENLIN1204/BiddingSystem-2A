@@ -1,6 +1,7 @@
 import unittest
 from generate import produce
 from compare import evaluate, weighted_quantile, quantile
+from batch import benchmark, summarize
 
 class SyntheticResearchTests(unittest.TestCase):
     def test_deterministic_seed(self):
@@ -27,6 +28,18 @@ class SyntheticResearchTests(unittest.TestCase):
         p = [(10.0, 2.0), (20.0, 1.0), (30.0, 1.0)]
         self.assertEqual(weighted_quantile(p, 0.5), 10.0)
         self.assertEqual(weighted_quantile(p, 0.85), 30.0)
+
+    def test_batch_reproducible_and_separated(self):
+        one = benchmark([31, 32], cases_per_combo=10, train_sizes=(3,))
+        two = benchmark([31, 32], cases_per_combo=10, train_sizes=(3,))
+        self.assertEqual(one, two)
+        self.assertEqual(len(one), 4 * 2 * 12 * 4)
+        for row in one:
+            self.assertEqual(row["evaluated_cases"], 10)
+            self.assertLessEqual(row["effective_train_cases"] or 0, 3)
+        summary = summarize(one)
+        self.assertEqual(len(summary), 4 * 1 * 4 * 2)
+        self.assertTrue(all(x["scenario_group_runs"] == 2 * 6 for x in summary))
 
     def test_holdout_comparison(self):
         rows = [dict(r, floor_area_m2=float(r["floor_area_m2"]),
