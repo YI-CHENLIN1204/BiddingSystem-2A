@@ -80,3 +80,29 @@ python -m unittest discover -s research/2a_synthetic -p "test_*.py" -v
 - `normal` 採平均值 ±1 個樣本標準差，`median` 用插值 P15/P85，`weighted` 用階梯加權 P15/P85：各方法的區間**定義不同**，覆蓋率僅供敏感度觀察，**不能直接據此比較哪種區間較準確**。下一階段要做同一目標覆蓋率的公平區間評比。
 - `weighted` 是現行加權方法的**簡化版**（面積、樓層、城市、時間），尚未重現正式 2A 所有相似度欄位，不能宣稱已驗證正式權重最優。
 - 種子彼此可重現，但不代表與真實世界獨立抽樣條件一致；真正產學模型仍需真實歷史建案、工程範圍與適用條件驗證。
+
+## 第三輪：對照正式 2A 六因素相似度（尚不修改正式系統）
+
+`production_weight_review.py` 是獨立的唯讀研究腳本，參照 `ProjectSimilarityService` 及 `DetectionCategoryRangeService` 的設計，包含結構 (25)、總樓地板面積 (20)、基地面積 (10)、樓層 (10)、年份 (0)、縣市 (5) 的六因素分數，面積／基地面積差異 50% 截斷、地上／地下樓層每層 3%／10% 扣分、時間三年半衰期、相似度平方、按相似度優先選 Top K，最後計算加權 P15/P50/P85。
+
+三組固定待比較設定：
+- `current_no_structure_gate`：現行權重，**允許不同結構候選**（與生產程式相同的風險）。
+- `current_with_structure_gate`：維持原權重，但只保留相同結構。
+- `no_site_area_with_gate`：相同結構條件，將基地面積權重 10 改為 0，面積 20 改為 25、樓層 10 改為 15，測試是否因規模重複加權使誤差增加。
+
+```powershell
+python research/2a_synthetic/production_weight_review.py --first-seed 20261111 --seeds 5 --cases-per-combo 30 --train-sizes 3 5 8
+python -m unittest discover -s research/2a_synthetic -p "test_*.py" -v
+```
+
+輸出至 `research/2a_synthetic/output/`：
+- `production_weight_detail.csv`：各組各情境的模擬誤差、區間涵蓋、ESS、混入不同結構的參考比例；
+- `production_weight_summary.csv`：按情境、樣本數、材料、設定比較；
+- `production_weight_manifest.json`：固定參數與研究限制。
+
+注意：
+- 雖參照正式程式的六因素公式，**Python 腳本仍是研究版重現，不是 ASP.NET API 的端到端驗證**；可能存在計量精度、欄位缺失、交易資料整合上的差異。
+- `cases-per-combo=30` 是模擬宇宙的每組建案數，`train-sizes 3 5 8` 模擬每案可使用的參考數。全部生成資料不等於企業真實資料。
+- 生成器的不同結構具有研究者預設的不同用量，因此「結構硬門檻是否更好」的模擬結果**可能受到設計假設主導**；這是敏感度實驗，不是建築工程的事實結論。
+- 模擬年份目前可包含待估案年份後的歷史參考，以重現現行相似度計算的對稱年代差異。**不可把這份實驗冒稱真正的時間前推回測。**
+- 這一輪不處理正式結構體工程大項完整決標價，合成單項材料金額也不等於大項價格。
