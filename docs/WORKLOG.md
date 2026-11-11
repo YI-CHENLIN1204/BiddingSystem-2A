@@ -403,3 +403,11 @@ TwoAQuantityAnalysisService.AnalyzeAsync 現新增執行時 fail-closed：僅 Tw
 - 新增 `factorial_weight_review.py` 六配置交叉對照，將結構硬門檻與「直接去掉基地面積」／「將權重挪給總樓地板面積及樓層」分開分析；`production_weight_review.run/predict` 可注入研究設定，原正式服務未變；新增配對完整性單元測試。
 - 交接審查判定：**必須更新**主交接、研究回溯、研究 README、新對話指引及 WORKLOG；已同步，且將本輪檔案列入 `docs/HANDOFF_CHANGE_REVIEWS.jsonl`。
 - 新腳本需使用者 Windows 執行；不得把程式提交視為測試成功。下一步上傳 `factorial_weight_report.md` 判讀。
+
+
+## 2026-11-11 — 第五輪成功與第六輪稀疏結構歷史研究
+
+- 使用者提供實測 PowerShell 輸出：第五輪 4320 組配置／144 彙總／192 配對，13 項單元測試全部通過，交接 Guardian 已確認 9/9 檔案審查。此前估算 2160 組不正確，文件統一更正。
+- 第五輪資料只顯示執行成功，尚未看到 `factorial_weight_report.md` 的實際 ΔMAPE，**模型採用結論仍未作成**。
+- 建立 `research/2a_synthetic/sparse_structure_review.py`，模擬相同結構只有 0～3 件，而跨結構參考充裕時，是否有交叉套用風險。將名義最低 5 案 readiness 與演算法能計算分開，保留現有正式樣本不足規則。
+- `test_research.py` 補上稀疏度、gate、可重現、非法配置測試；研究 README 與交接已更新。尚待 Windows 本機實跑，研究不連 DB。
