@@ -96,3 +96,12 @@ python -m unittest discover -s research/2a_synthetic -p "test_*.py" -v
 - 不使用 `git reset --hard`、`git clean -fd` 等破壞性命令，可能有個別未提交修改或本機輸出。
 - PostgreSQL／Supabase 查詢需先確認目標專案及 DB；執行研究無需讀取或修改 DB。
 - `output/` 有完整可重建資料才可要求使用者重跑；若要復原原始輸出，使用精確 seed+commit。
+
+
+## G. 2026-11-11 新增 Handoff Guardian 追蹤制度
+
+- Skill：`.agents/skills/waizheng-2a-handoff-guardian/SKILL.md`，識別名 `waizheng-2a-handoff-guardian`。
+- 操作指令：`AGENTS.md`；機械檢查器：`scripts/check_handoff_review.py`；審查記錄：`docs/HANDOFF_CHANGE_REVIEWS.jsonl`；GitHub PR gate：`.github/workflows/2a-handoff-review.yml`。
+- 每輪必記：起始 SHA、修改路徑、是否更新交接、真實更新文件、原因、實際驗證。GitHub 的每檔提交 SHA 可透過 change_id 與前後版本重建變動。
+- **審查紀錄不會自動證明結論正確**；Python script 只檢查 changed_paths 和審查 JSON 新增行的一致性，人工仍要判定交接內容是否準確。PR CI 只在符合事件條件時執行，不涵蓋所有直接 push。
+- 當次建立治理文件屬 E3（GitHub 程式已提交）；若未見本機命令或 GitHub Actions log，不得宣稱 E1 gate 已通過。
