@@ -376,3 +376,12 @@ TwoAQuantityAnalysisService.AnalyzeAsync 現新增執行時 fail-closed：僅 Tw
 - 決策同步追加 `docs/DECISIONS.md`（研究隔離、先審查權重再改生產、可重現交接）。
 - 下一步：先讀 `research/2a_synthetic/output/production_weight_summary.csv` 與 `production_weight_detail.csv` 實際結果，再比較 C# 與 Python 評分等價性、公平區間定義、時間前推回測。不要重做已確認的 5760 組模擬或盲目更改正式 DB。
 - 注意：本機 `output/` 被 gitignore 排除，**不能靠 GitHub 自動讀到其檔案**。可以透過使用者上傳匿名結果 CSV 或固定 seed 重現。
+
+
+## 2026-11-11 — 專案專屬 Handoff Guardian Skill
+
+- 應使用者要求，把跨對話交接與可回溯規範封裝成專案 Skill `waizheng-2a-handoff-guardian`；GitHub 路徑 `.agents/skills/waizheng-2a-handoff-guardian/SKILL.md`。
+- 新增 `AGENTS.md`，明確要求每次程式／研究／模型／文件變動後重新審查是否同步更新交接。
+- 新增 `scripts/check_handoff_review.py`，以變更前 SHA 比對 Git 檔案與**當輪新增**的 `docs/HANDOFF_CHANGE_REVIEWS.jsonl` 記錄；只有完整覆蓋 changed_paths 且符合更新文件聲明才通過。
+- 新增 `.github/workflows/2a-handoff-review.yml`，針對目標 `feature/1d-api-integration` 的 PR 或手動觸發執行檢查；直接向 feature 推送仍需手動按 Skill 檢查。
+- 更新主交接／研究證據追溯／新對話入口／決策文件，讓新對話先閱讀 Skill。這只是治理流程的建立，與正式量價模型計算無關。
