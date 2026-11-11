@@ -53,6 +53,7 @@ def produce(seed, cases_per_combo, scenario):
                 company_factor = (1.12 if company.startswith("崴正") else 1.0) if scenario == "company_shift" else 1.0
                 slope = 1.0 + 0.012 * (ground - 8) + 0.025 * basement
                 year = rng.randint(2016, 2025)
+                city = rng.choice(("台中市", "雲林縣", "桃園市", "高雄市"))
                 for material, base, unit, unit_price in (
                     ("鋼筋", base_rebar, "kg", 29.0),
                     ("混凝土", base_concrete, "m³", 3700.0),
@@ -71,7 +72,7 @@ def produce(seed, cases_per_combo, scenario):
                         "case_id": case_id, "dataset_type": "synthetic_research",
                         "scenario": scenario, "company_group": company,
                         "project_type": kind, "structure_type": structure,
-                        "city": rng.choice(("台中市", "雲林縣", "桃園市", "高雄市")),
+                        "city": city,
                         "project_year": year, "floor_area_m2": area,
                         "site_area_m2": site_area, "ground_floors": ground,
                         "basement_floors": basement, "material": material,
