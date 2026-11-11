@@ -2,6 +2,7 @@ import unittest
 from generate import produce
 from compare import evaluate, weighted_quantile, quantile
 from batch import benchmark, summarize
+from production_weight_review import score, predict, run, summarize as summarize_weights
 
 class SyntheticResearchTests(unittest.TestCase):
     def test_deterministic_seed(self):
@@ -40,6 +41,33 @@ class SyntheticResearchTests(unittest.TestCase):
         summary = summarize(one)
         self.assertEqual(len(summary), 4 * 1 * 4 * 2)
         self.assertTrue(all(x["scenario_group_runs"] == 2 * 6 for x in summary))
+
+    def test_production_style_score_bounds_and_structure(self):
+        base = [dict(row, floor_area_m2=float(row["floor_area_m2"]),
+                     site_area_m2=float(row["site_area_m2"]),
+                     ground_floors=int(row["ground_floors"]),
+                     basement_floors=int(row["basement_floors"]),
+                     project_year=int(row["project_year"]),
+                     usage_per_m2=float(row["usage_per_m2"]))
+                for row in produce(5, 10, "stable") if row["material"] == "鋼筋"]
+        target = base[0]
+        self.assertEqual(score(target, target), 100)
+        other_structure = dict(target, case_id="TEST-SC", structure_type="SC")
+        self.assertAlmostEqual(score(target, other_structure), 45 / 70 * 100, places=2)
+        self.assertIsNone(predict(target, [other_structure], 3, "current_with_structure_gate"))
+        self.assertIsNone(predict(target, [target], 3, "current_no_structure_gate"))
+        self.assertTrue(0 <= score(target, base[1]) <= 100)
+
+    def test_production_style_batch(self):
+        first = run([33], cases_per_combo=10, train_sizes=(3,), scenarios=("stable",))
+        second = run([33], cases_per_combo=10, train_sizes=(3,), scenarios=("stable",))
+        self.assertEqual(first, second)
+        self.assertEqual(len(first), 12 * 3)
+        summarized = summarize_weights(first)
+        self.assertEqual(len(summarized), 2 * 3)
+        self.assertTrue(all(row["evaluated_cases"] == 10 for row in first))
+        gated = [row for row in first if row["config"] == "current_with_structure_gate"]
+        self.assertTrue(all(row["cross_structure_references_percent"] == 0 for row in gated))
 
     def test_holdout_comparison(self):
         rows = [dict(r, floor_area_m2=float(r["floor_area_m2"]),
