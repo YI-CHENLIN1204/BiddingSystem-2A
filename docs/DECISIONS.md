@@ -219,3 +219,10 @@ Qty × UnitPrice
 ## D-014 — 新對話必須先以最新交接主檔確認狀態（2026-11-11）
 
 `docs/CURRENT_HANDOFF_2026-11-11.md` 為 11 月 11 日已驗證現況入口；`docs/RESEARCH_TRACEABILITY_2026-11-11.md` 保留每次 Git SHA、實驗命令、來源及測試證據等級；`docs/NEW_CHAT_START_2026-11-11.md` 提供可直接貼進新對話的提示。原 10 月 15 日 docs/HANDOFF.md 等是**歷史快照**而非最新事實。新的開發回合須同步更新交接與可回溯記錄。
+
+
+---
+
+## D-015 — 每次變更後必重新審查交接影響（2026-11-11）
+
+**決策：** 在 `BiddingSystem-2A` 每次程式、模型、測試、研究、參數、部署或文件修改後，都必須檢查並記錄「是否需要更新交接文件」，不再依賴對話摘要或事後想起。使用專案 Skill `waizheng-2a-handoff-guardian`、`AGENTS.md` 與 `docs/HANDOFF_CHANGE_REVIEWS.jsonl`；需要時同步修改主交接／決策／研究追溯／WORKLOG；不需修改也要書面說明原因。新對話先讀 Skill 再開發。機械檢查與 PR workflow 是輔助，不能代替人工確認內容正確性。
