@@ -161,3 +161,26 @@ python -m unittest discover -s research/2a_synthetic -p "test_*.py" -v
 第五輪 `factorial_weight_report.md` 與第六輪 `sparse_structure_report.md` 已由使用者上傳並分析。完整原始表的摘要、解讀、可比性風險、不可外推限制及後續研究優先序，已整理到 `docs/2A_FACTORIAL_SPARSE_RESULTS_2026-11-11.md`。
 
 重要觀察：五輪權重微調平均改善約 0.1～0.18 MAPE 百分點；六輪同結構僅 0～3 案時，無硬門檻的參考資料可大量跨結構混用，雖通過總數最低 5 案門檻，卻不能證明符合工程口徑。**下一輪應優先驗證資料來源與可比性門檻，而非再繼續盲目調權重。** 目前不變更生產服務、DB 或既有模擬腳本。
+
+
+## 第七輪：來源與工程可比性資格診斷（2026-11-12）
+
+第六輪結果顯示，名義歷史樣本數達門檻，**仍可能因結構異質而不可比較**。為避免把「參考筆數」當成來源真實性的替代，新增 **`eligibility_review.py`**，僅在獨立研究區試驗來源、用途、結構、材料、標準單位、整體工程範圍、審核狀態的資格規則。
+
+```powershell
+python research/2a_synthetic/eligibility_review.py --seed 20261111 --cases-per-combo 12 --minimum-count 5
+python research/2a_synthetic/eligibility_review.py --seed 20261111 --cases-per-combo 12 --minimum-count 5 --allow-cross-structure
+python -m unittest discover -s research/2a_synthetic -p "test_*.py" -v
+```
+
+輸出 `output/eligibility_detail.csv`、`eligibility_summary.json`、`eligibility_report.md`。兩種執行使用**同一個預設輸出名稱**，第二次會覆寫第一次；若需比對兩者，請提供不同 `--output` 前綴（如 `.../eligibility_strict` 與 `.../eligibility_cross`）。
+
+**嚴格隔離**：
+- 所有來源仍是 `source_kind=synthetic`。即使模擬了 `review_status=Approved`，也不能變成企業正式歷史。
+- `hypothetical_eligible` 只表示「若暫時假設來源可驗證，其他條件是否通過」，僅供研究規則；`production_eligible` 對全部合成資料必須為 `false`。
+- `reference_count_gate_pass` 只代表名義最低 5 案，**不是**工程品質保證或可以直接使用於正式異常偵測的充分條件。
+- 故意注入不同結構、錯誤單位、不完整範圍、Draft、錯誤材料／建案用途等情況，用來確認所有拒絕原因可追溯；可能有多個原因同時成立。
+- 這是**資格規則的研究樣品**，不是從資料庫讀出的真實 `ProjectMaster`／`HistoricalTransaction`，亦未與正式 .NET 的單位換算、結構類別、工項完整性校對。
+- 不需要新增任何測試資料到 Supabase；正式異常判定與資料庫不受影響。
+
+**下個驗證點**：先執行此腳本與單元測試，檢查合成候選的 `production_eligible=0` 與拒絕理由。其後研究「從真實 DB 唯讀欄位建立可比性摘要」時，必須先確認企業歷史原始來源、工程範圍資訊是否真的存在，不能推測資料庫已具備來源完整性標記。
