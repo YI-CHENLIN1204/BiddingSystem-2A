@@ -228,3 +228,14 @@ research/2a_synthetic/README.md、docs/2A_MODEL_AUDIT_2026-11-10.md，
 - 已新建 `docs/2A_REFERENCE_ELIGIBILITY_MAPPING_2026-11-12.md`：核對 C# 模型與研究資格欄位。現有 `ProjectMaster.ProjectType`、`StructureType`、`HistoryStatus`、`HistoricalTransaction.MaterialId` 等可支援基礎檢查；**已讀模型無可靠來源真實性／整體工程範圍完整性認證欄位**。
 - 已新增 `research/2a_synthetic/reference_schema_readonly.sql`，下一步應由使用者在正確 Supabase 開發 DB 執行純 `information_schema.columns` 查詢，檢查真實 schema 再決定可否設計實務資格審查 UI／migration。**SQL 尚未執行，也未修改正式 DB。**
 - 正式模型的權重、最少參考數、已核准歷史查詢、異常燈號全部保持現況。下一個對話先取 schema 結果，避免重跑第七輪同一批合成測試。
+
+
+## 17. 2026-11-12：真正 PostgreSQL 欄位 Schema 已核對（最新）
+
+使用者上傳在 Supabase 執行 `reference_schema_readonly.sql` 後的 `information_schema.columns` JSON 結果。**已直接驗證六張資料表共 86 個欄位**：`project_master` 17、`final_bid_item` 27、`historical_transaction` 8、`material_master` 5、`unit_master` 7、`estimation_settings` 22。
+
+根據真實 Schema：有用途／結構／Approved／材料／單位／來源檔案 hash 等基本欄位，但**沒有獨立且具證據的 source provenance certification／整份結構體工程 scope completeness 欄位**。尤其 `historical_transaction.project_master_id` 與 `final_bid_item_id` 可為 NULL，而 `project_master.project_type`／`structure_type`／`total_floor_area` 也可為 NULL。這不能僅依 C# Model 推論所有資料品質達標；亦不能因 Approved 代表真實可比較。
+
+詳見 **`docs/2A_VERIFIED_DB_SCHEMA_GAPS_2026-11-12.md`**。下一個操作點是研究用 **`research/2a_synthetic/reference_quality_counts_readonly.sql`**，在確認正確 Supabase 開發資料庫後，由使用者自行執行四組**唯讀聚合**查詢，查看用途 × 結構的獨立建案數、Approved 欄位缺漏與交易 FK／材料數量品質。**目前僅驗證存在的資料庫欄位，尚未讀取／查證當前實際建案筆數，新的聚合 SQL 亦尚未執行。**
+
+此次不修改任何正式 Schema、C#、參數或歷史判定。轉新對話時不應再要求重貼同一份 86 欄清單，應改分析新聚合結果。
