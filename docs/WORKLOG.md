@@ -411,3 +411,12 @@ TwoAQuantityAnalysisService.AnalyzeAsync 現新增執行時 fail-closed：僅 Tw
 - 第五輪資料只顯示執行成功，尚未看到 `factorial_weight_report.md` 的實際 ΔMAPE，**模型採用結論仍未作成**。
 - 建立 `research/2a_synthetic/sparse_structure_review.py`，模擬相同結構只有 0～3 件，而跨結構參考充裕時，是否有交叉套用風險。將名義最低 5 案 readiness 與演算法能計算分開，保留現有正式樣本不足規則。
 - `test_research.py` 補上稀疏度、gate、可重現、非法配置測試；研究 README 與交接已更新。尚待 Windows 本機實跑，研究不連 DB。
+
+
+## 2026-11-11 — 第五／六輪模擬報告分析收斂
+
+- 收到第五輪因子拆解報告及第六輪 0～3 同結構可比歷史壓力測試報告；詳細表及來源限制存於 `docs/2A_FACTORIAL_SPARSE_RESULTS_2026-11-11.md`。
+- 第五輪顯示權重微調的模擬 ΔMAPE 較小，沒有足夠證據改正式參數。
+- 第六輪在特意安排其他結構候選充足情境下，無硬門檻皆通過名義五件門檻，但 TopK 跨結構比例高；有硬門檻僅 0～3 同結構時，均達不到最低 5 件。模型可數學計算 ≠ 可正式判定；研究數字不可外推實務準確率。
+- 下一件待做工作：跨結構差異大小的敏感度、資料可比性資格診斷與時間前推；此輪僅更新分析與交接，不動任何產學正式模型／資料庫。
+- 依 `waizheng-2a-handoff-guardian` Skill 審查：本次研究結論與新對話下一步改變，故更新主交接、研究回溯、WORKLOG、研究 README 與新對話交接。
