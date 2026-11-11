@@ -195,3 +195,10 @@ research/2a_synthetic/README.md、docs/2A_MODEL_AUDIT_2026-11-10.md，
 - **最新研究新增** `research/2a_synthetic/factorial_weight_review.py`（六方案拆因子配對），擴充 `production_weight_review.py` 可由研究呼叫端注入設定，保留原本 A/B/C 舊比較。請以最新 `research/2a_synthetic/README.md` 執行新命令，等待本機跑出的 `factorial_weight_report.md` 分析。
 - 最近使用者曾貼出 **11／11** 研究測試通過，交接守門審查亦通過。這個證據**發生在本輪新增因子拆解腳本之前**，所以不能宣稱新增測試已通過。
 - 下一優先：產生並分析因子拆解配對報告；其後才設計同結構只有 0～3 案的壓力測試、真正時間前推回測及公平區間對比。**不調整正式產學模型、資料庫及主分支**。
+
+
+## 13. 2026-11-11 第五輪使用者實測／第六輪研究新階段
+
+- 使用者在本機 `C:\Users\User\Desktop\BiddingSystem-2A` 執行第五輪：`factorial_weight_review.py --first-seed 20261111 --seeds 5 --cases-per-combo 30 --train-sizes 3 5 8`，終端顯示 **4320 group runs、144 summaries、192 pairwise rows**；13/13 tests OK；交接審查 9 files / 1 review OK。這些是**程式執行驗證**，不是對實驗配對 MAPE 勝負的判定，因 `factorial_weight_report.md` 仍未提供。
+- 新增第六輪 `research/2a_synthetic/sparse_structure_review.py`，刻意測試每個相同結構只有 0/1/2/3 件可比較歷史的情形。區分數學上能輸出結果、達到名義最低 5 件門檻、跨結構混用比例、模擬 MAPE。新工具／新增測試已提交，**尚未取得用戶實測輸出**。
+- 下一輪請先保留並上傳 `output/factorial_weight_report.md`，及新 `output/sparse_structure_report.md`；完整指令見研究 README。交接資料與研究結果只用於專題，正式 .NET 判定與 Supabase 均未修改。
