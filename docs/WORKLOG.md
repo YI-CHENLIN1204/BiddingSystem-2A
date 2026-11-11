@@ -365,3 +365,14 @@ TwoAQuantityAnalysisService.AnalyzeAsync 現新增執行時 fail-closed：僅 Tw
 預備方案（不改生產判定）：1) 建立研究用外部資料來源清單與版本／授權／工程類型／材料數量涵蓋範圍；2) 區分台灣公共工程價格（適合價格外部對照）、公開 BIM QTO（適合擷取測試，非真實決標）、材料強度區域估算（不應冒充獨立真實建案）；3) 以同一批未參與訓練的真實崴正案進行企業-only、外部-only、分層／收縮三組比較；4) 企業資料是否加重權重，應由留案測試的誤差、區間涵蓋率與穩定性決定，不設定任意固定倍率；5) 權重有效樣本數 ESS = (sum w)^2/sum(w^2)，並追蹤標準工項口徑與完整／部分工程範圍；6) 交付前將結果標示分為「可正式判定／僅供參考／資料不足」，對信心度不宣稱未校準的正確率百分比。
 
 正式基準繼續使用企業已核准歷史資料；公開資料若經研究可用，預設只在獨立外部參考通道提供結果，未經明確驗收不得參與正式異常判定。此記錄為設計與研究門檻，非功能完成或資料庫變更。
+
+## 2026-11-11 — 專題模擬研究驗證與完整跨對話交接
+
+- 教授允許專題以明確標記模擬資料做模型研究；產學正式歷史不允許模擬數據混入真實決標標單，仍須真實工程資料驗證。
+- `research/2a_synthetic/generate.py` 建立六種用途結構 × 兩材料合成資料；`compare.py` 做基礎方法比較；`batch.py` 多種子四情境（stable/high_variance/company_shift/outliers），小樣本 3/5/8；`production_weight_review.py` 研究現有六因子相似度、結構門檻、基地面積權重調整。所有研究與正式 DB 無連線。
+- **完整使用者 PowerShell 證據**（提交節點 `3986920`）：執行 `python research/2a_synthetic/batch.py --first-seed 20261111 --seeds 10 --cases-per-combo 30 --train-sizes 3 5 8`，訊息 `5760 group runs, 96 summary rows`；`python -m unittest discover -s research/2a_synthetic -p "test_*.py" -v` 得 7/7 OK。
+- **其後新增第三輪**（提交節點 `68e8e45`）：`production_weight_review.py`、新增單元測試。使用者最新明確回報「沒有錯誤」，**但本輪無詳細測試逐行輸出及 CSV，尚未對演算法誤差做量化解讀**。
+- 建立 `docs/CURRENT_HANDOFF_2026-11-11.md`、`docs/RESEARCH_TRACEABILITY_2026-11-11.md`、`docs/NEW_CHAT_START_2026-11-11.md`，並更新 README / docs/README / docs/HANDOFF / docs/NEXT_CHAT_HANDOFF 指向新入口，避免 10/15 過時資料庫 0 筆及工作方向誤導新對話。
+- 決策同步追加 `docs/DECISIONS.md`（研究隔離、先審查權重再改生產、可重現交接）。
+- 下一步：先讀 `research/2a_synthetic/output/production_weight_summary.csv` 與 `production_weight_detail.csv` 實際結果，再比較 C# 與 Python 評分等價性、公平區間定義、時間前推回測。不要重做已確認的 5760 組模擬或盲目更改正式 DB。
+- 注意：本機 `output/` 被 gitignore 排除，**不能靠 GitHub 自動讀到其檔案**。可以透過使用者上傳匿名結果 CSV 或固定 seed 重現。
