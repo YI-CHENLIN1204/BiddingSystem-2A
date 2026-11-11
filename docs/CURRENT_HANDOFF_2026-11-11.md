@@ -186,3 +186,12 @@ research/2a_synthetic/README.md、docs/2A_MODEL_AUDIT_2026-11-10.md，
 - 報告必須以**實際 CSV** 為根據，按情境、樣本數、鋼筋／混凝土比較三組六因素權重，統計 MAPE 改善／惡化組數、ESS、混入不同結構的參考比例。缺少資料、資料不是明確標記模擬或某組設定遺漏，拒絕產生報告。
 - **尚未取得使用者本機的第三輪 CSV**，所以目前無權重優勝者、實際 MAPE 數值的研究結論；此輪只交付研究分析工具與單元測試程式。
 - 下一步：`python research/2a_synthetic/report_weights.py`，上傳 `research/2a_synthetic/output/production_weight_report.md`，再由新對話判讀結果並確認 Python／C# 模型等價性。正式 DB／生產模型權重不變。
+
+
+## 12. 2026-11-11 最新研究結論與下一個驗證點
+
+- **已收到使用者上傳的 `production_weight_report.md`**：24 組情境 × 三方案（72 筆彙總比較），A 17.10%、B 17.07%、C 16.91%（24 個已四捨五入 MAPE 的簡單平均）；平均差約 0.03 與 0.19 個百分點。正式審查：`docs/2A_SYNTHETIC_WEIGHT_RESULT_REVIEW_2026-11-11.md`。
+- A 模型跨結構參考比例平均僅 0.18%，所以本次無法有效評估跨結構混用；且 C 同時改變 3 個權重與硬門檻，不能推論基地面積「不重要」。
+- **最新研究新增** `research/2a_synthetic/factorial_weight_review.py`（六方案拆因子配對），擴充 `production_weight_review.py` 可由研究呼叫端注入設定，保留原本 A/B/C 舊比較。請以最新 `research/2a_synthetic/README.md` 執行新命令，等待本機跑出的 `factorial_weight_report.md` 分析。
+- 最近使用者曾貼出 **11／11** 研究測試通過，交接守門審查亦通過。這個證據**發生在本輪新增因子拆解腳本之前**，所以不能宣稱新增測試已通過。
+- 下一優先：產生並分析因子拆解配對報告；其後才設計同結構只有 0～3 案的壓力測試、真正時間前推回測及公平區間對比。**不調整正式產學模型、資料庫及主分支**。
