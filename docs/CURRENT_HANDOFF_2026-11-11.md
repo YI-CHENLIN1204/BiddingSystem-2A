@@ -178,3 +178,11 @@ research/2a_synthetic/README.md、docs/2A_MODEL_AUDIT_2026-11-10.md，
 - 參考可執行檢查：`python scripts/check_handoff_review.py --base <該輪變更前 SHA>`，確認本輪所有檔案都被新增審查記錄涵蓋。GitHub PR（目標為 feature 分支）有 `.github/workflows/2a-handoff-review.yml` 自動 gate，另可手動觸發；直接 push 不會被 PR gate 自動攔截，操作方仍必須遵循 Skill。
 - Skill 是版本化的 repo 規則，不可誇稱已自動安裝至所有 ChatGPT 對話。新對話必須明確讀取 `AGENTS.md` 與 Skill 檔案。
 - 此項治理機制不改任何正式量價計算或研究數據；已提交程式與 CI 規則仍需由 GitHub Actions／本機驗證執行情況，不等於已由 CI 完整測過。
+
+
+## 11. 2026-11-11 第四輪工具：第三輪權重結果自動成文
+
+- 新增 `research/2a_synthetic/report_weights.py`，讀取本機 `production_weight_summary.csv` 與 `production_weight_manifest.json`，輸出 `production_weight_report.md`。
+- 報告必須以**實際 CSV** 為根據，按情境、樣本數、鋼筋／混凝土比較三組六因素權重，統計 MAPE 改善／惡化組數、ESS、混入不同結構的參考比例。缺少資料、資料不是明確標記模擬或某組設定遺漏，拒絕產生報告。
+- **尚未取得使用者本機的第三輪 CSV**，所以目前無權重優勝者、實際 MAPE 數值的研究結論；此輪只交付研究分析工具與單元測試程式。
+- 下一步：`python research/2a_synthetic/report_weights.py`，上傳 `research/2a_synthetic/output/production_weight_report.md`，再由新對話判讀結果並確認 Python／C# 模型等價性。正式 DB／生產模型權重不變。
