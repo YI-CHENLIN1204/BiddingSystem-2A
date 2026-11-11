@@ -4,6 +4,7 @@
 Results are simulator diagnostics, not measured accuracy on real projects.
 """
 import argparse
+import hashlib
 import csv
 import json
 import math
@@ -51,13 +52,19 @@ def similarity_weight(target, sample, mode):
 def evaluate(group, train_size, method, weight_mode):
     if len(group) <= train_size:
         return None
-    # Each evaluation target is excluded from training. Simulation seed drives
-    # all generated data; fixed sorting ensures reruns are deterministic.
+    # Project-level holdout; deterministic independent ordering avoids always
+    # picking the first few (which may systematically include index=1 company).
     errors, intervals, esizes = [], [], []
     for target_idx, target in enumerate(group):
         candidates = [v for i, v in enumerate(group) if i != target_idx]
-        # Select prior observations deterministically; target never in train.
-        training = candidates[:train_size]
+        # Same reproducible reference subset for every estimator, no self-match.
+        # This is an exchangeability benchmark, NOT a time-forward backtest.
+        training = sorted(
+            candidates,
+            key=lambda x: hashlib.sha256(
+                f"{target['case_id']}|{x['case_id']}".encode("utf-8")
+            ).hexdigest(),
+        )[:train_size]
         values = sorted(x["usage_per_m2"] for x in training)
         if method == "median":
             prediction = statistics.median(values)
