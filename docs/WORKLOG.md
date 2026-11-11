@@ -436,3 +436,11 @@ TwoAQuantityAnalysisService.AnalyzeAsync 現新增執行時 fail-closed：僅 Tw
 - 對照最新 C# 模型：用途／結構／材料／Approved 有對應欄位，但來源真實性和工程範圍完整性尚無可靠的直接判定來源；研究示意欄位不等於 C# 正式欄位。
 - 新增 `docs/2A_REFERENCE_ELIGIBILITY_MAPPING_2026-11-12.md` 與研究區唯讀 SQL `reference_schema_readonly.sql`；後者只查 metadata，使用者確認開發 DB 後才執行。
 - 交接影響判定：研究發現、模型資料欄位差距及下一個工作改變，**需同步**主交接、研究回溯、WORKLOG、研究 README 與新對話提示；已更新並留 JSONL 審查。正式 ASP.NET 與 Supabase 均未修改。
+
+
+## 2026-11-12 — 真實資料庫 86 欄位核驗
+
+- 使用者已提供 Supabase `information_schema.columns` 查核結果，本次確認六張正式表共 86 欄：project_master 17、final_bid_item 27、historical_transaction 8、material_master 5、unit_master 7、estimation_settings 22。
+- 已核對來源檔名/Hash、Draft/Approved、材料/單位、結構/用途等欄位存在，但無來源真偽／工程範圍完整性的專用資格欄位；且部分關鍵 FK 與面積／類型欄位可 NULL。
+- 新增 `docs/2A_VERIFIED_DB_SCHEMA_GAPS_2026-11-12.md` 固化真正 DB Schema 證據；新增 `research/2a_synthetic/reference_quality_counts_readonly.sql` 提供唯讀聚合查核（尚未執行）。
+- **交接審查：需要更新**主交接、研究回溯、WORKLOG、新對話指示與研究 README，因真實 Schema 的查核狀態和下次工作已變更。本輪不改任何 ASP.NET Core、Supabase Schema 或正式演算法。
