@@ -138,3 +138,12 @@ python -m unittest discover -s research/2a_synthetic -p "test_*.py" -v
 - 原始報告要點及限制已固化 `docs/2A_FACTORIAL_SPARSE_RESULTS_2026-11-11.md`。第五輪部分配對改善約 0.1～0.18 MAPE 百分點，但不保證真實增益；第六輪少同結構樣本時雖然無硬門檻顯示 100% 達五筆名義門檻，參考案最高 100% 不同結構，顯示數量門檻與可比性門檻需分開審查。
 - **不得宣稱** 73.82%／47.90% 代表崴正真實工程錯誤率；模擬生成器設置結構不同用量基準，研究設計還特意提供大量其他結構候選；報表不含各 seed 完整差異。
 - 此次僅完成分析、證據與交接文檔（E3 GitHub commit），沒有變更 C# 生產服務、正式設定或 DB。下一研究方向為可比性／資料資格檢查和跨結構差異敏感度的獨立實驗。
+
+
+## L. 2026-11-12：可比性／歷史資料來源資格研究
+
+- 使用者提供 2026-11-12 PowerShell 完整輸出，`git merge 705efe3..cedf7df` 成功，`check_handoff_review.py --base 705efe3` 顯示 **Reviewed 6 files with 1 new audit record**；屬 E1 交接機械完整性驗證。
+- 新增 `research/2a_synthetic/eligibility_review.py`（研究-only），把來源真實性、同用途、同結構、材料、標準單位、工程範圍與 Approved 審核分開列拒絕原因。
+- 所有生成資料都帶 `source_kind=synthetic`；`hypothetical_eligible` 只用於隔離其他規則的研究影響，**不會授予任何假資料正式可用資格**。
+- 新增三項測試：全 synthetic 都不得成為生產基準；同案、自身與多錯誤防護；結構限制調整不會繞過來源驗證。**本輪新增的 Python 程式與測試尚未在使用者本機執行；不得記成 E1。**
+- 這些研究欄位並不證明真實 DB 有工程範圍或驗證來源欄位；日後若要對接生產，需先唯讀檢查資料表結構、資料品質及使用者授權。
