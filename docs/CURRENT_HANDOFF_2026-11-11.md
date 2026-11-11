@@ -169,3 +169,12 @@ research/2a_synthetic/README.md、docs/2A_MODEL_AUDIT_2026-11-10.md，
 及程式對照差異，不要重新設計系統或重做已完成研究。
 專題模擬資料與產學真實歷史必須分離；不改正式 DB／權重，不合併 main。
 ```
+
+
+## 10. 2026-11-11 新增專案 Skill：變更後必審交接
+
+- 唯一 Skill 識別：`waizheng-2a-handoff-guardian`；檔案 `.agents/skills/waizheng-2a-handoff-guardian/SKILL.md`；全 repo 代理入口 `AGENTS.md`。
+- **每次修改**（程式、模型、研究、設定、資料庫、文件）完成後，必須重新評估交接影響，並在 `docs/HANDOFF_CHANGE_REVIEWS.jsonl` 新增 JSON 審查紀錄。若改動使架構／現況／決策／測試與下一步不同，應實際更新本主交接、`docs/RESEARCH_TRACEABILITY_2026-11-11.md`、`docs/WORKLOG.md`、`docs/DECISIONS.md` 或其他受影響文件；即使不必更新也需記原因。
+- 參考可執行檢查：`python scripts/check_handoff_review.py --base <該輪變更前 SHA>`，確認本輪所有檔案都被新增審查記錄涵蓋。GitHub PR（目標為 feature 分支）有 `.github/workflows/2a-handoff-review.yml` 自動 gate，另可手動觸發；直接 push 不會被 PR gate 自動攔截，操作方仍必須遵循 Skill。
+- Skill 是版本化的 repo 規則，不可誇稱已自動安裝至所有 ChatGPT 對話。新對話必須明確讀取 `AGENTS.md` 與 Skill 檔案。
+- 此項治理機制不改任何正式量價計算或研究數據；已提交程式與 CI 規則仍需由 GitHub Actions／本機驗證執行情況，不等於已由 CI 完整測過。
