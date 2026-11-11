@@ -1,6 +1,6 @@
 import unittest
 from generate import produce
-from compare import evaluate, weighted_quantile
+from compare import evaluate, weighted_quantile, quantile
 
 class SyntheticResearchTests(unittest.TestCase):
     def test_deterministic_seed(self):
@@ -19,6 +19,9 @@ class SyntheticResearchTests(unittest.TestCase):
         for name in ("stable", "high_variance", "company_shift", "outliers"):
             with self.subTest(name=name):
                 self.assertEqual(len(produce(101, 2, name)), 24)
+
+    def test_exact_position_quantile(self):
+        self.assertEqual(quantile([10.0, 20.0, 30.0], 0.5), 20.0)
 
     def test_weighted_quantiles(self):
         p = [(10.0, 2.0), (20.0, 1.0), (30.0, 1.0)]
