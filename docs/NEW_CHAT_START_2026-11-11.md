@@ -104,3 +104,8 @@ GitHub 已保存程式／決策／變更與交接檔案，但**不能存取你�
 ## 2026-11-12：最新第七輪結果與正式欄位查核交接
 
 使用者已提供 `eligibility_report.md`：35 件模擬候選，hypothetical_eligible=1、production_eligible=0。已靜態核對正式 `ProjectMaster`／`FinalBidItem`／`HistoricalTransaction` C# 模型，詳細見 `docs/2A_REFERENCE_ELIGIBILITY_MAPPING_2026-11-12.md`。下一步不是重跑生成器，而是**由使用者在確認正確的開發 DB 後執行** `research/2a_synthetic/reference_schema_readonly.sql`，回傳 `information_schema` 欄位清單以確認來源資格欄位缺口。SQL 唯讀；禁止自行增加 DB migration、改正式模型或推論已經有來源可信認證。
+
+
+## 2026-11-12：實際 Schema 已確認（新對話最新接手點）
+
+使用者已提供六張表的真實 PostgreSQL Schema，總共 **86 欄**。詳見 `docs/2A_VERIFIED_DB_SCHEMA_GAPS_2026-11-12.md`，不用再向使用者索取相同的 columns 結果。已明確確認主要表缺少專用來源真實性與工程範圍完整性資格欄位，並且 ProjectMaster 若干基礎條件、HistoricalTransaction 外鍵可 NULL。**下一步**為讓使用者在正確 Supabase 開發 DB 執行 `research/2a_synthetic/reference_quality_counts_readonly.sql`，回報**聚合結果**，核對實際 Approved 案件數、用途/結構/材料可用案數、來源欄位缺漏與交易 FK 可追溯性；不得直接建 migration 或修改正式異常判斷。
