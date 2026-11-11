@@ -113,3 +113,12 @@ python -m unittest discover -s research/2a_synthetic -p "test_*.py" -v
 - 資料來源是本機 `production_weight_summary.csv`，並要求 manifest 標明 `SIMULATED_RESEARCH_ONLY`；沒有可讀結果檔就不能推論模型表現。
 - 明確輸出 `production_weight_report.md`（本機忽略 Git）；可透過固定亂數種子與同一 Git 版本回溯，或由使用者上傳報告／資料。
 - 狀態：GitHub 已提交研究工具（E3）；**第三輪實際數值尚未取得／分析，新增測試待本機輸出確認**。不能把這份腳本提交當作真實工程統計結果。
+
+
+## I. 2026-11-11 第三輪結果收到與第五輪因子拆解
+
+- 使用者正式上傳本機 `production_weight_report.md`（第三輪、72 筆三設定比較）：以報表 24 個已四捨五入的 MAPE 行平均 A 17.10%、B 17.07%、C 16.91%。改善約 0.03／0.19 個百分點；跨結構參考 A 平均 0.18%，B/C 0%；報告記載 B 18/4/2、C 20/4/0 改善／惡化／持平。**這是 E1 的輸出結果文件，不是原始 detail CSV，也不是實際建案工程驗證。**
+- 審查報告 `docs/2A_SYNTHETIC_WEIGHT_RESULT_REVIEW_2026-11-11.md` 記錄計算方式、三方案的混雜因素以及因為第三輪同結構樣本充裕而未測出風險。
+- 新增 `research/2a_synthetic/factorial_weight_review.py`，擴充 `production_weight_review.py` 的呼叫端可注入六方案設定，不改原 A/B/C CLI；`test_research.py` 新增對照設計與配置完整性測試。
+- 新的 2×3 配置能分離硬門檻效果與兩種基地面積權重調整方式，但仍依賴人為合成工程，且同結構資料尚未稀疏化。下一輪要再測少樣本及時間前推。
+- **目前驗證狀態**：上輪使用者 PowerShell 11/11 OK，新增第五輪腳本／測試尚未得到用戶本機輸出；不能將 Git commit 當成已實驗通過。
