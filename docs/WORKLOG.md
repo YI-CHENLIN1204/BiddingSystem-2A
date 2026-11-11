@@ -444,3 +444,10 @@ TwoAQuantityAnalysisService.AnalyzeAsync 現新增執行時 fail-closed：僅 Tw
 - 已核對來源檔名/Hash、Draft/Approved、材料/單位、結構/用途等欄位存在，但無來源真偽／工程範圍完整性的專用資格欄位；且部分關鍵 FK 與面積／類型欄位可 NULL。
 - 新增 `docs/2A_VERIFIED_DB_SCHEMA_GAPS_2026-11-12.md` 固化真正 DB Schema 證據；新增 `research/2a_synthetic/reference_quality_counts_readonly.sql` 提供唯讀聚合查核（尚未執行）。
 - **交接審查：需要更新**主交接、研究回溯、WORKLOG、新對話指示與研究 README，因真實 Schema 的查核狀態和下次工作已變更。本輪不改任何 ASP.NET Core、Supabase Schema 或正式演算法。
+
+## 2026-11-12 — Q4 核准材料獨立建案數真實檢查
+
+- 使用者貼出 Q4 聚合：住宅 RC、material_id=1 有 8 獨立 Approved 建案及 11 筆交易；material_id=2 有 8 獨立 Approved 建案及 10 筆交易；兩組分別關聯 11、10 個工項 ID。不能把交易筆數當工程件數。
+- 仍需核查材料 ID 名稱、DEMO 來源、工程範圍與 Q1～Q3 的缺漏/FK 檢查。8 件名義 Approved 不代表 8 件真實商務定案標單。
+- 新增 `docs/2A_APPROVED_MATERIAL_COHORT_2026-11-12.md` 保存證據，及 `research/2a_synthetic/reference_material_source_audit_readonly.sql` 供材料 ID、疑似 DEMO 與一案多交易的唯讀聚合查核。
+- 研究及接手狀態已有重大進展，依 Guardian 審查**必須更新**主交接、研究回溯、WORKLOG 與新對話文件；正式程式與 DB 未動。
