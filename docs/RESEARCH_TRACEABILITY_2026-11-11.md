@@ -105,3 +105,11 @@ python -m unittest discover -s research/2a_synthetic -p "test_*.py" -v
 - 每輪必記：起始 SHA、修改路徑、是否更新交接、真實更新文件、原因、實際驗證。GitHub 的每檔提交 SHA 可透過 change_id 與前後版本重建變動。
 - **審查紀錄不會自動證明結論正確**；Python script 只檢查 changed_paths 和審查 JSON 新增行的一致性，人工仍要判定交接內容是否準確。PR CI 只在符合事件條件時執行，不涵蓋所有直接 push。
 - 當次建立治理文件屬 E3（GitHub 程式已提交）；若未見本機命令或 GitHub Actions log，不得宣稱 E1 gate 已通過。
+
+
+## H. 2026-11-11 第四輪：本機第三輪權重 CSV 實證報告
+
+- 新增 `research/2a_synthetic/report_weights.py`；新增 `test_research.py` 的「實際彙總轉報告」及「不完整配置拒絕」測試。
+- 資料來源是本機 `production_weight_summary.csv`，並要求 manifest 標明 `SIMULATED_RESEARCH_ONLY`；沒有可讀結果檔就不能推論模型表現。
+- 明確輸出 `production_weight_report.md`（本機忽略 Git）；可透過固定亂數種子與同一 Git 版本回溯，或由使用者上傳報告／資料。
+- 狀態：GitHub 已提交研究工具（E3）；**第三輪實際數值尚未取得／分析，新增測試待本機輸出確認**。不能把這份腳本提交當作真實工程統計結果。
