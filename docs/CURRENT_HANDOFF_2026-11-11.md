@@ -239,3 +239,9 @@ research/2a_synthetic/README.md、docs/2A_MODEL_AUDIT_2026-11-10.md，
 詳見 **`docs/2A_VERIFIED_DB_SCHEMA_GAPS_2026-11-12.md`**。下一個操作點是研究用 **`research/2a_synthetic/reference_quality_counts_readonly.sql`**，在確認正確 Supabase 開發資料庫後，由使用者自行執行四組**唯讀聚合**查詢，查看用途 × 結構的獨立建案數、Approved 欄位缺漏與交易 FK／材料數量品質。**目前僅驗證存在的資料庫欄位，尚未讀取／查證當前實際建案筆數，新的聚合 SQL 亦尚未執行。**
 
 此次不修改任何正式 Schema、C#、參數或歷史判定。轉新對話時不應再要求重貼同一份 86 欄清單，應改分析新聚合結果。
+
+## 18. 2026-11-12：Q4 真實材料歷史聚合結果
+
+使用者提供 `reference_quality_counts_readonly.sql` 的 Q4 輸出：**住宅 × RC** 有 material_id=1 的 **8 件獨立 Approved、未刪除、非異常且數量為正的歷史建案，11 筆交易、11 個不同連結工項**；material_id=2 同樣 **8 件獨立建案，10 筆交易、10 個連結工項**。不是 11／10 件工程，也不能判定 8 件皆為真實可用標單。尚未確認 material_id=1/2 名稱或 DEMO 資料是否仍在；Q1～Q3 尚未取得。
+
+保存於 `docs/2A_APPROVED_MATERIAL_COHORT_2026-11-12.md`。下一步優先執行唯讀聚合 `research/2a_synthetic/reference_material_source_audit_readonly.sql` 確認材料名稱、來源疑似 DEMO 分組與同案同材料多筆交易；並補提供先前的 Q1～Q3 結果。**SQL 尚未執行，不能當成已完成核驗。** 正式 C#／DB／模型權重保持不變。
