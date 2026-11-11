@@ -99,3 +99,8 @@ GitHub 已保存程式／決策／變更與交接檔案，但**不能存取你�
 ## 2026-11-12：最新第七輪研究接手
 
 新研究程式 `research/2a_synthetic/eligibility_review.py` 已新增，針對來源／用途／結構／材料／單位／工程範圍／核准狀態做研究版資格診斷；`production_eligible` 不得讓任何合成資料通過。下一步在 Windows 本機執行並回報 `eligibility_report.md` 和單元測試結果。該研究未接觸正式資料庫，後續是否能映射至實務資料，仍須先查證真正歷史表欄位，不能預設已完成。
+
+
+## 2026-11-12：最新第七輪結果與正式欄位查核交接
+
+使用者已提供 `eligibility_report.md`：35 件模擬候選，hypothetical_eligible=1、production_eligible=0。已靜態核對正式 `ProjectMaster`／`FinalBidItem`／`HistoricalTransaction` C# 模型，詳細見 `docs/2A_REFERENCE_ELIGIBILITY_MAPPING_2026-11-12.md`。下一步不是重跑生成器，而是**由使用者在確認正確的開發 DB 後執行** `research/2a_synthetic/reference_schema_readonly.sql`，回傳 `information_schema` 欄位清單以確認來源資格欄位缺口。SQL 唯讀；禁止自行增加 DB migration、改正式模型或推論已經有來源可信認證。
