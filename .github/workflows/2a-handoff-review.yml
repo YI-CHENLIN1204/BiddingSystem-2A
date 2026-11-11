@@ -1,0 +1,40 @@
+name: 2A Handoff Review Gate
+
+on:
+  pull_request:
+    branches:
+      - feature/1d-api-integration
+    types: [opened, reopened, synchronize]
+  workflow_dispatch:
+    inputs:
+      base_ref:
+        description: "Base commit or ref before the set of changes"
+        required: true
+        default: "HEAD~1"
+
+permissions:
+  contents: read
+
+jobs:
+  ensure-handoff-reviewed:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+      - name: Verify every changed path is reviewed
+        shell: bash
+        env:
+          GH_EVENT: ${{ github.event_name }}
+          GH_PR_BASE: ${{ github.event.pull_request.base.sha }}
+          USER_BASE: ${{ inputs.base_ref }}
+        run: |
+          if [ "$GH_EVENT" = "pull_request" ]; then
+            BASE="$GH_PR_BASE"
+          else
+            BASE="$USER_BASE"
+          fi
+          python scripts/check_handoff_review.py --base "$BASE" --head HEAD
