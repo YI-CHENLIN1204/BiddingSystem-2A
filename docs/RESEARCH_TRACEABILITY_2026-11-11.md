@@ -147,3 +147,11 @@ python -m unittest discover -s research/2a_synthetic -p "test_*.py" -v
 - 所有生成資料都帶 `source_kind=synthetic`；`hypothetical_eligible` 只用於隔離其他規則的研究影響，**不會授予任何假資料正式可用資格**。
 - 新增三項測試：全 synthetic 都不得成為生產基準；同案、自身與多錯誤防護；結構限制調整不會繞過來源驗證。**本輪新增的 Python 程式與測試尚未在使用者本機執行；不得記成 E1。**
 - 這些研究欄位並不證明真實 DB 有工程範圍或驗證來源欄位；日後若要對接生產，需先唯讀檢查資料表結構、資料品質及使用者授權。
+
+
+## M. 2026-11-12 第七輪結果與正式資料模型缺口
+
+- **E1 合成研究輸出**：使用者上傳 `eligibility_report.md`，35 筆候選、hypothetical_eligible=1、production_eligible=0，25 筆 `wrong_structure`、35 筆 `unverified_source`；不是資料庫實際來源查核。
+- **E3 靜態欄位對照**：查閱現行分支 `崴正/Models/ProjectMaster.cs`、`FinalBidItem.cs`、`HistoricalTransaction.cs`、`MaterialMaster.cs`、`UnitMaster.cs`、`崴正/Data/ApplicationDbContext.cs`；結果在 `docs/2A_REFERENCE_ELIGIBILITY_MAPPING_2026-11-12.md`。
+- `source_kind` 與 `scope_quality` 是**模擬研究欄位**；在已讀實際 ProjectMaster 等模型中未見等價的可靠資格標記，不能斷言 DB 絕無其他欄位。
+- 新增 `research/2a_synthetic/reference_schema_readonly.sql` 供唯讀檢查資料庫 schema；**尚未實際連線執行，不可稱為 DB 驗證通過**。本輪無 C#、DB、正式參數變更。
