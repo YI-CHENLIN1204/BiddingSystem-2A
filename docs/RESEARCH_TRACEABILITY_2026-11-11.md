@@ -163,3 +163,9 @@ python -m unittest discover -s research/2a_synthetic -p "test_*.py" -v
 - **特別缺口**：六張表內沒有正式來源真實性證明／工程範圍完整性的專用欄位；`ProjectMaster.HistoryStatus=Approved` 不代表完成實體標單鑑真。ProjectMaster 類型、結構、樓地板面積 nullable；HistoricalTransaction 對 ProjectMaster/FinalBidItem 的參考可 null。
 - 建立 `docs/2A_VERIFIED_DB_SCHEMA_GAPS_2026-11-12.md` 保存經核對的資料表與限制；建立 `reference_quality_counts_readonly.sql` 作為下一步**未執行**的聚合式歷史品質查核。查詢不得讀取個別建案、檔名、hash、標單內容。
 - 過去文件中的 2026-10-15「0 案」為當時快照；**本輪沒有 COUNT 查核，不得沿用成今日結論**。此輪只修改 research/docs，不涉及正式資料庫 DML/DDL。
+
+## O. 2026-11-12：Q4 獨立 Approved 材料建案數（使用者實際 DB 聚合）
+
+E1：使用者貼出 Q4 兩列：住宅 RC、material_id=1：8 獨立建案／11 交易／11 linked bid items；material_id=2：8 獨立建案／10 交易／10 linked bid items。SQL 限定 Approved、未刪除、非 Outlier、正數量。**未能確認來源真實、各工項外鍵品質或兩個 material ID 的名稱**；其他用途/結構未出現在這份有效歷史材料 Q4 聚合。Q1～Q3 結果尚未收到，不能當成已檢查。
+
+新建 `docs/2A_APPROVED_MATERIAL_COHORT_2026-11-12.md` 與只查聚合、不揭露檔名和建案名稱的 `research/2a_synthetic/reference_material_source_audit_readonly.sql`。只提交未執行；先前 DEMO Approved 風險仍未結案。
