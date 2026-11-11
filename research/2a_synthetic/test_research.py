@@ -5,6 +5,7 @@ from batch import benchmark, summarize
 from production_weight_review import score, predict, run, summarize as summarize_weights
 from report_weights import analyse, report
 from factorial_weight_review import FACTORIAL_CONFIGS, PAIRS, comparisons
+from sparse_structure_review import stress as stress_sparse, summarize as summarize_sparse
 
 class SyntheticResearchTests(unittest.TestCase):
     def test_deterministic_seed(self):
@@ -116,6 +117,28 @@ class SyntheticResearchTests(unittest.TestCase):
         summary=summarize_weights(records)
         with self.assertRaises(ValueError):
             comparisons(summary[:-1])
+
+    def test_sparse_structure_gate_never_fakes_minimum_samples(self):
+        rows=stress_sparse([77], sparse_counts=(0,1,2,3),
+                           scenarios=("stable",), reservoir_per_combo=5)
+        self.assertEqual(len(rows), 12*4*2)
+        gated=[r for r in rows if r["config"]=="current_with_structure_gate"]
+        ungated=[r for r in rows if r["config"]=="current_no_structure_gate"]
+        self.assertTrue(all(not r["reference_count_gate_pass"] for r in gated))
+        self.assertTrue(all(r["cross_structure_reference_percent"] in ("",0) for r in gated))
+        self.assertTrue(all(r["reference_count_gate_pass"] for r in ungated))
+        self.assertTrue(any(r["cross_structure_reference_percent"] > 0 for r in ungated))
+        self.assertEqual(len(summarize_sparse(rows)),4*2)
+
+    def test_sparse_structure_reproducible_and_invalid_count_rejected(self):
+        a=stress_sparse([9], sparse_counts=(0,3),
+                        scenarios=("stable",), reservoir_per_combo=5)
+        b=stress_sparse([9], sparse_counts=(0,3),
+                        scenarios=("stable",), reservoir_per_combo=5)
+        self.assertEqual(a,b)
+        with self.assertRaises(ValueError):
+            stress_sparse([9], sparse_counts=(5,),
+                          scenarios=("stable",), reservoir_per_combo=5)
 
     def test_holdout_comparison(self):
         rows = [dict(r, floor_area_m2=float(r["floor_area_m2"]),
