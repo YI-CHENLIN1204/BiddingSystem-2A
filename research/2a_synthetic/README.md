@@ -106,3 +106,17 @@ python -m unittest discover -s research/2a_synthetic -p "test_*.py" -v
 - 生成器的不同結構具有研究者預設的不同用量，因此「結構硬門檻是否更好」的模擬結果**可能受到設計假設主導**；這是敏感度實驗，不是建築工程的事實結論。
 - 模擬年份目前可包含待估案年份後的歷史參考，以重現現行相似度計算的對稱年代差異。**不可把這份實驗冒稱真正的時間前推回測。**
 - 這一輪不處理正式結構體工程大項完整決標價，合成單項材料金額也不等於大項價格。
+
+
+## 第四輪：從第三輪結果 CSV 產生可查證報告（2026-11-11）
+
+第三輪權重研究已能成功執行，但在未提供輸出 CSV 前，**不能推斷哪個模型比較好**。新增 `report_weights.py`：直接讀取第三輪 `production_weight_summary.csv` 與標記 `SIMULATED_RESEARCH_ONLY` 的 manifest；檢查欄位、有效數值、每組三種設定完整性，再產生 Markdown 報告。
+
+```powershell
+python research/2a_synthetic/report_weights.py
+python -m unittest discover -s research/2a_synthetic -p "test_*.py" -v
+```
+
+輸出：`research/2a_synthetic/output/production_weight_report.md`，包含不同用途／材料／樣本數的三設定模擬 MAPE、相對差異、區間覆蓋、ESS、跨結構混用及跳過數；不改正式參數，不連任何 DB。
+
+**請上傳這個 Markdown 報告或 CSV 給下一個對話，才有真實數值可解讀**；`output/` 被 gitignore 排除，不會自動出現在 GitHub。CSV 若缺漏、重複配置或來源標記不對，程式將停止並報錯，不會虛構得分。此分析不是產學真實工程驗證。
