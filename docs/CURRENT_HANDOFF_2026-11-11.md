@@ -212,3 +212,11 @@ research/2a_synthetic/README.md、docs/2A_MODEL_AUDIT_2026-11-10.md，
 - 第六輪：同結構歷史僅 0～3 件時，現行無硬門檻在假設其他結構案例充足的模擬條件下，仍 100% 通過名義最低五案，但跨結構參考占比分別 100%、87.5%、75%、62.5%。以模擬情境四組簡單平均，無硬門檻 MAPE 約 73.82%、59.67%、47.90%、35.03%；硬門檻 0/1 件無可計算，2/3 件僅技術可算，**沒有一組達到五件門檻**。
 - 工程實務不可直接使用上述 MAPE；生成器先人為設定不同結構有不同材料強度，且其他結構每類有 20 件虛構候選。結論是「名義樣本數可合格而同結構可比性不足」，**不是**「已證明正式 2A 跨結構錯誤率」。
 - **新開發優先順序**：先研究可比性／同結構樣本資格診斷與跨結構材料差異敏感度，其次時間前推／同涵蓋率公平比較。第五／六輪結果已分析完畢，不要重複做一模一樣的權重實驗。產學 .NET 及 Supabase 不變。
+
+
+## 15. 2026-11-12：研究版歷史參考資格診斷
+
+- 使用者 2026-11-12 凌晨貼出 `git merge --ff-only` 更新到 `cedf7df` 成功，以及 `python scripts/check_handoff_review.py --base 705efe3` 正常輸出 **6 個修改檔／1 筆新增審查紀錄**。這只確認文件完整性檢查通過，不代表第五／六輪研究已在真實公司案驗收。
+- 第七輪新增 `research/2a_synthetic/eligibility_review.py` 與三個測試方法，於研究區驗證來源／用途／結構／材料／單位／工程範圍／審核狀態的可比性與正式資料資格。即使模擬 `Approved`，其 `source_kind=synthetic` 仍永遠不符合 production eligibility。
+- 「hypothetical eligibility（僅研究）」、「production eligibility（真實來源審核）」與「樣本數門檻」分開呈現。程式不存取 DB，**尚未連接真正 2A 歷史表，也不會修改生產判定**。
+- 下一任務：執行 `python research/2a_synthetic/eligibility_review.py --seed 20261111 --cases-per-combo 12 --minimum-count 5` 和 `python -m unittest discover -s research/2a_synthetic -p "test_*.py" -v`；回報實際輸出，再檢查研究規則是否可映射到正式 DB 的現有欄位。新對話必須先讀 Handoff Guardian Skill。
