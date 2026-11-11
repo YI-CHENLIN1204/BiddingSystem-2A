@@ -3,6 +3,7 @@ from generate import produce
 from compare import evaluate, weighted_quantile, quantile
 from batch import benchmark, summarize
 from production_weight_review import score, predict, run, summarize as summarize_weights
+from report_weights import analyse, report
 
 class SyntheticResearchTests(unittest.TestCase):
     def test_deterministic_seed(self):
@@ -68,6 +69,24 @@ class SyntheticResearchTests(unittest.TestCase):
         self.assertTrue(all(row["evaluated_cases"] == 10 for row in first))
         gated = [row for row in first if row["config"] == "current_with_structure_gate"]
         self.assertTrue(all(row["cross_structure_references_percent"] == 0 for row in gated))
+
+    def test_weight_report_is_generated_from_actual_aggregates(self):
+        raw = run([17], cases_per_combo=10, train_sizes=(3,), scenarios=("stable",))
+        summary = summarize_weights(raw)
+        self.assertEqual(len(summary), 6)
+        sections, outcomes = analyse(summary)
+        self.assertEqual(len(sections), 2)
+        self.assertEqual(sum(outcomes["current_with_structure_gate"].values()), 2)
+        output = report(summary, {"summary_file": "test.csv", "manifest_file": "test.json"})
+        self.assertIn("test.csv", output)
+        self.assertIn("模擬", output)
+        self.assertIn("改善", output)
+
+    def test_weight_report_rejects_missing_configuration(self):
+        raw = run([17], cases_per_combo=10, train_sizes=(3,), scenarios=("stable",))
+        summary = summarize_weights(raw)
+        with self.assertRaises(ValueError):
+            analyse(summary[:-1])
 
     def test_holdout_comparison(self):
         rows = [dict(r, floor_area_m2=float(r["floor_area_m2"]),
