@@ -102,3 +102,14 @@ feature/1d-api-integration
 如果 GitHub 當前顯示的是預設 `main`，可能看不到這個資料夾的最新內容。請使用 Branch 選擇器切換到 `feature/1d-api-integration`。
 
 除非使用者明確要求，否則不要合併到 `main`。
+
+
+## 自動化交接審查規則（2026-11-11）
+
+- **Skill**：[waizheng-2a-handoff-guardian](../.agents/skills/waizheng-2a-handoff-guardian/SKILL.md)
+- **代理入口**：[AGENTS.md](../AGENTS.md)
+- **變更審查紀錄**：[HANDOFF_CHANGE_REVIEWS.jsonl](./HANDOFF_CHANGE_REVIEWS.jsonl)
+- **本機檢查器**：`python scripts/check_handoff_review.py --base <變更前 SHA>`
+- **PR 檢查**：`.github/workflows/2a-handoff-review.yml`
+
+每次任何變動都審查；即使不更新交接內容，也必須記錄原因。新對話必讀 Skill。
