@@ -120,3 +120,17 @@ python -m unittest discover -s research/2a_synthetic -p "test_*.py" -v
 輸出：`research/2a_synthetic/output/production_weight_report.md`，包含不同用途／材料／樣本數的三設定模擬 MAPE、相對差異、區間覆蓋、ESS、跨結構混用及跳過數；不改正式參數，不連任何 DB。
 
 **請上傳這個 Markdown 報告或 CSV 給下一個對話，才有真實數值可解讀**；`output/` 被 gitignore 排除，不會自動出現在 GitHub。CSV 若缺漏、重複配置或來源標記不對，程式將停止並報錯，不會虛構得分。此分析不是產學真實工程驗證。
+
+
+## 第五輪：第三輪實測結果判讀與因子拆解（2026-11-11）
+
+已收到使用者上傳的 `production_weight_report.md`。來源摘要與限制已保存於 `docs/2A_SYNTHETIC_WEIGHT_RESULT_REVIEW_2026-11-11.md`：24 個模擬情境組的平均 MAPE A（現行）約 17.10%、B（結構硬門檻）17.07%、C（調整面積／樓層與硬門檻）16.91%；現行跨結構引用平均僅 0.18%，C 對 A 的改善約 0.19 個百分點，不能說實務一定比較好。
+
+**重大研究設計修正：** C 同時改動多個因子，無法獨立證明是基地面積權重還是結構門檻帶來的改善。新增 `factorial_weight_review.py`，沿用第三輪研究基底，建立六種條件的交叉／配對對照：A／B（原權重、無／有硬門檻）、C／D（重新分配面積／樓層權重、有／無門檻）、E／F（只移除基地面積權重、有／無門檻）。原第三輪的 A/B/C 不會被覆寫；新結果另存 `factorial_weight_*.csv`。
+
+```powershell
+python research/2a_synthetic/factorial_weight_review.py --first-seed 20261111 --seeds 5 --cases-per-combo 30 --train-sizes 3 5 8
+python -m unittest discover -s research/2a_synthetic -p "test_*.py" -v
+```
+
+新輸出：`factorial_weight_detail.csv`、`factorial_weight_summary.csv`、`factorial_weight_paired.csv`、`factorial_weight_report.md`、`factorial_weight_manifest.json`（均在 output/），整輪預期 4 情境 × 5 seeds × 6 類型 × 2 材料 × 3 樣本數 × 6 配置 = **2160 組配置測試**，加上 24 組情境 × 8 種配對 = **192 行配對結果**。這些都是合成研究指標，沒有真實工程校準，且仍未覆蓋每結構僅 0～3 件可比案例的情形；正式產學資料庫及演算法保持不變。
