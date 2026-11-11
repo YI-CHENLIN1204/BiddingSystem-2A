@@ -84,3 +84,8 @@ GitHub 已保存程式／決策／變更與交接檔案，但**不能存取你�
 ## 最新 2026-11-11：第三輪結果已分析
 
 已收到第三輪 `production_weight_report.md`，證據與數字見 `docs/2A_SYNTHETIC_WEIGHT_RESULT_REVIEW_2026-11-11.md`：A 17.10%、B 17.07%、C 16.91%，差距很小且被多因子同時變更干擾。已建立下一輪 `research/2a_synthetic/factorial_weight_review.py` 供結構門檻 × 面積權重獨立比較。新對話下一件事：取得本機 `research/2a_synthetic/output/factorial_weight_report.md`，解析結果並依交接 Skill 更新文件；不要重做第三輪或擅改正式權重。
+
+
+## 最新第五輪實測與第六輪接手（2026-11-11）
+
+使用者已證明 `factorial_weight_review.py` 跑完 **4320／144／192**，原有 **13/13** 測試通過、Guardian 9/9 交接審查通過；但尚未上傳 `factorial_weight_report.md`，不能判定新權重實驗勝負。第六輪新增 `sparse_structure_review.py`，模擬每個結構只有 0～3 件可用歷史資料，觀察結構限制與名義 5 件門檻的影響；下一步須檢查報告與單元測試。先閱讀專案 Skill 及最新 README，勿修改正式產學估算與 DB。
