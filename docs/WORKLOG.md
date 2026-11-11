@@ -385,3 +385,12 @@ TwoAQuantityAnalysisService.AnalyzeAsync 現新增執行時 fail-closed：僅 Tw
 - 新增 `scripts/check_handoff_review.py`，以變更前 SHA 比對 Git 檔案與**當輪新增**的 `docs/HANDOFF_CHANGE_REVIEWS.jsonl` 記錄；只有完整覆蓋 changed_paths 且符合更新文件聲明才通過。
 - 新增 `.github/workflows/2a-handoff-review.yml`，針對目標 `feature/1d-api-integration` 的 PR 或手動觸發執行檢查；直接向 feature 推送仍需手動按 Skill 檢查。
 - 更新主交接／研究證據追溯／新對話入口／決策文件，讓新對話先閱讀 Skill。這只是治理流程的建立，與正式量價模型計算無關。
+
+
+## 2026-11-11 — 第四輪：六因素模擬權重研究產出報告工具
+
+- 先依 `waizheng-2a-handoff-guardian` Skill 閱讀基線、查最新程式與交接。
+- 新增 `research/2a_synthetic/report_weights.py`：依本機第三輪 CSV 生成明確標記「模擬研究」的 Markdown 權重比較，檢查三種設定是否齊全與數值合法；不會自行猜模型勝負。
+- `test_research.py` 補上由彙總資料生成報告、缺比較設定拒絕的測試。
+- 下一步使用者本機執行後，上傳 `production_weight_report.md` 或 `production_weight_summary.csv`／manifest，以確切指標分析結果。正式 2A 生產模型／DB 未動。
+- 交接審查：模型研究流程與下個任務改變，**須更新主交接／研究回溯／研究 README／WORKLOG／新對話提示**；本輪已有對應更新並記錄 JSONL。
