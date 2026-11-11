@@ -109,3 +109,7 @@ GitHub 已保存程式／決策／變更與交接檔案，但**不能存取你�
 ## 2026-11-12：實際 Schema 已確認（新對話最新接手點）
 
 使用者已提供六張表的真實 PostgreSQL Schema，總共 **86 欄**。詳見 `docs/2A_VERIFIED_DB_SCHEMA_GAPS_2026-11-12.md`，不用再向使用者索取相同的 columns 結果。已明確確認主要表缺少專用來源真實性與工程範圍完整性資格欄位，並且 ProjectMaster 若干基礎條件、HistoricalTransaction 外鍵可 NULL。**下一步**為讓使用者在正確 Supabase 開發 DB 執行 `research/2a_synthetic/reference_quality_counts_readonly.sql`，回報**聚合結果**，核對實際 Approved 案件數、用途/結構/材料可用案數、來源欄位缺漏與交易 FK 可追溯性；不得直接建 migration 或修改正式異常判斷。
+
+## 最新 2026-11-12：Q4 聚合已收到
+
+Q4 已由使用者提供：有效 Approved 歷史材料記錄目前只回傳住宅 RC；material_id=1、2 各有 8 個**獨立建案**，對應交易分別 11、10 行。材料 ID 名稱未知，DEMO 資料疑慮未解，不能將 8 筆當成 8 個真實工程模型資格。見 `docs/2A_APPROVED_MATERIAL_COHORT_2026-11-12.md`。下一個對話請優先讀先前 Q1～Q3 結果（若未提供，才請使用者補）與新 `research/2a_synthetic/reference_material_source_audit_readonly.sql` 聚合結果，不要重查已完成的 Q4，也不要擅改正式資料庫。
