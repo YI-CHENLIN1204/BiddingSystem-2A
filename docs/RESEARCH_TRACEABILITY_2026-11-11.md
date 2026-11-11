@@ -155,3 +155,11 @@ python -m unittest discover -s research/2a_synthetic -p "test_*.py" -v
 - **E3 靜態欄位對照**：查閱現行分支 `崴正/Models/ProjectMaster.cs`、`FinalBidItem.cs`、`HistoricalTransaction.cs`、`MaterialMaster.cs`、`UnitMaster.cs`、`崴正/Data/ApplicationDbContext.cs`；結果在 `docs/2A_REFERENCE_ELIGIBILITY_MAPPING_2026-11-12.md`。
 - `source_kind` 與 `scope_quality` 是**模擬研究欄位**；在已讀實際 ProjectMaster 等模型中未見等價的可靠資格標記，不能斷言 DB 絕無其他欄位。
 - 新增 `research/2a_synthetic/reference_schema_readonly.sql` 供唯讀檢查資料庫 schema；**尚未實際連線執行，不可稱為 DB 驗證通過**。本輪無 C#、DB、正式參數變更。
+
+
+## N. 2026-11-12：真實六張表 86 欄 Schema 證據
+
+- **E1（使用者本機 SQL editor 輸出）**：上傳 `information_schema.columns` JSON，逐筆包含 table_name、column_name、data_type、is_nullable；實際 86 列，涵蓋 `project_master` 17、`final_bid_item` 27、`historical_transaction` 8、`material_master` 5、`unit_master` 7、`estimation_settings` 22。這是 Schema 存在性驗證，**不是資料列或資料來源的證實**。
+- **特別缺口**：六張表內沒有正式來源真實性證明／工程範圍完整性的專用欄位；`ProjectMaster.HistoryStatus=Approved` 不代表完成實體標單鑑真。ProjectMaster 類型、結構、樓地板面積 nullable；HistoricalTransaction 對 ProjectMaster/FinalBidItem 的參考可 null。
+- 建立 `docs/2A_VERIFIED_DB_SCHEMA_GAPS_2026-11-12.md` 保存經核對的資料表與限制；建立 `reference_quality_counts_readonly.sql` 作為下一步**未執行**的聚合式歷史品質查核。查詢不得讀取個別建案、檔名、hash、標單內容。
+- 過去文件中的 2026-10-15「0 案」為當時快照；**本輪沒有 COUNT 查核，不得沿用成今日結論**。此輪只修改 research/docs，不涉及正式資料庫 DML/DDL。
