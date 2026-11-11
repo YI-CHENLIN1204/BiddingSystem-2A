@@ -220,3 +220,11 @@ research/2a_synthetic/README.md、docs/2A_MODEL_AUDIT_2026-11-10.md，
 - 第七輪新增 `research/2a_synthetic/eligibility_review.py` 與三個測試方法，於研究區驗證來源／用途／結構／材料／單位／工程範圍／審核狀態的可比性與正式資料資格。即使模擬 `Approved`，其 `source_kind=synthetic` 仍永遠不符合 production eligibility。
 - 「hypothetical eligibility（僅研究）」、「production eligibility（真實來源審核）」與「樣本數門檻」分開呈現。程式不存取 DB，**尚未連接真正 2A 歷史表，也不會修改生產判定**。
 - 下一任務：執行 `python research/2a_synthetic/eligibility_review.py --seed 20261111 --cases-per-combo 12 --minimum-count 5` 和 `python -m unittest discover -s research/2a_synthetic -p "test_*.py" -v`；回報實際輸出，再檢查研究規則是否可映射到正式 DB 的現有欄位。新對話必須先讀 Handoff Guardian Skill。
+
+
+## 16. 2026-11-12 第七輪報告收到及資料模型對照
+
+- 使用者上傳 `eligibility_report.md`，內容顯示 35 件合成候選、同結構限制有、假設來源真實時合格 1 件、真正具備正式來源資格 0 件；35 件 `unverified_source`，25 件 `wrong_structure`。各拒絕原因可能同案重複。**這是研究輸出，不是正式 DB 的合格案數。**
+- 已新建 `docs/2A_REFERENCE_ELIGIBILITY_MAPPING_2026-11-12.md`：核對 C# 模型與研究資格欄位。現有 `ProjectMaster.ProjectType`、`StructureType`、`HistoryStatus`、`HistoricalTransaction.MaterialId` 等可支援基礎檢查；**已讀模型無可靠來源真實性／整體工程範圍完整性認證欄位**。
+- 已新增 `research/2a_synthetic/reference_schema_readonly.sql`，下一步應由使用者在正確 Supabase 開發 DB 執行純 `information_schema.columns` 查詢，檢查真實 schema 再決定可否設計實務資格審查 UI／migration。**SQL 尚未執行，也未修改正式 DB。**
+- 正式模型的權重、最少參考數、已核准歷史查詢、異常燈號全部保持現況。下一個對話先取 schema 結果，避免重跑第七輪同一批合成測試。
