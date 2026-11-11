@@ -58,8 +58,9 @@ def score(target, sample, weights=DEFAULT_WEIGHTS, area_cutoff=.5, site_cutoff=.
     return round(raw/total*100., 2)
 
 def predict(target, references, train_size, config, topk=8,
-            exponent=2., half_life_years=3.):
-    weights, gate = CONFIGS[config]
+            exponent=2., half_life_years=3., configurations=None):
+    options = CONFIGS if configurations is None else configurations
+    weights, gate = options[config]
     eligible = []
     for sample in references:
         if sample["case_id"] == target["case_id"]:
@@ -97,7 +98,9 @@ def predict(target, references, train_size, config, topk=8,
     }
 
 def run(seeds, cases_per_combo=30, train_sizes=(3,5,8),
-        scenarios=("stable","high_variance","company_shift","outliers")):
+        scenarios=("stable","high_variance","company_shift","outliers"),
+        configurations=None):
+    options = CONFIGS if configurations is None else configurations
     results = []
     for scenario in scenarios:
         for seed in seeds:
@@ -117,11 +120,11 @@ def run(seeds, cases_per_combo=30, train_sizes=(3,5,8),
                 pool = [x for x in rows if x["material"] == material
                         and x["project_type"] == kind]
                 for size in train_sizes:
-                    for config in CONFIGS:
+                    for config in options:
                         ape, covered, ess, cross = [], [], [], []
                         skipped = 0
                         for target in targets:
-                            prediction = predict(target, pool, size, config)
+                            prediction = predict(target, pool, size, config, configurations=options)
                             if prediction is None:
                                 skipped += 1
                                 continue
