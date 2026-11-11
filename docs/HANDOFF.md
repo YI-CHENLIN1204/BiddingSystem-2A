@@ -1,5 +1,8 @@
 # 2A 開發交接
 
+> **⚠ 2026-11-11 更新：本檔是歷史交接／索引，部分內容記載 2026-10-15 快照，不能代表現在的資料庫或研究進度。請優先閱讀 [完整交接主檔](./CURRENT_HANDOFF_2026-11-11.md)、[研究與版本回溯](./RESEARCH_TRACEABILITY_2026-11-11.md)、[新對話可複製提示](./NEW_CHAT_START_2026-11-11.md)、[模擬研究指南](../research/2a_synthetic/README.md)。最新測試：使用者已貼出 5760 組／96 彙總與原 7/7 單元測試成功，後續六因子審查亦回報無錯，詳細輸出待分析。**
+
+
 > 更新日期：2026-10-15  
 > Repository：`YI-CHENLIN1204/BiddingSystem-2A`  
 > 目前正式開發 Branch：`feature/1d-api-integration`
