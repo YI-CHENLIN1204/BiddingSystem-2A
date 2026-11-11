@@ -184,3 +184,12 @@ python -m unittest discover -s research/2a_synthetic -p "test_*.py" -v
 - 不需要新增任何測試資料到 Supabase；正式異常判定與資料庫不受影響。
 
 **下個驗證點**：先執行此腳本與單元測試，檢查合成候選的 `production_eligible=0` 與拒絕理由。其後研究「從真實 DB 唯讀欄位建立可比性摘要」時，必須先確認企業歷史原始來源、工程範圍資訊是否真的存在，不能推測資料庫已具備來源完整性標記。
+
+
+## 第七輪輸出解讀及正式欄位靜態對照（2026-11-12）
+
+使用者上傳 `eligibility_report.md`：35 個模擬候選，同結構限制開啟；假設來源真實後其他條件合格 **1** 件，實際正式來源合格 **0** 件；每案可能有多個拒絕理由（跨結構 25 件，來源未驗證 35 件）。此結果僅說明模擬資格邏輯，不是正式 2A 已有來源驗證機制。
+
+完整對照見 `docs/2A_REFERENCE_ELIGIBILITY_MAPPING_2026-11-12.md`：C# `ProjectMaster` 有用途／結構／Approved、`HistoricalTransaction` 有 MaterialId、`MaterialMaster` 和 `UnitMaster` 支援標準單位資訊；但是已讀模型中缺少可直接確認真實來源認證、整體工程範圍完整性的權威欄位。**不能只憑檔名、Hash、Approved 就說資料是真實完整的最終標單。**
+
+新增 `research/2a_synthetic/reference_schema_readonly.sql` 供使用者在確認正確開發 DB 後執行，只查 `information_schema.columns`，不含工程資料列、機密或更新；尚未執行，不能宣稱 DB schema 已驗證。此輪未修改正式 C# 或資料表。
