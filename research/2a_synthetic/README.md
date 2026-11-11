@@ -134,3 +134,23 @@ python -m unittest discover -s research/2a_synthetic -p "test_*.py" -v
 ```
 
 新輸出：`factorial_weight_detail.csv`、`factorial_weight_summary.csv`、`factorial_weight_paired.csv`、`factorial_weight_report.md`、`factorial_weight_manifest.json`（均在 output/），整輪預期 4 情境 × 5 seeds × 6 類型 × 2 材料 × 3 樣本數 × 6 配置 = **2160 組配置測試**，加上 24 組情境 × 8 種配對 = **192 行配對結果**。這些都是合成研究指標，沒有真實工程校準，且仍未覆蓋每結構僅 0～3 件可比案例的情形；正式產學資料庫及演算法保持不變。
+
+
+## 第六輪：稀疏同結構歷史案壓力測試（2026-11-11）
+
+第五輪 `factorial_weight_review.py` 使用者完整實測：**4320 group runs / 144 summaries / 192 pairwise rows**，且當時 `unittest` **13/13 OK**；`check_handoff_review.py --base 2acf10d` 已成功，9 檔完整審查。原先預估的 2160 次有誤，正確計算為 4 情境 × 5 seeds × 6 用途結構 × 2 材料 × 3 參考數 × 6 配置 = 4320。
+
+新的 `sparse_structure_review.py` 不更動正式模型，針對**每組 0/1/2/3 件相同結構歷史**的特定困境，保留其他結構的候選案例，並分開報告：
+- `technical_prediction_available`：數學上是否能算加權分位
+- `reference_count_gate_pass`：是否滿足現行最低參考案數 5 的名義門檻
+- `cross_structure_reference_percent`：參考中的跨結構比例
+- 模擬 MAPE、ESS、跳過及可計算個數
+
+```powershell
+python research/2a_synthetic/sparse_structure_review.py --first-seed 20261111 --seeds 5 --reservoir-per-combo 20
+python -m unittest discover -s research/2a_synthetic -p "test_*.py" -v
+```
+
+輸出：`output/sparse_structure_detail.csv`、`sparse_structure_summary.csv`、`sparse_structure_report.md`、`sparse_structure_manifest.json`。預計 4 情境 × 5 seeds × 6 類型 × 2 材料 × 4 稀疏度 × 2 結構 gate = **960 組比較**，彙整 4×4×2 = 32 行。
+
+此設計的人為「其他結構約 20 件候選」並非崴正實際情形；缺少真實同質案的研究結果只能幫助**辨識資料不足時的演算法行為**，不能證明 5 件門檻是足夠的真實統計可靠度或跨結構估算可用。正式產學 DB 不會讀研究輸出。
