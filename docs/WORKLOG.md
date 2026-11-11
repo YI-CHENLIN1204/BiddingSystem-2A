@@ -428,3 +428,11 @@ TwoAQuantityAnalysisService.AnalyzeAsync 現新增執行時 fail-closed：僅 Tw
 - 按 `waizheng-2a-handoff-guardian` 規範檢查最新程式／交接，新增 `eligibility_review.py` 研究來源、用途、結構、材料、單位、完整／部分工程、Approved 等條件，不與正式 DB 互動。
 - 研究輸出同時區分『假設來源真實時其他條件合格』與『正式歷史來源實際合格』，全部合成資料均不得進入正式基準。新增三項研究回歸測試。
 - **此次需更新交接**：新增研究方法、新 CLI 與下一個驗證點，故更新 README、主交接、研究回溯、WORKLOG 及新對話提示；不修改正式參數、C# Service 或 Supabase。
+
+
+## 2026-11-12 — 第七輪合成來源資格報告回收與資料模型映射
+
+- 收到 `eligibility_report.md`：35 件合成候選，假設來源真實時 1 件符合其餘條件，真正正式來源合格 0 件；所有模擬資料保持隔離。
+- 對照最新 C# 模型：用途／結構／材料／Approved 有對應欄位，但來源真實性和工程範圍完整性尚無可靠的直接判定來源；研究示意欄位不等於 C# 正式欄位。
+- 新增 `docs/2A_REFERENCE_ELIGIBILITY_MAPPING_2026-11-12.md` 與研究區唯讀 SQL `reference_schema_readonly.sql`；後者只查 metadata，使用者確認開發 DB 後才執行。
+- 交接影響判定：研究發現、模型資料欄位差距及下一個工作改變，**需同步**主交接、研究回溯、WORKLOG、研究 README 與新對話提示；已更新並留 JSONL 審查。正式 ASP.NET 與 Supabase 均未修改。
