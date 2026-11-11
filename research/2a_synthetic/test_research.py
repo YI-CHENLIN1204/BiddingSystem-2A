@@ -6,6 +6,7 @@ from production_weight_review import score, predict, run, summarize as summarize
 from report_weights import analyse, report
 from factorial_weight_review import FACTORIAL_CONFIGS, PAIRS, comparisons
 from sparse_structure_review import stress as stress_sparse, summarize as summarize_sparse
+from eligibility_review import scenario_candidates, audit, evaluate_reference, render
 
 class SyntheticResearchTests(unittest.TestCase):
     def test_deterministic_seed(self):
@@ -139,6 +140,36 @@ class SyntheticResearchTests(unittest.TestCase):
         with self.assertRaises(ValueError):
             stress_sparse([9], sparse_counts=(5,),
                           scenarios=("stable",), reservoir_per_combo=5)
+
+    def test_eligibility_rejects_all_synthetic_production_sources(self):
+        target, references = scenario_candidates(seed=23, per_combo=12)
+        rows, summary = audit(target, references, minimum_count=2)
+        self.assertEqual(summary["candidate_count"], len(references))
+        self.assertEqual(summary["actual_production_eligible_count"], 0)
+        self.assertFalse(summary["actual_production_count_gate_pass"])
+        self.assertTrue(all(not row["production_eligible"] for row in rows))
+        self.assertGreater(summary["hypothetical_eligible_count"], 0)
+        self.assertIn("不代表真實來源", render(summary))
+
+    def test_eligibility_prevents_self_reference_and_detects_multiple_faults(self):
+        target, _ = scenario_candidates(seed=17, per_combo=12)
+        corrupt = dict(target, source_kind="synthetic", scope_quality="partial",
+                       review_status="Draft", quantity_unit="tonne")
+        reasons = evaluate_reference(target, corrupt, hypothetical=False)
+        for required_reason in ("same_project", "wrong_unit", "incomplete_scope",
+                                "not_approved", "unverified_source"):
+            self.assertIn(required_reason, reasons)
+
+    def test_eligibility_structure_policy_is_separate_from_provenance(self):
+        target, candidates = scenario_candidates(seed=23, per_combo=12, defect_cycle=False)
+        _, gated = audit(target, candidates, require_same_structure=True)
+        _, ungated = audit(target, candidates, require_same_structure=False)
+        self.assertGreaterEqual(ungated["hypothetical_eligible_count"],
+                                gated["hypothetical_eligible_count"])
+        self.assertEqual(ungated["actual_production_eligible_count"], 0)
+        self.assertEqual(gated["actual_production_eligible_count"], 0)
+        with self.assertRaises(ValueError):
+            audit(target, candidates, minimum_count=0)
 
     def test_holdout_comparison(self):
         rows = [dict(r, floor_area_m2=float(r["floor_area_m2"]),
