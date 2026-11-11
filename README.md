@@ -1,5 +1,8 @@
 # BiddingSystem-2A
 
+> **2026-11-11 最新交接入口：** [完整交接主檔](docs/CURRENT_HANDOFF_2026-11-11.md) · [研究版本／證據回溯](docs/RESEARCH_TRACEABILITY_2026-11-11.md) · [新對話可複製提示](docs/NEW_CHAT_START_2026-11-11.md)。舊 2026-10-15 文件與零資料庫紀錄為歷史快照，不應當成現況。專題模擬研究請見 [研究操作](research/2a_synthetic/README.md)。
+
+
 崴正營造 × 雲科大資管產學合作之 **2A 量價估算與異常偵測系統**。
 
 目前正式開發方向已收斂為：
