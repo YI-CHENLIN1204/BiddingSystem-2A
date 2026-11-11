@@ -74,3 +74,8 @@ GitHub 已保存程式／決策／變更與交接檔案，但**不能存取你�
 執行 python scripts/check_handoff_review.py --base <變更前 SHA>。
 這是本專案每輪都必做的開發規則；不要只更新程式卻忘記交接。
 ```
+
+
+## 2026-11-11 第四輪接手補充
+
+最新加入 `research/2a_synthetic/report_weights.py`，它從本機第三輪權重比較 CSV 真實產出 `research/2a_synthetic/output/production_weight_report.md`，用以比較三組六因素權重。**尚未收到 CSV，也沒有正式模擬 MAPE 勝負結論**。新對話優先讀報告（若無就提供 `python research/2a_synthetic/report_weights.py` 指令），再決定下一輪研究。不把報告當實際建案驗證。
