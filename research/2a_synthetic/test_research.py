@@ -4,6 +4,7 @@ from compare import evaluate, weighted_quantile, quantile
 from batch import benchmark, summarize
 from production_weight_review import score, predict, run, summarize as summarize_weights
 from report_weights import analyse, report
+from factorial_weight_review import FACTORIAL_CONFIGS, PAIRS, comparisons
 
 class SyntheticResearchTests(unittest.TestCase):
     def test_deterministic_seed(self):
@@ -87,6 +88,34 @@ class SyntheticResearchTests(unittest.TestCase):
         summary = summarize_weights(raw)
         with self.assertRaises(ValueError):
             analyse(summary[:-1])
+
+    def test_factorial_pairwise_isolates_single_dimensions(self):
+        a,b,c,d,e,f=(FACTORIAL_CONFIGS[key] for key in (
+            "A_baseline_no_gate","B_baseline_gate","C_redistributed_gate",
+            "D_redistributed_no_gate","E_remove_site_only_gate",
+            "F_remove_site_only_no_gate"))
+        self.assertEqual(a[0],b[0])
+        self.assertEqual(a[1],d[1])
+        self.assertEqual(c[0],d[0])
+        self.assertEqual(e[0],f[0])
+        self.assertEqual(b[1],e[1])
+        self.assertEqual(b[0]["area"],e[0]["area"])
+        self.assertEqual(b[0]["floors"],e[0]["floors"])
+        self.assertEqual(e[0]["site"],0)
+        records=run([19],cases_per_combo=10,train_sizes=(3,),
+                    scenarios=("stable",),configurations=FACTORIAL_CONFIGS)
+        self.assertEqual(len(records),12*len(FACTORIAL_CONFIGS))
+        summary=summarize_weights(records)
+        paired=comparisons(summary)
+        self.assertEqual(len(paired),2*len(PAIRS))
+        self.assertTrue(all(row["before"] != row["after"] for row in paired))
+
+    def test_factorial_missing_config_is_rejected(self):
+        records=run([19],cases_per_combo=10,train_sizes=(3,),
+                    scenarios=("stable",),configurations=FACTORIAL_CONFIGS)
+        summary=summarize_weights(records)
+        with self.assertRaises(ValueError):
+            comparisons(summary[:-1])
 
     def test_holdout_comparison(self):
         rows = [dict(r, floor_area_m2=float(r["floor_area_m2"]),
