@@ -469,3 +469,5 @@ feature/1d-api-integration
 請使用 Branch 選擇器切換到 `feature/1d-api-integration`。
 
 除非使用者明確要求，否則不要合併到 `main`。
+
+> **所有開發變更必須審查交接同步：** 請先閱讀 [AGENTS.md](AGENTS.md) 與 [崴正 2A Handoff Guardian Skill](.agents/skills/waizheng-2a-handoff-guardian/SKILL.md)。每次變更後記錄 [交接影響審查](docs/HANDOFF_CHANGE_REVIEWS.jsonl)，必要時更新 [最新主交接](docs/CURRENT_HANDOFF_2026-11-11.md)；可使用 `python scripts/check_handoff_review.py --base <變更前SHA>` 檢查。
