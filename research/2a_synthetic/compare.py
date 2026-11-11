@@ -16,6 +16,8 @@ def quantile(sorted_values, p):
         raise ValueError("empty values")
     location = (len(sorted_values) - 1) * p
     lo, hi = math.floor(location), math.ceil(location)
+    if lo == hi:
+        return sorted_values[lo]
     return sorted_values[lo] * (hi - location) + sorted_values[hi] * (location - lo)
 
 def weighted_quantile(pairs, q):
