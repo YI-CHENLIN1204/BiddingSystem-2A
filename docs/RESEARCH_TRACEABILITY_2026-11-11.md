@@ -122,3 +122,11 @@ python -m unittest discover -s research/2a_synthetic -p "test_*.py" -v
 - 新增 `research/2a_synthetic/factorial_weight_review.py`，擴充 `production_weight_review.py` 的呼叫端可注入六方案設定，不改原 A/B/C CLI；`test_research.py` 新增對照設計與配置完整性測試。
 - 新的 2×3 配置能分離硬門檻效果與兩種基地面積權重調整方式，但仍依賴人為合成工程，且同結構資料尚未稀疏化。下一輪要再測少樣本及時間前推。
 - **目前驗證狀態**：上輪使用者 PowerShell 11/11 OK，新增第五輪腳本／測試尚未得到用戶本機輸出；不能將 Git commit 當成已實驗通過。
+
+
+## J. 2026-11-11 第五輪已驗證、第六輪稀疏樣本壓力實驗
+
+- **第五輪（E1、使用者終端完整證據）**：`factorial_weight_review.py` 執行成功 4320 group runs、144 summaries、192 paired rows；`python -m unittest discover -s research/2a_synthetic -p "test_*.py" -v` 實際 13/13 OK；`python scripts/check_handoff_review.py --base 2acf10d` 顯示 9 files / 1 new audit record、handoff updated。原先 2160 的前瞻估算已修正為 4320。
+- 尚未取得 `factorial_weight_report.md` 和配對原始 CSV，因此此時**不能**斷言在控制因素後哪種方法誤差較低。
+- **第六輪**：新增 `sparse_structure_review.py`，以 0～3 件同結構資料、不同結構候選多的反差場景，評估無 gate 與有 gate 的名義最低 5 件門檻、技術上可算性、跨結構混入、模擬誤差。新增單元測試。此為刻意壓力情境，其他結構參考數量**不是**崴正歷史樣本實況。
+- 目前 E3：提交程式與文件；第六輪實際通過與輸出內容待使用者本機證據。不可聲稱樣本稀少時安全放行任何正式異常燈號。
