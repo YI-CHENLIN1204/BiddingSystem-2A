@@ -459,3 +459,12 @@ TwoAQuantityAnalysisService.AnalyzeAsync 現新增執行時 fail-closed：僅 Tw
 - 兩組 Q3 異常計數可能重疊，不能直接加總；Q4 成功查到 21 筆有效歷史，不表示全數來源可信或 DEMO 已剔除。詳細另存 `docs/2A_HISTORICAL_DATA_QUALITY_Q1_Q4_2026-11-12.md`。
 - 已擴充下一份唯讀 `reference_material_source_audit_readonly.sql`，原 Q5～Q7 不變，新增 Q8 交叉檢查刪除與非 Approved 的實際重疊。
 - 本輪變更會影響研究事實與接手狀態，依 Skill 更新主交接、研究回溯、WORKLOG、新對話提示與審查 JSONL。正式服務、資料表、權重均未更動。
+
+
+## 2026-11-12 — Q5～Q8 聚合查核結果收到：DEMO 資料資格為當前核心風險
+
+- Q5 正式材料主檔：1=鋼筋/kg；2=混凝土/立方公尺。
+- Q6 8 Approved 中 7 件名稱或來源檔名疑似 DEMO／TEST；剩餘 1 件只是沒有被字串篩查命中，來源仍未核實。2 Draft 另有 1 件疑似展示、1 件來源不明。
+- Q7 鋼筋 7 案 1 筆、1 案 4 筆；混凝土 7 案 1 筆、1 案 3 筆，對應 Q4 的 11／10 行，並非 11／10 件工程。
+- Q8 證實 2 筆刪除交易與 2 筆關聯非 Approved／刪除建案交易完全重疊；其餘 21 筆未刪除交易與 Approved 活躍建案對應。
+- 存檔 `docs/2A_HISTORICAL_DATA_QUALITY_Q5_Q8_2026-11-12.md`，作為來源認證／工程完整性流程下一步設計依據。只做文件更新、無正式 DB 或 C# 改動，交接狀態須同步。
