@@ -451,3 +451,11 @@ TwoAQuantityAnalysisService.AnalyzeAsync 現新增執行時 fail-closed：僅 Tw
 - 仍需核查材料 ID 名稱、DEMO 來源、工程範圍與 Q1～Q3 的缺漏/FK 檢查。8 件名義 Approved 不代表 8 件真實商務定案標單。
 - 新增 `docs/2A_APPROVED_MATERIAL_COHORT_2026-11-12.md` 保存證據，及 `research/2a_synthetic/reference_material_source_audit_readonly.sql` 供材料 ID、疑似 DEMO 與一案多交易的唯讀聚合查核。
 - 研究及接手狀態已有重大進展，依 Guardian 審查**必須更新**主交接、研究回溯、WORKLOG 與新對話文件；正式程式與 DB 未動。
+
+
+## 2026-11-12 — Q1～Q4 完整真實資料品質盤點
+
+- 使用者已提供四組完整 SQL 聚合：10 件住宅 RC（8 Approved、2 Draft）；8 件 Approved 中 7 件缺少來源檔案 Hash；23 筆材料交易中 2 筆刪除、2 筆關聯非 Approved／已刪除建案，外鍵空值／錯連為零；有效數量歷史材料 ID=1 有 8 件建案／11 交易，ID=2 有 8 件建案／10 交易。
+- 兩組 Q3 異常計數可能重疊，不能直接加總；Q4 成功查到 21 筆有效歷史，不表示全數來源可信或 DEMO 已剔除。詳細另存 `docs/2A_HISTORICAL_DATA_QUALITY_Q1_Q4_2026-11-12.md`。
+- 已擴充下一份唯讀 `reference_material_source_audit_readonly.sql`，原 Q5～Q7 不變，新增 Q8 交叉檢查刪除與非 Approved 的實際重疊。
+- 本輪變更會影響研究事實與接手狀態，依 Skill 更新主交接、研究回溯、WORKLOG、新對話提示與審查 JSONL。正式服務、資料表、權重均未更動。
