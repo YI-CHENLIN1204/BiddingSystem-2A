@@ -266,3 +266,12 @@ research/2a_synthetic/README.md、docs/2A_MODEL_AUDIT_2026-11-10.md，
 有效 Approved 同案同材料交易分布：鋼筋 7 案×1筆 + 1 案×4筆 = 11筆；混凝土 7案×1筆 + 1案×3筆 = 10筆。可能是不同來源工項，**不能直接當重複輸入或多個獨立建案**。Q8 證實 Q3 的 2 筆已刪除與 2 筆連至非 Approved 是**同一批兩筆**，其餘 21 筆未刪除交易連至 Approved、未刪除建案。
 
 完整原值與證據限制見 **`docs/2A_HISTORICAL_DATA_QUALITY_Q5_Q8_2026-11-12.md`**。Q1～Q8 聚合結果已全部收到，**下輪不要再重查這些基本聚合**。優先事項：提出可稽核的來源／工程範圍認證設計；需區分業務 Approved 與模型 Verified Reference。未經核實不得聲稱有 8 件可靠真實公司最終標單，也不應擅自刪除展示資料。未改正式程式／DB。
+
+
+## 21. 2026-11-12：Verified Reference 來源／範圍資格設計草案（尚未核准）
+
+使用者回覆上一輪 GitHub 同步與 `python scripts/check_handoff_review.py --base ee3ff3e`「沒有錯誤」，作為**使用者口頭操作通過**證據。Q1～Q8 實際資料庫聚合已完整取得，主要問題是 8 Approved 當中 7 件名稱疑似 DEMO、另 1 件未核實，且不能將 Approved 當作來源真實完整之證明。
+
+新建 **`docs/2A_VERIFIED_REFERENCE_DESIGN_V1_2026-11-12.md`**，是尚待產學窗口／指導教授確認的**設計草案**，非已核定需求與現有功能。核心：保留既有 `Draft/Approved` 發布與鎖定流程，增設獨立 `Unreviewed/InReview/Verified/Rejected/Revoked` 來源審核及各估算目的（鋼筋、混凝土、結構體價格）的適格資格；審核須有可追溯來源版本、工程範圍、標準單位／材料口徑、主管權限、事件紀錄、撤銷及重審機制。
+
+草案包含欄位／資料表方案、API/UI 草案、角色矩陣、14 項驗收測試矩陣與舊 Approved 預設 Unreviewed 的遷移方向；未經決策**不能**建立 Migration、改 DB、改正式估算查詢、取消現有 Approved、或刪 DEMO。下一階段先針對現有 Authorization/History Publish/Reopen 的實際程式做接入影響清單，再與業務確認規格，才可進入實作。
