@@ -169,3 +169,10 @@ python -m unittest discover -s research/2a_synthetic -p "test_*.py" -v
 E1：使用者貼出 Q4 兩列：住宅 RC、material_id=1：8 獨立建案／11 交易／11 linked bid items；material_id=2：8 獨立建案／10 交易／10 linked bid items。SQL 限定 Approved、未刪除、非 Outlier、正數量。**未能確認來源真實、各工項外鍵品質或兩個 material ID 的名稱**；其他用途/結構未出現在這份有效歷史材料 Q4 聚合。Q1～Q3 結果尚未收到，不能當成已檢查。
 
 新建 `docs/2A_APPROVED_MATERIAL_COHORT_2026-11-12.md` 與只查聚合、不揭露檔名和建案名稱的 `research/2a_synthetic/reference_material_source_audit_readonly.sql`。只提交未執行；先前 DEMO Approved 風險仍未結案。
+
+
+## P. 2026-11-12：Q1–Q4 真實資料品質完整證據
+
+E1（使用者直接貼出 SQL 四組聚合）：Q1 10 件住宅 RC（8 Approved、2 Draft，未刪除皆 0）；Q2 8 Approved 中 **7 件缺 source_file_hash**，其他被查欄位缺漏均為 0；Q3 23 歷史交易，標記刪除 2、連到非 Approved／已刪除建案 2，全部 FK 有值且有效、工項不跨案；Q4 材料 ID=1／2 各涵蓋 8 個獨立住宅 RC Approved 專案，分別 11／10 筆有效交易。**Q3 兩組 2 件可能重疊，尚未證實交集。**
+
+歸檔 `docs/2A_HISTORICAL_DATA_QUALITY_Q1_Q4_2026-11-12.md`；補強 `reference_material_source_audit_readonly.sql` Q8，供同一 SQL Editor 唯讀交叉檢查。仍未取得 Q5～Q8 輸出、material_id 對應名、正式來源證明、工程範圍認證、實際可用真實公司歷史案數。未動 C# 或 DB。不得把 DB Approved 數推論成真實材料資料集。
