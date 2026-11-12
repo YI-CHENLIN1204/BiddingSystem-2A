@@ -191,3 +191,10 @@ E1：Q5 確認材料 1=鋼筋 kg、2=混凝土 立方公尺；Q6 8 Approved 中 
 - `docs/2A_VERIFIED_REFERENCE_DESIGN_V1_2026-11-12.md` 新增獨立來源資格與 per-purpose（鋼筋／混凝土／結構體價格）審核設計，Draft/Approved 業務發布流程不變，舊 Approved 暫不取得 Verified Reference。狀態、角色、稽核、重開、撤銷、API、資料模型與 VR-01～VR-14 測試均屬**提案**。
 - 依據：Q1～Q8 真實 DB 聚合，8 Approved 但 7 名稱疑似展示、1 來源尚未核實；不得由此斷言已有 0 件真案，只能說已提供證據中尚無完成鑑真的真實完整標單。不能據此擅改生產查詢。
 - 研究下一步：對照最新 C# Published History／權限／模型查詢實際實作，建立變更影響清單並由業務窗口確認；這批只改文件，無程式／DB／模型驗證。
+
+
+## S. 2026-11-12：Verified Reference 接入路徑審查（E3 靜態證據）
+
+已直接閱讀目前分支後端程式碼，詳細文件 `docs/2A_VERIFIED_REFERENCE_INTEGRATION_AUDIT_2026-11-12.md`。有兩個需先處理的 P0：`Program.cs` 無內建 Authentication/Authorization 中介設定且 Projects/Audit 等敏感 Controller 無 `[Authorize]`；ProjectSimilarityService 以 int ProjectId 取候選的 overload 缺 Approved 限制，而 DTO overload 有 Approved。需辨別一般展示與正式模型使用，不能盲目改邏輯。
+
+另外證實 Publish/Reopen 已採交易與冪等識別，數量模型依 ProjectId 聚合合格交易，價格模型依 FinalBidItem 工程大項彙總，正式最少樣本依 EstimationSettings 判定。**本輪靜態查核，不等於實際部署安全驗證、執行測試或新 Verified 功能上線**。下一步先完成部署身份機制與前端接入點清單、業務審核政策核准。
