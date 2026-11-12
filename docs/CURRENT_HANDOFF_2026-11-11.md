@@ -245,3 +245,15 @@ research/2a_synthetic/README.md、docs/2A_MODEL_AUDIT_2026-11-10.md，
 使用者提供 `reference_quality_counts_readonly.sql` 的 Q4 輸出：**住宅 × RC** 有 material_id=1 的 **8 件獨立 Approved、未刪除、非異常且數量為正的歷史建案，11 筆交易、11 個不同連結工項**；material_id=2 同樣 **8 件獨立建案，10 筆交易、10 個連結工項**。不是 11／10 件工程，也不能判定 8 件皆為真實可用標單。尚未確認 material_id=1/2 名稱或 DEMO 資料是否仍在；Q1～Q3 尚未取得。
 
 保存於 `docs/2A_APPROVED_MATERIAL_COHORT_2026-11-12.md`。下一步優先執行唯讀聚合 `research/2a_synthetic/reference_material_source_audit_readonly.sql` 確認材料名稱、來源疑似 DEMO 分組與同案同材料多筆交易；並補提供先前的 Q1～Q3 結果。**SQL 尚未執行，不能當成已完成核驗。** 正式 C#／DB／模型權重保持不變。
+
+
+## 19. 2026-11-12：已取得 Q1～Q4 真實資料品質完整聚合
+
+使用者已貼出 `reference_quality_counts_readonly.sql` **四組全部**查詢結果（不再只是 Q4）。詳細表格、證據範圍與不確定性見 **`docs/2A_HISTORICAL_DATA_QUALITY_Q1_Q4_2026-11-12.md`**。
+
+- Q1：`project_master` 10 件，全部住宅 RC：8 Approved、2 Draft，沒有任何建案標記刪除。
+- Q2：8 Approved 有 7 件缺少 `source_file_hash`（87.5%）；用途、結構、總樓地板面積、基地面積、日期、來源檔名、ApprovedAt/By 均無本次查詢定義的缺漏／不合法情況。這仍未證明來源真實與工程範圍完整。
+- Q3：23 筆歷史材料交易；2 筆已標記刪除、2 筆連到非 Approved 或已刪除建案；全部有有效的 ProjectMaster／FinalBidItem FK，且無跨案工項錯連。**刪除與非 Approved 兩組是否重疊尚未確認，不能直接相加為四筆問題交易。**
+- Q4：有效 Approved 歷史交易回傳住宅 RC、material_id=1 的 8 獨立建案／11 交易／11 工項、material_id=2 的 8 獨立建案／10 交易／10 工項；材料 ID 名稱與 DEMO 歷史來源仍待驗證。
+
+`research/2a_synthetic/reference_material_source_audit_readonly.sql` 現已包含 Q5 材料名稱／標準單位、Q6 疑似 DEMO 來源聚合、Q7 同案同材料多筆交易、**Q8 歷史交易刪除狀態×關聯建案核准狀態交叉表**。下一步先執行 Q5～Q8 的唯讀 SQL，回報聚合，不要重查已完成 Q1～Q4，不得因此更改正式模型權重或把 DEMO 當真實。
