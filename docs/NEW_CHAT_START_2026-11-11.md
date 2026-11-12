@@ -128,3 +128,8 @@ Q4 已由使用者提供：有效 Approved 歷史材料記錄目前只回傳住�
 ## 2026-11-12：Verified Reference 草案已完成，下一步是接入點審查
 
 已完成 Q1～Q8 真實 DB 聚合，8 Approved 裡 7 件**名稱疑似**展示/測試，1 件未核實；不可由此宣稱沒有真實建案。**最新版需求草案**：`docs/2A_VERIFIED_REFERENCE_DESIGN_V1_2026-11-12.md`。規格包含獨立來源狀態、鋼筋／混凝土／結構體價格各自資格、證據與稽核、角色／撤銷、舊資料過渡和 14 項 VR 驗收情境。它**尚未獲業務／老師確認，完全未實作**。下一件工作是讀現行 History Publish/Reopen、權限與估算服務，列出完整接入變更清單；不要直接修改 C#、DB、權重或重跑 Q1～Q8。
+
+
+## 最新 2026-11-12：Verified Reference 接入位置已靜態查核
+
+請先讀 `docs/2A_VERIFIED_REFERENCE_DESIGN_V1_2026-11-12.md`、`docs/2A_VERIFIED_REFERENCE_INTEGRATION_AUDIT_2026-11-12.md`。實際 C# 已看到 P0：Program 無 AuthN/AuthZ、Projects/Audit API 無 [Authorize]；相似度候選 int overload 無 Approved 限制、DTO overload 有；數量模型已有按 ProjectId 聚合。**Verified Reference 仍是未核定規格／未實作功能**；下一步釐清部署入口、實際身份與角色、前端 UI 位置及業務政策，之後才安全分期實作，禁止跳過核准直接改 DB 或模型候選。
