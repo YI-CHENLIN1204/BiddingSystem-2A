@@ -123,3 +123,8 @@ Q4 已由使用者提供：有效 Approved 歷史材料記錄目前只回傳住�
 ## 2026-11-12 最新：Q1～Q8 都已完成，正式來源資格待設計
 
 查庫八組聚合結果全部收到；請先讀 `docs/2A_HISTORICAL_DATA_QUALITY_Q1_Q4_2026-11-12.md` 與 `docs/2A_HISTORICAL_DATA_QUALITY_Q5_Q8_2026-11-12.md`。10 案全部住宅 RC（8 Approved、2 Draft）；7/8 Approved 缺 Hash；**7/8 Approved 來源名稱疑似展示或測試，剩餘 1 件未核真實**。鋼筋/kg 與混凝土/立方公尺各有 8 名義 Approved 建案、11/10 有效材料交易。刪除的兩筆恰與兩筆非 Approved 連結資料相同。下一步應提出來源/完整性審核、證據與資料模型方案，避免把 Approved 混同 Verified Reference；**不要再向使用者索取相同 Q1～Q8 結果，也不要重跑模擬**。不改正式權重/DB。
+
+
+## 2026-11-12：Verified Reference 草案已完成，下一步是接入點審查
+
+已完成 Q1～Q8 真實 DB 聚合，8 Approved 裡 7 件**名稱疑似**展示/測試，1 件未核實；不可由此宣稱沒有真實建案。**最新版需求草案**：`docs/2A_VERIFIED_REFERENCE_DESIGN_V1_2026-11-12.md`。規格包含獨立來源狀態、鋼筋／混凝土／結構體價格各自資格、證據與稽核、角色／撤銷、舊資料過渡和 14 項 VR 驗收情境。它**尚未獲業務／老師確認，完全未實作**。下一件工作是讀現行 History Publish/Reopen、權限與估算服務，列出完整接入變更清單；不要直接修改 C#、DB、權重或重跑 Q1～Q8。
