@@ -209,3 +209,10 @@ python -m unittest discover -s research/2a_synthetic -p "test_*.py" -v
 使用者提供真實 Supabase 聚合的完整 Q1–Q4。結果詳見 `docs/2A_HISTORICAL_DATA_QUALITY_Q1_Q4_2026-11-12.md`：10 件住宅 RC（8 Approved、2 Draft），7/8 Approved 缺來源 Hash，23 歷史交易中 2 已刪除、2 連非 Approved／已刪除（不一定為互異交易）；有效 material_id=1 有 8 件獨立建案／11 筆交易、material_id=2 有 8 件獨立建案／10 筆交易。每筆交易 FK 與 ProjectMaster/FinalBidItem 的關聯未見異常；仍不能據此證明資料來源真實。
 
 下一份 **`reference_material_source_audit_readonly.sql`** 共有 Q5～Q8：材料名稱、疑似 DEMO 來源聚合、同案同材料交易數、交易刪除×關聯 Approved 狀態交叉表。只輸出主檔名稱和聚合數值、不回傳任何真實建案名稱、標單內容或來源檔案名稱。尚未執行 Q5～Q8；只用於偵查，不能作為已核准正式模型改動。
+
+
+## 2026-11-12：真實 DB Q5～Q8 已回收
+
+使用者提供實際開發資料庫 Q5～Q8 聚合資料。材料 ID1=鋼筋/kg、ID2=混凝土/立方公尺；8 Approved 中有 7 件疑似展示／測試（名稱規則），另 1 件未核實；Q7 顯示鋼筋 7×1 + 1×4=11 行、混凝土 7×1 + 1×3=10 行；Q8 確認 2筆已刪除交易與 2筆連至非Approved/刪除建案紀錄是同兩筆。證據詳見 `docs/2A_HISTORICAL_DATA_QUALITY_Q5_Q8_2026-11-12.md`，**不得將疑似 DEMO 篩查當成鑑真**。
+
+Q1～Q8 的實際聚合已完成，研究重心轉移至來源真實性認證、工程範圍完整性與資料資格流程設計。待取得實際來源證據／決策前不建 migration、不修改正式模型參數、也不把模擬數據注入 DB。
