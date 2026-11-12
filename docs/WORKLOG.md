@@ -476,3 +476,11 @@ TwoAQuantityAnalysisService.AnalyzeAsync 現新增執行時 fail-closed：僅 Tw
 - 建立 `docs/2A_VERIFIED_REFERENCE_DESIGN_V1_2026-11-12.md`，詳細設計來源與估算目的分層審核、證據可追溯、既有 Approved 保留、DEMO 不自動刪除／誤判、權限矩陣、資料表／API 提案、重審撤銷、舊資料預設未核實與 14 項驗收情境。
 - 明確標記**尚未取得業務與老師確認，沒有程式、Migration 或 Supabase 變更**。下一步先檢查 ASP.NET History Publish/Reopen/模型參考查詢及授權實作，釐清切入點和安全遷移方案。
 - 因下一個對話接手任務、資料治理策略及驗收準則都發生變動，依 Guardian 同步主交接、研究回溯、WORKLOG、新對話入口、決策中「草案非核定」欄位及完整審查記錄。
+
+
+## 2026-11-12 — Verified Reference 後端接入位置／安全風險查核
+
+- 讀取最新 C# Program、ProjectsApiController、ProjectManagementService、ProjectSimilarityService、DetectionCategoryRangeService、MajorCategoryPriceRangeService、AnalysisCaseService、AuditLogsApiController 等。
+- 發現應優先釐清權限保障：Program 目前無 ASP.NET Core AuthN/AuthZ 註冊與管線；敏感歷史發布、重開、刪除、操作記錄 GET 無 [Authorize]。外部部署是否有有效入口限制未知。
+- 發現 ProjectSimilarityService int overload 沒有 Approved 限制，DTO overload 則有 Approved；目前無 Verified 條件。數量模型已將同案同材料多筆交易按 ProjectId 聚合，不能重造此功能。
+- 固化完整程式路徑、風險、分期方案及回歸測試於 `docs/2A_VERIFIED_REFERENCE_INTEGRATION_AUDIT_2026-11-12.md`。此輪只改文件，不改正式程式、DB、權重，不宣稱實測或企業核准。
