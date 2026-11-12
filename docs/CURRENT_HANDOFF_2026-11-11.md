@@ -257,3 +257,12 @@ research/2a_synthetic/README.md、docs/2A_MODEL_AUDIT_2026-11-10.md，
 - Q4：有效 Approved 歷史交易回傳住宅 RC、material_id=1 的 8 獨立建案／11 交易／11 工項、material_id=2 的 8 獨立建案／10 交易／10 工項；材料 ID 名稱與 DEMO 歷史來源仍待驗證。
 
 `research/2a_synthetic/reference_material_source_audit_readonly.sql` 現已包含 Q5 材料名稱／標準單位、Q6 疑似 DEMO 來源聚合、Q7 同案同材料多筆交易、**Q8 歷史交易刪除狀態×關聯建案核准狀態交叉表**。下一步先執行 Q5～Q8 的唯讀 SQL，回報聚合，不要重查已完成 Q1～Q4，不得因此更改正式模型權重或把 DEMO 當真實。
+
+
+## 20. 2026-11-12：Q5～Q8 真實資料庫結果已取得（最新）
+
+使用者已提供 `reference_material_source_audit_readonly.sql` 的 Q5～Q8：**material_id=1 鋼筋/kg，2 混凝土/立方公尺**；8 Approved 中有 7 件專案名稱或來源檔名符合 DEMO/TEST/模擬/測試字樣、1 件未命中且**尚未核實**。2 Draft 中 1 件疑似展示/測試、1 件未核實。這是文字篩查，不能當真偽認證。Q2 的 7 件缺 Hash 與 Q6 的 7 件疑似 Demo 是否為同一批**未知**。
+
+有效 Approved 同案同材料交易分布：鋼筋 7 案×1筆 + 1 案×4筆 = 11筆；混凝土 7案×1筆 + 1案×3筆 = 10筆。可能是不同來源工項，**不能直接當重複輸入或多個獨立建案**。Q8 證實 Q3 的 2 筆已刪除與 2 筆連至非 Approved 是**同一批兩筆**，其餘 21 筆未刪除交易連至 Approved、未刪除建案。
+
+完整原值與證據限制見 **`docs/2A_HISTORICAL_DATA_QUALITY_Q5_Q8_2026-11-12.md`**。Q1～Q8 聚合結果已全部收到，**下輪不要再重查這些基本聚合**。優先事項：提出可稽核的來源／工程範圍認證設計；需區分業務 Approved 與模型 Verified Reference。未經核實不得聲稱有 8 件可靠真實公司最終標單，也不應擅自刪除展示資料。未改正式程式／DB。
