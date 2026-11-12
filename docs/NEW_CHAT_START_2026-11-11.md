@@ -113,3 +113,8 @@ GitHub 已保存程式／決策／變更與交接檔案，但**不能存取你�
 ## 最新 2026-11-12：Q4 聚合已收到
 
 Q4 已由使用者提供：有效 Approved 歷史材料記錄目前只回傳住宅 RC；material_id=1、2 各有 8 個**獨立建案**，對應交易分別 11、10 行。材料 ID 名稱未知，DEMO 資料疑慮未解，不能將 8 筆當成 8 個真實工程模型資格。見 `docs/2A_APPROVED_MATERIAL_COHORT_2026-11-12.md`。下一個對話請優先讀先前 Q1～Q3 結果（若未提供，才請使用者補）與新 `research/2a_synthetic/reference_material_source_audit_readonly.sql` 聚合結果，不要重查已完成的 Q4，也不要擅改正式資料庫。
+
+
+## 2026-11-12 最新進度：完整 Q1～Q4 已取得
+
+已收到四組真實 DB 聚合！**不用再索取 Q1～Q4**。報告在 `docs/2A_HISTORICAL_DATA_QUALITY_Q1_Q4_2026-11-12.md`。8 Approved、2 Draft 全住宅 RC；7/8 Approved 缺 source_file_hash；23 交易有 2 刪除、2 連非 Approved（交集尚未確定），FK 無空或錯連；有效歷史材料 ID=1／2 各 8 件獨立建案及 11／10 交易。下一步執行 `research/2a_synthetic/reference_material_source_audit_readonly.sql` 的 Q5～Q8，確認材料名稱、疑似 DEMO 來源、同案材料多筆交易和刪除／非 Approved 交集。任何合格率結論都不能跳過來源真實性、標單完整性驗證；產學正式模型未變。
