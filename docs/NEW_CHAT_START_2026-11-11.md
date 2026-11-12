@@ -118,3 +118,8 @@ Q4 已由使用者提供：有效 Approved 歷史材料記錄目前只回傳住�
 ## 2026-11-12 最新進度：完整 Q1～Q4 已取得
 
 已收到四組真實 DB 聚合！**不用再索取 Q1～Q4**。報告在 `docs/2A_HISTORICAL_DATA_QUALITY_Q1_Q4_2026-11-12.md`。8 Approved、2 Draft 全住宅 RC；7/8 Approved 缺 source_file_hash；23 交易有 2 刪除、2 連非 Approved（交集尚未確定），FK 無空或錯連；有效歷史材料 ID=1／2 各 8 件獨立建案及 11／10 交易。下一步執行 `research/2a_synthetic/reference_material_source_audit_readonly.sql` 的 Q5～Q8，確認材料名稱、疑似 DEMO 來源、同案材料多筆交易和刪除／非 Approved 交集。任何合格率結論都不能跳過來源真實性、標單完整性驗證；產學正式模型未變。
+
+
+## 2026-11-12 最新：Q1～Q8 都已完成，正式來源資格待設計
+
+查庫八組聚合結果全部收到；請先讀 `docs/2A_HISTORICAL_DATA_QUALITY_Q1_Q4_2026-11-12.md` 與 `docs/2A_HISTORICAL_DATA_QUALITY_Q5_Q8_2026-11-12.md`。10 案全部住宅 RC（8 Approved、2 Draft）；7/8 Approved 缺 Hash；**7/8 Approved 來源名稱疑似展示或測試，剩餘 1 件未核真實**。鋼筋/kg 與混凝土/立方公尺各有 8 名義 Approved 建案、11/10 有效材料交易。刪除的兩筆恰與兩筆非 Approved 連結資料相同。下一步應提出來源/完整性審核、證據與資料模型方案，避免把 Approved 混同 Verified Reference；**不要再向使用者索取相同 Q1～Q8 結果，也不要重跑模擬**。不改正式權重/DB。
