@@ -275,3 +275,14 @@ research/2a_synthetic/README.md、docs/2A_MODEL_AUDIT_2026-11-10.md，
 新建 **`docs/2A_VERIFIED_REFERENCE_DESIGN_V1_2026-11-12.md`**，是尚待產學窗口／指導教授確認的**設計草案**，非已核定需求與現有功能。核心：保留既有 `Draft/Approved` 發布與鎖定流程，增設獨立 `Unreviewed/InReview/Verified/Rejected/Revoked` 來源審核及各估算目的（鋼筋、混凝土、結構體價格）的適格資格；審核須有可追溯來源版本、工程範圍、標準單位／材料口徑、主管權限、事件紀錄、撤銷及重審機制。
 
 草案包含欄位／資料表方案、API/UI 草案、角色矩陣、14 項驗收測試矩陣與舊 Approved 預設 Unreviewed 的遷移方向；未經決策**不能**建立 Migration、改 DB、改正式估算查詢、取消現有 Approved、或刪 DEMO。下一階段先針對現有 Authorization/History Publish/Reopen 的實際程式做接入影響清單，再與業務確認規格，才可進入實作。
+
+
+## 22. 2026-11-12：Verified Reference 正式後端接入點靜態審查
+
+已讀最新 `Program.cs`、`ProjectsApiController`、`ProjectManagementService`、`ProjectSimilarityService`、`DetectionCategoryRangeService`、`MajorCategoryPriceRangeService`、`AnalysisCaseService` 等，報告：**`docs/2A_VERIFIED_REFERENCE_INTEGRATION_AUDIT_2026-11-12.md`**。
+
+**P0 兩項實際程式風險**：`Program.cs` 未看到 Authentication/Authorization 配置，Publish/Reopen/Delete/Audit API 無 `[Authorize]`，不能假設只有主管能執行；ProjectSimilarityService 的 `GetScoredCandidateProjectsAsync(int)` 缺 Approved 限制，DTO overload 有 Approved，但兩者用途應先辨清。外部部署網路限制尚未核對，不可宣稱實際遭攻擊。
+
+PublishHistory 已有 advisory transaction lock／Idempotency receipt／SyncHistoricalTransaction／Audit；Reopen 會標記現有交易刪除、改 Draft；數量模型會按 ProjectId 加總多交易再計獨立建案、價格模型由 FinalBidItem 大項彙總並另有 Readiness。將來 Verified Reference 必須分目的在候選選擇器一致套用，不能只改其中一條 query，也不能假設已有 Verified 欄位。
+
+本輪**僅文件審查**，無正式程式或 DB 變更、沒有 dotnet build 或部署權限驗證。下一步是確認實際部署身份／權限模式、前端入口，與崴正／老師核定審核規則，再走具回退的分期實作。
