@@ -226,3 +226,8 @@ Qty × UnitPrice
 ## D-015 — 每次變更後必重新審查交接影響（2026-11-11）
 
 **決策：** 在 `BiddingSystem-2A` 每次程式、模型、測試、研究、參數、部署或文件修改後，都必須檢查並記錄「是否需要更新交接文件」，不再依賴對話摘要或事後想起。使用專案 Skill `waizheng-2a-handoff-guardian`、`AGENTS.md` 與 `docs/HANDOFF_CHANGE_REVIEWS.jsonl`；需要時同步修改主交接／決策／研究追溯／WORKLOG；不需修改也要書面說明原因。新對話先讀 Skill 再開發。機械檢查與 PR workflow 是輔助，不能代替人工確認內容正確性。
+
+
+## PENDING-2026-11-12 — Verified Reference 來源與工程範圍審核（尚未成為正式決策）
+
+**目前僅提出設計**，不是原 D-001～D-015 已核定規則的變更。依據 Q1～Q8 真實資料庫聚合發現，單一 `HistoryStatus=Approved` 尚無法證明來源真實性或工程範圍完整。提案詳見 `docs/2A_VERIFIED_REFERENCE_DESIGN_V1_2026-11-12.md`：保留 Approved 發布流程，另建來源/分目的資料資格與證據稽核；舊 Approved 預設未核實，數量/價格適格分開核查。實作前仍需業務窗口確認如何鑑真定案文件、工程口徑、主管權限、舊 DEMO 行為與影響範圍；**不得在沒有核准前執行 migration 或更改模型候選資格**。
