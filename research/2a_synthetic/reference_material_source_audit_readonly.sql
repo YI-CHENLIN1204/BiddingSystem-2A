@@ -43,4 +43,20 @@ FROM material_counts
 GROUP BY material_id,transactions
 ORDER BY material_id,transactions;
 
+
+-- Q8: 交叉確認 Q3 的「已刪除」與「連至非 Approved／已刪除專案」是否重疊
+-- 不輸出任何交易 ID、建案 ID、名稱或金額。
+SELECT
+  h.is_deleted AS transaction_marked_deleted,
+  CASE
+    WHEN p.project_id IS NULL THEN '缺少有效建案連結'
+    WHEN p.history_status = 'Approved' AND NOT p.is_deleted THEN 'Approved且建案未刪除'
+    ELSE '非Approved或建案已刪除'
+  END AS linked_project_status,
+  COUNT(*) AS transaction_rows
+FROM public.historical_transaction h
+LEFT JOIN public.project_master p ON p.project_id = h.project_master_id
+GROUP BY 1, 2
+ORDER BY 1, 2;
+
 COMMIT;
