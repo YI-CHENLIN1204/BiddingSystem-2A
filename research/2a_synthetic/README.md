@@ -202,3 +202,10 @@ python -m unittest discover -s research/2a_synthetic -p "test_*.py" -v
 下一步在核實正確 Supabase 開發 DB 後，開啟 `research/2a_synthetic/reference_quality_counts_readonly.sql`，查詢四組**聚合**結果：Approved/用途/結構案數、缺失重要基礎資料或來源檔案欄位案數、歷史交易連結品質、各用途/結構/材料的**獨立案數**。它是 `BEGIN READ ONLY` 且只輸出匯總、不輸出建案名稱或單價明細，也不會寫 DB。**腳本尚未執行，任何準備率與合格案數仍未驗證。**
 
 `project_master` 之 `project_type`、`structure_type`、`total_floor_area` 可為 NULL；`historical_transaction.project_master_id`、`final_bid_item_id` 可為 NULL；`Approved` 不證明企業來源真實。資料品質聚合結果即使全部通過，仍不是工程範圍完整性與來源真實的正式證明。
+
+
+## 2026-11-12：實際 DB 的 Q1–Q4 品質盤點已完成
+
+使用者提供真實 Supabase 聚合的完整 Q1–Q4。結果詳見 `docs/2A_HISTORICAL_DATA_QUALITY_Q1_Q4_2026-11-12.md`：10 件住宅 RC（8 Approved、2 Draft），7/8 Approved 缺來源 Hash，23 歷史交易中 2 已刪除、2 連非 Approved／已刪除（不一定為互異交易）；有效 material_id=1 有 8 件獨立建案／11 筆交易、material_id=2 有 8 件獨立建案／10 筆交易。每筆交易 FK 與 ProjectMaster/FinalBidItem 的關聯未見異常；仍不能據此證明資料來源真實。
+
+下一份 **`reference_material_source_audit_readonly.sql`** 共有 Q5～Q8：材料名稱、疑似 DEMO 來源聚合、同案同材料交易數、交易刪除×關聯 Approved 狀態交叉表。只輸出主檔名稱和聚合數值、不回傳任何真實建案名稱、標單內容或來源檔案名稱。尚未執行 Q5～Q8；只用於偵查，不能作為已核准正式模型改動。
