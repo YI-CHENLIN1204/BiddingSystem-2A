@@ -468,3 +468,11 @@ TwoAQuantityAnalysisService.AnalyzeAsync 現新增執行時 fail-closed：僅 Tw
 - Q7 鋼筋 7 案 1 筆、1 案 4 筆；混凝土 7 案 1 筆、1 案 3 筆，對應 Q4 的 11／10 行，並非 11／10 件工程。
 - Q8 證實 2 筆刪除交易與 2 筆關聯非 Approved／刪除建案交易完全重疊；其餘 21 筆未刪除交易與 Approved 活躍建案對應。
 - 存檔 `docs/2A_HISTORICAL_DATA_QUALITY_Q5_Q8_2026-11-12.md`，作為來源認證／工程完整性流程下一步設計依據。只做文件更新、無正式 DB 或 C# 改動，交接狀態須同步。
+
+
+## 2026-11-12 — 第八階段：Verified Reference 設計規格草案
+
+- 使用者確認上輪同步／交接檢查無錯，開始將歷史資料 Q1～Q8 調查結論轉為可實作之需求提案。
+- 建立 `docs/2A_VERIFIED_REFERENCE_DESIGN_V1_2026-11-12.md`，詳細設計來源與估算目的分層審核、證據可追溯、既有 Approved 保留、DEMO 不自動刪除／誤判、權限矩陣、資料表／API 提案、重審撤銷、舊資料預設未核實與 14 項驗收情境。
+- 明確標記**尚未取得業務與老師確認，沒有程式、Migration 或 Supabase 變更**。下一步先檢查 ASP.NET History Publish/Reopen/模型參考查詢及授權實作，釐清切入點和安全遷移方案。
+- 因下一個對話接手任務、資料治理策略及驗收準則都發生變動，依 Guardian 同步主交接、研究回溯、WORKLOG、新對話入口、決策中「草案非核定」欄位及完整審查記錄。
