@@ -231,3 +231,8 @@ Qty × UnitPrice
 ## PENDING-2026-11-12 — Verified Reference 來源與工程範圍審核（尚未成為正式決策）
 
 **目前僅提出設計**，不是原 D-001～D-015 已核定規則的變更。依據 Q1～Q8 真實資料庫聚合發現，單一 `HistoryStatus=Approved` 尚無法證明來源真實性或工程範圍完整。提案詳見 `docs/2A_VERIFIED_REFERENCE_DESIGN_V1_2026-11-12.md`：保留 Approved 發布流程，另建來源/分目的資料資格與證據稽核；舊 Approved 預設未核實，數量/價格適格分開核查。實作前仍需業務窗口確認如何鑑真定案文件、工程口徑、主管權限、舊 DEMO 行為與影響範圍；**不得在沒有核准前執行 migration 或更改模型候選資格**。
+
+
+### 2026-11-12 Verified Reference 接入審查補記（仍為 PENDING）
+
+已讀正式後端原始碼，發現 Authentication/Authorization 配置及敏感操作的角色保護需要優先確認，且 ProjectSimilarityService 兩條 overload 的 Approved 條件不同。詳 `docs/2A_VERIFIED_REFERENCE_INTEGRATION_AUDIT_2026-11-12.md`。此為**風險審查記錄**，不是授權採用 Verified Reference 的正式決策，也不等於已實作或已驗證部署安全；業務審核政策與權限來源確認前不得直接移轉舊 Approved 資料資格。
