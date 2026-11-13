@@ -198,3 +198,10 @@ E1：Q5 確認材料 1=鋼筋 kg、2=混凝土 立方公尺；Q6 8 Approved 中 
 已直接閱讀目前分支後端程式碼，詳細文件 `docs/2A_VERIFIED_REFERENCE_INTEGRATION_AUDIT_2026-11-12.md`。有兩個需先處理的 P0：`Program.cs` 無內建 Authentication/Authorization 中介設定且 Projects/Audit 等敏感 Controller 無 `[Authorize]`；ProjectSimilarityService 以 int ProjectId 取候選的 overload 缺 Approved 限制，而 DTO overload 有 Approved。需辨別一般展示與正式模型使用，不能盲目改邏輯。
 
 另外證實 Publish/Reopen 已採交易與冪等識別，數量模型依 ProjectId 聚合合格交易，價格模型依 FinalBidItem 工程大項彙總，正式最少樣本依 EstimationSettings 判定。**本輪靜態查核，不等於實際部署安全驗證、執行測試或新 Verified 功能上線**。下一步先完成部署身份機制與前端接入點清單、業務審核政策核准。
+
+
+## T. 2026-11-13：前端與 Nginx 靜態入口查核
+
+E3：從 GitHub 開發分支讀取 `frontend/src/services/api.ts`、`frontend/src/router/index.ts`、`frontend/src/App.vue`、`ProjectDetailView.vue`、`ProjectsView.vue`、`AuditLogView.vue`、`AnalysisCaseDetailView.vue`、`frontend/nginx.conf`、`frontend/Dockerfile`、`崴正/Program.cs`。分析已收錄 `docs/2A_VERIFIED_REFERENCE_FRONTEND_SECURITY_AUDIT_2026-11-13.md`。
+
+核對到：Vue 無角色/登入 route guard，側欄直接可見 AuditLogs；`api.ts` 未設 token，Nginx 配置只有 proxy_pass 而無 auth_request／allow/deny；ProjectDetailView 使用 Idempotency-Key + receipt 防失敗重送；分析頁已做 DEMO 名稱警告。部署主機、外部 Gateway/VPN/ACL 不在 GitHub 範圍，**本輪沒有做實際對外 API 測試、登入測試或建置測試**，不得推論正式服務一定對公眾可達。Verified Reference 仍為未核定設計，未做 API/DB 變更。
