@@ -133,3 +133,8 @@ Q4 已由使用者提供：有效 Approved 歷史材料記錄目前只回傳住�
 ## 最新 2026-11-12：Verified Reference 接入位置已靜態查核
 
 請先讀 `docs/2A_VERIFIED_REFERENCE_DESIGN_V1_2026-11-12.md`、`docs/2A_VERIFIED_REFERENCE_INTEGRATION_AUDIT_2026-11-12.md`。實際 C# 已看到 P0：Program 無 AuthN/AuthZ、Projects/Audit API 無 [Authorize]；相似度候選 int overload 無 Approved 限制、DTO overload 有；數量模型已有按 ProjectId 聚合。**Verified Reference 仍是未核定規格／未實作功能**；下一步釐清部署入口、實際身份與角色、前端 UI 位置及業務政策，之後才安全分期實作，禁止跳過核准直接改 DB 或模型候選。
+
+
+## 最新 2026-11-13：前端／部署靜態核對已完成
+
+Verified Reference 還未實作，業務／老師尚未核定。已完成後端及前端接入盤點，最新：`docs/2A_VERIFIED_REFERENCE_FRONTEND_SECURITY_AUDIT_2026-11-13.md`。Vue router/App/api 沒有已集成的登入及角色守衛，AuditLogs 出現在側欄；Nginx `/api/` 轉發 backend:8080 未見 auth 相關設定；ASP.NET Program 也沒有 AuthN/AuthZ，但**實際主機可能有外部入口限制，不能推斷它公開可達**。下一個需要確認的是部署管理員對 API/前端實際可達性、反向代理/防火牆/VPN、公司身份提供者與主管角色的規範，然後才實作端點授權。舊 Publish/Reopen 的 Idempotency-Key 不得被新機制破壞；不要再重跑已取得的 Q1–Q8。
