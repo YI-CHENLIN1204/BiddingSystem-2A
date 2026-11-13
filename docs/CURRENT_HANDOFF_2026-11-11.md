@@ -286,3 +286,14 @@ research/2a_synthetic/README.md、docs/2A_MODEL_AUDIT_2026-11-10.md，
 PublishHistory 已有 advisory transaction lock／Idempotency receipt／SyncHistoricalTransaction／Audit；Reopen 會標記現有交易刪除、改 Draft；數量模型會按 ProjectId 加總多交易再計獨立建案、價格模型由 FinalBidItem 大項彙總並另有 Readiness。將來 Verified Reference 必須分目的在候選選擇器一致套用，不能只改其中一條 query，也不能假設已有 Verified 欄位。
 
 本輪**僅文件審查**，無正式程式或 DB 變更、沒有 dotnet build 或部署權限驗證。下一步是確認實際部署身份／權限模式、前端入口，與崴正／老師核定審核規則，再走具回退的分期實作。
+
+
+## 23. 2026-11-13：Verified Reference 前端／Nginx 靜態安全接入審查
+
+使用者確認上一輪 GitHub 同步、Guardian 無錯並要求繼續。已完成對最新 Vue 前端 `api.ts`、`router/index.ts`、`App.vue`、`ProjectDetailView.vue`、`ProjectsView.vue`、`AuditLogView.vue`、`AnalysisCaseDetailView.vue`、以及 `frontend/nginx.conf`、`frontend/Dockerfile`、後端 `Program.cs` 的靜態查核，完整結果：**`docs/2A_VERIFIED_REFERENCE_FRONTEND_SECURITY_AUDIT_2026-11-13.md`**。
+
+風險：前端沒有可辨識的登入／角色路由守衛，操作紀錄列在一般側欄，`api.ts` 不帶專屬 bearer token；目前 Nginx 只有將 `/api/` 代理到 `backend:8080`，未在這個檔案配置 API 認證。後端亦無 ASP.NET Core AuthN/AuthZ。這是程式層的安全缺口；**實際部署可能有外部代理、VPN、內網、防火牆，尚未核實，不能聲稱外部可直接存取。**
+
+現有 ProjectDetailView Publish/Reopen 有保留 sessionStorage Idempotency-Key 的失敗對帳；Verified Reference 接入必須保留此機制，且將「Approved 已納入模型」的既有文案與「來源 Verified」區分。AnalysisCaseDetailView 現已有對名稱可辨識 DEMO 的提醒，**只能作為疑似標記**。
+
+本次未修改正式前後端或資料庫；下一步須由部署管理員確認真正入口的防護方式、企業用戶與角色來源，據此設計後端授權及 401/403 行為，然後才可開始建立新的核准 API。
