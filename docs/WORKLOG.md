@@ -484,3 +484,11 @@ TwoAQuantityAnalysisService.AnalyzeAsync 現新增執行時 fail-closed：僅 Tw
 - 發現應優先釐清權限保障：Program 目前無 ASP.NET Core AuthN/AuthZ 註冊與管線；敏感歷史發布、重開、刪除、操作記錄 GET 無 [Authorize]。外部部署是否有有效入口限制未知。
 - 發現 ProjectSimilarityService int overload 沒有 Approved 限制，DTO overload 則有 Approved；目前無 Verified 條件。數量模型已將同案同材料多筆交易按 ProjectId 聚合，不能重造此功能。
 - 固化完整程式路徑、風險、分期方案及回歸測試於 `docs/2A_VERIFIED_REFERENCE_INTEGRATION_AUDIT_2026-11-12.md`。此輪只改文件，不改正式程式、DB、權重，不宣稱實測或企業核准。
+
+
+## 2026-11-13 — Verified Reference 前端與部署設定靜態審查
+
+- 使用者回報 GitHub 同步／Guardian 無錯，要求繼續。檢查 Vue router/App/api/Projects/ProjectDetail/AuditLog/AnalysisCaseDetail 與 frontend/nginx.conf、Dockerfile、ASP.NET Program。
+- 前端路由無身份／角色守衛，操作紀錄在側欄無條件顯示；Nginx 僅 reverse proxy /api/ 到 backend:8080，未見內建 Auth；後端同樣未見 AuthN/AuthZ 設置。這不代表實際部署無外部入口限制，需請管理員確認。
+- ProjectDetailView 已有 sessionStorage Idempotency-Key／receipt 對帳；舊 Approved 文案不應混同新 Verified，AnalysisCaseDetailView 已有 DEMO 名稱疑似標記可延續。
+- 新建 `docs/2A_VERIFIED_REFERENCE_FRONTEND_SECURITY_AUDIT_2026-11-13.md`，包含權限分級、前端接口、部署核對、必要測試與分期方案。僅文件變更，未修改程式／資料庫。
