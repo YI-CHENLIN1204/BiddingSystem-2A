@@ -236,3 +236,8 @@ Qty × UnitPrice
 ### 2026-11-12 Verified Reference 接入審查補記（仍為 PENDING）
 
 已讀正式後端原始碼，發現 Authentication/Authorization 配置及敏感操作的角色保護需要優先確認，且 ProjectSimilarityService 兩條 overload 的 Approved 條件不同。詳 `docs/2A_VERIFIED_REFERENCE_INTEGRATION_AUDIT_2026-11-12.md`。此為**風險審查記錄**，不是授權採用 Verified Reference 的正式決策，也不等於已實作或已驗證部署安全；業務審核政策與權限來源確認前不得直接移轉舊 Approved 資料資格。
+
+
+### 2026-11-13 Verified Reference 前端與部署身份風險補充（仍為 PENDING）
+
+靜態核對 `frontend/src/router/index.ts`、`App.vue`、`api.ts`、`ProjectDetailView.vue`、`AuditLogView.vue`、`frontend/nginx.conf`：目前未找到完整前端身份/角色守衛與 Nginx 身份驗證配置，且後端 Program 未配置 ASP.NET Core AuthN/AuthZ。但外部 gateway/firewall/VPN 仍未知。詳 `docs/2A_VERIFIED_REFERENCE_FRONTEND_SECURITY_AUDIT_2026-11-13.md`。本項僅屬**設計與安全查核未結風險**，不是業務核准或已測試部署。必須先確認身份與部署信任邊界，才可實作 Verified Reference 的主管核准與授權。
