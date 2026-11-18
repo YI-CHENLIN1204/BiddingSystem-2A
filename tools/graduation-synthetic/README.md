@@ -48,3 +48,29 @@ python -m unittest discover -s tools/graduation-synthetic -p "test_*.py" -v
 - **此 Excel 是功能測試資料，不是企業最終標單或合法的實際工程用量基準。**
 - `export_demo_excel.py` 只輸出檔案，不呼叫 API、不寫入資料庫、不建立材料主檔；是否能在 UI 成功匯入，仍需在隔離畢專資料庫上實際驗證。
 - 不要把 **合成異常樣本** 未經處理便當成正常歷史基準；正式回測必須先分離訓練與驗證資料，並排除有植入異常的歷史基準樣本。
+
+
+## v0.3 不規則多工作表標單（建議先用這個驗證解析器）
+
+在 **Windows PowerShell、GitHub 專案根目錄**執行：
+
+```powershell
+git pull --ff-only
+python -m unittest discover -s tools/graduation-synthetic -p "test_*.py" -v
+python tools/graduation-synthetic/generate.py --count 300 --seed 20261119 --output .\graduation-data
+python tools/graduation-synthetic/generate_irregular_excel.py --source .\graduation-data --output .\graduation-irregular.xlsx --truth .\graduation-irregular-truth.json
+```
+
+注意：`--output` 指定的檔案不可已存在。重新執行請使用不同輸出檔名，不要刪除不確定來源的檔案。
+
+本版模擬的格式變異：
+
+- 四張工作表：`工程總表`（摘要）、`結構體明細`、`基礎及地下工程`、`樓層材料明細`。摘要表預期由現有解析器略過。
+- 每張明細表有不同表頭文字、起始列、欄位排列、附註、分類列和結尾合計列。
+- 同材料分布在多張明細表，為同一母資料交易的**不同分攤數量**，並非重複計數；但缺數量列應被標記而不可自行補完。
+- 材料名稱使用示意變體，例如 `SD420W D19 竹節鋼筋加工及組立`、`預拌混凝土 280kgf/cm²（含泵送）`、`H型鋼梁柱構件製作及吊裝`，並非只有「鋼筋／水泥」。
+- 各材料生成 `complete`、`missing_unit_price`、`missing_quantity` 測例；`graduation-irregular-truth.json` 含工作表、列號、正確材料類別、案例類型與應見值，可用來人工核對解析結果。
+
+**重要**：目前 v0.3 只建立解析器壓力測試資料。命名變體與資料缺漏是示意測試規則；先前原始企業 Excel 在此輪無法取得可讀位元組，因此**尚未逐份驗證為真實企業檔案的格式分布**，不能宣稱完全相同。全部不完整測例不得作為已核實歷史成交資料；未驗證之材料用量係數不代表工程標準。絕不可把 v0.3 測試標單匯入產學正式 DB。
+
+從應用程式做手動測試：在**已確認隔離的畢專資料庫**環境開啟標單匯入頁面，上傳 `graduation-irregular.xlsx`，比對 `graduation-irregular-truth.json`，確認各工作表是否有被解析、命名變體是否誤配、缺單價／缺數量是否被擋下或列為待審。**不可只因 HTTP 200 就判為 PASS。** 後端 `TenderExcelParser` 的數字位置推斷需額外留意缺數量列被誤讀。
