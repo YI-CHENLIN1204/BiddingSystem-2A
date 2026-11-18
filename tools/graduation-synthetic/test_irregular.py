@@ -5,7 +5,7 @@ from pathlib import Path
 from xml.etree import ElementTree as ET
 from zipfile import ZipFile
 from generate_irregular_excel import generate, BASE
-from grad_generator_work.generate import generate as make_data, write_csv, PROJECT_FIELDS, HISTORY_FIELDS
+from generate import generate as make_data, write_csv, PROJECT_FIELDS, HISTORY_FIELDS
 import hashlib
 
 class IrregularTests(unittest.TestCase):
