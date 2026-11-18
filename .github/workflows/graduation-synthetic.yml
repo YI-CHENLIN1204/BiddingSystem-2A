@@ -28,3 +28,6 @@ jobs:
           python tools/graduation-synthetic/generate.py --count 300 --seed 20261119 --output /tmp/graduation-data
           python tools/graduation-synthetic/export_demo_excel.py --source /tmp/graduation-data --output /tmp/graduation-demo.xlsx
           test -s /tmp/graduation-demo.xlsx
+          python tools/graduation-synthetic/generate_irregular_excel.py --source /tmp/graduation-data --output /tmp/graduation-irregular.xlsx --truth /tmp/graduation-irregular-truth.json
+          test -s /tmp/graduation-irregular.xlsx
+          test -s /tmp/graduation-irregular-truth.json
