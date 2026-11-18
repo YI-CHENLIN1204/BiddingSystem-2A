@@ -1,0 +1,30 @@
+name: Graduation synthetic generator
+
+on:
+  push:
+    paths:
+      - 'tools/graduation-synthetic/**'
+      - '.github/workflows/graduation-synthetic.yml'
+  pull_request:
+    paths:
+      - 'tools/graduation-synthetic/**'
+      - '.github/workflows/graduation-synthetic.yml'
+  workflow_dispatch:
+
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - name: Run generator and XLSX tests
+        run: python -m unittest discover -s tools/graduation-synthetic -p 'test_*.py' -v
+      - name: Generate offline demonstration data and workbook
+        run: |
+          python tools/graduation-synthetic/generate.py --count 300 --seed 20261119 --output /tmp/graduation-data
+          python tools/graduation-synthetic/export_demo_excel.py --source /tmp/graduation-data --output /tmp/graduation-demo.xlsx
+          test -s /tmp/graduation-demo.xlsx
