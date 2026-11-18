@@ -45,6 +45,27 @@ LAYOUTS = [
 ]
 SHEETS = ['結構體明細', '基礎及地下工程', '樓層材料明細']
 
+EXTRA_ITEMS = [
+    ('臨時圍籬組立及拆除（含安全設施）', 'm', '假設工程'),
+    ('基坑土方開挖與運棄（含機具）', 'm3', '土方工程'),
+    ('地下室擋土支撐構件組立', '式', '基礎工程'),
+    ('地坪級配料回填夯實', 'm3', '土方工程'),
+    ('普通模板組立及拆除（柱梁）', 'm2', '結構體工程'),
+    ('樓版支撐及鋁模租賃', 'm2', '結構體工程'),
+    ('外牆防水底塗與 PU 彈性塗膜', 'm2', '防水工程'),
+    ('地下室連續壁止水處理', 'm', '防水工程'),
+    ('AL 鋁窗框含玻璃安裝', '樘', '門窗工程'),
+    ('不鏽鋼欄杆製作及固定', 'm', '金屬工程'),
+    ('電氣配管 EMT 25mm 及管件', 'm', '水電工程'),
+    ('弱電線槽與機櫃設備安裝', '組', '弱電工程'),
+    ('給排水管路 PVC 4吋 配設', 'm', '水電工程'),
+    ('室內 60×60 磁磚鋪貼含打底', 'm2', '裝修工程'),
+    ('防火門框扇製作含五金', '樘', '門窗工程'),
+    ('屋頂排水與泛水收邊', 'm', '屋頂工程'),
+    ('施工安全監測沉陷觀測點', '點', '安全觀測工程'),
+    ('工區臨時供水配管系統', '式', '假設工程'),
+]
+
 
 def excel_col(n):
     result = ''
@@ -186,6 +207,36 @@ def generate(source, xlsx_path, truth_path, project_id=None, seed=4102):
                           'expected_quantity': str(part_qty) if scenario != 'missing_quantity' else None,
                           'expected_unit_price': str(unit_price) if scenario != 'missing_unit_price' else None,
                           'source_data_origin': 'SYNTHETIC', 'split': chosen['split']})
+    # Extra non-core construction work items exercise the unmapped-items workflow.
+    # These rows are synthetic test fixtures, NOT added to historical_transactions.csv.
+    for extra_idx in range(36):
+        label, unit, category = EXTRA_ITEMS[extra_idx % len(EXTRA_ITEMS)]
+        sheet_idx = extra_idx % len(SHEETS)
+        sheet_name = SHEETS[sheet_idx]
+        quantity = Decimal(rng.randint(1, 500)) + Decimal(str(rng.randrange(10))) / Decimal('10')
+        unit_price = Decimal(rng.randint(5, 900))
+        scenario = ('missing_unit', 'unmapped_extra', 'unmapped_extra', 'missing_unit_price')[extra_idx % 4]
+        item_label = label if extra_idx < len(EXTRA_ITEMS) else f'{label}－{rng.choice(["一區", "B棟", "地下二層", "屋頂層"])}'
+        row = {'項次': f'E{extra_idx+1:03d}', '序號': f'E{extra_idx+1:03d}',
+               '項目名稱': item_label, '工項名稱': item_label, '品名': item_label,
+               '材料規格': category, '規格': category, '單位': unit,
+               '數量': quantity, '工程數量': quantity, '單價': unit_price,
+               '金額': quantity * unit_price, '複價': quantity * unit_price, '總價': quantity * unit_price,
+               '備註': '合成測試'}
+        if scenario == 'missing_unit':
+            row['單位'] = None
+        elif scenario == 'missing_unit_price':
+            row['單價'] = None
+            for amount_key in ('金額', '複價', '總價'):
+                row[amount_key] = None
+        sheets[sheet_name].append([row.get(h, '') for h in LAYOUTS[sheet_idx]])
+        truth.append({'sheet': sheet_name, 'excel_row': len(sheets[sheet_name]),
+                      'source_synthetic_transaction_id': None, 'material_code': None,
+                      'rendered_item_name': item_label, 'scenario': scenario,
+                      'expected_quantity': str(quantity),
+                      'expected_unit_price': str(unit_price) if scenario != 'missing_unit_price' else None,
+                      'source_data_origin': 'SYNTHETIC', 'split': chosen['split'],
+                      'expected_mapping': 'unmapped_by_default'})
     for name in SHEETS:
         sheets[name].extend([[], ['備註', '以下留白'], ['合計', '測試彙總列，解析時應略過']])
     blob = make_xlsx(sheets)
