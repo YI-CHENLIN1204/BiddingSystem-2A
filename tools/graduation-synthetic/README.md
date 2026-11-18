@@ -29,3 +29,22 @@ python -m unittest discover -s tools/graduation-synthetic -p test_generate.py -v
 2. 畢專專用匯入器支援 dry-run、防重複與回滾。
 3. 生成可上傳 Excel，驗證最終標單匯入和異常分析。
 4. 合成資料可做受控實驗，但真實適用性須由合法公開工程資料獨立驗證。
+
+
+## 產生給現有標單解析器使用的測試 Excel
+
+先建立原始合成 CSV，再從 **test 切分**選取一個建案匯出：
+
+```powershell
+python tools/graduation-synthetic/generate.py --count 300 --seed 20261119 --output .\graduation-output
+python tools/graduation-synthetic/export_demo_excel.py --source .\graduation-output --output .\graduation-demo.xlsx
+python -m unittest discover -s tools/graduation-synthetic -p "test_*.py" -v
+```
+
+指定建案可加上 `--project-id SYN-00003`（需存在於輸入資料）。命令會輸出對應建案的類型、結構、縣市、面積、地上與地下樓層、日期，供手動輸入系統；產物只包含測試工項。
+
+- 工作表名稱為「材料明細」，表頭為「項次、項目名稱、規格、單位、數量、單價、金額」，對應 `崴正/Services/TenderExcelParser.cs` 的欄位辨識。
+- 會檢查 SHA-256、來源標籤與建案關聯，不允許覆寫現存 xlsx。
+- **此 Excel 是功能測試資料，不是企業最終標單或合法的實際工程用量基準。**
+- `export_demo_excel.py` 只輸出檔案，不呼叫 API、不寫入資料庫、不建立材料主檔；是否能在 UI 成功匯入，仍需在隔離畢專資料庫上實際驗證。
+- 不要把 **合成異常樣本** 未經處理便當成正常歷史基準；正式回測必須先分離訓練與驗證資料，並排除有植入異常的歷史基準樣本。
