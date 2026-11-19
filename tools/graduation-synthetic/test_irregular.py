@@ -27,16 +27,27 @@ class IrregularTests(unittest.TestCase):
         self.assertEqual(a.read_bytes(),b.read_bytes())
         self.assertEqual(json.loads(ta.read_text(encoding='utf-8'))['cases'],json.loads(tb.read_text(encoding='utf-8'))['cases'])
         truth=json.loads(ta.read_text(encoding='utf-8'))
-        self.assertEqual(len(truth['worksheets']),4)
+        self.assertEqual(len(truth['worksheets']),7)
         self.assertEqual({x['scenario'] for x in truth['cases']},{'complete','missing_unit_price','missing_quantity','missing_unit','unmapped_extra'})
-        self.assertEqual(len(truth['cases']),42)
+        self.assertEqual(len(truth['cases']),360)
+        self.assertEqual(truth['requested_detail_rows'], 360)
+        self.assertEqual(truth['actual_detail_rows'], 360)
+        self.assertEqual(sum(truth['detail_rows_per_sheet'].values()), 360)
+        self.assertEqual(len(truth['detail_rows_per_sheet']), 6)
+        self.assertGreater(len({x['rendered_item_name'] for x in truth['cases']}), 250)
+        self.assertGreater(sum(x['scenario']=='complete' for x in truth['cases']), 200)
+        for case in truth['cases']:
+            if case['scenario']=='missing_quantity':
+                self.assertIsNone(case['expected_quantity'])
+            if case['scenario']=='missing_unit_price':
+                self.assertIsNone(case['expected_unit_price'])
         self.assertEqual(truth['xlsx_sha256'],hashlib.sha256(a.read_bytes()).hexdigest())
         self.assertTrue(all(x['source_data_origin']=='SYNTHETIC' for x in truth['cases']))
         self.assertTrue(all('示意' not in x['rendered_item_name'] for x in truth['cases']))
         with ZipFile(a) as z:
             self.assertIsNone(z.testzip())
-            self.assertEqual(len([n for n in z.namelist() if n.startswith('xl/worksheets/sheet')]),4)
-            for n in range(1,5):
+            self.assertEqual(len([n for n in z.namelist() if n.startswith('xl/worksheets/sheet')]),7)
+            for n in range(1,8):
                 sheet=ET.fromstring(z.read(f'xl/worksheets/sheet{n}.xml'))
                 self.assertGreater(len(sheet.findall(f'.//{{{BASE}}}row')),3)
     def test_no_overwrite_and_tamper(self):
