@@ -176,3 +176,14 @@ npm run build
 - 驗證界線：**PASS 僅涵蓋 Python 生成器單元測試與離線檔案產出**，不代表最新 ASP.NET 解析器上傳／工項對應／量價估算的整合或實務準確度通過。沒有使用 1A，也沒有資料庫寫入或 Migration。
 - 已知差距：`generate.py` 歷史交易每案仍僅 2 種示意材料；v0.4 每案雖有 360 筆工程工項，多數工項來自共用模板，尚未依不同建案的結構、面積、樓層與工程範疇調整工作表分布。這是下一個改善點，不得稱為具真實工料表統計分布。
 - 下一驗證點：建立可量化的跨建案多樣性測試，確認不同建案不只是參數／名稱改變；在隔離畢專 DB 完成前繼續禁止正式庫匯入。
+
+
+### 2026-11-19 — 工作表 0 筆不可選取：修正於使用者開發分支
+- 需求：使用者反映上傳真實或不規則 Excel 時「所有工作表都不能勾選」，阻擋畢專流程。
+- 程式修正：**`feature/1d-api-integration` 分支** commit `7e272718c2da4de75a52757687df7851b13ba4ad`，修改 `frontend/src/components/WorkbookSheetPicker.vue`；**尚未合併 main**，不要在 main 找此檔案（main 目前沒有相同工作表選擇元件）。
+- 根因（程式查證）：該分支在 preview API 的 `itemCount=0` 時前端設 `:disabled="sheet.itemCount === 0"`；但後端 `崴正/Controllers/TenderImportController.cs` 的 itemCount 來自 `TenderExcelParser.Parse`，僅代表解析器成功擷取的筆數，**不能證明整張表沒有明細**。
+- 變更：移除 0 筆工作表的強制 disabled，提供「勾選已辨識明細」快捷鍵與 0 筆警示；允許使用者手動選取未辨識工作表進行唯讀 inspect。保留多表明確選擇原則，不自動把未辨識內容當正式成交資料；`FinalBidImportService` 仍拒絕 0 筆匯入。
+- 驗證：已在 GitHub 該 feature 分支重新讀取元件原始碼，確認 disabled 移除與警示新增 **PASS（靜態查核）**；前端 `npm run build`、實際預覽／檢查／回寫 E2E **尚未測試**；也尚未證明原始 Excel 的 0 筆解析原因。
+- 影響：前端 UI；**不改 DB、Migration、API 或 1A**；正式交易安全限制維持。
+- 下一驗證點：在本機 `feature/1d-api-integration` 取回單檔、執行 `npm run build`，再上傳 `graduation-irregular-v04.xlsx`；若顯示 0 筆仍須檢查 `TenderExcelParser` 表頭辨識與工作表資料，而不能直接當成有效匯入。
+- 已淘汰判定：「解析 0 筆 = 工作表不可選」已取消；改由人工選取＋唯讀診斷＋匯入階段嚴格確認。
