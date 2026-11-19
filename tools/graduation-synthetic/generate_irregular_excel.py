@@ -42,8 +42,11 @@ LAYOUTS = [
     ['項次', '項目名稱', '規格', '單位', '數量', '單價', '金額', '備註'],
     ['序號', '工項名稱', '材料規格', '單位', '工程數量', '單價', '複價'],
     ['項次', '品名', '單位', '規格', '單價', '數量', '總價'],
+    ['編號', '項目及說明', '規格', '工程數量', '單位', '單價', '複價'],
+    ['項次', '名稱與說明', '規格', '單位', '數量', '單價', '金額', '備註'],
+    ['序號', '項目名稱', '規格', '單位', '單價', '工程數量', '總價'],
 ]
-SHEETS = ['結構體明細', '基礎及地下工程', '樓層材料明細']
+SHEETS = ['結構體明細', '基礎及地下工程', '樓層材料明細', '防水門窗及外裝', '機電消防及弱電', '室內裝修與雜項']
 
 EXTRA_ITEMS = [
     ('臨時圍籬組立及拆除（含安全設施）', 'm', '假設工程'),
@@ -64,6 +67,29 @@ EXTRA_ITEMS = [
     ('屋頂排水與泛水收邊', 'm', '屋頂工程'),
     ('施工安全監測沉陷觀測點', '點', '安全觀測工程'),
     ('工區臨時供水配管系統', '式', '假設工程'),
+    ('連續壁導溝開挖及回填', 'm', '基礎工程'),
+    ('基礎筏式底版止水帶施工', 'm', '防水工程'),
+    ('接地銅排及接地極施作', '組', '電氣工程'),
+    ('PVC-U 排水管及管件安裝', 'm', '給排水工程'),
+    ('樓梯間油漆批土及面漆', 'm2', '裝修工程'),
+    ('屋頂防水保護層及隔熱材', 'm2', '防水工程'),
+    ('外牆石材乾掛骨架系統', 'm2', '外牆工程'),
+    ('輕隔間 C 型骨架與雙面封板', 'm2', '裝修工程'),
+    ('公共區域天花板輕鋼架', 'm2', '裝修工程'),
+    ('機房消防灑水配管與測試', 'm', '消防工程'),
+    ('照明迴路配管配線施工', 'm', '電氣工程'),
+    ('地下停車場標線及標誌', 'm2', '雜項工程'),
+    ('戶外人行步道透水鋪面', 'm2', '景觀工程'),
+    ('混凝土表面修補及粉光', 'm2', '泥作工程'),
+    ('防火區劃貫穿部填塞', '處', '消防工程'),
+    ('空調冷媒銅管保溫及安裝', 'm', '空調工程'),
+    ('電梯門框收邊及修飾', '處', '電梯工程'),
+    ('衛浴設備給水配管及測試', '組', '給排水工程'),
+    ('陽台滴水線及收邊施作', 'm', '外牆工程'),
+    ('地下室地坪耐磨塗裝', 'm2', '裝修工程'),
+    ('弱電資訊插座與面板配設', '只', '弱電工程'),
+    ('工區臨時電力分盤設置', '組', '假設工程'),
+    ('屋頂設備基座澆置及固定', '座', '屋頂工程'),
 ]
 
 
@@ -131,7 +157,9 @@ def load_checked_source(source):
     return projects, txs
 
 
-def generate(source, xlsx_path, truth_path, project_id=None, seed=4102):
+def generate(source, xlsx_path, truth_path, project_id=None, seed=4102, items=360):
+    if not 60 <= items <= 2000:
+        raise ValueError('items must be between 60 and 2000')
     if xlsx_path.exists() or truth_path.exists():
         raise ValueError('refusing to overwrite existing output')
     if xlsx_path.resolve() == truth_path.resolve():
@@ -209,14 +237,25 @@ def generate(source, xlsx_path, truth_path, project_id=None, seed=4102):
                           'source_data_origin': 'SYNTHETIC', 'split': chosen['split']})
     # Extra non-core construction work items exercise the unmapped-items workflow.
     # These rows are synthetic test fixtures, NOT added to historical_transactions.csv.
-    for extra_idx in range(36):
+    # Scale BOQ rows independently from the small historical transaction fixture.
+    extra_count = items - len(truth)
+    if extra_count < 0:
+        raise ValueError('requested row count below core test rows')
+    for extra_idx in range(extra_count):
         label, unit, category = EXTRA_ITEMS[extra_idx % len(EXTRA_ITEMS)]
         sheet_idx = extra_idx % len(SHEETS)
         sheet_name = SHEETS[sheet_idx]
         quantity = Decimal(rng.randint(1, 500)) + Decimal(str(rng.randrange(10))) / Decimal('10')
         unit_price = Decimal(rng.randint(5, 900))
-        scenario = ('missing_unit', 'unmapped_extra', 'unmapped_extra', 'missing_unit_price')[extra_idx % 4]
-        item_label = label if extra_idx < len(EXTRA_ITEMS) else f'{label}－{rng.choice(["一區", "B棟", "地下二層", "屋頂層"])}'
+        marker = extra_idx % 20
+        scenario = ('missing_unit' if marker == 0 else
+                    'missing_unit_price' if marker in (1, 2) else
+                    'missing_quantity' if marker == 3 else
+                    'unmapped_extra' if marker in (4, 5) else 'complete')
+        zone = ('A棟', 'B棟', 'C棟', '地下停車場', '裙樓', '屋頂層')[(extra_idx // len(EXTRA_ITEMS)) % 6]
+        level = ('B2', 'B1', '1F', '3F', '5F', '8F', '12F', 'RF')[(extra_idx // 6) % 8]
+        spec = ('標準型', '加強型', '耐候型', '防火型', '依圖說', '含施工測試')[(extra_idx // 11) % 6]
+        item_label = f'{label}－{zone}/{level}（{spec}）'
         row = {'項次': f'E{extra_idx+1:03d}', '序號': f'E{extra_idx+1:03d}',
                '項目名稱': item_label, '工項名稱': item_label, '品名': item_label,
                '材料規格': category, '規格': category, '單位': unit,
@@ -225,6 +264,11 @@ def generate(source, xlsx_path, truth_path, project_id=None, seed=4102):
                '備註': '合成測試'}
         if scenario == 'missing_unit':
             row['單位'] = None
+        elif scenario == 'missing_quantity':
+            row['數量'] = None
+            row['工程數量'] = None
+            for amount_key in ('金額', '複價', '總價'):
+                row[amount_key] = None
         elif scenario == 'missing_unit_price':
             row['單價'] = None
             for amount_key in ('金額', '複價', '總價'):
@@ -233,7 +277,7 @@ def generate(source, xlsx_path, truth_path, project_id=None, seed=4102):
         truth.append({'sheet': sheet_name, 'excel_row': len(sheets[sheet_name]),
                       'source_synthetic_transaction_id': None, 'material_code': None,
                       'rendered_item_name': item_label, 'scenario': scenario,
-                      'expected_quantity': str(quantity),
+                      'expected_quantity': str(quantity) if scenario != 'missing_quantity' else None,
                       'expected_unit_price': str(unit_price) if scenario != 'missing_unit_price' else None,
                       'source_data_origin': 'SYNTHETIC', 'split': chosen['split'],
                       'expected_mapping': 'unmapped_by_default'})
@@ -244,6 +288,9 @@ def generate(source, xlsx_path, truth_path, project_id=None, seed=4102):
                   'seed': seed, 'worksheets': list(sheets), 'xlsx_sha256': hashlib.sha256(blob).hexdigest(),
                   'project': {k: chosen[k] for k in ('project_type','structure_type','city','total_floor_area','floor_count','basement_floor_count','start_date')},
                   'cases': truth,
+                  'requested_detail_rows': items,
+                  'actual_detail_rows': len(truth),
+                  'detail_rows_per_sheet': {name: sum(1 for case in truth if case['sheet'] == name) for name in SHEETS},
                   'warnings': ['Synthetic aliases are illustrative; not verified against real enterprise templates.',
                                'Missing quantities/prices are intentional malformed input, not suitable for history.',
                                'The missing_quantity line contributes to source total but is intentionally unreadable.',
@@ -252,7 +299,9 @@ def generate(source, xlsx_path, truth_path, project_id=None, seed=4102):
     truth_path.parent.mkdir(parents=True, exist_ok=True)
     xlsx_path.write_bytes(blob)
     truth_path.write_text(json.dumps(truth_data, ensure_ascii=False, indent=2)+'\n', encoding='utf-8')
-    return {'project_id': target, 'sheets': list(sheets), 'test_cases': len(truth), 'xlsx_sha256': truth_data['xlsx_sha256']}
+    return {'project_id': target, 'sheets': list(sheets), 'test_cases': len(truth),
+            'detail_rows_per_sheet': truth_data['detail_rows_per_sheet'],
+            'xlsx_sha256': truth_data['xlsx_sha256']}
 
 
 def main(argv=None):
@@ -262,9 +311,10 @@ def main(argv=None):
     parser.add_argument('--truth', type=Path, required=True)
     parser.add_argument('--project-id')
     parser.add_argument('--seed', type=int, default=4102)
+    parser.add_argument('--items', type=int, default=360, help='Total detail rows (60-2000); default 360')
     args = parser.parse_args(argv)
     try:
-        print(json.dumps(generate(args.source, args.output, args.truth, args.project_id, args.seed), ensure_ascii=False, indent=2))
+        print(json.dumps(generate(args.source, args.output, args.truth, args.project_id, args.seed, args.items), ensure_ascii=False, indent=2))
     except (ValueError, KeyError, OSError, json.JSONDecodeError) as error:
         parser.error(str(error))
 
