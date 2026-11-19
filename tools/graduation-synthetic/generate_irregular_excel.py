@@ -246,7 +246,18 @@ def generate(source, xlsx_path, truth_path, project_id=None, seed=4102, items=36
         raise ValueError('requested row count below core test rows')
     for extra_idx in range(extra_count):
         label, unit, category = EXTRA_ITEMS[extra_idx % len(EXTRA_ITEMS)]
-        sheet_idx = extra_idx % len(SHEETS)
+        # Group by work type to mimic disciplinary worksheets, with structural
+        # details split across two structural sheets for cross-sheet testing.
+        if category in ('結構體工程', '泥作工程'):
+            sheet_idx = (0 if extra_idx % 2 == 0 else 2)
+        elif category in ('假設工程', '土方工程', '基礎工程', '安全觀測工程'):
+            sheet_idx = 1
+        elif category in ('防水工程', '門窗工程', '金屬工程', '外牆工程', '屋頂工程'):
+            sheet_idx = 3
+        elif category in ('水電工程', '弱電工程', '電氣工程', '給排水工程', '消防工程', '空調工程'):
+            sheet_idx = 4
+        else:
+            sheet_idx = 5
         sheet_name = SHEETS[sheet_idx]
         quantity = Decimal(rng.randint(1, 500)) + Decimal(str(rng.randrange(10))) / Decimal('10')
         unit_price = Decimal(rng.randint(5, 900))
