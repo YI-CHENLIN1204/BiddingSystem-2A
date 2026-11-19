@@ -85,3 +85,28 @@ python tools/graduation-synthetic/generate_irregular_excel.py --source .\graduat
 - 36 筆額外工項**只存在標單測試檔**，不會被自動寫進合成歷史成交 CSV；測試初始狀態可合理預期列入未對應清單。是否正確處理仍需隔離環境 E2E。
 - 3 張明細表採三種表頭排列，包含不同起始列、分類列、空行、備註及合計列。此格式是**參考解析器現行能力設計的合成不規則案例**，尚不等於真實企業範本的逐張分布。
 - 所有數量與價格都是示意數值，存在故意缺漏；不可以把它當成已確認的決標標單或真實工程行情。
+
+
+## v0.4 大型工程標單（取代上方 v0.3.1 的 42 筆預設值）
+
+使用者指出 42 筆工項遠少於實務詳細標單，因此此版將 **一份標單的明細筆數** 與「歷史合成建案總數」拆開控制。**`--count 300` 是歷史建案數；`--items 360` 是這一份 Excel 裡的工程項目列數**，兩者不是同一回事。
+
+在 Windows PowerShell，先從 GitHub main 取得新版 `tools/graduation-synthetic`（如果目前在 `feature/1d-api-integration`，不用切換分支）：
+
+```powershell
+git fetch origin main
+git restore --source=origin/main --worktree -- tools/graduation-synthetic
+python -m unittest discover -s tools/graduation-synthetic -p "test_*.py" -v
+```
+
+若前一階段 `graduation-data` 已存在，**沿用即可，不必重新產生**。以下生成新的 Excel 名稱，以避免覆寫先前的版本：
+
+```powershell
+python tools/graduation-synthetic/generate_irregular_excel.py --source .\graduation-data --output .\graduation-irregular-v04.xlsx --truth .\graduation-irregular-v04-truth.json --items 360
+```
+
+可將 `--items` 設為 60–2000；建議先用 360，觀察解析器結果後再加大至 600。
+
+v0.4 輸出 **7 張工作表**（1 張摘要、6 張不同工程類別明細），預設 **360 筆詳細工項**。不同明細表有表頭偏移、表頭用詞與欄位順序差異；工項名稱加入工程部位、棟別、樓層與規格。部分工項故意缺單價、缺數量、缺單位，部分為預期未對應材料；另保留分類、空白、備註、合計列。JSON 會記錄工作表、列號、預期數量／單價、缺漏情境，以及各工作表工項計數。不可把缺漏資料當正常歷史交易。
+
+**限制與界線：** 為測試解析器承載能力所建立的**合成壓力資料**，不是透過企業真正標單逐案抽樣學到的格式分布；名稱、數量、單價仍未經專家校準。因此 360 筆不等於 360 種不同材料，也不等於企業工程估算的可信度。未完成畢專隔離 DB 前，不能將測試 Excel 上傳正式資料庫。
