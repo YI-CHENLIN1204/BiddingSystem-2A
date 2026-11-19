@@ -64,6 +64,14 @@ const filter = ref<'All' | 'Rebar' | 'Concrete' | 'Review'>('All')
 let requestId = 0
 let inspectionRequestId = 0
 
+const unrecognizedSelected = computed(() =>
+  props.modelValue.filter(name => sheets.value.some(sheet => sheet.name === name && sheet.itemCount === 0))
+)
+
+function selectRecognized() {
+  emit('update:modelValue', sheets.value.filter(sheet => sheet.itemCount > 0).map(sheet => sheet.name))
+}
+
 const shownRows = computed(() => {
   const rows = inspection.value?.rows ?? []
   if (filter.value === 'All') return rows
@@ -160,15 +168,25 @@ function typeName(type: CandidateType) {
     <div v-if="loading" class="text-muted small">正在預覽工作表，請稍候...</div>
     <div v-if="error" class="alert alert-danger py-2">{{ error }}</div>
     <div v-if="!loading && !error && sheets.length" class="d-grid gap-2">
+      <div class="d-flex align-items-center gap-2 flex-wrap">
+        <button type="button" class="btn btn-sm btn-outline-primary"
+          :disabled="!sheets.some(sheet => sheet.itemCount > 0)"
+          @click="selectRecognized">
+          勾選已辨識明細
+        </button>
+        <span class="small text-muted">
+          0 筆表示解析器未辨識出有效明細，不代表工作表一定為空。可手動勾選並進行唯讀檢查。
+        </span>
+      </div>
       <label v-for="sheet in sheets" :key="sheet.name"
         class="d-flex align-items-start gap-2 border rounded p-2 bg-white"
-        :class="{ 'opacity-50': sheet.itemCount === 0 }">
+        :class="{ 'border-warning': sheet.itemCount === 0 }">
         <input type="checkbox" class="form-check-input mt-1" :checked="modelValue.includes(sheet.name)"
-          :disabled="sheet.itemCount === 0"
           @change="toggle(sheet.name, ($event.target as HTMLInputElement).checked)" />
         <span class="flex-grow-1">
           <span class="fw-semibold">{{ sheet.name }}</span>
           <span class="small text-muted ms-2">候選明細 {{ sheet.itemCount }} 筆</span>
+          <span v-if="sheet.itemCount === 0" class="badge bg-warning text-dark ms-2">未辨識，可人工選取</span>
           <span class="small d-block text-muted">{{ sheet.reason }}</span>
           <span v-if="sheet.sampleItems.length" class="small d-block text-muted">
             範例：{{ sheet.sampleItems.join('、') }}
@@ -178,6 +196,11 @@ function typeName(type: CandidateType) {
       <div class="small fw-semibold" :class="modelValue.length ? 'text-success' : 'text-danger'">
         已選 {{ modelValue.length }} 張工作表。
         {{ modelValue.length ? '請確認全數屬於同一工程及相同階段的正式明細。' : '請至少勾選一張真正的工程明細工作表。' }}
+      </div>
+      <div v-if="unrecognizedSelected.length" class="alert alert-warning py-2 mb-0">
+        已選取 {{ unrecognizedSelected.length }} 張目前辨識為 0 筆的工作表：
+        {{ unrecognizedSelected.join('、') }}。建議先按「檢查選取工作表的全部候選明細」。
+        若仍是 0 筆，代表需要改善解析器或核對原始表格，不應直接回寫歷史資料。
       </div>
       <div class="d-flex gap-2 align-items-center flex-wrap mt-2">
         <button type="button" class="btn btn-sm btn-outline-primary"
