@@ -206,6 +206,9 @@ def generate(source, xlsx_path, truth_path, project_id=None, seed=4102, items=36
                    '項目名稱': ALIASES[code][(part_i + rng.randrange(4)) % 4],
                    '工項名稱': ALIASES[code][(part_i + rng.randrange(4)) % 4],
                    '品名': ALIASES[code][(part_i + rng.randrange(4)) % 4],
+                   '項目及說明': ALIASES[code][(part_i + rng.randrange(4)) % 4],
+                   '名稱與說明': ALIASES[code][(part_i + rng.randrange(4)) % 4],
+                   '編號': str(len(truth)+1),
                    '材料規格': f'{code} / 合成規格', '規格': f'{code} / 合成規格',
                    '單位': transaction['unit'], '數量': part_qty,
                    '工程數量': part_qty, '單價': unit_price,
@@ -227,7 +230,7 @@ def generate(source, xlsx_path, truth_path, project_id=None, seed=4102, items=36
             sheet_name = SHEETS[sheet_i]
             values = [row.get(h, '') for h in LAYOUTS[sheet_i]]
             # Ensure only one name alias per physical row, including mixed layouts.
-            name = next((row[h] for h in LAYOUTS[sheet_i] if h in ('項目名稱', '工項名稱', '品名')), '')
+            name = next((row[h] for h in LAYOUTS[sheet_i] if h in ('項目名稱', '工項名稱', '品名', '項目及說明', '名稱與說明')), '')
             sheet_row = len(sheets[sheet_name])+1
             sheets[sheet_name].append(values)
             truth.append({'sheet': sheet_name, 'excel_row': sheet_row, 'source_synthetic_transaction_id': transaction['synthetic_transaction_id'],
@@ -256,8 +259,9 @@ def generate(source, xlsx_path, truth_path, project_id=None, seed=4102, items=36
         level = ('B2', 'B1', '1F', '3F', '5F', '8F', '12F', 'RF')[(extra_idx // 6) % 8]
         spec = ('標準型', '加強型', '耐候型', '防火型', '依圖說', '含施工測試')[(extra_idx // 11) % 6]
         item_label = f'{label}－{zone}/{level}（{spec}）'
-        row = {'項次': f'E{extra_idx+1:03d}', '序號': f'E{extra_idx+1:03d}',
+        row = {'項次': f'E{extra_idx+1:03d}', '序號': f'E{extra_idx+1:03d}', '編號': f'E{extra_idx+1:03d}',
                '項目名稱': item_label, '工項名稱': item_label, '品名': item_label,
+               '項目及說明': item_label, '名稱與說明': item_label,
                '材料規格': category, '規格': category, '單位': unit,
                '數量': quantity, '工程數量': quantity, '單價': unit_price,
                '金額': quantity * unit_price, '複價': quantity * unit_price, '總價': quantity * unit_price,
