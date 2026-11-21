@@ -918,3 +918,10 @@ npm run build
 - 根據 GitHub 現況：Repository 已 Public，default `main`，但 PR #2 `feature/1d-api-integration → main` 仍 Open／未合併；先前比較顯示兩者明顯分岔（feature 比 main ahead 673 / behind 210 commits）。組員要根據目前 2A 程式碼撰寫專題報告，**指定共享的 `feature/1d-api-integration` 分支**，不是現階段尚未整合最新功能的預設 main。此為「報告閱讀／開發分支」而非已釋出的 production release；正式報告應記錄固定 Commit SHA。
 - 已**實際修改並提交** `main/README.md`（commit `c159f85669d4e98504764312a3fbcb5219e5b9a8`）、`feature/1d-api-integration/README.md`（commit `42eac3eeeb668f6c5c531167e6a2955025fc982d`）的最上方醒目提醒與分支超連結。 `main` 原 README 中「此專案維持 Private」與 GitHub 現況衝突，已改為公開風險注意事項。feature `docs/CURRENT_HANDOFF_2026-11-11.md` 另行同步記錄。
 - 本輪是分支導覽／文件決策，**沒有**合併主程式碼、動過資料庫或新增 CI；未做新的 Windows/E2E 驗證。 `course-version.zip` 和完整歷史對外公開安全性仍未核准，須與合作方確認授權；GitHub Public 狀態非本輪修改。
+
+
+### 2026-11-22 — 桌面最後 cherry-pick 已完成；目前對話尚未載入新增資料夾權限
+- 使用者已將桌面 integration 及主 repo 加入專案資料夾。本輪直接讀取原 `C:\Users\User\Desktop\BiddingSystem-2A-integration`：分支 `integration/src-closure`、HEAD `5c0ae5c`（最後審查紀錄提交）、`git status --short` 只剩原有 6 個 untracked 測試／比較檔，沒有 UU；`CHERRY_PICK_HEAD` 不存在。**前述「原桌面仍在最後衝突」已過時，不得再重新 cherry-pick 或修同一衝突。**
+- 目前工作階段 cwd 仍是原本的 Codex 暫存工作區。對原桌面 `docs/HANDOFF_CHANGE_REVIEWS.jsonl` 與主 repo `.git/worktrees/BiddingSystem-2A-integration/index` 嘗試只開 ReadWrite handle（未寫入任何位元組），兩者均 Access denied。新增資料夾尚未在本段對話提供可用寫權；不能宣稱可直接改原檔。
+- HTTP 實測：5263 case15 GET=200；同版本15 quantity-scope GET=404。新版 API 重啟、Docker/DB 6/6 仍未完成；沒有啟動／停止原程序或修改 DB。
+- 下一步：從已附加兩資料夾的本機專案建立新 Local／This computer 對話，integration 設為主要目錄；先核對實際寫權、Git HEAD/status 和 DB 身分，再停止舊 5263 並以原 55433 隔離連線重啟新版後端。保留既有 V1/Run/資料庫與未追蹤測試檔，不重 seed、不重算、不發布 smoke。
