@@ -31,3 +31,9 @@ jobs:
           python tools/graduation-synthetic/generate_irregular_excel.py --source /tmp/graduation-data --output /tmp/graduation-irregular.xlsx --truth /tmp/graduation-irregular-truth.json
           test -s /tmp/graduation-irregular.xlsx
           test -s /tmp/graduation-irregular-truth.json
+          python tools/graduation-synthetic/generate_full_project_dataset.py --count 60 --seed 20261119 --output /tmp/graduation-full
+          python tools/graduation-synthetic/export_full_project_excel.py --source /tmp/graduation-full --output /tmp/graduation-full.xlsx --truth /tmp/graduation-full-truth.json
+          python tools/graduation-synthetic/evaluate_full_project_holdout.py --source /tmp/graduation-full --output /tmp/graduation-full-evaluation.json
+          test -s /tmp/graduation-full.xlsx
+          test -s /tmp/graduation-full-truth.json
+          test -s /tmp/graduation-full-evaluation.json
