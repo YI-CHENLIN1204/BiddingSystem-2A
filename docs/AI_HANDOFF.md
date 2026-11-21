@@ -670,3 +670,9 @@ npm run build
 - Commit 後 `git status -sb` 顯示 `## integration/src-closure`，但有兩個新未追蹤且名稱異常的項目：`"ersUserDesktopBiddingSystem-2A-integration\\357\\200\\242"` 和 `"ories\\357\\200\\242"`（Git quote-path escape 顯示，實際檔案名/內容/來源未明）。暫時不清理也不納入 Git；先用 `git -c core.quotePath=false status --short`、`Get-ChildItem -Force -Name` 和個別 metadata 檢查，再判斷是否可移除。禁止 `git clean -fd` 清空其他未追蹤資料。
 - 查 GitHub 最新 feature 的 `崴正/Services/ProjectSimilarityService.cs` 確認 `GetScoredCandidateProjectsAsync(ProjectSimilarityTargetDto)` 已有 `p.HistoryStatus=="Approved"`、`p.ProjectType==target.ProjectType` 及 `(target.StructureType!="SRC" || p.StructureType=="SRC")`；以 projectId 查相似度的另一 overload 同樣有 SRC 結構過濾，但不自動要求 Approved。要做可靠 API/DB E2E，必須以**新版 `86c068b` + 本機 `d725379` 的後端**連 55433，不能把舊 `97f7cfd` 的已存 Run 誤當新版政策 PASS；現階段無新的新版 API 實測結果。
 - 下一點：檢查兩個未知未追蹤檔的名稱/大小；保留 local `d725379`；以不產生新分析案的方式先檢查現存 DB cohort 和服務端嚴格過濾路徑；如需全 API E2E，應在隔離庫受控新建分析案並明確記錄新 Run，避免污染舊 13 件報告。未改 DB schema/migration/seed。
+
+
+### 2026-11-21 — 本機 integration branch 兩個異常未追蹤檔與 C# 語句誤貼 PowerShell
+- 使用者 `git -c core.quotePath=false status --short` 列出兩個未追蹤一般檔案 `ersUserDesktopBiddingSystem-2A-integration` (18,217 bytes，20:40:00) 及 `ories` (16,653 bytes，20:40:01)。檔名尾端為特殊字元，不確定是意外重導向還是另有內容；目前未讀取內容，**不得直接刪除或納入 Git**。下一步僅查看檔案第一行與 metadata，若疑似敏感內容不得貼在聊天。
+- 使用者將先前回答中標示的 `target.StructureType != "SRC" || p.StructureType == "SRC"` C# 過濾條件當成 PowerShell 命令執行，出現 `'||' 非有效陳述式分隔符` 和 `target.StructureType 無法辨識`，**純屬命令語言不相容，不是程式建置/執行錯誤**。後續所有使用者執行命令應標明 Powershell，且不要把示意 C# 片段當作操作步驟。
+- 本機 `integration/src-closure` local `d725379` 已成功提交修補 Vue 3.5.46/Vite 7.3.8，`npm audit 0`、`vue-tsc && vite build` PASS，仍未 Push。SRC 55433 已核驗 77 個 Approved、37,504 筆交易/0缺失標單鏈結；嚴格 SRC API/DB E2E **尚未執行**。本次未執行本機命令、無 API/DB/Seed/程式碼變更。
