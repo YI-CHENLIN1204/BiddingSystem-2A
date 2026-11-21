@@ -1,5 +1,6 @@
 <script setup lang="ts">
-import { computed, ref, watch } from 'vue'
+import { computed, onMounted, ref, watch } from 'vue'
+import { useRoute, useRouter } from 'vue-router'
 import ProjectFields from '../components/ProjectFields.vue'
 import WorkbookSheetPicker from '../components/WorkbookSheetPicker.vue'
 import { useSystemOptions } from '../composables/useSystemOptions'
@@ -42,6 +43,8 @@ interface PolicyResponse { knownMajorCategories: string[] }
 interface FilterOptions { categories: string[]; units: string[] }
 interface MasterOption { categoryId?: number; categoryName?: string; unitId?: number; unitName?: string; isActive: boolean }
 
+const route = useRoute()
+const router = useRouter()
 const { options, error: optionsError } = useSystemOptions()
 const project = ref<ProjectForm>({
   projectName: '', projectType: '', structureType: '', city: '', totalFloorArea: null, siteArea: null,
@@ -122,6 +125,7 @@ async function upload() {
   try {
     const result = await apiForm<{ projectId: number; message?: string }>('/Estimation/upload-final-bid', form)
     projectId.value = Number(result.projectId)
+    await router.replace({ path: '/final-bid', query: { projectId: String(projectId.value) } })
     message.value = result.message ?? '決標資料已成功回寫。'
     file.value = null
     includedSheets.value = []
@@ -327,6 +331,23 @@ async function createMaterial() {
     error.value = caught instanceof Error ? caught.message : '新增標準材料失敗'
   } finally { busyId.value = null }
 }
+
+async function openExistingReview() {
+  const raw = route.query.projectId
+  if (typeof raw !== 'string' || !/^[1-9]\\d*$/.test(raw) || !Number.isSafeInteger(Number(raw))) {
+    if (raw != null) error.value = '決標審核的建案編號無效'
+    return
+  }
+  projectId.value = Number(raw)
+  error.value = ''
+  try {
+    await loadMappingResources()
+    await Promise.all([loadSummary(), loadTwoASummary(), loadItems(1)])
+  } catch (caught) {
+    error.value = caught instanceof Error ? caught.message : '無法重新載入此建案決標審核'
+  }
+}
+onMounted(openExistingReview)
 
 function resetAndLoad() { page.value = 1; loadItems(1) }
 watch(search, () => { window.clearTimeout(searchTimer); searchTimer = window.setTimeout(resetAndLoad, 300) })
