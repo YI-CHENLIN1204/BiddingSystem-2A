@@ -331,3 +331,10 @@ npm run build
 - `GET /api/major-category-price/readiness` 回覆 `majorCategory=結構體工程`、`eligibleMetadataProjectCount=210`、`availableProjectCount=210`、`minimumSampleCount=5`、`missingProjectCount=0`、`status=ReadyForEstimation`。確認價格估算的正式查詢路徑已可取得全部 210 案合成歷史價格；不代表判定精準度已被驗證。
 - 本輪無 DB 內容變更、Migration 或正式估算演算法更動。待驗證：使用新版包含逐筆 `工程大項` 欄的 `graduation-v2-project-ready.xlsx` 作為 test-only；以 `POST /api/analysis-cases/from-upload` 建立案件，取得 `analysisCaseId` / `analysisBidVersionId`；然後分別呼叫 `POST /api/analysis-cases/{caseId}/versions/{versionId}/quantity-analysis` 和 `major-price-analysis`（request majorCategory=結構體工程），核對回傳與 truth。沒有實際 API 成功輸出前不得聲稱偵錯已通過。
 - 注意：此前初版 `graduation-v2-project.xlsx` 尚未包含 `工程大項`，不應拿它當正式 API 驗證。PowerShell 只印回傳中的非敏感欄位，不提供任何 DB 密碼或連線字串。
+
+
+### 2026-11-21 — SYN-00002 574-row structured workbook upload HTTP 400, diagnosed missing sheet selection
+- 使用者確定 `graduation-v2-project-ready.xlsx` 與 `graduation-v2-project-ready-truth.json` 存在，從 truth 讀出 `SYN-00002` 且 `split=test` 的建案參數，使用 Windows PowerShell `curl.exe -sS --fail-with-body -X POST http://127.0.0.1:5261/api/analysis-cases/from-upload` 傳 Excel 和全部建案參數，收到 **HTTP 400**。API 錯誤內容在 PowerShell 被錯誤解碼為亂碼，`ConvertFrom-Json` 隨之失敗；`$upload` 不存在。
+- 依 `feature/1d-api-integration` 的 `崴正/Services/TenderExcelParser.cs` 查證：`includedSheetNames == null && worksheetNames.Count > 1` 時**明確丟出 InvalidDataException**「此檔案包含多個工作表，請先預覽並明確選擇要匯入的工作表。」本次上傳恰好沒有傳 `includedSheetNames`，而待估 Excel 有 7 張工作表。這是高度確定且可由程式直接推導的 400 主因；因實際訊息亂碼，目前尚未驗證伺服器是否同時存在其它拒絕原因。
+- 下一步**不修改 DB、不重跑 seed、不修改估算算法**。只重新上傳同一 test-only 標單，在 multipart form 加入依 `truth.detail_rows_per_sheet` 選出的 6 張詳細表 `includedSheetNames` JSON 陣列（不含「工程總表」），使用 PowerShell `System.Net.Http.HttpClient` 的 UTF-8 解碼讀出伺服器回應及具體錯誤。上傳成功才取得 `analysisCaseId`、`analysisBidVersionId`，再執行數量與價格 API；若仍是 400 先觀察原始 UTF-8 message，不可猜測其它修正。
+- 驗證狀態：正式 ASP.NET 兩個 readiness 先前 PASS，SYN-00002 **上傳 FAIL (400)**，Quantity 和 MajorPrice 分析 **NOT RUN**；沒有程式碼 / DB / Migration 變更。
