@@ -2,7 +2,7 @@
 """Choose a fresh test-split synthetic BOQ for 2A UI upload, without DB writes."""
 import argparse
 import json
-import sys
+import urllib.error
 import urllib.request
 from pathlib import Path
 
