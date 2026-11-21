@@ -205,3 +205,12 @@ E1：Q5 確認材料 1=鋼筋 kg、2=混凝土 立方公尺；Q6 8 Approved 中 
 E3：從 GitHub 開發分支讀取 `frontend/src/services/api.ts`、`frontend/src/router/index.ts`、`frontend/src/App.vue`、`ProjectDetailView.vue`、`ProjectsView.vue`、`AuditLogView.vue`、`AnalysisCaseDetailView.vue`、`frontend/nginx.conf`、`frontend/Dockerfile`、`崴正/Program.cs`。分析已收錄 `docs/2A_VERIFIED_REFERENCE_FRONTEND_SECURITY_AUDIT_2026-11-13.md`。
 
 核對到：Vue 無角色/登入 route guard，側欄直接可見 AuditLogs；`api.ts` 未設 token，Nginx 配置只有 proxy_pass 而無 auth_request／allow/deny；ProjectDetailView 使用 Idempotency-Key + receipt 防失敗重送；分析頁已做 DEMO 名稱警告。部署主機、外部 Gateway/VPN/ACL 不在 GitHub 範圍，**本輪沒有做實際對外 API 測試、登入測試或建置測試**，不得推論正式服務一定對公眾可達。Verified Reference 仍為未核定設計，未做 API/DB 變更。
+
+
+## U. 2026-11-21：UI 資料鏈相依修復與測試可信度界線
+
+- **E1 使用者實測：** 7/7 5263／5174 API 預檢 PASS，4/4 Docker/SQL/API 唯讀比對 PASS，14 個案件、14 個版本、28 筆 Run、210 個歷史建案；只證實可查與讀回，未證實新 UI 上傳、模型結果準確或真實公司資料資格。
+- **E1 失敗紀錄：** `prepare_ui_case.py` 執行遇到 `ModuleNotFoundError: No module named 'export_full_project_excel'`；後續 `ENOENT` 為沒有產生 XLSX 的結果。保留失敗證據，不應算 parser 缺陷。
+- **E3 程式修正：** 本分支加入 main 已有來源驗證與 test-only XLSX 產生器及相依的 OOXML 產生器（`97558ce`、`3235696`），並建立 `test_prepare_ui_case.py`（`0aca507`）驗證 XLSX/JSON 產出、來源完整性、test-only 及拒絕覆寫。
+- **E3 CI 治理：** 更新 `2a-build.yml`（`9f68b3a`），刪除重複的 `graduation-ui-build.yml`（`71738d9`），不修改量價模型或 DB。**CI 結果須查 Actions 實際狀態，不得只憑提交宣稱通過。**
+- **未測：** 本地重新產出新 Excel、透過 UI 逐筆上傳／生成 AnalysisRun、正式歷史回寫與 Audit；不得把 holdout 加入 Approved 當新訓練歷史。後續準確度仍待獨立真值。
