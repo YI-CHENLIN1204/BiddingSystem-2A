@@ -13,11 +13,12 @@ string connectionString = Environment.GetEnvironmentVariable("GRADUATION_DB_CONN
 if (string.IsNullOrWhiteSpace(connectionString))
     throw new InvalidOperationException("GRADUATION_DB_CONNECTION is required. Never pass production credentials.");
 var connection = new NpgsqlConnectionStringBuilder(connectionString);
+// Only two named disposable Docker databases are allowed. Never accept Supabase.
+var approved = (connection.Port == 55432 && connection.Database == "bidding2a_graduation") ||
+               (connection.Port == 55433 && connection.Database == "bidding2a_graduation_src");
 if (connection.Host is not ("127.0.0.1" or "localhost") ||
-    connection.Port != 55432 ||
-    connection.Database != "bidding2a_graduation" ||
-    connection.Username != "graduation")
-    throw new InvalidOperationException("REFUSED: only localhost:55432 / bidding2a_graduation / graduation is permitted.");
+    !approved || connection.Username != "graduation")
+    throw new InvalidOperationException("REFUSED: approved localhost graduation DB only (55432 or 55433).");
 
 using var document = JsonDocument.Parse(await File.ReadAllTextAsync(args[1]));
 var root = document.RootElement;
@@ -31,7 +32,7 @@ DateTime ReadDate(JsonElement row, string key) => DateTime.ParseExact(
 if (ReadString(root, "data_origin") != "SYNTHETIC" ||
     ReadString(root, "dataset_version") != "2.0.0" ||
     ReadString(root, "split") != "train" ||
-    ReadString(root, "target_database") != "bidding2a_graduation")
+    ReadString(root, "target_database") != connection.Database)
     throw new InvalidDataException("SYNTHETIC v2 TRAIN seed required.");
 
 var projects = root.GetProperty("project_rows").EnumerateArray().ToArray();
