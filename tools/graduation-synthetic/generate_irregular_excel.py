@@ -121,7 +121,9 @@ def worksheet_xml(rows, headers=None):
     widths = []
     for index in range(max_cols):
         label = names[index] if index < len(names) else ''
-        width = 68 if label in ('項目名稱', '工項名稱', '品名', '名稱與說明', '項目及說明') else 36 if label in ('規格', '材料規格') else 28 if label == '備註' else 21 if label in ('金額', '總價', '複價', '單價') else 17
+        # The summary sheet has no typed column headers; preserve enough space
+        # for the project title and description rather than defaulting to 17.
+        width = 38 if not headers else 68 if label in ('項目名稱', '工項名稱', '品名', '名稱與說明', '項目及說明') else 36 if label in ('規格', '材料規格') else 28 if label == '備註' else 21 if label in ('金額', '總價', '複價', '單價') else 17
         widths.append(f'<col min="{index+1}" max="{index+1}" width="{width}" customWidth="1"/>')
     return f'<?xml version="1.0" encoding="utf-8"?><worksheet xmlns="{BASE}"><cols>{"".join(widths)}</cols><sheetData>{"".join(result)}</sheetData></worksheet>'
 
@@ -267,7 +269,7 @@ def generate(source, xlsx_path, truth_path, project_id=None, seed=4102, items=36
     floor_count = int(chosen['floor_count'])
     if basement_count < 0 or floor_count < 1:
         raise ValueError('invalid synthetic project floors')
-    underground_keywords = ('地下室', '連續壁', '擋土', '基坑')
+    underground_keywords = ('地下', '連續壁', '擋土', '基坑')
     eligible_items = [
         item for item in EXTRA_ITEMS
         if basement_count > 0 or not any(k in item[0] for k in underground_keywords)
