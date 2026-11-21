@@ -109,12 +109,21 @@ def cell_xml(ref, value):
     return f'<c r="{ref}" t="inlineStr"><is><t>{escape(str(value))}</t></is></c>'
 
 
-def worksheet_xml(rows):
+def worksheet_xml(rows, headers=None):
     result = []
     for n, values in enumerate(rows, 1):
         cells = ''.join(cell_xml(f'{excel_col(i)}{n}', v) for i, v in enumerate(values, 1))
-        result.append(f'<row r="{n}">{cells}</row>')
-    return f'<?xml version="1.0" encoding="utf-8"?><worksheet xmlns="{BASE}"><sheetData>{"".join(result)}</sheetData></worksheet>'
+        # Comfortable row height for long construction item names and specs.
+        row_height = 42 if n > 4 else 30
+        result.append(f'<row r="{n}" ht="{row_height}" customHeight="1">{cells}</row>')
+    max_cols = max((len(row) for row in rows), default=1)
+    names = headers or []
+    widths = []
+    for index in range(max_cols):
+        label = names[index] if index < len(names) else ''
+        width = 68 if label in ('項目名稱', '工項名稱', '品名', '名稱與說明', '項目及說明') else 36 if label in ('規格', '材料規格') else 28 if label == '備註' else 21 if label in ('金額', '總價', '複價', '單價') else 17
+        widths.append(f'<col min="{index+1}" max="{index+1}" width="{width}" customWidth="1"/>')
+    return f'<?xml version="1.0" encoding="utf-8"?><worksheet xmlns="{BASE}"><cols>{"".join(widths)}</cols><sheetData>{"".join(result)}</sheetData></worksheet>'
 
 
 def make_xlsx(sheets):
@@ -130,7 +139,9 @@ def make_xlsx(sheets):
         'xl/_rels/workbook.xml.rels': f'<?xml version="1.0" encoding="utf-8"?><Relationships xmlns="http://schemas.openxmlformats.org/package/2006/relationships">{"".join(sheet_rels)}</Relationships>',
     }
     for i, rows in enumerate(sheets.values(), 1):
-        parts[f'xl/worksheets/sheet{i}.xml'] = worksheet_xml(rows)
+        # Sheet one is the summary; detail header rows vary among sheets.
+        header = None if i == 1 else LAYOUTS[(i - 2) % len(LAYOUTS)]
+        parts[f'xl/worksheets/sheet{i}.xml'] = worksheet_xml(rows, header)
     output = io.BytesIO()
     with ZipFile(output, 'w') as workbook:
         for filename, payload in parts.items():
