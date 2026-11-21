@@ -54,6 +54,7 @@ builder.Services.AddScoped<DetectionCategoryRangeService>();
 builder.Services.AddScoped<TwoAQuantityAnalysisService>();
 builder.Services.AddScoped<MajorCategoryPriceRangeService>();
 builder.Services.AddScoped<AnalysisCaseService>();
+builder.Services.AddScoped<MaterialCapabilityService>();
 
 builder.Services.AddHttpClient<OneDIntegrationService>(
     (serviceProvider, client) =>

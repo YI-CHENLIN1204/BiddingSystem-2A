@@ -3,6 +3,7 @@ import { computed, onMounted, ref } from 'vue'
 import { useRoute } from 'vue-router'
 import { api, apiForm } from '../services/api'
 import WorkbookSheetPicker from '../components/WorkbookSheetPicker.vue'
+import MaterialCapabilityPanel from '../components/MaterialCapabilityPanel.vue'
 
 interface CaseSummary {
   analysisCaseId: number
@@ -679,6 +680,8 @@ onMounted(loadCase)
         </div>
         <div v-else class="scope-body text-muted small">讀取工項分類中...</div>
       </section>
+
+      <MaterialCapabilityPanel :structure-type="detail.case.structureType" />
 
       <div class="tabs">
         <button class="tab" :class="{ active: tab === 'items' }" @click="tab = 'items'">版本工項</button>

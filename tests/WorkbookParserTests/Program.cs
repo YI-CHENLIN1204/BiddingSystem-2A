@@ -190,4 +190,61 @@ Check(smokeInspection.Rows.Where(x => x.CandidateType == "Excluded")
     .All(x => x.Warnings.Contains("疑似輔助工項，未納入鋼筋／混凝土候選用量")),
     "每筆排除的材料相關工項需保留理由供人工覆核");
 
+// Conditional material patterns are specification calculations, not an
+// extension of the historical anomaly scope or a generic engineering rate.
+var curing = SpecificationQuantityService.Calculate(new 崴正.Models.MaterialSpecificationEstimateRequest {
+    ProfileKey = "antisol-e", WorkAreaM2 = 1000m
+});
+Check(curing.LowerQuantity == 150m && curing.UpperQuantity == 200m && curing.Unit == "kg",
+    "指定養護劑須依實際施工面積與kg/m2計算，不使用總樓地板面積");
+var woodRelease = SpecificationQuantityService.Calculate(new 崴正.Models.MaterialSpecificationEstimateRequest {
+    ProfileKey = "separol-wood", WorkAreaM2 = 273m
+});
+Check(woodRelease.LowerQuantity == 13m && woodRelease.UpperQuantity == 21m && woodRelease.Unit == "L",
+    "覆蓋率m2/L必須反向除算上下界，不能當L/m2相乘");
+var metalRelease = SpecificationQuantityService.Calculate(new 崴正.Models.MaterialSpecificationEstimateRequest {
+    ProfileKey = "separol-metal-plastic", WorkAreaM2 = 1134m, ObservedQuantity = 100m
+});
+Check(metalRelease.LowerQuantity == 27m && metalRelease.UpperQuantity == 42m,
+    "金屬塑膠模板使用獨立產品條件，不混用木模板覆蓋率");
+Check(!metalRelease.FormalAnomalyEnabled && metalRelease.ReviewStatus == "ManualReviewRequired" &&
+    curing.RangeKind == "ManufacturerTheoreticalRange" && !curing.FormalAnomalyEnabled,
+    "超出產品理論範圍僅要求人工核對，不偽裝成歷史P15P85或正式異常紅燈");
+foreach (var badRequest in new[] {
+    new 崴正.Models.MaterialSpecificationEstimateRequest { ProfileKey = "unknown", WorkAreaM2 = 100m },
+    new 崴正.Models.MaterialSpecificationEstimateRequest { ProfileKey = "antisol-e", WorkAreaM2 = 0m },
+    new 崴正.Models.MaterialSpecificationEstimateRequest { ProfileKey = "antisol-e", WorkAreaM2 = 100m, ObservedQuantity = -1m }
+}) {
+    bool refused = false;
+    try { SpecificationQuantityService.Calculate(badRequest); }
+    catch (ArgumentException) { refused = true; }
+    Check(refused, "未知產品、無效面積及負用量必須拒絕，不猜預設規格");
+}
+var materialEvidence = new[] { new 崴正.Models.MaterialCapabilityMaterial(1, "養護劑", "kg") };
+var historicalEvidence = Enumerable.Range(1, 100)
+    .Select(i => new 崴正.Models.MaterialCapabilityHistory(1, i, "SRC", "SYNTHETIC:sample"))
+    .ToArray();
+var candidateCapability = MaterialCapabilityService.Evaluate(
+    MaterialCapabilityService.Definitions.Single(x => x.Key == "curing-compound"), materialEvidence,
+    new[] { new 崴正.Models.MaterialCapabilityMapping(1, "混凝土養護劑", "結構體工程", "kg") }, historicalEvidence, 5);
+Check(candidateCapability.HistoricalProjectCount == 100 && !candidateCapability.FormalAnomalyEnabled &&
+    candidateCapability.SpecificationEstimateAvailable && candidateCapability.MissingEngineeringConditions.Length > 0,
+    "即使100個歷史案且有材料對應，缺工程口徑的新增工項仍不得自動升格正式判異常");
+var duplicateHistory = Enumerable.Range(1, 30)
+    .Select(_ => new 崴正.Models.MaterialCapabilityHistory(2, 1, "SRC", "SYNTHETIC:same-project")).ToArray();
+var duplicateCapability = MaterialCapabilityService.Evaluate(
+    MaterialCapabilityService.Definitions.Single(x => x.Key == "rebar"),
+    new[] { new 崴正.Models.MaterialCapabilityMaterial(2, "鋼筋", "kg") },
+    new[] { new 崴正.Models.MaterialCapabilityMapping(2, "鋼筋", "結構體工程", "kg") }, duplicateHistory, 5);
+Check(duplicateCapability.HistoricalProjectCount == 1 && !duplicateCapability.FormalAnomalyEnabled,
+    "30筆交易仍只能計為1個獨立歷史建案，不得補足最低5案");
+var wrongUnit = MaterialCapabilityService.Evaluate(
+    MaterialCapabilityService.Definitions.Single(x => x.Key == "release-agent"),
+    new[] { new 崴正.Models.MaterialCapabilityMaterial(3, "脫模劑", "kg") }, [], [], 5);
+Check(wrongUnit.IncompatibleUnitMaterialCount == 1 && wrongUnit.HistoricalProjectCount == 0,
+    "缺密度時不可將公斤換算公升作為脫模劑歷史基準");
+Check(!TwoAScopePolicy.IsQuantityDetectionCategory("混凝土養護劑") &&
+    !TwoAScopePolicy.IsQuantityDetectionCategory("模板脫模劑"),
+    "規格試算不會偷偷放寬既有正式異常偵錯範圍");
+
 Console.WriteLine("WorkbookParserTests: all checks passed.");

@@ -1,9 +1,22 @@
+## 2026-11-22 最新指示與工項擴充第一批
+
+本節優先於下方較舊的工作順序。識別 `material-capability-phase1-20261122`（起點 `ab565eaa`；以含此識別的 Git commit 回查提交）。
+
+- 最新四階段：**工項擴充 → 真正瀏覽器 UI 驗收 → 集中修正／回歸／整合 → 最後 Holdout 準確度與演算法比較**。既有回測報告為歷史基線，本輪未重跑準確度。
+- 能力矩陣新增 8 類工項，檢查材料候選、正式對應、單位、獨立 Approved 建案及缺少工程條件。新候選未經工程條件模型驗證不啟用正式紅燈。
+- 新增養護劑及脫模劑之 3 組指定產品規格試算，使用實際施作面積；是廠商理論範圍，不是 P15/P85。超出只提示人工確認，不修改原統計白名單。
+- 工程估算／案件明細已加 UI。無 schema／seed／DB 寫入或模型參數變更。另修正文檔誤植權重為實際 `25/30/10/15/10/10`。
+- 已通過：後端 0 警告建置、Parser 全部（含 11 新檢核）、前端建置（初次 option 標籤錯誤修復後通過）、Python 11/11、HTTP 規格契約 7/7。
+- **未驗證**：DB 能力端點（隔離 DB 環境密碼未提供至本工作程序）、真正瀏覽器全流程（本工作階段無瀏覽器控制工具）。原 :5263／:5174 未部署此批。不可將編譯或 HTTP 通過記為 UI 驗收完成。
+- 下一步先啟動本批於隔離 DB 環境核對能力矩陣，再進入完整 UI 流程；不要重匯合成資料、重跑既有 SRC smoke／敏感度。
+- 詳細檔案、API、廠商來源、合成候選數及回滾：[`MATERIAL_CAPABILITY_PHASE1_2026-11-22.md`](MATERIAL_CAPABILITY_PHASE1_2026-11-22.md)。
+
 ## 最新收尾進度（2026-11-22）：合成留案回測與144組參數對照已實測
 
 使用者本輪重新指定先完成「準確度回測、演算法比較、整合回歸」三個工作包；本節優先於先前把 accuracy 永遠排最後的舊工作順序。已完成的SRC來源3條API、9組smoke與6組敏感度不重做，不重建或匯入合成歷史。
 
 - 報告：`docs/HOLDOUT_EVALUATION_2026-11-22.md`；機讀摘要同名 `.json`。既有300案資料實際為210 train / 45 validation / 45 test，非90個獨立test。原機5263正式range API已完成237個project/scope配對（474次唯讀運算）；每組核對train lineage、SRC-only、來源數值、目前Top8參考ID及區間重現。settings/case API快照前後不變，沒有新案件、Run、歷史或設定寫入。
-- 144組權重/TopK/時間半衰期/相似指數只以validation挑選，test只比較現行與該選定組。validation最佳為40/25/10/15/5/5、K32、half-life3、exponent1；但SRC價格的未注入非極端test子集(n5) MAPE14.56%→24.33%、coverage60%→20%，因此**保留正式25/30/10/15/11/11、K8與原設定，不整套替換**。SRC鋼筋(n8)現行MAPE17.25%/coverage75%，混凝土(n8)9.92%/75%；候選分別13.20%/75%、7.94%/87.5%。不能只挑改善的項目宣布模型升級。
+- 144組權重/TopK/時間半衰期/相似指數只以validation挑選，test只比較現行與該選定組。validation最佳為40/25/10/15/5/5、K32、half-life3、exponent1；但SRC價格的未注入非極端test子集(n5) MAPE14.56%→24.33%、coverage60%→20%，因此**保留正式25/30/10/15/10/10、K8與原設定，不整套替換**。SRC鋼筋(n8)現行MAPE17.25%/coverage75%，混凝土(n8)9.92%/75%；候選分別13.20%/75%、7.94%/87.5%。不能只挑改善的項目宣布模型升級。
 - 13份既有paired XLSX/truth已驗hash；只來自3案，所有variant仍manual_review_required。無注入不等於工程正常；現有真值不能識別Precision/Recall/FPR，保留null並列資料定義阻塞，不為產出百分比而重傳/重算。3個曾被診斷的test案另排除提供42案補充結果。實驗不是時間順序預測，也不是企業真實工程accuracy。
 - 新增永久`tools/graduation-synthetic/evaluate_live_holdout.py`與8項測試；只允許2類range POST及GET settings/cases，拒絕history/upload/settings寫入；來源hash/case-level split、baseline replay、settings/cache一致性與拒覆寫已實作。
 - 同批修復`TenderImportInspectionService.cs`的Unit null輸出(CS8604)與`崴正.csproj`顯式Relational10.0.5對齊(MSB3277)，不改分類、模型、schema/Migration。Windows API Release build **0 warnings/0 errors**、WorkbookParser全通過、Python11/11、兩個Node syntax PASS；GitHub既有永久CI提交後另核實，沒有新workflow。

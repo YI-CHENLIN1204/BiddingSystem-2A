@@ -1,6 +1,7 @@
 <script setup lang="ts">
 import { ref } from 'vue'
 import ProjectFields from '../components/ProjectFields.vue'
+import MaterialCapabilityPanel from '../components/MaterialCapabilityPanel.vue'
 import { useSystemOptions } from '../composables/useSystemOptions'
 import { api } from '../services/api'
 import type { ProjectForm } from '../types'
@@ -123,12 +124,14 @@ function formatMonth(value?: string | null) {
   <div class="page-stack structural-estimation">
     <div class="page-intro">
       <div>
-        <h2>結構體工程估算</h2>
+        <h2>工程與材料估算</h2>
         <p>輸入建案條件，以相似歷史建案的「結構體工程每坪單價」建立 P15 / P50 / P85 合理價格區間。</p>
       </div>
     </div>
 
     <div v-if="optionsError || error" class="notice error">{{ optionsError || error }}</div>
+
+    <MaterialCapabilityPanel :structure-type="form.structureType" allow-specification-estimate />
 
     <section class="notice info">
       <strong>目前估算單位：結構體工程。</strong>
