@@ -330,3 +330,12 @@ PublishHistory 已有 advisory transaction lock／Idempotency receipt／SyncHist
 修正 `tools/graduation-synthetic/test_prepare_ui_case.py`：用 `env=os.environ.copy()` 對 child 單獨設 `PYTHONIOENCODING=utf-8`，與父 `subprocess.run(..., encoding="utf-8")` 配對，**不改全域 Windows 設定**。增加既有永久 `scripts/verify-ui-state.mjs --case-id <ID>`：對新 synthetic UI 案件，確認同一 current version 有已保存 `Quantity`、`MajorPrice:結構體工程` Run，從 API 讀回兩份結果並維持 Docker/DB/API 四項強對照；不執行任何 POST 或 DB 修改。Commits：`79af4b822b523d8843d353f5b6fcd5144381f473`、`d6b3fb1463111e7c502d31f4657c47455e8d8d5a`。沒有新 Workflow，僅沿用永久 `2a-build.yml`。
 
 **下一階段**：使用者同步新 commits、Windows Python 回歸再跑（預期修好 CP950，須以真實結果為準）；接著直接用現有 `graduation-ui-smoke-1121-02.xlsx` 進 `http://127.0.0.1:5174/analysis-cases`，「自行上傳」只勾結構體明細與基礎及地下工程，先於 UI 檢視 4 警示；建立名為 `SYNTHETIC-UI-驗收-graduation-ui-smoke-1121-02` 的 SRC 案件，輸入住宅／臺中市／12000 m²／基地 950 m²／地上 12／地下 2／2025-01，執行「數量偵錯」與「結構體工程」價格異常。重整頁面、開啟歷史 Run 後以 `node scripts/verify-ui-state.mjs --case-id <ID>` 查五項（**尚未實際執行**）。不把這份 smoke test 上傳決標草稿或發布 Approved history。資料庫/Migration/演算法/權限不變。
+
+
+## 27. 2026-11-21：UI 人工實測已建立 AnalysisCase #15，數量與價格 Run 畫面成功；納入範圍需對照
+
+**使用者直接提供瀏覽器畫面（E1 UI 證據）**：`http://127.0.0.1:5174/analysis-cases/15` 可見案件 `SYNTHETIC-UI-驗收-graduation-ui-smoke-1121-02`，住宅/SRC/臺中市、樓地板 12,000m²、基地 950m²、12F/B2，V1 自行上傳 `graduation-ui-smoke-1121-02.xlsx`，**15 筆工項**；價格分析顯示已保存 `Run #31` 且結果「結構體工程 29,268,000 元、每坪 8,062.81、P15/50/85 每坪 28,591.65/28,718.02/39,487.84、8 參考案、ESS 6.25、Low」。另一張畫面顯示數量分析鋼筋 **38,000 kg**、混凝土 **3,650m³**，二類各 8 個參考案（量範圍另見原圖），且數量分析結果成功呈現。這是確實的 UI 建案與分析操作成功證據；**仍未執行**獨立 `node scripts/verify-ui-state.mjs --case-id 15` 的 DB/Run 持久化五項核對，亦未證實歷次 Run 刷新後可讀回。
+
+靜態對照 `tools/graduation-synthetic/prepare_ui_case.py`、`崴正/Services/TenderImportInspectionService.cs`、`崴正/Services/TwoAPreprocessService.cs` 和 `TwoAQuantityAnalysisService.cs`：合成 Excel 的結構體工項中鋼筋名義數量 **130,000 kg**，混凝土名義數量 **5,450m³**。預檢前述 **4 warning rows** 恰對應三條名稱含「加工／組立／綁紮／工資」的鋼筋工項（42,000+32,000+18,000kg）及一條「預拌混凝土澆置」（1,800m³）。這四條目前被分類為 `Excluded`，故正式數量偵錯只用 **38,000kg** 及 **3,650m³**；大項價格仍計入結構體所有 10 條數量×單價，合計 **29,268,000 元**，與畫面一致。**沒有證據是算術漏加或 DB 資料遺失**。但名稱型關鍵字分類不等於材料/勞務真正拆分，且「鋼筋施工」「混凝土泵送與搗實」同樣屬複合措辭、當前卻被納入；這是**待人工審核的分類邊界及 UI 可解釋性問題**，絕不可直接把統計 Low 當成真實工程異常或為消掉紅燈調演算法。
+
+本次對應主程式並未修改；只驗證 UI 顯示與追查納入範圍。下一步直接在現有 5263→55433 獨立 DB 執行 `node .\scripts\verify-ui-state.mjs --case-id 15`，需要結果 5/5 才算 Run 保存／跨 API 讀回驗收；若失敗先查原案件，不重傳 Excel 或清空 DB。再評估在正式 UI 顯示「排除項數／工項名稱與理由」以避免把已排除含料複合工項的 38,000kg 誤讀為整案鋼筋用量。決標發布與真實準確率仍未驗證；smoke fixture 禁止 Approved History。
