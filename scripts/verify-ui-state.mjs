@@ -188,9 +188,45 @@ async function run() {
     }
     success('Synthetic UI case #' + expectedCaseId +
       ' quantity and structural-price saved runs retrieved from isolated database')
+
+    // Use exactly the backend preprocessing route; do not duplicate
+    // classification keywords or infer the included quantity from filenames.
+    const scope = await get('/analysis-cases/' + expectedCaseId +
+      '/versions/' + ver + '/quantity-scope')
+    check(scope?.analysisCaseId === expectedCaseId &&
+      scope?.analysisBidVersionId === ver &&
+      Array.isArray(scope.items) && scope.items.length === scope.itemCount,
+      'Quantity scope cannot be read for the current saved version')
+    check(scope.includedItemCount + scope.excludedItemCount +
+      scope.pendingItemCount === scope.itemCount,
+      'Quantity scope counts do not reconcile')
+    check(new Set(scope.items.map(row => row.analysisBidItemId)).size === scope.itemCount,
+      'Quantity scope item identifiers are missing or duplicated')
+    check(scope.items.every(row =>
+      ['Included', 'Excluded', 'Pending'].includes(row.status) &&
+      typeof row.reason === 'string' && row.reason.length > 0),
+    'Quantity scope status or per-item reason missing')
+    const excludedCandidates = scope.items.filter(row =>
+      row.status === 'Excluded' && row.candidateType === 'Excluded')
+    check(excludedCandidates.length === scope.excludedQuantityCandidateCount,
+      'Excluded material-related candidate count mismatch')
+    if (candidate.caseName === 'SYNTHETIC-UI-驗收-graduation-ui-smoke-1121-02') {
+      check(scope.itemCount === 15 && excludedCandidates.length === 4,
+        'Case #15 should retain 15 source rows and four excluded material candidates')
+      const included = scope.items.filter(row => row.status === 'Included')
+      const rebar = included.filter(row => row.detectionCategory === '鋼筋')
+        .reduce((sum, row) => sum + Number(row.normalizedQuantity ?? 0), 0)
+      const concrete = included.filter(row => row.detectionCategory === '混凝土')
+        .reduce((sum, row) => sum + Number(row.normalizedQuantity ?? 0), 0)
+      check(rebar === 38000 && concrete === 3650,
+        'Case #15 included material quantities differ from saved smoke baseline')
+    }
+    success('Saved case #' + expectedCaseId + ' quantity-scope readback: ' +
+      scope.itemCount + ' items, ' + excludedCandidates.length +
+      ' excluded material-related candidates with reasons')
   }
 
-  console.log('[RESULT] ' + pass + '/' + (expectedCaseId !== null ? 5 : 4) +
+  console.log('[RESULT] ' + pass + '/' + (expectedCaseId !== null ? 6 : 4) +
     ' isolated read-only checks PASS')
   console.log('[NOTE] API/DB case signatures strongly corroborate 5263 -> 55433, but not a formal connection-string attestation')
   console.log('[NOT VERIFIED] Browser click/upload, new analysis execution, history publish, audit-log and accuracy')
