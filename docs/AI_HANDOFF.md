@@ -485,3 +485,10 @@ npm run build
 ### 2026-11-21 — 量價異常註記補正：合理設計變動不得自動視為違失
 - `tools/graduation-synthetic/export_full_project_excel.py` commit `41c98701`：test-only 注入真值中的 `injection.cause_kind` 明確分為 `DESIGN_VARIATION_POSSIBLY_JUSTIFIED`、`UNIT_PRICE_STRESS_NOT_PROOF_OF_OVERPRICING`、`MIXED_DESIGN_AND_PRICE_STRESS`，並設定 `manual_review_required=true`。建築師或結構設計造成高低材料用量可為合理設計，價高/低也不必然代表不當；正式 2A 紅燈僅供稽核/人工審核，不能將標籤直接視為違規或系統判定應當通過的真值。
 - 狀態：已提交程式碼，單元測試、CI 與正式 API 仍待實際驗證；資料庫未更動。
+
+
+### 2026-11-21 — Windows 21/21 Python 回歸測試 PASS；匯出尚缺來源資料集
+- 使用者在 `C:\Users\User\Desktop\BiddingSystem-2A` 完成 `git restore --source=FETCH_HEAD --worktree -- tools/graduation-synthetic`，執行 `python -m unittest discover -s tools/graduation-synthetic -p "test_*.py" -v`：**Ran 21 tests in 19.480s，OK（21/21 PASS）**。包括 SRC/extreme 分割檢查、10 個標單量價異常注入、來源不覆寫與 test-only 安全守門。輸出中 `test_refuse_overwrite` 的 argparse error 為測試刻意驗證覆寫拒絕，整個 suite 仍 OK，不是程序失敗。
+- 隨後執行 `python tools/graduation-synthetic/export_anomaly_holdout_suite.py --source .\\graduation-src-extreme-v3 --output-dir .\\graduation-anomaly-holdouts` **FAIL（輸入前置條件未成立）**：`[Errno 2] No such file or directory: graduation-src-extreme-v3\\manifest.json`。表示此新來源目錄尚未產生（或不在當前路徑），**不是量價注入邏輯的單元測試失敗**。
+- 下一可執行步驟：`python tools/graduation-synthetic/generate_full_project_dataset.py --count 300 --seed 20261119 --include-src --include-extremes --output .\\graduation-src-extreme-v3`；檢查 manifest `project_count=300`、結構分布與 `extreme_cases_per_split` 各6，然後重跑 `export_anomaly_holdout_suite.py` 與 `anomaly_suite_manifest.json`。所有輸出拒絕覆寫，已存在時先查而不是刪。
+- 仍未執行新 55433 SRC DB 匯入與正式 ASP.NET quantity/price API E2E，不能宣稱新異常案例有檢出準確性。舊 55432 RC/SC 資料保持不動。本輪無新程式碼修改，僅實際測試結果交接。
