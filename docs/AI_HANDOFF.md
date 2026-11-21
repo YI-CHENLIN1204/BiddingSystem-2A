@@ -711,3 +711,9 @@ npm run build
 - 須嚴格限定結論：本測試只驗證 **SRC 結構體價格 1 個正常可用樣本群組、8 筆 references 的結構純度**；未檢查所有候選 lineage、SRC 鋼筋/混凝土數量 API、SRC 样本不足路徑、真實 Supabase SRC approved 資料真偽/涵蓋；不得聲稱全部 SRC 業務規則或模型精度已通過。既有 55433 全庫 RC78/SC55/SRC77 已核准合成 train-only，101,166 歷史交易。
 - 下一驗證：在同一 5263、同一 SRC target 下 `GET /api/detection-category` 找有效鋼筋/混凝土類別 ID，`POST /api/detection-category/{id}/range` 取得 references[].projectId，對 55433 `project_master` 回查結構（嚴格拒絕無參考/漏查/非 SRC 的假 PASS）。避免建立新 AnalysisCase/Run、重跑原 13 案、重 Seed 或觸碰 55432/正式 Supabase。
 - GitHub handoff doc 真實更新，此記錄未更動 ASP.NET/Vue/EF Migration，使用者本機 frontend 修補 `d725379` 尚未 Push。既有 .NET CS8604 與 MSB3277 警告仍待後續修正，`5263` 測試子程序仍應在完成測試後停止（之前 PID 47040，須再核對目前 PID）。
+
+
+### 2026-11-21 — SRC 鋼筋/混凝土數量查核因 PSReadLine 介面崩潰而未完成
+- 使用者在 integration worktree 的 Windows PowerShell 貼入較長 `foreach ($category in $selected) { ... }`，PSReadLine 在多行編輯時拋 `System.ArgumentOutOfRangeException`（`System.Console.SetCursorPosition(... top=-7)`、`PSConsoleReadLine.ReallyRender`）；堆疊屬**主控台輸入渲染問題，不是 ASP.NET API/EF/PostgreSQL 執行錯誤**。再次貼上缺失 `$response = Invoke-RestMethod` 賦值的部分程式碼，雖返回 PowerShell 提示符，但無鋼筋/混凝土 HTTP 結果或 DB reference 比對輸出；不得宣稱數量 SRC-only PASS/FAIL。
+- 保留已驗證的新版價格 API SRC-only PASS（5263 API 候選77、實際參考8、DB8/8 SRC）、55433 synthetic DB RC78/SC55/SRC77。下一步採**短命令、分階段**操作，先核對 `$target`、`$cid`、`GET /api/detection-category` 的實際 categories/IDs；再分別對鋼筋/混凝土發送 `POST /api/detection-category/{id}/range` 並用 read-only SQL 驗證完整 ID 與 SRC-only。避免再貼超長 `foreach` 或誤用舊 `$response`，任何空 references/未比對都不宣告 PASS。
+- 不需重建 DB、不需 seed/上傳原有 13 案、不得觸碰 5262 舊 API 或正式 Supabase。PSReadLine 的意外錯誤不應誤寫為 2A 功能測試失敗。
