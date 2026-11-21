@@ -283,7 +283,7 @@ python tools/graduation-synthetic/verify_similarity_sensitivity.py --source .\gr
 python tools/graduation-synthetic/export_anomaly_holdout_suite.py --source .\graduation-src-extreme-v3 --output-dir .\graduation-anomaly-holdouts
 ```
 
-結果是 **10 份 Excel + 10 份 truth JSON + anomaly_suite_manifest.json**，包含：
+結果是 **10 份異常 Excel 與對應 truth JSON**，另外會依實際使用的來源建案輸出**未變更的 baseline Excel／truth**，並建立 `anomaly_suite_manifest.json`（其中 `baseline_workbooks` 明列配對關係）。同一個建案的多份變體不可視為獨立樣本。包含：
 - `design_concrete_high/low`：混凝土數量 2.5 倍／0.35 倍。
 - `design_rebar_high/low`：鋼筋數量 2.4 倍／0.4 倍。
 - `design_steel_high/low`：鋼骨數量 2.5 倍／0.35 倍（**鋼骨目前不屬於正式量異常紅綠燈範圍**）。
