@@ -1,0 +1,23 @@
+# Isolated localhost graduation-only PostgreSQL.
+# No shared volume, no production connection, no external network binding.
+# From repository root:
+#   $env:GRADUATION_DB_PASSWORD = '<choose-a-unique-local-password>'
+#   docker compose -f tools/graduation-synthetic/compose.graduation-db.yaml up -d
+services:
+  graduation-postgres:
+    image: postgres:17-alpine
+    environment:
+      POSTGRES_DB: bidding2a_graduation
+      POSTGRES_USER: graduation
+      POSTGRES_PASSWORD: ${GRADUATION_DB_PASSWORD:?Set GRADUATION_DB_PASSWORD locally}
+    ports:
+      - "127.0.0.1:55432:5432"
+    volumes:
+      - graduation_pgdata:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U graduation -d bidding2a_graduation"]
+      interval: 3s
+      timeout: 5s
+      retries: 20
+volumes:
+  graduation_pgdata:
