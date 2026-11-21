@@ -36,9 +36,11 @@ if (ReadString(root, "data_origin") != "SYNTHETIC" ||
 
 var projects = root.GetProperty("project_rows").EnumerateArray().ToArray();
 var materials = root.GetProperty("material_rows").EnumerateArray().ToArray();
+var boqRows = root.GetProperty("boq_rows").EnumerateArray().ToArray();
 var transactions = root.GetProperty("transaction_rows").EnumerateArray().ToArray();
 if (projects.Length != ReadInt(root, "train_project_count") ||
     transactions.Length != ReadInt(root, "train_transaction_count") ||
+    boqRows.Length != transactions.Length ||
     projects.Length < 1 || materials.Length < 1 || transactions.Length < 1)
     throw new InvalidDataException("Seed record counts mismatch.");
 if (projects.Any(x => ReadString(x, "split") != "train"))
@@ -53,9 +55,15 @@ if (projectIds.Distinct(StringComparer.Ordinal).Count() != projectIds.Length)
 var projectIdSet = projectIds.ToHashSet(StringComparer.Ordinal);
 var materialCodeSet = codeIds.ToHashSet(StringComparer.Ordinal);
 var transactionIdSet = new HashSet<string>(StringComparer.Ordinal);
+var sourceByTx = boqRows.ToDictionary(x=>ReadString(x,"synthetic_transaction_id"),x=>x,StringComparer.Ordinal);
+if (sourceByTx.Count != boqRows.Length) throw new InvalidDataException("Duplicate BOQ transactions");
 foreach (var tx in transactions)
 {
-    if (!transactionIdSet.Add(ReadString(tx,"synthetic_transaction_id")) ||
+    var transactionId = ReadString(tx,"synthetic_transaction_id");
+    if (!transactionIdSet.Add(transactionId) ||
+        !sourceByTx.TryGetValue(transactionId, out var source) ||
+        ReadString(source,"quantity") != ReadString(tx,"quantity") ||
+        ReadString(source,"unit_price") == "" || ReadString(source,"synthetic_project_id") != ReadString(tx,"synthetic_project_id") || ReadString(source,"material_code") != ReadString(tx,"material_code") ||
         !projectIdSet.Contains(ReadString(tx,"synthetic_project_id")) ||
         !materialCodeSet.Contains(ReadString(tx,"material_code")) ||
         ReadDecimal(tx,"quantity") <= 0)
@@ -181,6 +189,51 @@ var dbProjectIds = (await db.ProjectMasters.AsNoTracking()
     .Select(x=>new {x.ProjectName,x.ProjectId}).ToListAsync())
     .ToDictionary(x=>x.ProjectName.Split(' ')[0]["SYNTHETIC:".Length..],x=>x.ProjectId);
 
+// Preserve full multi-trade synthetic final-bid rows for price reporting and
+// auditability, not merely the 2A quantity history. Only TRAIN is seeded.
+var finalItems = new List<FinalBidItem>(500);
+foreach (var row in boqRows)
+{
+    if (!projectIdSet.Contains(ReadString(row,"synthetic_project_id")))
+        throw new InvalidDataException("TEST holdout BOQ row cannot be seeded");
+    var now = DateTime.UtcNow;
+    finalItems.Add(new FinalBidItem {
+        ProjectMasterId = dbProjectIds[ReadString(row,"synthetic_project_id")],
+        SourceFileName = "SYNTHETIC_V2_TRAIN.csv",
+        SheetName = ReadString(row,"major_category"),
+        ItemCode = ReadString(row,"synthetic_line_id"),
+        Category1 = ReadString(row,"major_category"),
+        ItemName = ReadString(row,"item_name"),
+        Spec = ReadString(row,"spec"),
+        Unit = ReadString(row,"unit"),
+        Qty = ReadDecimal(row,"quantity"),
+        UnitPrice = ReadDecimal(row,"unit_price"),
+        Amount = ReadDecimal(row,"amount"),
+        MaterialId = materialIds[ReadString(row,"material_code")],
+        MappingStatus = "Manual",
+        Note = "SYNTHETIC_ONLY; seeded locally for graduation demo",
+        IsIgnored = false,
+        CreatedAt = now, UpdatedAt = now
+    });
+    if (finalItems.Count >= 500) {
+        db.FinalBidItems.AddRange(finalItems);
+        await db.SaveChangesAsync();
+        db.ChangeTracker.Clear();
+        finalItems.Clear();
+    }
+}
+if (finalItems.Count>0) {
+    db.FinalBidItems.AddRange(finalItems);
+    await db.SaveChangesAsync();
+    db.ChangeTracker.Clear();
+}
+var persistedFinalItems = await db.FinalBidItems.AsNoTracking()
+    .Select(x=>new {x.ItemCode,x.FinalBidItemId}).ToListAsync();
+var bidItemIdByLine = persistedFinalItems
+    .ToDictionary(x=>x.ItemCode ?? "",x=>x.FinalBidItemId,StringComparer.Ordinal);
+if (bidItemIdByLine.Count!=boqRows.Length)
+    throw new InvalidDataException("Final-bid line count mismatch");
+
 var buffer = new List<HistoricalTransaction>(500);
 int inserted = 0;
 foreach (var row in transactions)
@@ -191,6 +244,7 @@ foreach (var row in transactions)
         ActualQuantity = ReadDecimal(row,"quantity"),
         TransactionDate = ReadDate(row,"transaction_date"),
         IsOutlier = row.GetProperty("is_outlier").GetBoolean(),
+        FinalBidItemId = bidItemIdByLine[ReadString(sourceByTx[ReadString(row,"synthetic_transaction_id")],"synthetic_line_id")],
         IsDeleted = false
     });
     if (buffer.Count >= 500)
@@ -215,6 +269,7 @@ Console.WriteLine(JsonSerializer.Serialize(new {
     TrainingProjects = projects.Length,
     MaterialMasters = materials.Length,
     HistoricalTransactions = inserted,
+    FinalBidRows = bidItemIdByLine.Count,
     ExcludedHoldoutProjects = ReadInt(root,"excluded_holdout_projects"),
     TrainingOnly = true
 }));
