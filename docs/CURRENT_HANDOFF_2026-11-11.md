@@ -297,3 +297,14 @@ PublishHistory 已有 advisory transaction lock／Idempotency receipt／SyncHist
 現有 ProjectDetailView Publish/Reopen 有保留 sessionStorage Idempotency-Key 的失敗對帳；Verified Reference 接入必須保留此機制，且將「Approved 已納入模型」的既有文案與「來源 Verified」區分。AnalysisCaseDetailView 現已有對名稱可辨識 DEMO 的提醒，**只能作為疑似標記**。
 
 本次未修改正式前後端或資料庫；下一步須由部署管理員確認真正入口的防護方式、企業用戶與角色來源，據此設計後端授權及 401/403 行為，然後才可開始建立新的核准 API。
+
+
+## 24. 2026-11-21：永久 CI 收斂、合成 Excel 測試鏈相依修復
+
+使用者本機 `integration/src-closure` 於 `5263`／`5174` 的唯讀 API 預檢實際 **7/7 PASS**；進一步 Docker/SQL/API 唯讀比對 **4/4 PASS**，確認 `127.0.0.1:55433` 的 `bidding2a_graduation_src` 容器，API 與 DB 的 **14 個案件 ID/名稱指紋一致、210 個 Approved 歷史案一致、14 個版本／28 筆 Run 中抽讀 14 筆成功**。這不是新 UI 上傳、重算、發布或實際準確度驗證。
+
+接著首次執行 `prepare_ui_case.py` 時因整合分支缺少 `export_full_project_excel.py` 發生 `ModuleNotFoundError`；後續 `verify-ui-preflight.mjs --excel` 的 `ENOENT` 是檔案尚未產生的連帶結果。**已針對根因**把 main 現有正式 `export_full_project_excel.py` 和 `generate_irregular_excel.py` 加入 feature 分支；新增真正執行 XLSX/JSON 輸出的永久 `test_prepare_ui_case.py`，檢查 test-only、SHA 來源一致、ZIP 可讀和拒絕覆寫。
+
+依使用者明確決策：不再保留一次性、重複的 CI。已整併到 `.github/workflows/2a-build.yml`（backend Release、Parser Regression、Vue Build、Node 唯讀腳本檢查及 Python 產生器契約測試）；**刪除** `.github/workflows/graduation-ui-build.yml`，保留真正有用的 CLI 與 `2a-handoff-review.yml`，不刪使用者未追蹤 Python/JSON 或任何測試資料。使用方法見 README 第 19 節。
+
+此輪沒有 DB/Migration/API/正式估算 Scope 變更。後續：同步 feature 本輪 5 commits、測試 GitHub Actions 實際結果；使用者再跑 `python prepare_ui_case.py` 及 `node verify-ui-preflight.mjs --excel`，後續才開始 UI 建案／兩種異常分析／Run 跨刷新保存。決標正式發布必須另用可回滾測試來源，禁止讓 test holdout 進歷史。
