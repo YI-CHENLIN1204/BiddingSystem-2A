@@ -312,3 +312,14 @@ npm run build
 - 現況：ASP.NET 與 GraduationSeed 編譯通過、Docker local Postgres **healthy**；`train` 歷史 JSON **尚未匯入**，`AnalysisCase` 的數量估算和價格異常偵錯 API **尚未端到端驗證**，不得標示為完成。
 - 下一驗證點：先輪替本機測試庫密碼；以 `GRADUATION_DB_CONNECTION` 本機限定連線執行 `dotnet run --no-build -c Release --project tools/graduation-synthetic/GraduationSeed/GraduationSeed.csproj -- --seed-json .\\graduation-v2-train-seed.json`；紀錄真實建案數、材料數、歷史交易與決標明細筆數及錯誤，之後再啟動 ASP.NET 使用相同隔離連線進行數量估算/價格異常 E2E。不得指向 Supabase。
 - 本段是執行結果與安全交接紀錄，沒有資料庫 Migration/正式程式碼改動。
+
+
+### 2026-11-21 — 畢專 train-only DB 匯入成功 210 案／99,959 筆；待估標單分類相容性修正
+- 使用者在已啟動的 **localhost:55432 / bidding2a_graduation** 隔離 PostgreSQL 執行 `dotnet run --no-build -c Release --project .\\tools\\graduation-synthetic\\GraduationSeed\\GraduationSeed.csproj -- --seed-json .\\graduation-v2-train-seed.json`，CLI **成功退出**並輸出 `{"Database":"bidding2a_graduation","DataOrigin":"SYNTHETIC","TrainingProjects":210,"MaterialMasters":100,"HistoricalTransactions":99959,"FinalBidRows":99959,"ExcludedHoldoutProjects":90,"TrainingOnly":true}`。這是 C# 實際 DB 寫入階段的首次通過；尚未由 SQL 二次核對筆數，亦未呼叫正式估算 API。
+- 用戶最新 .NET 10 Release build 成功且未顯示 MSB3277 版本警告；Docker PostgreSQL healthy。**不可再次執行 DB seed**，設計上拒絕重複匯入，亦不可先將 test 案 SYN-00002 寫進 train DB。
+- 查證正式 feature 分支 `AnalysisCaseController.cs` 的路由是 `api/analysis-cases`（複數），`POST api/analysis-cases/from-upload`；數量端點 `POST api/analysis-cases/{id}/versions/{versionId}/quantity-analysis`；價格端點 `POST api/analysis-cases/{id}/versions/{versionId}/major-price-analysis`；價格 readiness `GET api/major-category-price/readiness`；數量設定 `GET api/detection-category/readiness`。
+- 查證 `AnalysisCaseService.ValidateUploadStructure` 要求每一詳細列都能由 `Category1/2/3` 辨識工程大項，`TenderExcelParser` 接受標頭為 `工程大項` 的逐列分類；原 v2 Excel 沒有明確分類欄，很可能導致整張待偵錯標單被拒絕。
+- 修正 `tools/graduation-synthetic/export_full_project_excel.py` commit `16ac12d0`：新輸出的每一工程列增加 `工程大項` 欄，將合成較細工程分類映射到 `TwoAScopePolicy` 可接受的大項名稱；原始 `major_category` 仍留在 CSV / truth，新增 `analysis_major_category`。**不擴充正式估算政策**，仍僅數量鋼筋/混凝土與價格結構體工程。
+- 修改 `tools/graduation-synthetic/test_full_project_dataset.py` commit `760267ca`：測試 truth 中每筆輸出列的有效工程大項。原已生成的 `graduation-v2-project.xlsx` 不受 Github 修改影響，需要**另以新檔名重新生成**待估標單（如 `graduation-v2-project-ready.xlsx`）；不可覆寫既有證據。
+- 驗證界線：輸出修正已提交 GitHub **但未取得用戶 Windows 回測或 ASP.NET API 上傳結果**；不得宣稱正式數量/價格偵錯已可成功執行。完整 train DB 已匯入；圖表與獨立 test 案尚需 API E2E。
+- 下一步：同步新版 exporter/test，重跑 Python unittest → 新檔名輸出有 `工程大項` 的 test-only Excel → 以 `ConnectionStrings__DefaultConnection=$env:GRADUATION_DB_CONNECTION` 啟動**本機獨立 DB**的 ASP.NET → read-only `GET /api/analysis-cases/policy`、`/api/detection-category/readiness`、`/api/major-category-price/readiness` → 正式 POST 上傳 / quantity-analysis / major-price-analysis；最後比對真值與圖表。沒有 DB Migration，原產學資料庫未動。
