@@ -297,3 +297,32 @@ python tools/graduation-synthetic/export_anomaly_holdout_suite.py --source .\gra
 預設不使用 `--anomaly-scenario` 時，原 `export_full_project_excel.py` 的行為不改變。可用單次 `--project-id` 加 `--anomaly-scenario` 產生一份新檔，但**僅限 test split**，其餘 split 直接拒絕。所有來源 CSV SHA-256 保持不變、輸出檔拒絕覆寫，`anomaly_suite_manifest.json` 明確標記 `HELDOUT_ONLY_NOT_TRAINING_HISTORY`。
 
 此版本尚未在使用者 Windows / 隔離 SRC DB 中完成正式 ASP.NET API E2E。請先跑 Python 測試、確認真值 JSON 和 Excel 金額一致，再用新的 55433 隔離資料庫測量量價檢出與誤報，**絕不把標籤反寫訓練歷史或放行新的紅綠燈類別**。
+
+
+### Windows 已驗證 SRC baseline 之後：13 份標單 API 成對檢查（新增）
+
+Windows PowerShell 上傳曾需 `Add-Type -AssemblyName System.Net.Http`，因此這裡提供 **Python 標準函式庫 multipart** 的批次腳本，不依賴 PowerShell 的 HTTP .NET 類型。在已啟動且指向 **localhost SRC 整合測試庫（55433）** 的 ASP.NET API（例如 5262）時：
+
+```powershell
+# 先更新 main 中 tools 的新腳本；切勿整支切換後端 feature branch
+git fetch origin main
+git restore --source=FETCH_HEAD --worktree -- tools/graduation-synthetic/audit_paired_anomaly_api.py tools/graduation-synthetic/test_paired_anomaly_api.py
+python -m unittest discover -s tools/graduation-synthetic -p "test_*.py" -v
+
+# 零 HTTP / 零 DB 寫入：先驗證 13 個本機 XLSX SHA 與 test-only truth
+python tools/graduation-synthetic/audit_paired_anomaly_api.py --suite .\\graduation-anomaly-holdouts --api http://127.0.0.1:5262 --output .\\graduation-src-paired-api-report.json
+
+# 這一步會在目前 localhost 測試 DB 中真正建立 13 個 AnalysisCase 和各 2 筆 AnalysisRun
+# 不會寫入歷史訓練交易或啟用新紅綠燈。切勿對正式/共同資料庫執行！
+python tools/graduation-synthetic/audit_paired_anomaly_api.py --suite .\\graduation-anomaly-holdouts --api http://127.0.0.1:5262 --output .\\graduation-src-paired-api-report.json --execute
+```
+
+完成後 `graduation-src-paired-api-report.json` 的 `results` 保存每一個 case id、run id、實際數量與價格、紅綠燈、合理範圍；`paired_deltas` 逐情境與**同一來源建案的未修改 baseline** 比較，不把原始基準已為 Red 的項目當成「成功抓到新異常」。可用 PowerShell 查看簡表：
+
+```powershell
+$r = Get-Content .\\graduation-src-paired-api-report.json -Raw -Encoding UTF8 | ConvertFrom-Json
+$r.results | Select-Object scenario,baseProjectId,parsedItemCount,quantityRunId,priceRunId | Format-Table -AutoSize
+$r.paired_deltas | Select-Object scenario,baseProjectId,priceObservedDelta,baselinePriceLight,variantPriceLight | Format-Table -AutoSize
+```
+
+此腳本先檢查 13 份檔案與 SHA，僅允許 HTTP localhost，API readiness 未達標就不建立案件，並拒絕覆寫結果；發生中途錯誤會保留 `.partial.json` 記錄已建立案件 ID，避免無聲重跑造成重複測試。輸出結果是 **API smoke test／成對變化**，尚不能充當模型準確率、正式工程驗證或新增鋼骨紅綠燈的審批證據。腳本本身尚待使用者 Windows 真正執行；原 SRC 基準 `SYN-00030` 已成功上傳 446/446、quantity 和 price API 成功，但鋼筋、結構總價在**未注入**版本即為 Red，因此必須將基準異常與注入異常分開。
