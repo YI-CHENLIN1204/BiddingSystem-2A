@@ -110,6 +110,9 @@ class SrcExtendedTests(unittest.TestCase):
                                    if r["synthetic_line_id"] == edit["synthetic_line_id"])
                     self.assertEqual(changed["expected_quantity"], edit["injected_quantity"])
                     self.assertEqual(changed["expected_unit_price"], edit["injected_unit_price"])
+                    expected_amount = (Decimal(edit["injected_quantity"]) *
+                                       Decimal(edit["injected_unit_price"])).quantize(Decimal("0.01"))
+                    self.assertEqual(Decimal(changed["expected_amount"]), expected_amount)
                     self.assertNotEqual(
                         (edit["original_quantity"], edit["original_unit_price"]),
                         (edit["injected_quantity"], edit["injected_unit_price"]))
