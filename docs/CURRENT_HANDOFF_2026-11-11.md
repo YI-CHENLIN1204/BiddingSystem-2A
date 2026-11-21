@@ -308,3 +308,14 @@ PublishHistory 已有 advisory transaction lock／Idempotency receipt／SyncHist
 依使用者明確決策：不再保留一次性、重複的 CI。已整併到 `.github/workflows/2a-build.yml`（backend Release、Parser Regression、Vue Build、Node 唯讀腳本檢查及 Python 產生器契約測試）；**刪除** `.github/workflows/graduation-ui-build.yml`，保留真正有用的 CLI 與 `2a-handoff-review.yml`，不刪使用者未追蹤 Python/JSON 或任何測試資料。使用方法見 README 第 19 節。
 
 此輪沒有 DB/Migration/API/正式估算 Scope 變更。後續：同步 feature 本輪 5 commits、測試 GitHub Actions 實際結果；使用者再跑 `python prepare_ui_case.py` 及 `node verify-ui-preflight.mjs --excel`，後續才開始 UI 建案／兩種異常分析／Run 跨刷新保存。決標正式發布必須另用可回滾測試來源，禁止讓 test holdout 進歷史。
+
+
+## 25. 2026-11-21：修復 UI 測試資料來源路徑缺失
+
+使用者本機重新同步上一批永久 CI 修改，`python -m unittest discover -s tools/graduation-synthetic -p "test_*.py" -v` **2/2 PASS**；但 `graduation-src-extreme-v3/manifest.json` **不存在**，先前指令強制帶入 `--source` 導致 `prepare_ui_case.py` 無法產生 XLSX，隨後 `verify-ui-preflight --excel` 的 `ENOENT` 僅是檔案不存在。不可推論 parser/API 或模型出錯，也不能將該次 Excel 檢查記為 PASS。
+
+在 `feature/1d-api-integration` 修正 `tools/graduation-synthetic/prepare_ui_case.py`：新增**離線、無來源資料庫**的預設 UI smoke workbook 模式（不帶 `--source`），輸出有總表、結構體、基礎地下三工作表的合成明細，以及 Excel SHA／逐列數量單價／完整 UI metadata 的 JSON；所有資料明確標註 `SYNTHETIC_UI_ONLY_NOT_HOLDOUT_OR_HISTORY`、`eligible_for_training_history=false`、`is_accuracy_ground_truth=false`，**不依賴 5263/55433，也不准發布成 Approved History**。保留原有明確 `--source` 模式及 SHA 驗證；指定不存在來源時仍然 fail closed。
+
+新增 `test_prepare_ui_case.py` 的**真 CLI 子程序**離線測試、Excel OOXML／明細／數量×單價一致性、來源標記、防重覆輸出和 RC/SRC 切換。更動 commits `de6a4f52fd3510164021216082bff0f21e729042`、`29b2a1d092dd951b097b9dca40a1626f2d9084f6`。僅使用既有永久 `.github/workflows/2a-build.yml`，沒有新 workflow；暫無 .NET、DB、Migration、正式模型或檢測類別變更。
+
+**下一步**：同步兩筆 commit，改用 `python tools/graduation-synthetic/prepare_ui_case.py --output graduation-ui-1121-01.xlsx --truth graduation-ui-1121-01-truth.json`（**不帶 --source**），接著 `node scripts/verify-ui-preflight.mjs --excel graduation-ui-1121-01.xlsx`。唯讀解析成功後才做 UI 寫入＋Run 持久化；歷史發布只能使用可回滾、與 holdout 完全分開的測試庫。不能宣稱新功能 E2E 已成功。
