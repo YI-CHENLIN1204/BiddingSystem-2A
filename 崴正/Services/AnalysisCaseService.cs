@@ -537,6 +537,90 @@ namespace 崴正.Services
         }
 
 
+        // Read-only disclosure of the exact material-scope preprocessing used
+        // by RunQuantityAnalysisAsync. No new analysis run or audit write.
+        public async Task<ServiceResult> GetVersionQuantityScopeAsync(
+            int analysisCaseId,
+            long versionId)
+        {
+            var version = await _context.AnalysisBidVersions
+                .AsNoTracking()
+                .Include(x => x.Items)
+                .FirstOrDefaultAsync(x =>
+                    x.AnalysisBidVersionId == versionId &&
+                    x.AnalysisCaseId == analysisCaseId);
+
+            if (version == null)
+                return ServiceResult.NotFound("找不到指定的待偵錯版本");
+
+            var orderedItems = version.Items
+                .OrderBy(x => x.AnalysisBidItemId)
+                .ToList();
+
+            var preprocess = _twoAPreprocessService.Build(
+                analysisCaseId, ToPreprocessSourceItems(orderedItems));
+
+            var scopeRows = orderedItems.Select((sourceItem, index) =>
+            {
+                var item = preprocess.Items[index];
+                return new
+                {
+                    sourceItem.AnalysisBidItemId,
+                    sourceItem.SheetName,
+                    sourceItem.RowNumber,
+                    sourceItem.ItemName,
+                    sourceItem.Spec,
+                    sourceItem.Unit,
+                    sourceItem.Quantity,
+                    sourceItem.MajorCategory,
+                    item.DetectionCategory,
+                    item.Status,
+                    item.Reason,
+                    item.UnitNormalizationStatus,
+                    item.NormalizedQuantity,
+                    item.NormalizedUnit,
+                    CandidateType = TenderImportInspectionService
+                        .ClassifyQuantityCandidate(
+                            BuildAnalysisText(sourceItem.ItemName, sourceItem.Spec),
+                            null)
+                };
+            }).ToArray();
+
+            return ServiceResult.Ok(new
+            {
+                analysisCaseId,
+                analysisBidVersionId = versionId,
+                itemCount = orderedItems.Count,
+                preprocess.IncludedItemCount,
+                preprocess.ExcludedItemCount,
+                preprocess.PendingItemCount,
+                excludedQuantityCandidateCount = scopeRows.Count(x =>
+                    x.Status == "Excluded" && x.CandidateType == "Excluded"),
+                items = scopeRows,
+                note = "這是執行數量偵錯時使用的工項分類快照檢視。排除不代表工項完全沒有材料，複合工項須人工確認；數量偵錯不改動歷史基準，價格大項仍依整份標單計價。"
+            });
+        }
+
+
+        private static List<OneDSavedResultItem> ToPreprocessSourceItems(
+            IReadOnlyList<AnalysisBidItem> orderedItems)
+        {
+            return orderedItems
+                .Select(x => new OneDSavedResultItem
+                {
+                    Category = x.SourceCategory1,
+                    Chapter = x.MajorCategory ?? string.Empty,
+                    SeqInChapter = x.SourceSequence,
+                    Code = x.ItemCode,
+                    Name = BuildAnalysisText(x.ItemName, x.Spec),
+                    Unit = x.Unit,
+                    Quantity = x.Quantity,
+                    Confidence = x.SourceConfidence
+                })
+                .ToList();
+        }
+
+
         public async Task<ServiceResult> RunQuantityAnalysisAsync(
             int analysisCaseId,
             long versionId,
@@ -555,20 +639,8 @@ namespace 崴正.Services
                 return ServiceResult.NotFound("找不到指定的待偵錯版本");
             }
 
-            var sourceItems =
-                version.Items
-                    .Select(x => new OneDSavedResultItem
-                    {
-                        Category = x.SourceCategory1,
-                        Chapter = x.MajorCategory ?? string.Empty,
-                        SeqInChapter = x.SourceSequence,
-                        Code = x.ItemCode,
-                        Name = BuildAnalysisText(x.ItemName, x.Spec),
-                        Unit = x.Unit,
-                        Quantity = x.Quantity,
-                        Confidence = x.SourceConfidence
-                    })
-                    .ToList();
+            var sourceItems = ToPreprocessSourceItems(
+                version.Items.OrderBy(x => x.AnalysisBidItemId).ToList());
 
             var preprocess =
                 _twoAPreprocessService.Build(
