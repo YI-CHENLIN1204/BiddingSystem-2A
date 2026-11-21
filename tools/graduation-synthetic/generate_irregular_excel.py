@@ -128,7 +128,7 @@ def worksheet_xml(rows, headers=None):
     return f'<?xml version="1.0" encoding="utf-8"?><worksheet xmlns="{BASE}"><cols>{"".join(widths)}</cols><sheetData>{"".join(result)}</sheetData></worksheet>'
 
 
-def make_xlsx(sheets):
+def make_xlsx(sheets, headers_by_sheet=None):
     if len(set(sheets)) != len(sheets):
         raise ValueError('duplicate sheet names')
     strings = [f'<sheet name="{escape(name)}" sheetId="{i}" r:id="rId{i}"/>' for i, name in enumerate(sheets, 1)]
@@ -152,9 +152,11 @@ def make_xlsx(sheets):
         '<xf numFmtId="0" fontId="0" fillId="0" borderId="0" xfId="0" applyAlignment="1">'
         '<alignment vertical="center" wrapText="1"/></xf></cellXfs></styleSheet>'
     )
-    for i, rows in enumerate(sheets.values(), 1):
-        # Sheet one is the summary; detail header rows vary among sheets.
-        header = None if i == 1 else LAYOUTS[(i - 2) % len(LAYOUTS)]
+    for i, (name, rows) in enumerate(sheets.items(), 1):
+        # Optional explicit layouts allow realistic workbooks to omit
+        # entire disciplines without shifting other sheets' column widths.
+        header = (headers_by_sheet.get(name) if headers_by_sheet is not None
+                  else None if i == 1 else LAYOUTS[(i - 2) % len(LAYOUTS)])
         parts[f'xl/worksheets/sheet{i}.xml'] = worksheet_xml(rows, header)
     output = io.BytesIO()
     with ZipFile(output, 'w') as workbook:
