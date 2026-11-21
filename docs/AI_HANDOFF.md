@@ -601,3 +601,11 @@ npm run build
 - Test RC18（非 extreme16）：混凝土 18 無 shock／0有、鋼筋 17／1、結構大項15／3。SC17（非 extreme15）：混凝土15／2、鋼筋不適用、結構大項11／6。SRC10（非 extreme8）：混凝土10／0、鋼筋10／0、結構大項7／3。這些是**生成器記錄倍率變化篩檢**，不是正常值保證，也不是模型準確率。
 - 3 Baseline 交叉：RC `SYN-00029` 混凝土 Normal/0、鋼筋 Low/0、結構總價 Normal/0；SRC `SYN-00030` 混凝土 Normal/0、鋼筋 Low/0、結構總價 Low/0；SC `SYN-00026` 混凝土 Normal/0、結構總價 Low/**4 筆原始生成器 shock**。因此 RC/SRC 的基準紅燈不是已記錄的 group shock 直接引起；SC shock 可能與總價有關但未驗證因果。均 `engineeringNormalCertified=false`，不可用來宣稱誤報率。
 - 已更新 `docs/PROJECT_CLOSURE_PLAN.md` commit `de881d5d3e4c9b5e33d073886f69ea24fb8de8c0`。下一點：對 3 baseline Low 根據正式 API 的對照組成與相似建案資訊做只讀離線分析，確認是否為合成結構分布/材料 scope/區間邊界之問題，再決定如何建立經審定正常測試真值。不要重跑13次 `--execute` 或重 seed、改模型門檻；沒有程式碼/資料庫/Migration 變更。
+
+
+### 2026-11-21 — P0 第二階段：3 baseline 已保存 AnalysisRun 的唯讀參考組診斷工具（待 Windows 驗證）
+- 使用者表示「可以繼續」，在原 26/26 Python 單元測試、45 test provenance 已 PASS 的基礎上，開始對三個 baseline 原有 Low 做診斷，不重跑已完成的13案、26次分析。
+- 已從 GitHub `main` 和 `feature/1d-api-integration` 查核最新交接/README、`AnalysisCaseController.cs`、`AnalysisCaseService.cs`、`ProjectSimilarityService.cs`；feature 路由確實存在 `GET /api/analysis-cases/{analysisCaseId}/runs/{analysisRunId}`，回傳已保存的 `AnalysisRun.ResultJson`。本次只讀此路由，禁止 POST 和改資料庫。
+- 已在 `main` 新增 `tools/graduation-synthetic/diagnose_baseline_low.py` commit `c5d572f1`，查 `graduation-src-paired-api-report.json` 的 3 個 baseline run IDs，與 `graduation-src-holdout-provenance.json` 交叉驗證，按 concrete/rebar/structural_price 計算 observed 對上下界偏離比例、參考建案數/結構/分數/年距/權重及來源群組 shock。從 `graduation-src-extreme-v3/projects.csv` 的 SHA 驗證來源專案結構。任何跨結構參考僅標記為待查，不直接宣稱 bug；任何「無 shock」不算工程正常真值或可計誤報率。
+- 新增 `tools/graduation-synthetic/test_diagnose_baseline_low.py` commit `459a70d7`，4 個純離線測試涵蓋下界/上界距離、跨結構參考標記及非法範圍拒絕；README 新段落 commit `a6a00b3a`、`docs/PROJECT_CLOSURE_PLAN.md` commit `38b3078c`。
+- **未執行**使用者 Windows 新 unittest（預期 30 項）、GET 保存分析紀錄或輸出 JSON；未修改 ASP.NET/Vue/DB/EF Migration/生成器或估算參數。下一驗證點：安全 fetch 新兩工具到當前 feature 分支 → Windows `python -m unittest discover -s tools/graduation-synthetic -p "test_*.py" -v` 30/30 → 執行 `diagnose_baseline_low.py --api http://127.0.0.1:5262 --source .\\graduation-src-extreme-v3 --paired-report .\\graduation-src-paired-api-report.json --provenance .\\graduation-src-holdout-provenance.json --output .\\graduation-src-baseline-diagnosis.json` → 使用實際數據決定是否需要模型/相似度修正。不要重 seed、不要刪 55432/55433、不要再跑13件 --execute。
