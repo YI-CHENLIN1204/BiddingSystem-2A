@@ -370,3 +370,13 @@ npm run build
 - 這只是新 RC test-only workbook 實際生成，**尚未經 AnalysisCase/from-upload 正式上傳、尚未執行 RC quantity/price API**；不能聲稱鋼筋/混凝土雙材料已正式分析。
 - 下一驗證點：重用 `127.0.0.1:5261` 同一隔離資料庫、以 UTF-8 HttpClient multipart 明確選取 `truth.detail_rows_per_sheet` 的六張明細表傳 `includedSheetNames`，建立新的 RC target analysis case；保存真實 case/version ID，才依序呼叫 quantity-analysis、major-price-analysis 並保存各 result JSON；檢查是否真的產生鋼筋與混凝土兩組，否則追查 `TwoAPreprocessService` 的工項分類，不改模型範圍。
 - 不重跑 seed，不刪除舊 SC 案件，不連正式 Supabase；本次僅交接文件更新，沒有程式碼及 Migration 修改。
+
+
+### 2026-11-21 — RC SYN-00029 正式 2A 量價雙路徑端到端實測 PASS
+- 使用者使用本機隔離 PostgreSQL 的 ASP.NET API：`POST /api/analysis-cases/from-upload` **HTTP 200**，`analysisCaseId=3`、`analysisBidVersionId=3`、`versionNo=1`、`sourceType=Upload`、`itemCount=409`，代表新生成的 RC 未訓練測試標單 `graduation-v2-rc-ready.xlsx` 409 列全數解析成功並儲存於 Target Pipeline。
+- 正式 `POST /api/analysis-cases/3/versions/3/quantity-analysis` 成功，`analysisRunId=5`、`totalGroupCount=2`、`analyzedGroupCount=2`、`insufficientDataCount=0`，混凝土觀測 3885.108 m3、判定 `Low/Red`；鋼筋觀測 496658.648 kg、判定 `Low/Red`。兩個正式偵錯細項都已實際出現，前次 SC 案只有混凝土的結果不表示鋼筋偵錯失效。
+- 正式 `POST /api/analysis-cases/3/versions/3/major-price-analysis` 成功，`analysisRunId=6`，結構體工程觀測金額 91,153,245.71、P15/P50/P85 金額 69,512,978.87／120,860,965.10／146,643,899.77，`analysisStatus=Normal`、`trafficLight=Green`。計算：觀測金額處於預測上下限內，但低於中位數。
+- 用戶在本機已保存 `graduation-v2-rc-quantity-result.json` 與 `graduation-v2-rc-price-result.json`；文件中記錄的是用戶貼出的摘要，**RC 數量預測上下界與有效樣本數等細節未貼出，尚不可寫入未驗證數字**。
+- 與 SC SYN-00002 對照：SC 標單 574/574 PASS，混凝土量 Low/Red，結構體價格 High/Red（price runId=2）；RC 標單 409/409 PASS，鋼筋+混凝土量均 Low/Red，結構體價格 Normal/Green。此為**兩個獨立 held-out 建案上的正式 API 功能實證**，非模型可靠度或真實工程準確性統計。
+- 下一實驗目標只聚焦數量估算與價格異常偵錯：讀取本機保存的四份真實 API 結果，對照兩份 truth JSON，繪製觀測值與正式 P15/P50/P85（含材質單位和建案）比較圖；擴充多個 held-out 案才可計算 MAPE、涵蓋率、異常檢出率及混淆矩陣；明確標示 SYNTHETIC，不能把兩案 Red/Green 算成正確率。不要額外擴充工種模型或重跑歷史資料 seed。
+- 以上是 2026-11-21 使用者實測結果補登；未修改 C# 估算邏輯、DB Migration 或產學正式資料庫。
