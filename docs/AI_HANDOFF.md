@@ -452,3 +452,8 @@ npm run build
 - **測試狀態**：已完成 GitHub 實際提交，尚未在使用者 Windows 執行新 Python unit tests、建置修改後 Seed、創建新 SRC DB、匯入新 SRC 訓練案、上傳 SRC/極端標單或跑正式 API；以上皆標記 **NOT RUN**，不得宣稱 PASS。舊 RC/SC 17 tests、210 案 DB 及兩案 E2E 成功仍是之前版本的事實。
 - **資料庫與回滾**：本輪沒有任何 DB/Migration 變更或現場資料寫入；新 DB 先用獨立 Docker project/volume 進行，有問題可停止新 SRC 服務而不影響舊 55432 資料；禁止未經同意刪除任何 volume。所有 credentials 僅置使用者環境變數且不可回貼到對話。
 - 下一驗證點：使用者本機 scoped restore 最新 `tools/graduation-synthetic`、執行 unittest → `--include-src --include-extremes` 在新 `graduation-src-extreme-v3` 輸出 300 案 → 檢查 manifest `structure_type_counts` 與各 split extremes → 匯出新 SRC train-only JSON 及 7 份 test-only Excel → 新 55433 DB 建置/匯入 → 用 feature ASP.NET 服務驗證城市/基地敏感度與 SRC 正式數量/價格 API → 批次留出測試、決定各候選工項是否應繼續研究。先一組集中完成測試，避免小碎步重複 push。
+
+
+### 2026-11-21 — SRC/extreme 套件納入 CI 驗證路徑
+- 新增 `.github/workflows/graduation-synthetic.yml` commit `ae8e085a` 的 SRC/extreme 離線驗證步驟：產生獨立 120 案含 SRC/極端 train/validation/test 資料 → 產生 SRC-only DB 指向的 train seed JSON → 輸出 SRC+極端七份 test-only 標單與真值 → 產生候選工項 STRICT research audit → 以 `test -s` 檢查關鍵輸出非空。原有 .NET build 與 Python unittest 步驟仍保留。
+- 因目前尚未從 GitHub Actions 取得該 commit 對應的 run/step 結果，也未取得使用者 Windows 回測，**CI 工作定義已提交但此輪是否執行 PASS 尚未驗證**；請以下輪實際測試結果為準。此工作流程不會啟動 Docker、不會修改任何 DB，也不會把候選工項正式啟用。
