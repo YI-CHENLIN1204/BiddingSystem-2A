@@ -768,3 +768,12 @@ npm run build
 - 候選新增工項排序：**鋼骨（SC/SRC 研究）、模板（分工法與單位）、土方（開挖深度/地下層/地質等條件）**；實際升格為正式估算/偵錯前需確認資料庫是否有對應歷史、字典/材料主檔/單位換算/分母、工法可比性、至少足夠獨立歷史案件、UI 能顯示不可估原因；不要直接把候選名稱加入 `TwoAScopePolicy` 或前端下拉就稱為已可正式判異常，避免錯誤紅綠燈和汙染歷史。需先建立**動態能力/證據清單（Enabled/Insufficient/ResearchOnly）**，再批次實作可通過門檻者。
 - 完整 UI 驗收需透過前端 5174 明確 proxy 到**新** backend 5263（勿誤接 5262）、驗證 55433 isolated synthetic DB，採**新合成 UI 測試案 / 獨立隔離 DB 或 transaction rollback**；不得覆寫既有 210 approved/13 案/分析跑次，不得直接改正式 Supabase。已確認的 SRC API 3/3、9/9、敏感度6/6 PASS 仍有效，但 UI upload/final-bid/writeback/新增正式工項/accuracy 均未實測。
 - 本次只完成來源與路徑盤點、收尾決策更新，**未完成候選新工項的模型/DB/前端修改，也沒有 UI E2E 實測**；下個可驗收交付點應是完整 UI 套件與用例、自動化端到端測試，不再零碎只測單支 API。修改後必須建置、E2E、回歸並同步提交本 handoff。
+
+
+### 2026-11-21 — 畢專 UI 獨立上傳防阻斷修復（feature 分支）
+- Branch: `feature/1d-api-integration`；程式 commits `347ef4962c780a06ec5dc3e9a781f82f86a0333b`、`b5edaff49194a226808ac4723937fdddf4c4d202`；本節記於 `main`，程式**尚未合併 main**。
+- 修改 `frontend/src/views/AnalysisCasesView.vue`：建立案件預設「自行上傳」；`/one-d/status` 失敗退回 configured=false，不阻斷案件清單與自行上傳；可選 readiness 失敗回 null，不阻斷核心頁面。
+- 修改 `frontend/src/views/AnalysisCaseDetailView.vue`：隔離可選 `/one-d/status` 失敗，核心案件／版本／分析 Run API 仍保持正常錯誤處理。
+- DB/API/Migration/演算法：無修改，沒有碰測試 DB 或 Supabase；1D 正常可用時仍可選擇。
+- 驗證：GitHub 兩檔程式提交 **成功**；前端編譯、瀏覽器 UI、Excel 解析、決標回寫／資料持久化／稽核 E2E **未執行**，不能標記 PASS。
+- 下一步：整合分支的編譯與 UI 功能測試；確定新 5263 backend + 55433 隔離 DB；用新合成案件完成上傳→工作表→分析→決標草稿→人工審核→正式發布→重整持久化；候選工項先評估證據門檻，最後才做 holdout 準確度。禁止重 seed／覆寫原 13 案。
