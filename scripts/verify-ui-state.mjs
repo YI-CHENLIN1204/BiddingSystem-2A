@@ -5,6 +5,7 @@
  * identified localhost Docker PostgreSQL 55433 synthetic container.
  *
  * Usage: node scripts/verify-ui-state.mjs
+ *        node scripts/verify-ui-state.mjs --case-id <synthetic-analysis-case-id>
  * Requires Docker Desktop and the existing 5263 backend; no secrets output.
  * Does NOT create cases, run new analyses, publish history or touch volumes.
  */
@@ -44,7 +45,14 @@ function psql(id, sql) {
     '-X', '-A', '-t', '-v', 'ON_ERROR_STOP=1', '-c', sql])
 }
 async function run() {
-  check(process.argv.length === 2, 'Usage: node scripts/verify-ui-state.mjs')
+  const args = process.argv.slice(2)
+  check(args.length === 0 || (args.length === 2 && args[0] === '--case-id'),
+    'Usage: node scripts/verify-ui-state.mjs [--case-id ID]')
+  const expectedCaseId = args.length === 2 ? Number(args[1]) : null
+  if (expectedCaseId !== null) {
+    check(/^[1-9][0-9]*$/.test(args[1]) && Number.isSafeInteger(expectedCaseId),
+      'Invalid case ID: provide a positive safe integer from the UI URL')
+  }
   const containers = docker([
     'ps', '--filter', 'label=com.docker.compose.project=' + PROJECT,
     '--filter', 'label=com.docker.compose.service=' + SERVICE,
@@ -148,7 +156,42 @@ async function run() {
     ' cases, ' + totalVersions + ' versions, ' + savedRunCount + ' runs; ' +
     verifiedRuns + ' retrieved run payloads')
 
-  console.log('[RESULT] ' + pass + '/4 isolated read-only checks PASS')
+  if (expectedCaseId !== null) {
+    const candidate = cases.find(c => c.analysisCaseId === expectedCaseId)
+    check(candidate?.caseName?.startsWith('SYNTHETIC-UI-驗收-'),
+      '--case-id must select a saved standalone synthetic UI smoke case')
+    const [detail, runs] = await Promise.all([
+      get('/analysis-cases/' + expectedCaseId),
+      get('/analysis-cases/' + expectedCaseId + '/runs'),
+    ])
+    const current = detail?.versions?.find(v => v.isCurrent)
+    check(current && Number.isSafeInteger(current.analysisBidVersionId),
+      'Expected current analysis version missing')
+    const ver = current.analysisBidVersionId
+    const quantity = runs.find(r =>
+      r.analysisBidVersionId === ver && r.runType === 'Quantity' && r.status === 'Completed')
+    const price = runs.find(r =>
+      r.analysisBidVersionId === ver &&
+      r.runType === 'MajorPrice:結構體工程' && r.status === 'Completed')
+    check(quantity && price,
+      'Saved Quantity and MajorPrice:結構體工程 runs are both required for the same current version')
+    const [quantitySaved, priceSaved] = await Promise.all([
+      get('/analysis-cases/' + expectedCaseId + '/runs/' + quantity.analysisRunId),
+      get('/analysis-cases/' + expectedCaseId + '/runs/' + price.analysisRunId),
+    ])
+    for (const [summary, record] of [[quantity, quantitySaved], [price, priceSaved]]) {
+      check(record.analysisRunId === summary.analysisRunId &&
+        record.analysisBidVersionId === ver &&
+        record.runType === summary.runType &&
+        record.result !== undefined && record.result !== null,
+      'Persisted analysis run payload was not readable')
+    }
+    success('Synthetic UI case #' + expectedCaseId +
+      ' quantity and structural-price saved runs retrieved from isolated database')
+  }
+
+  console.log('[RESULT] ' + pass + '/' + (expectedCaseId !== null ? 5 : 4) +
+    ' isolated read-only checks PASS')
   console.log('[NOTE] API/DB case signatures strongly corroborate 5263 -> 55433, but not a formal connection-string attestation')
   console.log('[NOT VERIFIED] Browser click/upload, new analysis execution, history publish, audit-log and accuracy')
 }
