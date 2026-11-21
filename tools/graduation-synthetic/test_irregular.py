@@ -47,9 +47,17 @@ class IrregularTests(unittest.TestCase):
         with ZipFile(a) as z:
             self.assertIsNone(z.testzip())
             self.assertEqual(len([n for n in z.namelist() if n.startswith('xl/worksheets/sheet')]),7)
+            self.assertIn('xl/styles.xml', z.namelist())
+            styles=ET.fromstring(z.read('xl/styles.xml'))
+            self.assertTrue(styles.findall(f'.//{{{BASE}}}alignment[@wrapText="1"]'))
             for n in range(1,8):
                 sheet=ET.fromstring(z.read(f'xl/worksheets/sheet{n}.xml'))
                 self.assertGreater(len(sheet.findall(f'.//{{{BASE}}}row')),3)
+                widths=sheet.findall(f'.//{{{BASE}}}cols/{{{BASE}}}col')
+                self.assertGreater(len(widths), 0)
+                self.assertTrue(any(float(col.attrib['width']) >= 28 for col in widths))
+                self.assertTrue(all(row.get('customHeight') == '1'
+                    for row in sheet.findall(f'.//{{{BASE}}}row')))
     def test_no_overwrite_and_tamper(self):
         out=self.root/'out.xlsx';truth=self.root/'truth.json'
         out.write_bytes(b'protect')
