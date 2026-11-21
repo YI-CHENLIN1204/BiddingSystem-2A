@@ -122,19 +122,36 @@ async function upload() {
   form.append('excelFile', file.value)
   form.append('includedSheetNames', JSON.stringify(includedSheets.value))
   Object.entries(project.value).forEach(([key, value]) => form.append(key, value == null ? '' : String(value)))
+
   try {
     const result = await apiForm<{ projectId: number; message?: string }>('/Estimation/upload-final-bid', form)
-    projectId.value = Number(result.projectId)
-    await router.replace({ path: '/final-bid', query: { projectId: String(projectId.value) } })
-    message.value = result.message ?? '決標資料已成功回寫。'
+    const createdId = Number(result.projectId)
+    if (!Number.isSafeInteger(createdId) || createdId <= 0) {
+      error.value = '後端已回應匯入，但未提供有效建案編號。請先到建案管理查詢，勿直接重傳。'
+      return
+    }
+    projectId.value = createdId
+    message.value = '決標資料已匯入審核草稿；尚未正式發布歷史基準。'
     file.value = null
     includedSheets.value = []
     workbookReady.value = false
     fileInputKey.value++
-    await loadMappingResources()
-    await Promise.all([loadSummary(), loadTwoASummary(), loadItems(1)])
+
+    // 匯入成功之後的導航或重新讀取失敗，不應誤報成上傳失敗。
+    try {
+      await router.replace({ path: '/final-bid', query: { projectId: String(createdId) } })
+    } catch {
+      error.value = '草稿已建立，但網址未能更新。可從建案管理重新進入審核。'
+    }
+    try {
+      await loadMappingResources()
+      await Promise.all([loadSummary(), loadTwoASummary(), loadItems(1)])
+    } catch (caught) {
+      error.value = '草稿已建立，但讀取審核明細失敗：' +
+        (caught instanceof Error ? caught.message : '未知錯誤')
+    }
   } catch (caught) {
-    error.value = caught instanceof Error ? caught.message : '決標資料回寫失敗'
+    error.value = caught instanceof Error ? caught.message : '匯入決標草稿失敗'
   } finally {
     uploading.value = false
   }
