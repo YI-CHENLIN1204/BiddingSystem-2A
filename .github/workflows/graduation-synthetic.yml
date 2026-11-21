@@ -35,6 +35,8 @@ jobs:
           python tools/graduation-synthetic/export_full_project_excel.py --source /tmp/graduation-full --output /tmp/graduation-full.xlsx --truth /tmp/graduation-full-truth.json
           python tools/graduation-synthetic/evaluate_full_project_holdout.py --source /tmp/graduation-full --output /tmp/graduation-full-evaluation.json
           python tools/graduation-synthetic/build_evidence_report.py --source /tmp/graduation-full --benchmark /tmp/graduation-full-evaluation.json --output /tmp/graduation-evidence.html
+          python tools/graduation-synthetic/prepare_training_seed.py --source /tmp/graduation-full --output /tmp/graduation-train-seed.json
+          test -s /tmp/graduation-train-seed.json
           test -s /tmp/graduation-evidence.html
           test -s /tmp/graduation-full.xlsx
           test -s /tmp/graduation-full-truth.json
