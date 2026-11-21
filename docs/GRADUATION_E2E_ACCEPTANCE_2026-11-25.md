@@ -61,3 +61,13 @@ Invoke-Item .\graduation-v2-evidence.html
 4. 用真實來源標單校準多類別工項、不同工程規模、數量與單價的分布。正式真實精度和合成模型對照報告分開呈現。
 
 安全禁則：不能用假資料冒充已決標工程；不能將本合成 CSV 宣稱為公開工程資料；不得將完整使用者/企業來源資料或連線密碼提交 GitHub。
+
+
+## 六、2026-11-21 新增隔離環境實作（仍待 Windows 驗證）
+
+- `tools/graduation-synthetic/compose.graduation-db.yaml`：獨立 PostgreSQL 17，僅綁定 `127.0.0.1:55432`，DB 名稱 `bidding2a_graduation`，本機密碼來自 `GRADUATION_DB_PASSWORD`。
+- `tools/graduation-synthetic/prepare_training_seed.py`：以 manifest SHA-256 驗證同源 3 CSV，僅轉換 `train` 建案、全部標單工項及對應交易成 JSON；`validation/test` 不進歷史 DB。
+- `tools/graduation-synthetic/GraduationSeed/`：獨立 .NET 10 EF Core 匯入程式，僅允許本機 `bidding2a_graduation`，首次執行時 `EnsureCreated` 建表、確認 DB 無資料，以單一交易寫入材料分類、單位類別、材料主檔、既有受控偵錯細項、模擬估算設定、歷史建案、完整 `FinalBidItem` 與有 FK 對應的 `HistoricalTransaction`；再次執行遇到已有資料直接拒絕。使用 `SYNTHETIC` 前綴，僅在此隔離測試庫將歷史狀態設為 Approved。
+- `tools/graduation-synthetic/build_evidence_report.py`：無外部依賴的 HTML 圖形輸出，含各大項筆數、RC/SC 結構分布、P50 MAPE 與 P15-P85 涵蓋率、來源限制。
+- **驗證界線：上述程式已提交，尚未在使用者 Windows 上執行新增單元測試、dotnet build、Docker postgres 初始化與 AnalysisCase API E2E；不得寫為 PASS。**
+- `EnsureCreated` 僅限拋棄式 demo DB，不能替代正式 Migration；資料不自動進 Supabase，且目前數量偵錯政策依然只有結構體工程鋼筋/混凝土兩項。應以測試項目逐步確認，再決定是否擴充其他工程大項的正式估算模型。
