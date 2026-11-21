@@ -1,3 +1,12 @@
+## 最新證據補記（2026-11-21）：Windows 工作區修復驗證
+
+- 開發基線 a27f850d；桌面 HEAD dadc7aa，最後審查紀錄仍衝突。獨立 clone 的修復 commit ab32e344ef76f67e8c0134f0592ba5b74f136a1f，不等同桌面已提交或 GitHub 已有該修復 commit。
+- 本輪直接執行：Windows API Release build、WorkbookParserTests、Python 3/3、兩個 Node syntax checks 均 PASS。前端標準 build 在 config loader 被 OS 目錄權限擋住；沿用整合副本 node_modules，指定 --configLoader native 後 vue-tsc/Vite PASS。非乾淨 npm ci 證據；保留 CS8604 與 MSB3277 警告。
+- HTTP 實測：5263 case15 GET=200、currentVersionId=15；相同版本 quantity-scope GET=404。Docker checker 因 named-pipe 權限失敗，6/6 未完成。全程零 DB 寫入；不是實際工程或模型 accuracy 證據。
+- 詳見 CURRENT_HANDOFF 頂部最新狀態；下一驗證仍為使用者權限下啟動新版 5263 並跑 6/6。
+
+---
+
 # 2A 研究證據、版本回溯與實驗追蹤（2026-11-11）
 
 > 目的：新對話不靠模糊記憶，而能用**檔案、命令、Git commit、數據來源、驗證狀態**追回每一步。真實工程的準確率與模擬結果分開報告。

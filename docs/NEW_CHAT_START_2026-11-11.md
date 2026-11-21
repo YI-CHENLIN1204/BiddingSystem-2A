@@ -1,3 +1,11 @@
+## 優先讀取：2026-11-21 最新接手任務
+
+先讀 CURRENT_HANDOFF 頂部 Windows 工作區驗證記錄。GitHub feature 基線 a27f850d，桌面 integration/src-closure 仍在最後 HANDOFF_CHANGE_REVIEWS.jsonl 衝突；獨立 clone recovery commit ab32e344ef76f67e8c0134f0592ba5b74f136a1f 已完成合併，但未修復桌面原工作樹。
+
+Windows 後端/Parser/Python 3/3 與 native config loader 前端 build 已實測通過。5263 case15 GET=200、新 quantity-scope GET=404；Docker checker 受 named-pipe 權限限制，6/6 未完成。下一步只需在使用者環境完成最後 cherry-pick，原隔離 DB 連線重啟新版 5263，再做唯讀 6/6。不得重 seed、重傳 V1、重算舊 Run、發布 smoke，勿重做已完成的生成器工作。
+
+---
+
 # 2A 新對話接手提示（2026-11-11）
 
 > 直接將下面的「交接提示」整段複製到新的 ChatGPT 對話。專案的真正長期紀錄在 GitHub docs，而不是此段文字。**不要只憑提示詞猜測程式內容。**

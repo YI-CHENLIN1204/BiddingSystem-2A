@@ -1,3 +1,12 @@
+## 2026-11-21 — 直接開啟工作區副本、完成衝突修復與 Windows 驗證
+
+- 從使用者本機 repo 建立可寫獨立 clone，保留桌面原工作樹及未追蹤測試檔；在 recovery 分支重現並解決最後 a27f850d 審查紀錄衝突，commit ab32e344ef76f67e8c0134f0592ba5b74f136a1f 僅存在此 clone。
+- Windows API build、Parser、Python 3/3、Node 語法通過；前端標準 Vite config loader 權限失敗，指定 native loader 後 build 通過。未改套件、CI、模型或資料庫；CS8604、MSB3277 仍存在。
+- checker 因 Docker named-pipe 權限失敗；直接讀 case15 HTTP 200，但新版 quantity-scope HTTP 404。已記錄真實阻塞，未把工作區成功說成桌面 cherry-pick／舊 API 重啟或 6/6 成功。
+- 同步 CURRENT_HANDOFF、RESEARCH_TRACEABILITY、新對話入口與本日誌，新增審查 JSONL；main 的 AI_HANDOFF 索引另行更新，不合併開發程式。
+
+---
+
 # 2A 開發紀錄
 
 ## 2026-10-12 — 正式建立待偵錯／歷史資料分流

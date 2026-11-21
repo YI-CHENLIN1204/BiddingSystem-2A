@@ -1,3 +1,16 @@
+## 最新接手狀態（2026-11-21）：工作區修復與 Windows 驗證
+
+- GitHub 開發基線為 `a27f850d356aa46b0f201dc2e672af3341e9014c`。桌面 `integration/src-closure` HEAD 為 `dadc7aa31920638c3a151eca9da67d684263ea73`，仍停在最後一筆 `a27f850d` 的 `docs/HANDOFF_CHANGE_REVIEWS.jsonl` 衝突；不得把遠端提交或工作區修復說成桌面原工作樹已修復。
+- 已在可寫工作區建立獨立 clone，分支 `integration/src-closure-recovery` 重現並完成上述 cherry-pick，修復 commit `ab32e344ef76f67e8c0134f0592ba5b74f136a1f`（僅該 clone 的本機 commit）。完整保留雙方 19 筆 JSON 紀錄，無重複 change_id；工作樹無衝突。逐檔比對 `崴正/`、`tests/`、`scripts/`、`tools/`、`frontend/src/` 與 GitHub a27f850d 無差異。整合副本保留自己的前端 package/package-lock 版本，不冒稱與 feature 依賴鎖檔相同。
+- **本輪 Windows 實測 PASS**：.NET SDK 10.0.301，使用現有離線 NuGet 快取還原後，API Release build 0 errors；`dotnet run --project tests/WorkbookParserTests/WorkbookParserTests.csproj -c Release --no-restore` 全部檢查通過，含 case15 15 列、4 筆材料相關排除、38,000kg／3,650m³、價格 29,268,000；Python 3.12 `python -m unittest discover -s tools/graduation-synthetic -p 'test_*.py' -v` **3/3 PASS**，CP950 子程序回歸已在本輪 Windows 驗證；兩個 Node 唯讀工具 `node --check` PASS。
+- 前端沿用桌面整合副本已安裝的 node_modules（未執行 npm ci）：標準 build 的 vue-tsc 已通過，但 Vite 預設 esbuild config loader 因本執行環境無權枚舉上層目錄而失敗；改以 `npm.cmd run build --prefix frontend -- --configLoader native` **PASS**（vue-tsc + Vite 7.3.8，66 modules）。這是此次工作區的啟動參數，不修改正式 Vite 設定、套件或 CI。
+- **現存警告**：`TenderImportInspectionService.cs:135 CS8604`；Parser 測試建置另有 EFCore.Relational 10.0.4/10.0.5 的 MSB3277。測試雖通過，不能隱藏警告或宣稱已消除。
+- **實測阻塞／未驗收**：`node scripts/verify-ui-state.mjs --case-id 15` 在 Docker named pipe 回 `permission denied`，Docker config 亦不可讀；未完成任何 DB 身分或 6/6 檢查。獨立 HTTP GET `/api/analysis-cases/15` 為 **200**，取得 currentVersionId=15；GET `/api/analysis-cases/15/versions/15/quantity-scope` 為 **404**。因此現有 5263 尚未提供新版端點；不得寫新版 UI/6/6 已 PASS，也不能僅由 404 斷言具體原因。
+- **下一步**：在有桌面寫權及 Docker 權限的使用者環境完成最後 cherry-pick，停止原 5263，使用原已確認的 55433 隔離連線重啟新版 API；先確認 quantity-scope HTTP 200，再重跑永久唯讀 checker 6/6。不要重 seed、重傳 V1、重跑既存 Run 或發布 smoke 為歷史。決標／稽核／準確度仍未完成。
+- 本輪只更新交接證據，沒有改演算法、API 實作、DB schema、Migration、既有 DB 或 CI；未將開發程式合併 main。
+
+---
+
 # 崴正營造 2A｜完整開發交接主檔（2026-11-11）
 
 > **此文件是新對話的 CURRENT SOURCE OF TRUTH（目前狀態入口）**。歷史 docs/HANDOFF.md、docs/NEXT_CHAT_HANDOFF.md 的 2026-10-15 快照是歷史紀錄，**不可蓋過本檔**。
