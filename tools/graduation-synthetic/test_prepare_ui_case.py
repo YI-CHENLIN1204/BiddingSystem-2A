@@ -2,6 +2,7 @@
 import csv
 import hashlib
 import json
+import os
 import tempfile
 import unittest
 from pathlib import Path
@@ -112,6 +113,11 @@ class PrepareUiCaseTests(unittest.TestCase):
             output = folder / "smoke-src.xlsx"
             truth = folder / "smoke-src.json"
             script = Path(__file__).with_name("prepare_ui_case.py")
+            # Windows console Python may encode subprocess stdout with cp950.
+            # Always align the CHILD stdout encoding with the UTF-8 reader;
+            # text=True/encoding= only sets the PARENT decoder.
+            child_env = os.environ.copy()
+            child_env["PYTHONIOENCODING"] = "utf-8"
             completed = subprocess.run(
                 [sys.executable, str(script), "--output", str(output),
                  "--truth", str(truth), "--structure", "SRC"],
@@ -119,6 +125,7 @@ class PrepareUiCaseTests(unittest.TestCase):
                 capture_output=True,
                 text=True,
                 encoding="utf-8",
+                env=child_env,
                 check=True,
             )
             payload = json.loads(completed.stdout)
