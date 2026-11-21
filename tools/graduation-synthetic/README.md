@@ -172,3 +172,51 @@ python tools/graduation-synthetic/evaluate_full_project_holdout.py --source .\gr
 - v2 暫以住宅 RC/SC 為範圍，不把商辦、廠房混入未校準的住宅模板；住宅內部建案條件與工項內容已有差異，但**尚不涵蓋所有建案類型**。
 - 雖然輸出含廣泛工程類別，但正式 C# 數量異常模型只對受控的可估算偵錯細項判定。**標單完整明細≠所有類別都已具有效估算模型**。
 - `SYN-WORK-*`、`SYN-REBAR` 等是合成材料代碼，不是系統正式 MaterialMaster 外鍵；禁止在產學合作正式 DB 匯入，須先做隔離畢專 DB 和主檔映射。
+
+
+## v2.1：獨立畢專資料庫與圖形證據（不可連產學正式 DB）
+
+**三個重要輸出：** A) `graduation-data-v2` 全部建案與同源歷史資料，B) test-only `graduation-v2-project.xlsx` 待估算標單，C) 可列印的 `graduation-v2-evidence.html` 圖形報告。模型數字都是合成資料離線代理回測。
+
+### 階段 A：先驗證檔案，不連 DB
+
+```powershell
+git fetch origin main
+git restore --source=origin/main --worktree -- tools/graduation-synthetic
+python -m unittest discover -s tools/graduation-synthetic -p "test_*.py" -v
+python tools/graduation-synthetic/generate_full_project_dataset.py --count 300 --seed 20261119 --output .\graduation-data-v2
+python tools/graduation-synthetic/export_full_project_excel.py --source .\graduation-data-v2 --output .\graduation-v2-project.xlsx --truth .\graduation-v2-project-truth.json
+python tools/graduation-synthetic/evaluate_full_project_holdout.py --source .\graduation-data-v2 --output .\graduation-v2-holdout.json --top-k 8 --min-sample 5
+python tools/graduation-synthetic/build_evidence_report.py --source .\graduation-data-v2 --benchmark .\graduation-v2-holdout.json --output .\graduation-v2-evidence.html
+python tools/graduation-synthetic/prepare_training_seed.py --source .\graduation-data-v2 --output .\graduation-v2-train-seed.json
+Invoke-Item .\graduation-v2-evidence.html
+```
+
+所有檔案均不覆寫。若已建立，**保留既有結果並更換新的檔名**；若 v2 資料先前由舊版本產生，應用全新 `graduation-data-v2b`，並修改後續 `--source`。
+
+### 階段 B：本機隔離 PostgreSQL（需 Docker 與 .NET 10）
+
+**本工具尚未通過 Windows 實測與 C# 編譯；先完成階段 A 後再進行。** 以 PowerShell 在專案根目錄操作：
+
+```powershell
+$env:GRADUATION_DB_PASSWORD = "<請設定僅供本機使用的強密碼>"
+docker compose -f tools/graduation-synthetic/compose.graduation-db.yaml up -d
+docker compose -f tools/graduation-synthetic/compose.graduation-db.yaml ps
+
+$env:GRADUATION_DB_CONNECTION = "Host=127.0.0.1;Port=55432;Database=bidding2a_graduation;Username=graduation;Password=$env:GRADUATION_DB_PASSWORD"
+dotnet run --project .\tools\graduation-synthetic\GraduationSeed\GraduationSeed.csproj -- --seed-json .\graduation-v2-train-seed.json
+```
+
+`GraduationSeed` 僅允許本機 `127.0.0.1:55432`（或 localhost）、資料庫 `bidding2a_graduation`、帳號 `graduation`；會用 EF `EnsureCreated` 初始化**全新空白**畢專 DB，任何已有資料的 DB 都拒絕種入。匯入 train-only 的 `ProjectMaster`、`MaterialMaster`、`UnitMaster`、`FinalBidItem`、`HistoricalTransaction`、偵錯細項對應與測試估算參數。其 `HistoryStatus=Approved` 僅用於**隔離合成測試環境**，不適用實務審核；`EnsureCreated` 亦不能取代正式 Migration。
+
+**安全與回滾：** 禁止把 `GRADUATION_DB_CONNECTION` 指向 Supabase；DB 以獨立容器/Volume 運作，C# 端再次檢查資料庫名稱、host、port、username；不會修改既有 `compose.yaml`、`ConnectionStrings__DefaultConnection` 或企業 DB。若要重建，只在使用者明確確認後處理畢專專用 volume，不會自動執行 `down -v`。
+
+### 階段 C：正式系統 API（尚未驗收）
+
+以 **`ConnectionStrings__DefaultConnection=$env:GRADUATION_DB_CONNECTION`** 啟動本機 ASP.NET 後端，並以 `AnalysisCaseController` 的 `POST /api/analysis-case/from-upload` 上傳 test-only 的 `graduation-v2-project.xlsx`。必要參數包含建案類型、結構、縣市、總樓地板面積、基地面積、地上地下樓層、日期及手動選擇的工作表。比對回傳的估算和 `graduation-v2-project-truth.json`。
+
+目前正式數量偵錯政策僅支援「結構體工程／鋼筋、混凝土」；其他工程工項可進歷史與完整明細供解析與未來擴充，但**不可宣稱已能正式預測每個工程類別的合理用量**。
+
+**驗收順序：** unittest → v2 資料生成 → train-only seed → PostgreSQL 匯入 → test Excel 上傳 → 正式 API P15/P50/P85 → 圖表/回測。每個檢查點必須留下實際執行結果；沒有結果就保持「未驗證」。
+
+> 精準度和可信度：任何帶有 `SYNTHETIC` 標籤的 MAPE 與涵蓋率都只能證明模型在**受控合成條件**下的表現，不能作為真實工程預測能力的外部驗證。
