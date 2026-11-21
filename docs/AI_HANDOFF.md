@@ -912,3 +912,9 @@ npm run build
 - 下個驗證：以使用者權限完成桌面最後提交、同一已核實 55433 隔離連線重啟新版 5263；確認新 GET 200 後跑永久 checker 6/6。DB、Migration、既存 Run、Approved history、演算法皆未改動。決標/稽核/實際模型準確度仍未完成。
 
 - **本輪 CI 最終核實**：永久 `2A Build Validation` run `44921528280`（head `97e582cb971cb60f71ae1ca7b9b44556df426dd7`）已 `completed/success`。`backend-build`、`frontend-build`、`synthetic-fixture-contracts` 三個 Jobs 全數通過，含 Linux 乾淨 `npm ci` + 標準 `npm run build`；沒有新增 Workflow。此 CI 不改變桌面原工作樹衝突、5263 新端點 404 或本輪 Docker 權限阻塞，6/6 仍未完成。
+
+
+### 2026-11-21 — 組員報告版本分支指定及雙 README 公告
+- 根據 GitHub 現況：Repository 已 Public，default `main`，但 PR #2 `feature/1d-api-integration → main` 仍 Open／未合併；先前比較顯示兩者明顯分岔（feature 比 main ahead 673 / behind 210 commits）。組員要根據目前 2A 程式碼撰寫專題報告，**指定共享的 `feature/1d-api-integration` 分支**，不是現階段尚未整合最新功能的預設 main。此為「報告閱讀／開發分支」而非已釋出的 production release；正式報告應記錄固定 Commit SHA。
+- 已**實際修改並提交** `main/README.md`（commit `c159f85669d4e98504764312a3fbcb5219e5b9a8`）、`feature/1d-api-integration/README.md`（commit `42eac3eeeb668f6c5c531167e6a2955025fc982d`）的最上方醒目提醒與分支超連結。 `main` 原 README 中「此專案維持 Private」與 GitHub 現況衝突，已改為公開風險注意事項。feature `docs/CURRENT_HANDOFF_2026-11-11.md` 另行同步記錄。
+- 本輪是分支導覽／文件決策，**沒有**合併主程式碼、動過資料庫或新增 CI；未做新的 Windows/E2E 驗證。 `course-version.zip` 和完整歷史對外公開安全性仍未核准，須與合作方確認授權；GitHub Public 狀態非本輪修改。
