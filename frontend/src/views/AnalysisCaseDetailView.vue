@@ -829,6 +829,11 @@ onMounted(loadCase)
 .action-controls label span { display: block; margin-bottom: 5px; color: var(--muted); font-size: 11px; font-weight: 700; }
 .action-controls .btn, .action-controls .form-control, .action-controls .form-select { min-height: 44px; width: 100%; }
 .action-controls .btn { display: flex; align-items: center; justify-content: center; padding: 9px 14px; line-height: 1.35; white-space: normal; text-align: center; }
+.table-wrap { max-width: 100%; overflow-x: auto; }
+.table-wrap table { min-width: 1100px; width: 100%; table-layout: auto; }
+.table-wrap th, .table-wrap td { white-space: normal; overflow-wrap: anywhere; vertical-align: top; }
+.table-wrap td.item-name { min-width: 290px; max-width: 480px; line-height: 1.5; }
+.table-wrap td.number { white-space: nowrap; }
 .item-name { font-weight: 700; }
 .number { text-align: right; font-variant-numeric: tabular-nums; }
 .major-tag { display: inline-block; padding: 4px 7px; color: #34425d; background: #eef1f5; border-radius: 5px; font-size: 12px; font-weight: 700; }
