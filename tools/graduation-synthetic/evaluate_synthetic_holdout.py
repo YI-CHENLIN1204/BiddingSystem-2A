@@ -115,20 +115,45 @@ def evaluate(source, top_k=8, min_sample=5, half_life_years=3.0):
         if n == 0:
             summary[method] = {"n": 0, "status": "INSUFFICIENT_DATA"}
             continue
-        # Proper 70% central prediction interval score (lower is better).
-        alpha = 0.30
-        interval_score = lambda r: (r["upper"] - r["lower"]) + (
-            (2 / alpha) * (r["lower"] - r["actual_usage_per_area"]) if r["actual_usage_per_area"] < r["lower"] else 0
-        ) + (
-            (2 / alpha) * (r["actual_usage_per_area"] - r["upper"]) if r["actual_usage_per_area"] > r["upper"] else 0
-        )
+        # Metrics with physical units must be reported per material, never averaged
+        # across kg/m2 and m3/m2 as if they had the same units.
+        groups = defaultdict(list)
+        for row in subset:
+            groups[row["material_code"]].append(row)
+        def measures(data):
+            count = len(data)
+            alpha = 0.30
+            def interval_score(row):
+                score = row["upper"] - row["lower"]
+                if row["actual_usage_per_area"] < row["lower"]:
+                    score += (2 / alpha) * (row["lower"] - row["actual_usage_per_area"])
+                elif row["actual_usage_per_area"] > row["upper"]:
+                    score += (2 / alpha) * (row["actual_usage_per_area"] - row["upper"])
+                return score
+            return {
+                "n": count,
+                "median_absolute_error_in_material_unit_per_m2":
+                    round(sum(abs(x["median"] - x["actual_usage_per_area"]) for x in data)/count, 6),
+                "mean_absolute_percentage_error_percent":
+                    round(sum(abs(x["median"] - x["actual_usage_per_area"]) /
+                              x["actual_usage_per_area"] for x in data)/count*100, 3),
+                "p15_p85_coverage_percent":
+                    round(sum(x["lower"] <= x["actual_usage_per_area"] <= x["upper"]
+                              for x in data)/count*100, 2),
+                "avg_interval_width_in_material_unit_per_m2":
+                    round(sum(x["upper"]-x["lower"] for x in data)/count, 6),
+                "interval_score_in_material_unit_per_m2":
+                    round(sum(interval_score(x) for x in data)/count, 6)
+            }
         summary[method] = {
             "n": n,
-            "median_absolute_error_unit_per_m2": round(sum(abs(x["median"]-x["actual_usage_per_area"]) for x in subset)/n, 6),
-            "median_absolute_percentage_error_percent": round(sum(abs(x["median"]-x["actual_usage_per_area"]) / x["actual_usage_per_area"] for x in subset)/n*100, 3),
-            "p15_p85_coverage_percent": round(sum(x["lower"] <= x["actual_usage_per_area"] <= x["upper"] for x in subset)/n*100, 2),
-            "avg_interval_width_unit_per_m2": round(sum(x["upper"]-x["lower"] for x in subset)/n, 6),
-            "interval_score_unit_per_m2": round(sum(interval_score(x) for x in subset)/n, 6)
+            "mean_absolute_percentage_error_percent":
+                round(sum(abs(x["median"]-x["actual_usage_per_area"]) /
+                          x["actual_usage_per_area"] for x in subset)/n*100, 3),
+            "p15_p85_coverage_percent":
+                round(sum(x["lower"] <= x["actual_usage_per_area"] <= x["upper"]
+                          for x in subset)/n*100, 2),
+            "per_material": {key: measures(group) for key, group in sorted(groups.items())}
         }
     return {
         "data_origin": "SYNTHETIC", "benchmark_kind": "OFFLINE_PROXY_NOT_API",
