@@ -154,9 +154,42 @@ def enrich_project(project, rng):
     return project
 
 
-def generate_full(count, seed, include_src=False):
+# Deliberate edge cases for independent robustness validation, not realistic engineering norms.
+# Allocate the same scenario families across train, validation and test; never
+# re-label a held-out project as training data.
+EXTREME_CASES = (
+    ("tiny_lowrise", "SRC", 3, 0, 1200.0, 550.0, "臺中市", None),
+    ("large_highrise", "RC", 55, 5, 85000.0, 10000.0, "桃園市", None),
+    ("deep_basement", "SC", 13, 7, 24000.0, 4700.0, "高雄市", None),
+    ("constrained_site", "SRC", 25, 3, 32000.0, 620.0, "臺南市", None),
+    ("wide_lowrise", "RC", 4, 0, 9000.0, 19000.0, "臺中市", None),
+    ("older_remote_city", "SC", 11, 2, 15000.0, 2500.0, "花蓮縣", "2006-06-15"),
+)
+
+
+def apply_extreme_projects(projects):
+    by_split = defaultdict(list)
+    for project in projects:
+        by_split[project["split"]].append(project)
+    if any(len(by_split[split]) < len(EXTREME_CASES) for split in ("train", "validation", "test")):
+        raise ValueError("include_extremes requires at least six projects in each split (try --count 120)")
+    for split in ("train", "validation", "test"):
+        for project, scenario in zip(by_split[split], EXTREME_CASES):
+            name, structure, floors, basements, area, site, city, start_date = scenario
+            project.update(structure_type=structure, floor_count=floors,
+                           basement_floor_count=basements, total_floor_area=f"{area:.2f}",
+                           city=city, extreme_scenario=name)
+            if start_date:
+                project["start_date"] = start_date
+            project["extreme_site_area"] = site
+    return projects
+
+
+def generate_full(count, seed, include_src=False, include_extremes=False):
     if not 20 <= count <= 10000:
         raise ValueError("count must be between 20 and 10000")
+    if include_extremes and not include_src:
+        raise ValueError("include_extremes requires include_src")
     projects, _ = make_projects(count, seed)
     if include_src:
         # Opt-in and deterministic: preserve all existing RC/SC v2 fixtures.
@@ -164,8 +197,14 @@ def generate_full(count, seed, include_src=False):
         for index, project in enumerate(projects):
             if index % 3 == 2:
                 project["structure_type"] = "SRC"
+    if include_extremes:
+        projects = apply_extreme_projects(projects)
     rng = random.Random(seed + 24791)
     projects = [enrich_project(p, rng) for p in projects]
+    if include_extremes:
+        for project in projects:
+            if "extreme_site_area" in project:
+                project["site_area"] = f'{project.pop("extreme_site_area"):.2f}'
     history, detail = [], []
     for project in projects:
         pid = project["synthetic_project_id"]
@@ -179,7 +218,8 @@ def generate_full(count, seed, include_src=False):
         # Different buildings have different line counts, material families,
         # work scopes, locations and drawings. Do not repeat all 42 blindly.
         for template_index, (code, item_name, unit, category, coeff) in enumerate(templates):
-            take_probability = .94 if code in ("SYN-REBAR", "SYN-CONCRETE", "SYN-STEEL") else .82
+            take_probability = (1.0 if include_src and code in ("SYN-REBAR", "SYN-CONCRETE", "SYN-STEEL")
+                                else .94 if code in ("SYN-REBAR", "SYN-CONCRETE", "SYN-STEEL") else .82)
             if project_rng.random() > take_probability:
                 continue
             repeats = (project_rng.randint(1, 3) if unit in ("式", "座", "點") else
@@ -249,13 +289,21 @@ def main(argv=None):
     parser.add_argument("--seed", type=int, default=20261119)
     parser.add_argument("--include-src", action="store_true",
                         help="opt-in experimental SRC fixtures; use NEW output directory")
+    parser.add_argument("--include-extremes", action="store_true",
+                        help="opt-in 6 tagged edge cases per train/validation/test split; requires --include-src")
     parser.add_argument("--output", type=Path, required=True)
     args = parser.parse_args(argv)
     if args.output.exists() and any(args.output.iterdir()):
         parser.error("output directory must be empty (refusing overwrite)")
-    projects, histories, lines = generate_full(args.count, args.seed, include_src=args.include_src)
+    try:
+        projects, histories, lines = generate_full(args.count, args.seed,
+            include_src=args.include_src, include_extremes=args.include_extremes)
+    except ValueError as exc:
+        parser.error(str(exc))
     args.output.mkdir(parents=True, exist_ok=True)
     extended = PROJECT_FIELDS + ["site_area", "facade_system", "finish_level", "foundation_system", "site_condition"]
+    if args.include_extremes:
+        extended.append("extreme_scenario")
     output = [("projects.csv", extended, projects),
               ("historical_transactions.csv", HISTORY_FIELDS, histories),
               ("project_boq_rows.csv", BOQ_FIELDS, lines)]
@@ -271,12 +319,16 @@ def main(argv=None):
         "boq_line_count": len(lines), "files_sha256": digests,
         "distinct_material_codes": len(catalog),
         "experimental_src_enabled": args.include_src,
+        "extreme_cases_enabled": args.include_extremes,
+        "extreme_scenario_counts": dict(Counter(p.get("extreme_scenario", "") for p in projects if p.get("extreme_scenario"))),
+        "extreme_cases_per_split": dict(Counter(p["split"] for p in projects if p.get("extreme_scenario"))),
         "structure_type_counts": dict(Counter(p["structure_type"] for p in projects)),
         "min_lines_per_project": min(counts.values()),
         "max_lines_per_project": max(counts.values()),
         "limitations": [
             "Quantities, design choices, prices and site conditions are synthetic, NOT measured construction facts.",
             "SRC templates are research-only: no automatic production scope/traffic-light expansion.",
+            "Extreme cases are deliberate synthetic stress tests, NOT plausible benchmark estimates; their flags must not leak into model features.",
             "All historical rows correspond 1:1 to project_boq_rows.csv, but they are not real executed transactions.",
             "Template collection is illustrative, not an exhaustive BOQ; no actual supplier quotations.",
             "Do not report synthetic model errors as real-world engineering accuracy.",
