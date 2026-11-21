@@ -822,3 +822,9 @@ npm run build
 - 修改 `.github/workflows/graduation-ui-build.yml` commits `4f16e3738d4dabaea57dcb94263668cabb09ee3d`、`5e69dda39ea79f205c4ac0697cd98f8b9ca54cbe`：Node22 `node --check` 兩個 script、Python `py_compile` fixture generator、Vue `npm ci && npm run build`；GitHub run 44913149083 已 `completed/success`（檢查 Node state script 和 Vue build），較新 run 44913252777 提交當時 `in_progress`，需後續查證。
 - 實測界線：新增 DB identity/readback 工具與 fixture script **已提交 GitHub、尚未在使用者 Windows 執行**，不能宣稱 DB 4/4 PASS 或 UI 業務流程通過。沒有更改 DB／Migration／估算算法／歷史資料；目前仍僅正式支援鋼筋／混凝土量和結構體大項價格，鋼骨／模板／土方未開正式異常燈。
 - 下一驗收：在既有 `integration/src-closure` 保留 untracked JSON 與 Python 腳本；先 cherry-pick 上述5個 commits，執行 `node scripts/verify-ui-state.mjs`，只有 DB 強對照成功後再生成新 Excel；`node scripts/verify-ui-preflight.mjs --excel <新檔>` 先跑 preview/inspect，最後用瀏覽器 UI 自行上傳並產生 Run、刷新再查證；決標發布僅在另外備份且可回滾的隔離測試資料庫執行，禁止將 test holdout 寫入 Approved 歷史。
+
+
+### 2026-11-21 — 新版 DB 身分比對／UI 測試資料準備器之 GitHub CI PASS
+- GitHub Actions `Graduation UI build and preflight syntax` run `44913252777`，head `5e69dda39ea79f205c4ac0697cd98f8b9ca54cbe`；實際 API 確認 `status=completed`，`conclusion=success`。
+- Job `frontend-build`：兩個 Node 檢查腳本 `node --check`、`prepare_ui_case.py` Python `py_compile`、Node22 `npm ci`、Vue `npm run build` **全數 PASS**。
+- 此 CI 不具備使用者本機 Docker 55433／API 5263，僅屬靜態語法和前端建置驗證。兩支新工具的實際 DB 比對、合成 Excel 產出及透過 UI 操作仍 **NOT RUN**。
