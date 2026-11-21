@@ -786,3 +786,11 @@ npm run build
 - DB/API/權限/Migration：無變更。歷史發布仍經既有 `/projects/{projectId}/publish-history` 路徑和後端審核；沒有替使用者自動發布或修改正式歷史庫。
 - 驗證：GitHub 檔案提交與後續來源查核成功；**仍未完成前端編譯、實際 UI 跳轉、API E2E、決標持久化／刷新、權限與稽核測試**，絕不可記為已通過。
 - 下一個必要驗證：在使用者 integration worktree 安全取回上述改動，對實際 5174→5263→55433 執行新合成案例瀏覽器流程；檢查刷新後同一 projectId 的 Mapping Summary、2A Summary、Items 與發布狀態確實一致，再做畢專估算／異常及最後準確度比對。
+
+
+### 2026-11-21 — 五個 UI 修正已 cherry-pick 到整合工作樹，Vue 建置實測 PASS
+- 使用者本機 `C:\\Users\\User\\Desktop\\BiddingSystem-2A-integration`，分支 `integration/src-closure`，依序 cherry-pick `347ef496` → `b8af4e3`、`b5edaff4` → `0b2aab9`、`96a894da` → `e19114b`、`82285b83` → `2917596`、`f3d14398` → `9caa06c`，**五筆全部成功、沒有 merge conflict**。
+- 修正後前端實測 `npm.cmd run build`：`vue-tsc --noEmit && vite build`，Vite v7.3.8，66 modules transformed，`built in 1.64s`，**PASS**。此前 `npm.cmd ci` 安裝 49 packages、稽核 50 packages、`found 0 vulnerabilities`，**PASS**。PowerShell 的 `npm.ps1` 執行限制以 `npm.cmd` 排除，並非程式碼問題。
+- `git status -sb` 執行時有四個未追蹤檔：`compare_src_sensitivity.py`、`src-batch-api-audit.json`、`src-sensitivity-comparison.json`、`src_batch_audit.py`；不得清除或覆蓋。其後未再次執行 status。
+- 驗證界線：**只驗證整合分支的前端建置與成功 cherry-pick**；瀏覽器 UI/5174 proxy 5263/55433、Excel 上傳、分析保存、決標發布與重新整理持久化、權限及稽核 E2E **尚未執行**；不能以此記為系統交付 PASS。
+- 下一驗證：先在同一 PowerShell 明確設定 `VITE_API_PROXY_TARGET=http://127.0.0.1:5263`，避免 Vite 預設 5261；確認實際 5263 API 與隔離 55433 DB 正常，再啟動 `npm.cmd run dev`，使用**新建、獨立且標示 SYNTHETIC 的測試案件**進行 UI 上傳、數量／價格分析與草稿回寫／覆核／發布；不要重跑原 13 案或重新 seed。
