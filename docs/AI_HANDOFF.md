@@ -1,3 +1,17 @@
+## 2026-11-22 最新：鋼骨、模板、土方已接入歷史估算
+
+本節優先於下方第一批候選狀態。最新程式：[19a4c508](https://github.com/YI-CHENLIN1204/BiddingSystem-2A/commit/19a4c5086958d0f9aae0890a6d0bcb1aa6bc1c4c)，`feature/1d-api-integration`；**main 這次只更新交接索引及審查，不合併功能程式，也不代表原本執行中的 UI 已更新。**
+
+- 鋼骨限 SC／SRC 且分開比較；模板同用途／同結構／同標準材料；土方另限相同且大於零的地下層數。鋼骨／模板按樓地板面積歷史比例、土方按基地面積比例概算，仍須人工核對設計與工法。
+- 新 `GET /api/bulk-material-estimates/options`、`POST /api/bulk-material-estimates/range` 及工程估算／案件明細 UI。可選材料、Top K、待比總量、自身歷史建案排除 ID；回傳來源、分位區間、ESS 及排除原因。
+- 原正常回寫只允許鋼筋／混凝土；新大宗唯讀估算直接使用 Approved 已對應決標列，已有歷史交易則交叉核對。明確排除／刪除／離群、重複來源與不完整範圍不會因回退而重新納入。使用 RepeatableRead；無 DB schema／seed／資料寫入、既有 Run 或參數變更。
+- 超出區間只提示人工複核，資料不足不給界限；尚未啟用新正式紅燈。價格未有一致的純材料／加工安裝標記，故不混算大宗單價。
+- **已通過**：API／測試專案 Release 0 warnings / 0 errors；Parser 78 個檢核（新增 36）；前端 vue-tsc/Vite 72 modules；4 種 Npgsql SQL 轉譯；6 個無效 HTTP 請求 400；5 組合成決標來源功能重播（SRC/SC 鋼骨、RC/SRC 模板、SRC 土方，各 8 案）。重播非新服務 DB 整合、非準確度，未重跑獨立 Holdout 或調參。
+- GitHub CI [44933218707](https://github.com/YI-CHENLIN1204/BiddingSystem-2A/actions/runs/44933218707)：completed / success，backend-build、frontend-build、synthetic-fixture-contracts 三項通過。交接審查 23 檔、1 筆新紀錄通過。
+- **尚未測**：新服務實際 DB 整合與 options（此工作程序缺隔離 DB 連線環境）；真正瀏覽器操作（目前無控制工具）。原 Desktop 工作樹、:5263／:5174 未部署本批。前端編譯／來源快照／SQL 轉譯不能當作 UI 全流程驗收。
+- 下一步：先啟動新服務驗 DB 與 UI；維持 **工項擴充 → 真正瀏覽器 UI 驗收 → 集中修正回歸整合 → 最後獨立 Holdout 準確度／演算法比較**。不要重匯合成資料或重跑已完成 SRC smoke／敏感度。
+- [詳細檔案、API、來源、實測與回滾](https://github.com/YI-CHENLIN1204/BiddingSystem-2A/blob/19a4c5086958d0f9aae0890a6d0bcb1aa6bc1c4c/docs/BULK_MATERIAL_ESTIMATION_2026-11-22.md)；同名 JSON 保留實測摘要。識別 `bulk-material-range-20261122`。
+
 ## 2026-11-22 最新：改採四階段收尾，工項擴充第一批已提交
 
 **本節覆蓋下方歷史段落的工作順序。** 使用者最新順序為 **①擴充估算與異常偵錯工項 → ②真正瀏覽器完整 UI 驗收 → ③集中修正／回歸／分支整合 → ④最後獨立 Holdout 準確度與演算法比較**。既有回測只保留為歷史基線，本輪未重跑準確度。
