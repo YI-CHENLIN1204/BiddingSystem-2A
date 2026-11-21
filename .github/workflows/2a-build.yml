@@ -3,11 +3,19 @@ on:
   push:
     branches:
       - feature/1d-api-integration
+  pull_request:
+    branches:
+      - main
+      - feature/1d-api-integration
   workflow_dispatch:
+
+permissions:
+  contents: read
 
 jobs:
   backend-build:
     runs-on: ubuntu-latest
+    timeout-minutes: 15
     steps:
       - uses: actions/checkout@v4
       - uses: actions/setup-dotnet@v4
@@ -20,6 +28,7 @@ jobs:
 
   frontend-build:
     runs-on: ubuntu-latest
+    timeout-minutes: 15
     steps:
       - uses: actions/checkout@v4
       - uses: actions/setup-node@v4
@@ -27,9 +36,24 @@ jobs:
           node-version: '24'
           cache: npm
           cache-dependency-path: frontend/package-lock.json
+      - name: Validate permanent read-only verification scripts
+        run: |
+          node --check scripts/verify-ui-preflight.mjs
+          node --check scripts/verify-ui-state.mjs
       - name: Install dependencies
         working-directory: frontend
         run: npm ci
       - name: Vue type-check and Vite build
         working-directory: frontend
         run: npm run build
+
+  synthetic-fixture-contracts:
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - name: Verify synthetic UI fixture generator is runnable with dependencies
+        run: python -m unittest discover -s tools/graduation-synthetic -p 'test_*.py' -v
