@@ -67,3 +67,12 @@
 - 生成資料與訓練歷史不可混入 test；分析案件只能寫 Target Pipeline。
 - 涉及 DB Schema 變動時先備份、列 Migration 與降級策略，並在隔離庫先驗證。
 - 本文件為**收斂計畫/技術決策**，不表示上述待完成項目已執行。
+
+
+## P0 第一個落地工具：合成 holdout 來源稽核（2026-11-21）
+
+已在 `main` 新增 `tools/graduation-synthetic/audit_holdout_provenance.py` 與 `test_holdout_provenance.py`，用歷史 CSV 的 `synthetic_label` 串接同一 transaction 的 BOQ，在現有 test split 逐建案列出三種評估 scope 中是否有生成器刻意倍率變化，並對既有 3 份 baseline API 結果加上來源警示；完全不重建建案、不重跑 API、不改動 DB。
+
+- 來源唯一有證據的標籤是**已記錄的群組倍率變化**，不是工程正常/異常的正式 ground truth。
+- `noRecordedGeneratorShock` ≠ 工程正常；`readyForFalsePositiveRate` 一律 false。後續若要正式誤報/漏報率，必須先擬定獨立工程情境與正常標記的驗收方法。
+- **狀態**：GitHub 實作已提交、Windows 單元測試與實際 CSV 報告**尚未執行**。下一次驗證點請直接依 `tools/graduation-synthetic/README.md` 執行新 3 tests + 既有 23 tests，再產生 provenance JSON；未通過前不可勾選上方 P0 的最終驗收項目。
