@@ -432,3 +432,23 @@ npm run build
 - **已提交 GitHub；但尚未由用戶 Windows 執行最新 Python unittest、SRC research dataset CLI、C# SimilarityContract build/run、正式 SRC 無參考樣本 API，全部列為 NOT RUN**。只有先前 RC/SC live E2E PASS 仍成立，不能把新 SRC 宣稱為正式經過數量/價格估算驗收。
 - 後續：使用者 feature 工作樹不可全量 reset/merge；僅同步所需 main 腳本/測試及 feature C# 服務與 SimilarityContract 目錄，先做 Python unittest 和 .NET contract。若 PASS，再在**新**`graduation-src-research-v1` 產生 60 案 SRC 合成研究資料，查看 manifest，接著獨立 API 和隔離 DB 無樣本安全性回歸，不改現有庫。RC/SC 正式 API 舊證據應保留。
 - 本批沒有新增任何 `TwoAScopePolicy` 正式候選類別，沒有 C# schema/Migration。修改錯誤可透過以上 commit 還原程式碼，資料庫無回滾需求。
+
+
+### 2026-11-21 — 嚴格模式 SRC+極端條件新隔離研究套件已提交（尚待 Windows 實測）
+- 用戶已明確批准嚴格模式：除現有鋼筋/混凝土以外的候選工項必須經分層留出案例回測及工程適用性審查，**不得因資料中出現或 proxy 回測數字好看就自動啟用紅綠燈**。要求加入 SRC 歷史建案、SRC 待估標單，以及各種極端條件建案；同時測試城市與基地面積相似度。
+- 查證 `main` `generate_full_project_dataset.py` 已有 opt-in `--include-src` 和實驗用三材料 SRC CORE；不可重複宣稱 SRC 從零新增。本輪基於現行代碼增加 opt-in `--include-extremes`，且需同時 `--include-src`，每個 train/validation/test split 依序配置 6 個有標籤極端案例：`tiny_lowrise`、`large_highrise`、`deep_basement`、`constrained_site`、`wide_lowrise`、`older_remote_city`，含 RC/SC/SRC，修改建案結構、總樓地板面積、基地面積、地上地下樓層、縣市及/或日期；保留原始不加旗標時之產出行為。實驗 SRC CORE 材料生成率在 `include_src` 時設為 100%，避免缺鋼筋、鋼骨或混凝土使測試無法覆蓋。**這些極端設定刻意不代表合理營造量。**
+- 本輪已提交到 `main` 的新增/修改程式及路徑：
+  - `tools/graduation-synthetic/generate_full_project_dataset.py` commit `707d9504`：明確 train/validation/test 情境、manifest 計數與 `extreme_scenario` 欄。
+  - `tools/graduation-synthetic/test_full_project_dataset.py` commit `0e3cd82c`：涵蓋 6 種情境各 split、RC/SC/SRC 材料及 deterministic/guard checks。
+  - `tools/graduation-synthetic/prepare_training_seed.py` commit `d0dca773`：`--target-database bidding2a_graduation_src` 僅支援兩個本機白名單 DB 名，保留舊預設。
+  - `tools/graduation-synthetic/GraduationSeed/Program.cs` commit `eaf85ef6`：白名單只接受本機 55432/legacy 庫或 55433/SRC 新庫，檢查種子宣稱 DB 與連線相符，維持不可對非空 DB 重匯／禁止 Supabase。
+  - `tools/graduation-synthetic/compose.graduation-src-db.yaml` commits `95c87f1b`,`d3d91cda`：獨立 project `graduation-src-synthetic`，獨立 volume、Postgres17、只綁 127.0.0.1:55433。
+  - `tools/graduation-synthetic/export_src_holdout_suite.py` commit `dafd1acf`：輸出一個未訓練普通 SRC 和六個 test split 極端案件的 7 份 Excel/真值，不進 train。
+  - `tools/graduation-synthetic/verify_similarity_sensitivity.py` commit `259ee10d`：對實際 ASP.NET `POST /api/major-category-price/range` 同條件切換城市、基地面積，唯讀比對 Top8 參考分數與排序，未有敏感差異時標示 INVESTIGATE，**不是模型準確度測試**。
+  - `tools/graduation-synthetic/audit_candidate_scope.py` commit `52537246`：鋼骨、模板、土方等候選生成研究資料與 preliminary gate，全部 `formal_red_green=false`，不得自動修改 Scope。
+  - `tools/graduation-synthetic/test_src_extended.py` commit `010ca64f`：SRC 新 DB seed split 防洩漏、候選遮罩、7 個 holdout 輸出規格回歸測試。
+  - `tools/graduation-synthetic/README.md` commit `bb318dfb`：從 Python 測試到新版獨立 DB/seed/標單與敏感度驗證流程。
+- **版本風險**：GitHub `main` 的 `ProjectSimilarityService` 與 Model 尚未具備 `SiteAreaWeight` 計算；正在開發的 `feature/1d-api-integration` 中 `ProjectSimilarityService.cs`、`EstimationSetting.cs`、`ProjectSimilarityTargetDto.cs` 具有 `SiteArea` 實作。上列唯讀測試**必須對實際啟動且含該功能的後端執行**。沒有將 feature 整支複製到 main，以免影響主系統 Migration / API 相容性；目前仍有分支整合待辦。城市 `CityWeight` 在兩分支均已存在，完全相同城市加權，其餘城市得 0，不會自動調價。
+- **測試狀態**：已完成 GitHub 實際提交，尚未在使用者 Windows 執行新 Python unit tests、建置修改後 Seed、創建新 SRC DB、匯入新 SRC 訓練案、上傳 SRC/極端標單或跑正式 API；以上皆標記 **NOT RUN**，不得宣稱 PASS。舊 RC/SC 17 tests、210 案 DB 及兩案 E2E 成功仍是之前版本的事實。
+- **資料庫與回滾**：本輪沒有任何 DB/Migration 變更或現場資料寫入；新 DB 先用獨立 Docker project/volume 進行，有問題可停止新 SRC 服務而不影響舊 55432 資料；禁止未經同意刪除任何 volume。所有 credentials 僅置使用者環境變數且不可回貼到對話。
+- 下一驗證點：使用者本機 scoped restore 最新 `tools/graduation-synthetic`、執行 unittest → `--include-src --include-extremes` 在新 `graduation-src-extreme-v3` 輸出 300 案 → 檢查 manifest `structure_type_counts` 與各 split extremes → 匯出新 SRC train-only JSON 及 7 份 test-only Excel → 新 55433 DB 建置/匯入 → 用 feature ASP.NET 服務驗證城市/基地敏感度與 SRC 正式數量/價格 API → 批次留出測試、決定各候選工項是否應繼續研究。先一組集中完成測試，避免小碎步重複 push。
