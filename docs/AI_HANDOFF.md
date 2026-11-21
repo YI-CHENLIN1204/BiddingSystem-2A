@@ -200,3 +200,10 @@ npm run build
 - 不足與風險：只有來源標記 `SYNTHETIC` 的 300 建案／600 筆材料交易，每案兩種核心材料；360 筆標單工項多數仍是額外虛構測試明細，未與相同案的真實歷史價量對齊，不能用它當企業精度真值；缺真實匿名標單與建案屬性時，11/25 只能交付合成資料回測和資料可用性限制。
 - 下一驗證點：在本機同步 `tools/graduation-synthetic`；重跑全部 Python 測試；輸出全新 `graduation-irregular-v05.xlsx` 和 `graduation-synthetic-holdout-v01.json`，檢查生成量與模型指標。取得具有合法用途的真實建案資料後，另外進行獨立真實資料保留樣本回測。
 - 淘汰／未採用：目前正式用量估算仍為相似建案加權分位數；**未將常態分布正式替換進 C# 估算 API**；只有離線合成比較基準，不得宣稱正式系統已改採常態分布或其效能較佳。
+
+
+### 2026-11-21 — 11/25 衝刺補充：全面長欄位與公開範本
+- `feature/1d-api-integration` branch commit `1a34875c`：修改 `frontend/src/views/AnalysisCaseDetailView.vue` 的工項和分析結果表格，設定水平捲動、長欄位折行、項目名稱最小寬度與數字不折行；先前同分支 `c09fea4b` 已修正 `WorkbookSheetPicker.vue`。**兩檔均未合併 main**，前端建置／實際畫面驗證仍未完成。
+- `main` commit `294a532d`：`docs/GRADUATION_DELIVERY_2026-11-25.md` 新增國立中興大學總務處官方 Excel/ODS 工程預算書下載頁、臺中市住宅發展工程處總標單範本。這些是**格式參考資料**，不是已取得的實際工程決標數量資料。
+- 尚未解決：缺實際可核對來源和建案特徵的多案價格／用量資料，不能回報真正的企業精準度；最新 v0.5 Python 測試及實際編譯結果仍尚未取得。
+- 下一步：以 Windows 執行新的 unittest、v0.5 XLSX、離線 holdout 指標，再收集可授權使用且已去識別化的真實詳細標單做外部驗證。
