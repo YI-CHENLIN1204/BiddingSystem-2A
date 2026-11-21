@@ -390,3 +390,11 @@ npm run build
 - 測試狀態：兩個案例的正式 Quantity/MajorPrice API **執行 PASS**，但量價判定是否與合成異常標準答案相符、回測誤差及涵蓋率等 **尚未驗證**。兩個數量觀測值均低於下限，需要評估生成器規則與服務彙整/分類/相似建案參考差異，**不能先推定一定是算法錯誤或真實工程量偏低**。
 - 下一驗證點：以唯讀腳本比對 target `truth.cases` 中鋼筋/混凝土 `expected_quantity` 總量與正式 API 的 observedQuantity，並比對參考歷史 train-only 用量；接續多個 test holdout 才能計算可解釋的回測指標，製作 SYNTHETIC 註記的報告。不要重 seed、不擴充模型、不修改正式 DB 或 migration。
 - 本次只更新交接文件，無程式碼變更。
+
+
+### 2026-11-21 — RC SYN-00029 truth 對正式 API 觀測數量完全一致
+- 使用者由 `graduation-v2-rc-ready-truth.json` 的 `cases` 篩選材料碼 `SYN-REBAR`、`SYN-CONCRETE`，按材料彙整 `expected_quantity`：鋼筋 **4/4 有效列、合計 496658.648 kg**；混凝土 **8/8 有效列、合計 3885.108 m3**。
+- 這與先前正式 API `analysisCaseId=3`、`quantity-analysis` `analysisRunId=5` 的 `observedQuantity` **逐項完全相符，數量差異都是 0**。本次已排除這兩類材料在標單匯入、分類或數量加總時發生總量遺漏的疑慮。此驗證不代表其他材料行或其它案完全無誤。
+- RC 結果仍為混凝土 P15/P50/P85=4635.50/5127.43/5696.79 m3，實際 3885.108 Low/Red；鋼筋 P15/P50/P85=567635.47/830851.50/953640.20 kg，實際 496658.648 Low/Red。由於 target 觀測數量正確，後續優先比對類別 mapping 的歷史建案 `ActualQuantity` 彙總、建案面積歸一化、Top8 相似案件權重、生成器的組數與量係數／注入異常，避免僅為降低紅燈而修改模型。
+- 下一驗證點：使用既有 `graduation-v2-rc-quantity-result.json` 查看鋼筋與混凝土各 Top8 `references` 的 `usagePerArea`、`actualQuantity`、`floorArea`、`similarityScore`、`finalWeight`，和待估案的 `observedUsagePerArea` 比對。用相同 SYNTHETIC 測試集多案回測才能談 coverage/FP/FN/MAE，兩例不足以支持準確率結論。
+- 本次僅文件更新；沒有更動 DB、Migration、估算演算法、訓練資料與檔案解析。
