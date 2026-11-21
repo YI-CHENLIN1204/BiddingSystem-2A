@@ -293,3 +293,12 @@ npm run build
 - 本次僅新增驗證交接紀錄；生成器及 C# 程式未修改。舊 17/17 PASS 仍成立於使用者先前版本；本次是獨立 Excel 匯出成功，尚無正式解析器 API E2E。
 - 下一驗證點：用戶 Windows 先執行 `dotnet build tools/graduation-synthetic/GraduationSeed/GraduationSeed.csproj`，確認 C# 編譯；確認 Docker 環境後才建立獨立 localhost Postgres `127.0.0.1:55432`，限制只匯入 train-only，禁止連正式 Supabase。待估算標單 `SYN-00002` 應保持 test-only，絕不可先寫入歷史基準。
 - 畢專主要範圍：結構體工程鋼筋／混凝土的數量估算，以及結構體工程大項的價格異常偵錯；不擴大其他工項模型。報告仍需實際 API 結果與標準答案比較。
+
+
+### 2026-11-21 — Windows Docker /.NET CLI 編譯通過，修正 EF Relational 版本衝突
+- 使用者執行 `docker version`：Docker Desktop 4.91.0、Client 29.8.0 / Server Engine 29.8.0，Context desktop-linux，**Docker Engine 運作正常**；尚未啟動本專用畢專 PostgreSQL 容器。
+- 使用者執行 `dotnet build .\\tools\\graduation-synthetic\\GraduationSeed\\GraduationSeed.csproj -c Release`：ASP.NET `崴正 net10.0` 與 `GraduationSeed net10.0` 均成功，**0 errors / 1 warning (MSB3277)**；相依 `Microsoft.EntityFrameworkCore.Relational` 10.0.4.0 與 10.0.5.0 衝突，解析至 10.0.4.0。使用者執行 `Test-Path .\\graduation-v2-train-seed.json` 回傳 `True`。
+- 程式修正：`main` commit `c2a5f55bee16836675a8add2dd372cbe79a0bbe2`，`tools/graduation-synthetic/GraduationSeed/GraduationSeed.csproj` 增加直接套件 `Microsoft.EntityFrameworkCore.Relational` 10.0.5，對齊 `崴正/崴正.csproj` 的 EF Core 10.0.5；沒有升級其它套件、沒有 DB schema 改動。
+- **修正後建置結果尚待用戶重跑**，不可宣稱 warning 已經排除；若仍有衝突需要先檢查 `dotnet list ... package --include-transitive` 再處理，避免不必要地修改主程式套件。
+- 下一驗證點：`git fetch origin main` + 在 feature 分支只 restore `tools/graduation-synthetic/GraduationSeed/GraduationSeed.csproj` + `dotnet build ... -c Release`，確認警告消失；然後設置本機畢專資料庫密碼，透過 `compose.graduation-db.yaml` 啟動 **127.0.0.1:55432/bidding2a_graduation**，以 Docker health status 驗證。**尚未有匯入成功的證據，不可碰正式 Supabase**。
+- 11/25 目標僅數量估算／價格異常偵錯；現有 Python 17/17 PASS 及 Excel 574 行輸出已完成，C# 實際 DB 匯入、API 數量/價格 E2E 尚未測試。
