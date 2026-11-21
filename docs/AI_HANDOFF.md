@@ -419,3 +419,16 @@ npm run build
 - 城市對價格比對可能很重要，但建議避免把城市的價格差異當作工程數量差異；需要實測相同條件跨縣市敏感度以及地區樣本數不足時的退路。合成資料生成器的 region_factor 僅模擬單價變化，不是真實地區價格指數。
 - 新階段下一步：定義 SRC 的核心材料/結構參考樣本隔離策略；列出可計量的工項候選與必要 metadata，先於獨立測試資料研究；設計城市加分/城市優先篩樣與 SITE area 分母不一致的測試；**待用戶確認擴模範圍後才對正式 `TwoAScopePolicy` / 種子 / DB 做相關修改**。原 RC/SC 正式 API 成功紀錄保留。
 - 本次僅更新需求與查證交接，無程式碼、Migration 或測試新結果。
+
+
+### 2026-11-21 — 嚴格模式第一批實作：SRC opt-in、SRC 同結構參考隔離、城市/基地面積 C# contract
+- 使用者明確同意 **嚴格模式**：候選工項要經回測驗證才可取得正式紅綠燈；SRC、城市、基地面積相似度須有可核對的測試。此批集中修改沒有觸碰正式 Supabase、隔離畢專既有 210 案 DB、Migration 或既有 RC/SC 測試結果。
+- 查證版本差異：`main` 的 `ProjectSimilarityService.cs`／DTO 是較舊架構，**實際操作 `feature/1d-api-integration` 已有完整 `SiteArea` 欄位、`CalculateSiteAreaScore` 及 `SiteAreaWeight` 分子分母**，且已接受 SRC、城市 exact match 加分。前一輪僅看 main 後認定基地面積缺失，不能套用到 feature；此次沒有重寫既有加權演算法。
+- `main` commit `1f31a964` 更新 `tools/graduation-synthetic/generate_full_project_dataset.py`：增加 `--include-src`（預設 OFF），以固定 seed 對第三分之一建案賦予 SRC 結構、三材料 `SYN-STEEL/SYN-REBAR/SYN-CONCRETE`，僅產生研究合成資料，新增 manifest structure counts 和 experimental_src_enabled；既有不帶旗標的 RC/SC 資料生成保持原邏輯及不覆寫輸出。
+- `main` commit `bf029d16` 修改 `tools/graduation-synthetic/test_full_project_dataset.py`：增加 opt-in SRC 三核心材料、RC/SC 原始 fixture 不變與固定 seed 重現性測試。
+- `feature/1d-api-integration` commit `86c068b4` 只改 `崴正/Services/ProjectSimilarityService.cs` 的兩條歷史候選查詢：若目標 `StructureType=SRC`，**僅允許 SRC 歷史建案**，不再借 RC/SC 歷史案例生成 SRC 的正式樣本；RC/SC 選樣規則保持不變。現有隔離 DB 無 SRC 時應顯示不足／無樣本，不能假裝驗證過 SRC 準確度。
+- `feature/1d-api-integration` commits `b355b28b`、`8263675b` 新增 `tools/graduation-synthetic/SimilarityContract/SimilarityContract.csproj` 與 `Program.cs`：透過 reflection 真正呼叫 C# `CalculateStructureScore`（SRC 對 RC/SC 不加分）、`CalculateCityScore`（同城 10、異城 0）、`CalculateSiteAreaScore`（同面積 10、差 50% 得 5、差 100% 或缺值 0），完全離線不接 DB。
+- `main` commit `8938ae95` 新增 `docs/SRC_STRICT_SCOPE_AND_SIMILARITY_VALIDATION_2026-11-21.md`：驗收門檻、城市及基地面積敏感度、SRC 參考群隔離、候選項目（鋼骨／模板／土方）研究且無量價紅綠燈的規定，並列出 Windows 重跑指令。
+- **已提交 GitHub；但尚未由用戶 Windows 執行最新 Python unittest、SRC research dataset CLI、C# SimilarityContract build/run、正式 SRC 無參考樣本 API，全部列為 NOT RUN**。只有先前 RC/SC live E2E PASS 仍成立，不能把新 SRC 宣稱為正式經過數量/價格估算驗收。
+- 後續：使用者 feature 工作樹不可全量 reset/merge；僅同步所需 main 腳本/測試及 feature C# 服務與 SimilarityContract 目錄，先做 Python unittest 和 .NET contract。若 PASS，再在**新**`graduation-src-research-v1` 產生 60 案 SRC 合成研究資料，查看 manifest，接著獨立 API 和隔離 DB 無樣本安全性回歸，不改現有庫。RC/SC 正式 API 舊證據應保留。
+- 本批沒有新增任何 `TwoAScopePolicy` 正式候選類別，沒有 C# schema/Migration。修改錯誤可透過以上 commit 還原程式碼，資料庫無回滾需求。
