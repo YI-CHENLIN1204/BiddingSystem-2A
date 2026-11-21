@@ -152,6 +152,13 @@ def export(source, output, truth, project_id=None, seed=147, anomaly_scenario=No
     if not items:
         raise ValueError("no project BOQ lines")
     items, injected_rows = inject_test_scenario(items, selected, anomaly_scenario)
+    # An extreme design allowance is not equivalent to an error or misconduct.
+    cause_kind = (
+        "DESIGN_VARIATION_POSSIBLY_JUSTIFIED" if anomaly_scenario and anomaly_scenario.startswith("design_")
+        else "UNIT_PRICE_STRESS_NOT_PROOF_OF_OVERPRICING" if anomaly_scenario and anomaly_scenario.startswith("structural_price_")
+        else "MIXED_DESIGN_AND_PRICE_STRESS" if anomaly_scenario
+        else None
+    )
     baseline_by_line = {x["synthetic_line_id"]: x for x in boq
                         if x["synthetic_project_id"] == selected["synthetic_project_id"]}
     injected_ids = {x["synthetic_line_id"] for x in injected_rows}
@@ -233,6 +240,7 @@ def export(source, output, truth, project_id=None, seed=147, anomaly_scenario=No
            "total_detail_rows": len(truth_rows), "detail_rows_per_sheet": dict(Counter(x["sheet"] for x in truth_rows)),
            "cases": truth_rows,
            "injection": {"scenario": anomaly_scenario, "source_split": selected["split"],
+                         "cause_kind": cause_kind, "manual_review_required": bool(anomaly_scenario),
                          "is_label_not_model_prediction": bool(anomaly_scenario),
                          "changed_line_count": len(injected_rows),
                          "changed_lines": injected_rows} if anomaly_scenario else None,
