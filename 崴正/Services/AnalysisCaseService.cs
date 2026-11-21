@@ -597,7 +597,7 @@ namespace 崴正.Services
                 excludedQuantityCandidateCount = scopeRows.Count(x =>
                     x.Status == "Excluded" && x.CandidateType == "Excluded"),
                 items = scopeRows,
-                note = "這是執行數量偵錯時使用的工項分類快照檢視。排除不代表工項完全沒有材料，複合工項須人工確認；數量偵錯不改動歷史基準，價格大項仍依整份標單計價。"
+                note = "此區是依目前數量偵錯前處理規則，對版本快照重新計算的唯讀分類；如規則日後調整，歷次 Run 仍保留當時結果。排除不代表工項沒有材料，複合工項須人工確認；分類排除不影響大項價格的計價納入。"
             });
         }
 
