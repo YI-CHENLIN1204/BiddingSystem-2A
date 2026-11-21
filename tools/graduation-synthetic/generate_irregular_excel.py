@@ -261,14 +261,29 @@ def generate(source, xlsx_path, truth_path, project_id=None, seed=4102, items=36
                           'expected_quantity': str(part_qty) if scenario != 'missing_quantity' else None,
                           'expected_unit_price': str(unit_price) if scenario != 'missing_unit_price' else None,
                           'source_data_origin': 'SYNTHETIC', 'split': chosen['split']})
-    # Extra non-core construction work items exercise the unmapped-items workflow.
+    # Project-dependent scope: no underground-floor items for buildings
+    # without a basement; avoid floors which exceed actual building height.
+    basement_count = int(chosen['basement_floor_count'])
+    floor_count = int(chosen['floor_count'])
+    if basement_count < 0 or floor_count < 1:
+        raise ValueError('invalid synthetic project floors')
+    underground_keywords = ('地下室', '連續壁', '擋土', '基坑')
+    eligible_items = [
+        item for item in EXTRA_ITEMS
+        if basement_count > 0 or not any(k in item[0] for k in underground_keywords)
+    ]
+    above_ground_levels = [f'{f}F' for f in range(1, floor_count + 1)]
+    floors = ([f'B{f}' for f in range(1, basement_count + 1)] +
+              above_ground_levels + ['RF'])
+    zones = (['A棟', 'B棟', '公共區域', '屋頂層'] +
+             (['地下停車場', '地下機房'] if basement_count else ['戶外地坪', '一樓大廳']))
+    # Extra non-core construction work items exercise unmapped-item workflows.
     # These rows are synthetic test fixtures, NOT added to historical_transactions.csv.
-    # Scale BOQ rows independently from the small historical transaction fixture.
     extra_count = items - len(truth)
     if extra_count < 0:
         raise ValueError('requested row count below core test rows')
     for extra_idx in range(extra_count):
-        label, unit, category = EXTRA_ITEMS[extra_idx % len(EXTRA_ITEMS)]
+        label, unit, category = eligible_items[extra_idx % len(eligible_items)]
         # Group by work type to mimic disciplinary worksheets, with structural
         # details split across two structural sheets for cross-sheet testing.
         if category in ('結構體工程', '泥作工程'):
@@ -289,8 +304,8 @@ def generate(source, xlsx_path, truth_path, project_id=None, seed=4102, items=36
                     'missing_unit_price' if marker in (1, 2) else
                     'missing_quantity' if marker == 3 else
                     'unmapped_extra' if marker in (4, 5) else 'complete')
-        zone = ('A棟', 'B棟', 'C棟', '地下停車場', '裙樓', '屋頂層')[(extra_idx // len(EXTRA_ITEMS)) % 6]
-        level = ('B2', 'B1', '1F', '3F', '5F', '8F', '12F', 'RF')[(extra_idx // 6) % 8]
+        zone = zones[(extra_idx // len(eligible_items)) % len(zones)]
+        level = floors[(extra_idx // 6) % len(floors)]
         spec = ('標準型', '加強型', '耐候型', '防火型', '依圖說', '含施工測試')[(extra_idx // 11) % 6]
         item_label = f'{label}－{zone}/{level}（{spec}）'
         row = {'項次': f'E{extra_idx+1:03d}', '序號': f'E{extra_idx+1:03d}', '編號': f'E{extra_idx+1:03d}',
@@ -325,6 +340,7 @@ def generate(source, xlsx_path, truth_path, project_id=None, seed=4102, items=36
     truth_data = {'data_origin': 'SYNTHETIC', 'source_project_id': target, 'source_split': chosen['split'],
                   'seed': seed, 'worksheets': list(sheets), 'xlsx_sha256': hashlib.sha256(blob).hexdigest(),
                   'project': {k: chosen[k] for k in ('project_type','structure_type','city','total_floor_area','floor_count','basement_floor_count','start_date')},
+                  'composition_policy': 'Floor counts and basement-dependent work items enforced; other BOQ quantity assumptions remain illustrative.',
                   'cases': truth,
                   'requested_detail_rows': items,
                   'actual_detail_rows': len(truth),
