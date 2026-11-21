@@ -46,3 +46,12 @@ jobs:
           test -s /tmp/graduation-full.xlsx
           test -s /tmp/graduation-full-truth.json
           test -s /tmp/graduation-full-evaluation.json
+      - name: SRC and extreme research fixture contracts (no database)
+        run: |
+          python tools/graduation-synthetic/generate_full_project_dataset.py --count 120 --seed 20261119 --include-src --include-extremes --output /tmp/graduation-src-extreme
+          python tools/graduation-synthetic/prepare_training_seed.py --source /tmp/graduation-src-extreme --target-database bidding2a_graduation_src --output /tmp/graduation-src-seed.json
+          python tools/graduation-synthetic/export_src_holdout_suite.py --source /tmp/graduation-src-extreme --output-dir /tmp/graduation-src-holdouts
+          python tools/graduation-synthetic/audit_candidate_scope.py --source /tmp/graduation-src-extreme --output /tmp/graduation-src-candidate-audit.json
+          test -s /tmp/graduation-src-seed.json
+          test -s /tmp/graduation-src-holdouts/suite_manifest.json
+          test -s /tmp/graduation-src-candidate-audit.json
