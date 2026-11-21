@@ -22,7 +22,7 @@ class FullProjectDatasetTests(unittest.TestCase):
         self.assertGreater(len(set(counts.values())), 8)
         self.assertGreater(len({row["material_code"] for row in detail}), 25)
         self.assertGreater(len({row["major_category"] for row in detail}), 10)
-        self.assertTrue(any(p["basement_floor_count"] == "0" for p in projects))
+        self.assertTrue(any(int(p["basement_floor_count"]) == 0 for p in projects))
         project_map = {p["synthetic_project_id"]:p for p in projects}
         for row, tx in zip(detail, history):
             self.assertEqual(row["synthetic_transaction_id"], tx["synthetic_transaction_id"])
