@@ -578,3 +578,10 @@ npm run build
 - 結構總價方向：`design_concrete_high` RC 91,153,245.71→111,089,614.77 Normal→Normal；`design_concrete_low` SRC 98,123,625.84→91,672,173.65 Low→Low；`design_rebar_high` RC 91,153,245.71→155,322,613.86 Normal→High；`design_rebar_low` SRC 98,123,625.84→74,003,706.60 Low→Low；`design_steel_high` SC 14,892,313.82→29,286,360.78 Low→Normal；`design_steel_low` SRC 98,123,625.84→87,208,471.86 Low→Low；`structural_price_high` SRC 98,123,625.84→295,388,887.01 Low→High；`structural_price_low` RC 91,153,245.71→18,229,996.61 Normal→Low；`combined_concrete_high_price_high` SRC 98,123,625.84→340,052,805.24 Low→High；`combined_concrete_low_price_low` RC 91,153,245.71→16,502,176.17 Normal→Low。所有同來源案對應上下界不變，觀察到的方向符合注入倍率。**不能把用量增加造成總金額升高說成單價過高**，也不能將 Low→Low 或原本 Red→Green 誤報成異常新增命中。
 - 判讀：正式 API 流程與注入變化方向驗證 PASS；沒有統計上足夠的獨立基準正常樣本，RC/SRC 的鋼筋與 SRC/SC 的總價 baseline 已紅，不足以報告 precision/recall/false-positive rate 或實際工程性能。生成器已知有 `group_anomaly` 5.5% 情境及其他變異，未修改的 baseline ≠ 嚴格正常標籤。下一研究工作應先建立清潔/明確標記的獨立 holdout，按結構型別分層、分別分析量與價格及工程設計影響，不要現在就提高門檻或擴大鋼骨紅綠燈。
 - 沒有程式碼、DB Schema、Migration 或 Seed 更動；此為使用者 Windows 實測的分析交接。
+
+
+### 2026-11-21 — 2A 正式轉入專案收斂/驗收階段（scope freeze）
+- 使用者明確決定「慢慢收斂專案」，不再優先增加任意新功能或新資料庫。已在 `main` 新增 `docs/PROJECT_CLOSURE_PLAN.md`，commit `3e46177c579e75f9a7d5d4e5cf553adea0a88793`；內容固定核心範圍（RC/SC/SRC 單庫、鋼筋/混凝土數量、結構體大項價格、標單上傳/分析紀錄）、現有 Windows 測試證據、P0 模型有效性/feature-main 整合門檻、P1 備份還原/部署交接，以及風險和禁止重跑/刪除事項。
+- 目前已驗證：Windows Python unittest 23/23；城市/基地面積相似度敏感度；獨立 SRC DB train-only 210 案/101166交易；13份 API Excel/26分析成功；受控量價高低方向大體符合注入邏輯。但 3 baseline 中鋼筋或大項價格原已 Red，故正常誤報率、實際準確性、外部有效性**尚無足夠證據**。不拿 10 個衍生情境當 10 個獨立建案。基準乾淨與可追溯標籤是下一個最先處理的證據缺口。
+- `main` / `feature/1d-api-integration` 差異尚未整合，Vue UI 全流程、build/CI、跨裝置 DB 恢復等仍需驗證。保留既有 `55432` 和 `55433`；不重 seed、不 `down -v`、不修改正式 Supabase。嚴格模式下未核准鋼骨/模板/土方仍不上線。
+- 此次僅新增驗收/收斂文件與同步交接；**未修改應用/資料庫/模型，未執行新的 Python/.NET/E2E 測試**。下一執行點：先建可靠正常 holdout 標籤及明確異常真值，再依現有不變報告檢驗誤報/漏報；不要再重做已 PASS 的 13 案 API 批次。
