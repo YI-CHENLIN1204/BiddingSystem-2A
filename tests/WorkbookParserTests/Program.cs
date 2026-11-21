@@ -146,4 +146,48 @@ Check(TenderImportInspectionService.ClassifyQuantityCandidate("鋼筋材料", "S
 Check(TenderImportInspectionService.ClassifyQuantityCandidate("預拌混凝土", "3500 psi") == "Concrete",
     "預拌混凝土材料應保留");
 
+// 永久防回歸：UI 標單的材料/勞務複合工項數量不得自動混入材料量。
+// 預檢與正式 Quantity 前處理共用 ClassifyQuantityCandidate，分類需要人工審核。
+var uiSmokeRows = new (string Name, string Spec, string Unit, decimal Qty, decimal Price, string Major)[]
+{
+    ("SD420W D19 鋼筋加工及組立", "D19", "kg", 42000m, 39m, "結構體工程"),
+    ("SD420W D22 鋼筋加工及組立", "D22", "kg", 32000m, 40m, "結構體工程"),
+    ("基礎鋼筋綁紮材料及工資", "D16", "kg", 18000m, 42m, "結構體工程"),
+    ("柱梁主筋鋼筋施工", "D25", "kg", 38000m, 43m, "結構體工程"),
+    ("預拌混凝土澆置", "280kgf/cm2", "m3", 1800m, 2600m, "結構體工程"),
+    ("樓板混凝土泵送與搗實", "350kgf/cm2", "m3", 1450m, 2850m, "結構體工程"),
+    ("基礎底版預拌混凝土", "280kgf/cm2", "m3", 1150m, 2750m, "結構體工程"),
+    ("柱梁牆預拌混凝土", "350kgf/cm2", "m3", 1050m, 2900m, "結構體工程"),
+    ("普通模板組立與拆除", "柱梁版", "m2", 10500m, 620m, "結構體工程"),
+    ("樓板支撐系統租賃", "含安裝", "m2", 5400m, 450m, "結構體工程"),
+    ("H型鋼構梁柱製作及吊裝", "H-300", "kg", 105000m, 91m, "鋼骨鋼構工程"),
+    ("鋼骨接合板及現場組立", "SRC", "kg", 38000m, 98m, "鋼骨鋼構工程"),
+    ("基礎土方開挖及外運", "一般土", "m3", 4300m, 320m, "土方及基礎工程"),
+    ("地下室擋土支撐組立", "臨時支撐", "式", 2m, 175000m, "土方及基礎工程"),
+    ("地下室防水塗膜施作", "PU", "m2", 2800m, 610m, "防水工程"),
+};
+var smokeInspection = TenderImportInspectionService.Build(
+    uiSmokeRows.Select((line, index) => new 崴正.Models.TenderImportRowDto {
+        SheetName = index < 12 ? "結構體明細" : "基礎及地下工程",
+        RowNumber = 5 + index, Category1 = line.Major, ItemName = line.Name,
+        Spec = line.Spec, Unit = line.Unit, Qty = line.Qty, UnitPrice = line.Price,
+        Amount = line.Qty * line.Price
+    }).ToArray());
+Check(smokeInspection.TotalRows == 15 && smokeInspection.WarningRows == 4,
+    "15 筆 UI 測試明細須正確保留四條複合工項排除提示");
+Check(smokeInspection.Rows.Count(x => x.CandidateType == "Excluded") == 4,
+    "四筆鋼筋/混凝土複合工項不得混入材料候選數量");
+Check(smokeInspection.QuantitySummaries.Single(x => x.CandidateType == "Rebar")
+    .CandidateQuantity == 38000m,
+    "UI smoke 鋼筋候選量 38,000 kg，非原始全部 130,000 kg");
+Check(smokeInspection.QuantitySummaries.Single(x => x.CandidateType == "Concrete")
+    .CandidateQuantity == 3650m,
+    "UI smoke 混凝土候選量 3,650 m3，非原始全部 5,450 m3");
+Check(uiSmokeRows.Where(x => x.Major == "結構體工程")
+    .Sum(x => x.Qty * x.Price) == 29268000m,
+    "結構體大項價格仍計入複合工項，合計 29,268,000，不受數量排除影響");
+Check(smokeInspection.Rows.Where(x => x.CandidateType == "Excluded")
+    .All(x => x.Warnings.Contains("疑似輔助工項，未納入鋼筋／混凝土候選用量")),
+    "每筆排除的材料相關工項需保留理由供人工覆核");
+
 Console.WriteLine("WorkbookParserTests: all checks passed.");
