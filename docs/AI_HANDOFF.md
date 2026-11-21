@@ -738,3 +738,11 @@ npm run build
 - 使用者實際將兩個 API 的 `references[].projectId` 各自取 distinct，驗證非空且與 `referenceProjectCount` 相同，對**同一 55433** DB 的 `project_master` 以只讀 PostgreSQL SQL 查 `COUNT(*)` 與 `COUNT(*) FILTER (WHERE structure_type='SRC')`，兩項均為全數 SRC：終端明確回傳 `PASS: 鋼筋 8/8 筆全部為 SRC` 與 `PASS: 混凝土 8/8 筆全部為 SRC`；這次之前的 404/虛假 PASS 已排除。
 - 同一新版 feature 的結構體價格此前已 `candidateProjectCount=77`, `availableProjectCount=77`, `referenceProjectCount=8`，DB 回查實際 8/8 為 SRC。因此**SRC 三條主要參考來源路徑：結構體價格、鋼筋量、混凝土量，API + 55433 SQL cohort identity smoke 3/3 PASS**。這只驗證特定合成 SRC 目標、topCount=8 的參考建案結構純度及取樣可用性；**沒有驗證精度、紅黃燈正確性、零/不足 SRC 樣本時不借 RC/SC、正式 Supabase 的 SRC 歷史資料品質**，不得擴大結論。
 - 本階段無 DB migration、reseed、history write、程式碼變更，保留 55432/55433 與舊 5262。接下來驗證不足樣本的 fail-closed 行為（宜採只讀或受控隔離測試，不刪現有 77 SRC 歷史）、處理後端 CS8604 nullability 與 EF relational MSB3277 NuGet 版衝警告、再核對工作樹／準備合併。前端 patch local commit `d725379` 尚未 Push，5263 測試 process 完工後應查 PID 再停止。
+
+
+### 2026-11-21 — 下一輪改批次驗證，先完成演算法比較前的基礎資料留存
+- 使用者明確希望**加快開發與驗證**，後續還要做準確度測試、相似度/估算演算法比較，停止每輪只跑一小段 PowerShell 再回報的流程。最新 SRC 三條主要 API 已用實際 55433 DB 各驗證 8/8 refs SRC Approved，毋須重複單點手動測試。
+- 已檢視最新版 feature `崴正/Services/ProjectSimilarityService.cs`：相似度包含結構、總樓地板面積、基地面積、樓層、年份、城市多項分數；量價 Range 接著選樣並結合相似度與時間權重。**沒有使用舊 Z-score/LSTM/Razor**；應以這套當作比較的現行 baseline，不可擅自把研究提案當成已部署模型。
+- 提供使用者單檔 `src_batch_audit.py`（對話附件，由使用者本機下載運行，尚未存進 GitHub repo），在已啟動的 5263 + 55433 上用 Docker CLI 只讀取 SRC Approved metadata，向三個現有 API 發出 baseline／只變城市／基地面積×1.5 的 **9 次只讀範圍運算**，每次核對 references 非空、ID 不重複、count 對得上、歷史建案確實屬 SRC Approved，輸出本機 `src-batch-api-audit.json` 作後續差異比較。腳本尚未在使用者 Windows 環境執行；**不表示9/9已 PASS、不表示模型準確率或紅黃燈品質**。檔案不是專案原有測試工具；不得宣稱已推 GitHub。
+- 之後優先以既有 holdout 90 案與 13 份成對 baseline/anomaly XLSX 的 synthetic truth（保留 train/holdout 隔離）作正式批次回測，彙整 P15/P85 coverage、價格/量誤差、模型權重/TopK 敏感度與真值已明確的混淆矩陣；不能將純合成 truth 或零注入基準的紅燈直接宣稱為企業真實假陽性率。**不要再建/覆蓋 55433、重新 seed、重傳原 13 件或把 holdout 放入 Approved**。
+- `CS8604` null 單位警告與 EF Core 版本衝突另併成一組低風險修復，不阻塞唯讀計算實驗；完整程式修改經本機建置+測試後再提交並更新交接。
