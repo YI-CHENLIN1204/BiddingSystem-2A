@@ -805,3 +805,10 @@ npm run build
 - 安全與資料庫：**無 DB schema、EF Migration、估算演算法或正式 scope 變更**；未動 55432/55433 volume、既有 13 案、Supabase。對鋼骨／模板／土方仍為研究候選，待證據後啟用，不能宣稱已新增正式異常偵測。
 - 驗證：程式檔與 workflow GitHub 提交成功；使用者先前的 5 個 cherry-pick + Vue build PASS 僅適用上一批 \`9caa06c\`，**不等於本批 commit 經 Windows 編譯或 UI E2E 通過**。新一批本機 Vue build、實際 5174→5263→55433 DB、Excel preview、Upload→Quantity/Price Runs→刷新、FinalBid 審核發布及稽核仍 **待執行**。
 - 下一步最短驗證：安全 fetch + cherry-pick 新 5 個 feature commits 至 \`integration/src-closure\`（保留未追蹤比較工具／JSON），\`cd frontend; npm.cmd run build\`，按實際設定啟動 Vite 5174→5263；\`node scripts/verify-ui-preflight.mjs --excel <全新合成標單路徑>\` 先確認唯讀檢查。其後以新合成 UI 測試案執行 UI 寫入，必要時先 DB 備份及核對 55433 身分；不可把 holdout 當 Approved train。最後才做 accuracy。
+
+
+### 2026-11-21 — UI 收尾批次 GitHub Actions 實際 PASS
+- GitHub Actions \`Graduation UI build and preflight syntax\` run ID \`44912749097\`，來源 feature commit \`b6b3e282b72777e944cbc8b204077b86fab70d10\`；GitHub API 回 \`status=completed\`, \`conclusion=success\`。
+- Job \`frontend-build\` 完成：\`node --check scripts/verify-ui-preflight.mjs\` **PASS**；Node22 \`npm ci\` **PASS**；\`vue-tsc --noEmit && vite build\`（\`npm run build\`）**PASS**。本次驗證涵蓋本輪新增 Vue UI 及其腳本語法。
+- 仍**未執行** 5174/5263 真正 HTTP preflight（GitHub runner 無使用者本機服務與 55433 DB）、瀏覽器 Excel 上傳與 Run 持久化、FinalBid 真正發布／資料庫稽核；CI PASS 不能擴大成系統 E2E 完成。
+- 目前應由使用者 integration worktree cherry-pick 五個新 commit，執行本機唯讀 preflight，再使用新合成案件於 UI 驗證真實寫入路徑。
