@@ -506,3 +506,16 @@ node .\scripts\verify-ui-preflight.mjs --excel .\graduation-ui-1121-01.xlsx
 省略 `--source` 時會用內建的結構體／鋼筋／混凝土／鋼骨／基礎測試明細生成三工作表的**純 UI smoke fixture**；不依賴來源資料夾、外部 API 或 DB，亦不需要重新 seed。產生器同時提供建案名稱、結構、年月、面積等 UI 欄位。這份數字僅為人工示例，**不是 holdout 真值或實際估算品質證據**，只能建立 2A 待偵錯案件；不得用於決標回寫／正式歷史發布。
 
 如果**有**受 SHA 驗證的合成資料來源，可明確提供 `--source <資料夾>`，沿用原先挑選 test split 未使用建案的模式。明確指定不存在的來源資料夾仍會 FAIL，不能靜默轉成內建資料。
+
+
+### Windows Python 跨子程序編碼與指定案件 Run 驗證
+
+本機 Windows 的 Python 子程序有時使用 CP950 stdout；測試中的 `subprocess.run(..., encoding="utf-8")` **只設定父程序解碼，不能強制子程序使用 UTF-8**。永久 `test_prepare_ui_case.py` 現會對子程序顯式設定 `PYTHONIOENCODING=utf-8`，讓測試跨 Windows/CI 相容，不需改全機 PowerShell 執行原則。
+
+使用者本機已有 `graduation-ui-smoke-1121-02.xlsx`：先使用這份成功產生的檔案跑瀏覽器 UI 建案／數量與價格分析，不需重建 Excel。完成後從 `/analysis-cases/<案件編號>` 複製實際 ID，再在 **同一 55433 隔離測試環境**執行：
+
+```powershell
+node .\scripts\verify-ui-state.mjs --case-id <案件編號>
+```
+
+此模式保留既有 4 項唯讀 Docker/DB/API 對帳，額外要求案件名稱以 `SYNTHETIC-UI-驗收-` 開頭、同一個目前版本有已保存的 `Quantity` 與 `MajorPrice:結構體工程` Runs，並能用 GET 讀回兩份完整 payload，成功才回報 **5/5**。這不會建立 Run、寫資料或批准歷史；不等於 UI 瀏覽器操作有自動化測試，也不代表異常判定準確。
