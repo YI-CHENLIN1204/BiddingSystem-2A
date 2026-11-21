@@ -530,3 +530,9 @@ npm run build
 - 使用者實際執行 `verify_similarity_sensitivity.py --source .\\graduation-src-extreme-v3 --api http://127.0.0.1:5262 --output .\\graduation-src-city-site-audit.json`，回傳 `{"project_id":"SYN-00002","city_scores_changed":true,"site_area_scores_changed":true,"status":"PASS"}`。**僅證明相同 SRC 測試案改變城市/基地面積會使 API 參考案分數/排名不同**；尚未證明估算數量/價格的誤差、召回率或紅綠燈性能。
 - 下一階段先取得一個 test-only SRC baseline 的真實 `POST /api/analysis-cases/from-upload`（multipart，帶全部工項表+建案 metadata）結果，再依 `analysisCaseId`、`analysisBidVersionId` 走 `quantity-analysis` 與 `major-price-analysis`，核對 1) 成功解析且不寫歷史 2) 鋼筋混凝土數量與 truth 3) 價格含單價 4) 有正常參考區間。基準案 PASS 之後才批次跑 10 個相互關聯的異常標單與 paired delta 回測。
 - 本次為真實 Windows API 執行成果及環境變數辨析，沒有程式碼或 DB Migration 修改；正式 SRC 上傳/量價偵測仍 NOT RUN。
+
+
+### 2026-11-21 — SRC baseline E2E Windows PowerShell HttpClient 缺程序集導致未上傳（失敗已定位）
+- 使用者以 `feature/1d-api-integration` 在 `http://127.0.0.1:5262` 嘗試上傳 `SYN-00030` SRC 基準標單，truth 預期 `446` 筆。PowerShell 在 `[System.Net.Http.HttpClient]::new()`、`MultipartFormDataContent`、`StringContent`、`ByteArrayContent` 回報 `TypeNotFound`，致使 `$client`/`$form` 均為 null、multipart **根本未送出**；後續 `analysisCaseId`/`analysisBidVersionId` 空白，`quantity-analysis` 和 `major-price-analysis` 均回 404。此為客戶端前置問題，不代表 SRC parse 或模型演算法 FAIL；`ExpectedItems=446` 僅為 truth 預期值，不是 API 已解析數量。
+- 修復驗證方式：Windows PowerShell 先明確執行 `Add-Type -AssemblyName System.Net.Http`，重新在同一視窗建立新的 HttpClient/multipart（不要沿用 null 變數），逐步檢查 HTTP 成功、JSON 有正整數 ID、`itemCount` 與 truth 比對，只有上傳成功才執行兩種分析；以 try/finally 釋放連線與 form，避免把空白 ID 誤判為可用。
+- 無正式 DB/history seed 修改、Migration 或刪除；僅記錄使用者實測失敗與下一個正確檢查點。SRC baseline E2E 仍 NOT RUN（請待成功上傳後更新實際結果）。
