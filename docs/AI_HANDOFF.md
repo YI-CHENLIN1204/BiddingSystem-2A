@@ -910,3 +910,5 @@ npm run build
 - 本輪直接 GET：`/api/analysis-cases/15` **200**，currentVersionId=15；`/api/analysis-cases/15/versions/15/quantity-scope` **404**。永久 checker 因 Docker named-pipe 及 config 權限失敗，**新版 6/6 未完成**。不能把副本 build PASS 或前輪 5/5 套用到目前服務。
 - 交接 gate `python scripts/check_handoff_review.py --base a27f850d356aa46b0f201dc2e672af3341e9014c` 在本機文件提交 **PASS（4 files/1 review）**；遠端舊 19 筆審查紀錄逐筆比對完整保留。
 - 下個驗證：以使用者權限完成桌面最後提交、同一已核實 55433 隔離連線重啟新版 5263；確認新 GET 200 後跑永久 checker 6/6。DB、Migration、既存 Run、Approved history、演算法皆未改動。決標/稽核/實際模型準確度仍未完成。
+
+- **本輪 CI 最終核實**：永久 `2A Build Validation` run `44921528280`（head `97e582cb971cb60f71ae1ca7b9b44556df426dd7`）已 `completed/success`。`backend-build`、`frontend-build`、`synthetic-fixture-contracts` 三個 Jobs 全數通過，含 Linux 乾淨 `npm ci` + 標準 `npm run build`；沒有新增 Workflow。此 CI 不改變桌面原工作樹衝突、5263 新端點 404 或本輪 Docker 權限阻塞，6/6 仍未完成。
