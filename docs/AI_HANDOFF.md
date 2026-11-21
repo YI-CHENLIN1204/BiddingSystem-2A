@@ -546,3 +546,11 @@ npm run build
 - 新增 `tools/graduation-synthetic/audit_paired_anomaly_api.py` commit `2ace863c`：先以 test-only + XLSX SHA 驗證13件 (3 base + 10 variants)，預設 dry-run 無 HTTP/DB 寫入，僅 `--execute` 對 local 5262 逐件呼叫上傳、數量分析、價格分析；readiness 檢查、非本機地址拒絕、回傳 IDs+解析筆數守門、失敗保留 partial；輸出 JSON `results` 及同來源案 `paired_deltas`，不動歷史交易/Scope/DB Schema。此批次執行**會建立 AnalysisCase/AnalysisRun**（target pipeline），不是純唯讀。
 - 新增 `tools/graduation-synthetic/test_paired_anomaly_api.py` commit `a9a68d01`：純離線測試基準已 Red 仍可正確計算注入前後 delta、只摘要核准類別、不誤納鋼骨為正式 category。 `tools/graduation-synthetic/README.md` commit `1975db2d`：記錄 Windows dry-run/execute/成對報告查看方式。
 - **新增腳本/tests 尚未執行 Windows unittest 或正式 13 件 API 批次，NOT RUN**。不修改後端/前端/DB/Migration，不重跑 train seed，不清除 volume。下一驗證點：檢查 git scoped 檔案無本機未提交更動 → 更新工具腳本 → unittest → dry-run13件 SHA / test-only → execute API → 比對實際觀測值變化、燈號變化、原始基準已紅的混淆情形，決定是否要重修合成資料的 clean-baseline 定義。正式鋼骨/模板/土方候選仍禁止直接紅綠燈。
+
+
+### 2026-11-21 — 新成對 API 測試工具在 Windows 未取得：Git fetch origin/main ref 競態；21 舊測試 PASS
+- 使用者在 `feature/1d-api-integration` 執行 `git fetch origin main`，遠端物件下載完成但最後出現 `error: fetching ref refs/remotes/origin/main failed: incorrect old value provided`。此為遠端追蹤 ref 更新衝突（可能同時有另一 Git 程序更新；原因尚未證實），**不能假設 FETCH_HEAD 指向最新 commit**。
+- 其後 `git restore --source=FETCH_HEAD --worktree -- tools/graduation-synthetic/audit_paired_anomaly_api.py tools/graduation-synthetic/test_paired_anomaly_api.py` 均回 `pathspec ... did not match any file(s) known to git`；本機未取得新檔。此次 `python -m unittest ...` 仍是 **21 tests OK**，為舊測試，**沒有**跑到新 `test_paired_anomaly_api.py`。執行新的 dry-run、`--execute` 都回 `No such file or directory`，故尚未建立 13 筆新分析案件；報告 JSON 不存在屬連帶結果。
+- 重新以 GitHub connector 驗證遠端 `main` 確實含 `audit_paired_anomaly_api.py`、`test_paired_anomaly_api.py`。下一修復採 **`git fetch --no-tags --refmap= origin main`**（空 refmap 避免依 config 同步更新衝突的 `origin/main`，只取得 FETCH_HEAD），然後明確檢查 `git cat-file -e "FETCH_HEAD:tools/..."`（兩檔都存在）才 `git restore --source=FETCH_HEAD --worktree -- <兩個檔案>`。不要使用 `reset --hard`、`clean -fd`、強制更新 `origin/main`、刪資料庫或重 seed。
+- 下一驗證點：兩個腳本在 Windows `Test-Path` 成功 → unittest 預期新增 2 測試（共 23）→ dry-run 13 SHA/test-only 驗證 → 用既有 localhost:5262 + 55433 API 進行成對分析。若仍報 fetch ref 競態，先輸出 `git remote -v`、`git rev-parse FETCH_HEAD`、`git status -sb` 查核再採更精確修復，不覆蓋 feature 工作樹。
+- 此輪僅因真實使用者回報修訂交接；未修改應用程式、資料庫或 Migration。
