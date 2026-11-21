@@ -180,10 +180,11 @@ function typeName(type: CandidateType) {
       </div>
       <label v-for="sheet in sheets" :key="sheet.name"
         class="d-flex align-items-start gap-2 border rounded p-2 bg-white"
+        style="min-width: 0;"
         :class="{ 'border-warning': sheet.itemCount === 0 }">
         <input type="checkbox" class="form-check-input mt-1" :checked="modelValue.includes(sheet.name)"
           @change="toggle(sheet.name, ($event.target as HTMLInputElement).checked)" />
-        <span class="flex-grow-1">
+        <span class="flex-grow-1" style="min-width: 0; overflow-wrap: anywhere; white-space: normal;">
           <span class="fw-semibold">{{ sheet.name }}</span>
           <span class="small text-muted ms-2">候選明細 {{ sheet.itemCount }} 筆</span>
           <span v-if="sheet.itemCount === 0" class="badge bg-warning text-dark ms-2">未辨識，可人工選取</span>
@@ -239,8 +240,8 @@ function typeName(type: CandidateType) {
             {{ choice.name }}
           </button>
         </div>
-        <div class="table-responsive" style="max-height: 430px; overflow-y: auto;">
-          <table class="table table-sm table-striped table-bordered align-middle small">
+        <div class="table-responsive" style="max-height: 480px; overflow: auto;">
+          <table class="table table-sm table-striped table-bordered align-middle small" style="min-width: 1500px; table-layout: auto;">
             <thead class="table-light" style="position: sticky; top: 0; z-index: 1;">
               <tr>
                 <th>來源</th><th>工項／規格</th><th>工程大項</th><th>辨識</th>
@@ -252,7 +253,7 @@ function typeName(type: CandidateType) {
             <tbody>
               <tr v-for="row in shownRows" :key="row.sheetName + ':' + row.rowNumber">
                 <td class="text-nowrap">{{ row.sheetName }} 第 {{ row.rowNumber }} 列</td>
-                <td style="min-width: 200px;">{{ row.itemName }}<div v-if="row.spec" class="text-muted">{{ row.spec }}</div></td>
+                <td style="min-width: 320px; max-width: 480px; white-space: normal; overflow-wrap: anywhere;">{{ row.itemName }}<div v-if="row.spec" class="text-muted">{{ row.spec }}</div></td>
                 <td class="text-nowrap">{{ row.effectiveMajorCategory ?? '未辨識' }}</td>
                 <td class="text-nowrap">{{ typeName(row.candidateType) }}</td>
                 <td class="text-end">{{ number(row.qty) }}</td>
@@ -262,7 +263,7 @@ function typeName(type: CandidateType) {
                 <td class="text-end text-nowrap">
                   {{ number(row.standardQuantity) }} {{ row.standardQuantity === null ? '' : row.standardUnit }}
                 </td>
-                <td style="min-width: 200px;">
+                <td style="min-width: 270px; max-width: 420px; white-space: normal; overflow-wrap: anywhere;">
                   <span v-if="!row.warnings.length" class="text-muted">—</span>
                   <div v-for="warning in row.warnings" :key="warning" class="text-warning-emphasis">{{ warning }}</div>
                 </td>
