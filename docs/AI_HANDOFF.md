@@ -925,3 +925,16 @@ npm run build
 - 目前工作階段 cwd 仍是原本的 Codex 暫存工作區。對原桌面 `docs/HANDOFF_CHANGE_REVIEWS.jsonl` 與主 repo `.git/worktrees/BiddingSystem-2A-integration/index` 嘗試只開 ReadWrite handle（未寫入任何位元組），兩者均 Access denied。新增資料夾尚未在本段對話提供可用寫權；不能宣稱可直接改原檔。
 - HTTP 實測：5263 case15 GET=200；同版本15 quantity-scope GET=404。新版 API 重啟、Docker/DB 6/6 仍未完成；沒有啟動／停止原程序或修改 DB。
 - 下一步：從已附加兩資料夾的本機專案建立新 Local／This computer 對話，integration 設為主要目錄；先核對實際寫權、Git HEAD/status 和 DB 身分，再停止舊 5263 並以原 55433 隔離連線重啟新版後端。保留既有 V1/Run/資料庫與未追蹤測試檔，不重 seed、不重算、不發布 smoke。
+
+
+### 2026-11-22 — 合成準確度回測與144組對照實際完成；保留正式參數，兩項編譯警告已修
+- 使用者本輪重新指定三個必要收尾工作包，**本次優先實作數值回測及對照**，不再受舊「accuracy永遠最後」段落限制。不重跑已完成的3條SRC來源API、9組source smoke或6組城市/基地敏感度，不重seed、不重傳既有13標單、不發布holdout。
+- GitHub開發提交：`ab565eaaca905eb75f2bf2bdbdd764574ad2b61c`，`feature/1d-api-integration`；本輪12檔（11個受審查變更＋JSONL），2筆新審查紀錄且遠端原紀錄無刪除。**未merge main、未套回桌面或重啟原5263。**
+- 已提交可讀報告 `docs/HOLDOUT_EVALUATION_2026-11-22.md` 與機讀摘要同名JSON；新增永久 `tools/graduation-synthetic/evaluate_live_holdout.py`、測試。來源既有SYNTHETIC v2／300建案／143700對齊明細，SHA與lineage核對；實際210train/45validation/45test，不是90個獨立test。正式5263 range API完成237個project/scope之Top8/完整池配對（474次只讀range POST），均通過reference ID／source train／SRC-only／數值/日期/面積及區間重現檢查。沒有建立cases/runs/history或修改settings，API case/settings前後快照不變；不是新Docker連線認證。
+- **SRC test未注入非極端子集**：鋼筋n8，現行MAPE17.245%、coverage75%；混凝土n8，9.923%/75%；結構體價格n5，14.563%/60%。僅代表合成數值誤差；「未注入」不等工程正常，n小且不是時間順序預測。3個test案曾被舊paired/UI診斷，另提供排除後42案補充結果，不稱全新盲測。
+- **參數對照**：六因子3組×TopK5/8/16/32×半衰期1/3/6/無×相似指數0/1/2，共144組；只用validation的相對interval score宏平均選擇，再評test。選出的40/25/10/15/5/5、K32、半衰3、指數1，使SRC鋼筋MAPE降至13.195%、混凝土7.937%，但SRC價格升至24.331%、coverage降至20%。**決策：維持正式25/30/10/15/10/10、K8與既有設定，不部署全域替代組，不依test再挑參數。** 替代組是已對齊API baseline的離線counterfactual，不是將144組寫入settings。
+- **Precision/Recall/FPR不可識別**：13個paired XLSX/truth的hash已唯讀通過，只來自3案。全部variant仍manual_review_required，其cause_kind為可能合理的設計變異、非高報價證明的單價壓力或兩者混合；baseline無工程正常認證，不能自動當TN。JSON三指標維持null，這是標籤定義缺口，不能靠多跑API補出。
+- **同批警告修復**：`崴正/Services/TenderImportInspectionService.cs` 對InspectionRow Unit null顯式轉空字串，保留分類與缺單位警示（CS8604）；`崴正/崴正.csproj` 顯式Relational10.0.5對齊既有EFCore，避免測試project採到10.0.4（MSB3277）。無Migration/schema/估算算法變更。
+- **實測PASS**：Windows API Release **0 warnings/0 errors**；WorkbookParser全通過；Python **11/11**；兩個永久Node syntax PASS。交接gate首跑因Git quotePath將中文路徑轉義而FAIL，已改`scripts/check_handoff_review.py`使用NUL分隔並加入真實temp Git/core.quotePath=true測試；最終本機整批gate `--base 853e98d48c592e68b524c4fb4eee5a36a95e350e` **PASS：11 files/2 reviews**，遠端相對e644edb0的變更與review coverage亦核對一致。
+- **永久CI最終PASS**：`2A Build Validation` run `44927779220`，head `ab565eaaca905eb75f2bf2bdbdd764574ad2b61c`，completed/success；backend-build、frontend-build、synthetic-fixture-contracts三Job全部success。不新增臨時workflow。
+- **三包剩餘界線**：(1)合成數值回測已交付，分類Precision/Recall/FPR受真值缺口阻塞；(2)對照已交付並作不換正式參數的決策；(3)兩項編譯警告及交接工具問題已修、回歸與CI通過，但原機寫權/Docker、新5263 quantity-scope 6/6、既定完整系統整合/PR#2與最終版本仍未完成。不得寫「企業準確率通過」或「整個系統已結案」。
