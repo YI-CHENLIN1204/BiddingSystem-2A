@@ -131,3 +131,44 @@ python tools/graduation-synthetic/evaluate_synthetic_holdout.py --source .\gradu
 ```
 
 所有輸出檔都拒絕覆寫，若名稱已存在請更換檔名。2026-11-25 教授交付的資料來源區分、真實精度驗收規則，請閱讀 `docs/GRADUATION_DELIVERY_2026-11-25.md`。
+
+
+## v2.0 重要變更：建案專屬、多類別且歷史明細與標單 1:1 對齊
+
+**此方案取代 v0.1 的「每個建案只有兩個材料交易」作為 11/25 畢專測試的主要資料集。**
+原始 `generate.py`、`generate_irregular_excel.py` 保留作舊版 2 材料功能測試，不可把 v0.1 的合成精度套用到 v2.0。
+
+v2 依建案結構 RC/SC、總樓地板面積、地上地下樓層、基地限制（合成情境）、外牆工法與裝修等級，決定採用哪些工項模板、樓層、工程位置與數量。模板除了結構工程，也涵蓋假設、土方、基礎、泥作、防水、屋頂、門窗、金屬、外牆、室裝、給排水、電氣、消防、空調、弱電、電梯、景觀、雜項等。資料筆數因建案特徵而改變，不強制固定 360 筆或相同 7 張表。
+
+輸出：
+- `projects.csv`：建案基本資料＋ v2 合成建築特徵。
+- `historical_transactions.csv`：**每筆工程明細有對應同一案歷史交易**；交易欄位仍保持既有 CSV 相容。
+- `project_boq_rows.csv`：每個建案的詳細工程列，記錄來源交易 ID、材料代碼、工程類別、單位、價格、數量與位置。
+- `manifest.json`：來源標記、3 份檔案 SHA-256 與總數。
+
+輸出 Excel 直接取同案 `project_boq_rows.csv`，不再額外憑空附加 360 筆來源不明的假明細。為測試缺漏，部分 Excel 列會故意遮蔽單價／數量／單位，**但歷史來源保留完整合成數值**，並在 truth JSON 逐列記錄；缺漏測例不能直接寫入正常歷史庫。
+
+### Windows PowerShell 操作
+
+**不刪除先前 `graduation-data`，新建 v2 資料夾。** 如果已在 feature 分支，僅同步工具路徑即可。
+
+```powershell
+git fetch origin main
+git restore --source=origin/main --worktree -- tools/graduation-synthetic
+python -m unittest discover -s tools/graduation-synthetic -p "test_*.py" -v
+python tools/graduation-synthetic/generate_full_project_dataset.py --count 300 --seed 20261119 --output .\graduation-data-v2
+python tools/graduation-synthetic/export_full_project_excel.py --source .\graduation-data-v2 --output .\graduation-v2-project.xlsx --truth .\graduation-v2-project-truth.json
+python tools/graduation-synthetic/evaluate_full_project_holdout.py --source .\graduation-data-v2 --output .\graduation-v2-holdout.json --top-k 8 --min-sample 5
+```
+
+選擇特定建案可於匯出時附上 `--project-id SYN-00002`，未指定時自動從 `test` 案件中選一個。三種輸出若已存在，拒絕覆寫。
+
+### 資料完整性與研究限制
+
+- 同案 `historical_transactions.csv` 與 `project_boq_rows.csv` 以 `synthetic_transaction_id` 1:1 對應、金額／數量一致；保留 `train / validation / test` **依建案**切分。
+- 重複樓層的相同材料應先**同建案同材料碼彙總**，再形成估算樣本；不可把一案 50 列算成 50 個獨立建案。
+- `evaluate_full_project_holdout.py` 比較加權經驗分位數與加權常態代理基準，逐材料輸出 MAPE／涵蓋率／區間評分。**不是正式 C# Service 的 E2E 結果，也不是企業實際精準度**。
+- 工項名稱與類別是合成示例／工程常見名詞，**不是經過公開標單逐列抽取與統計校準**；單位面積係數、數量與單價也不是工程設計標準。仍須以合法取得的真實住宅標單核對工項組成、數量分布、工法與設計條件。
+- v2 暫以住宅 RC/SC 為範圍，不把商辦、廠房混入未校準的住宅模板；住宅內部建案條件與工項內容已有差異，但**尚不涵蓋所有建案類型**。
+- 雖然輸出含廣泛工程類別，但正式 C# 數量異常模型只對受控的可估算偵錯細項判定。**標單完整明細≠所有類別都已具有效估算模型**。
+- `SYN-WORK-*`、`SYN-REBAR` 等是合成材料代碼，不是系統正式 MaterialMaster 外鍵；禁止在產學合作正式 DB 匯入，須先做隔離畢專 DB 和主檔映射。
