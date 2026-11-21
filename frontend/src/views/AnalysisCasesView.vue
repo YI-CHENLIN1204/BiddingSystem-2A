@@ -1,5 +1,6 @@
 <script setup lang="ts">
 import { onMounted, ref } from 'vue'
+import { useRouter } from 'vue-router'
 import ProjectFields from '../components/ProjectFields.vue'
 import WorkbookSheetPicker from '../components/WorkbookSheetPicker.vue'
 import { api, apiForm } from '../services/api'
@@ -62,6 +63,7 @@ interface PolicyResponse {
   }
 }
 
+const router = useRouter()
 const { options, error: optionsError } = useSystemOptions()
 const cases = ref<AnalysisCaseSummary[]>([])
 const policy = ref<PolicyResponse | null>(null)
@@ -174,6 +176,7 @@ async function createCase() {
     const value = form.value
     const projectDate = `${value.projectMonth}-01`
 
+    let created: { analysisCaseId: number }
     if (sourceType.value === 'OneD') {
       if (!oneDStatus.value.configured) {
         throw new Error('目前環境未設定 1D API，請改用自行上傳建立待偵錯案件')
@@ -182,7 +185,7 @@ async function createCase() {
         throw new Error('請輸入有效的 1D ProjectId')
       }
 
-      await api(`/analysis-cases/from-1d/${oneDProjectId.value}?note=${encodeURIComponent(note.value.trim())}`, {
+      created = await api<{ analysisCaseId: number }>(`/analysis-cases/from-1d/${oneDProjectId.value}?note=${encodeURIComponent(note.value.trim())}`, {
         method: 'POST',
         body: JSON.stringify({
           caseName: value.projectName.trim(),
@@ -218,12 +221,21 @@ async function createCase() {
       data.append('projectDate', projectDate)
       data.append('note', note.value.trim())
 
-      await apiForm('/analysis-cases/from-upload', data)
+      created = await apiForm<{ analysisCaseId: number }>('/analysis-cases/from-upload', data)
     }
 
     showCreate.value = false
     message.value = '待偵錯案件已建立，來源資料已保存為 Version 1。'
-    await load()
+    // 建檔成功後直接進入分析頁；導航失敗不能誤報為建檔失敗，避免重複上傳。
+    if (Number.isSafeInteger(created.analysisCaseId) && created.analysisCaseId > 0) {
+      void router.push(`/analysis-cases/${created.analysisCaseId}`).catch(() => {
+        message.value = '案件已建立，但無法自動開啟。請從案件清單進入。'
+        void load()
+      })
+    } else {
+      message.value = '案件已建立，但沒有收到有效案件編號。請從清單進入。'
+      await load()
+    }
   } catch (caught) {
     error.value = caught instanceof Error ? caught.message : '建立待偵錯案件失敗'
   } finally {
