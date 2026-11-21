@@ -8,6 +8,7 @@ on:
       - "frontend/**"
       - "scripts/verify-ui-preflight.mjs"
       - "scripts/verify-ui-state.mjs"
+      - "tools/graduation-synthetic/prepare_ui_case.py"
       - ".github/workflows/graduation-ui-build.yml"
   pull_request:
     paths:
@@ -31,6 +32,8 @@ jobs:
         run: |
           node --check scripts/verify-ui-preflight.mjs
           node --check scripts/verify-ui-state.mjs
+      - name: Check isolated UI fixture generator syntax
+        run: python -m py_compile tools/graduation-synthetic/prepare_ui_case.py
       - name: Install locked frontend dependencies
         working-directory: frontend
         run: npm ci
