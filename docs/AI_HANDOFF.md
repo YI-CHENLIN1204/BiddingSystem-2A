@@ -346,3 +346,12 @@ npm run build
 - 驗證狀態：train-only 210 歷史案／99,959 筆資料庫寫入成功，數量偵錯 readiness 2/2、價格估算 readiness 210/210，**SYN-00002 574/574 上傳及解析 PASS**；正式 C# `quantity-analysis` 與 `major-price-analysis` **尚未執行，不能把上傳成功視為估算成功**。價格／數量演算法沒有修改。
 - 下一實際驗證點：不再重複上傳；用現有 caseId=1、versionId=1 分別呼叫 `POST /api/analysis-cases/1/versions/1/quantity-analysis` body `{}`，與 `POST /api/analysis-cases/1/versions/1/major-price-analysis` body `{"majorCategory":"結構體工程","topCount":8}`，保存原始 JSON（注意 PowerShell UTF-8），記錄 HTTP Status、run IDs、正式 P15/P50/P85 判定、有效樣本數、無法判定原因，再與 test-only truth 比對。若任一步失敗應停止，檢查該 API 錯誤，不可重新 seed。DB 尚未再次用 SQL 獨立核對資料筆數。
 - 本次更新僅交接文件，沒有新的程式碼/資料庫/Migration 修改。隱私：正式連線字串及密碼不可貼到 GitHub／對話。
+
+
+### 2026-11-21 — 正式 API 數量及價格分析首次成功：SYN-00002，結果有紅燈、需辨識結構限制
+- 使用者在已建立的 `analysisCaseId=1`、`analysisBidVersionId=1` 後執行正式 API，提交 `$quantity.result` 文字檔和 `$price.result` JSON 文字。數量回傳 `analysisCaseId=1`、`totalGroupCount=1`、`analyzedGroupCount=1`、`insufficientDataCount=0`、`skippedGroupCount=0`：僅「結構體工程／混凝土」 m³，觀測 2,575.546，usage/m²=0.091296，P15/P50/P85 數量為 4,330.57／5,312.71／6,097.52 m³，analysisStatus=Low、trafficLight=Red、8 參考案、effectiveSampleSize=6.46、可用參考案 178。來源詳見使用者附檔，不含個資。
+- 價格 API `analysisRunId=2`，結構體工程 `candidateProjectCount=210`、`availableProjectCount=210`、`referenceProjectCount=8`、`effectiveSampleSize=6.49`、`hasEnoughSamples=true`；合理每坪價格 P15/P50/P85：8,814.29／10,615.02／13,718.69 元，觀測 14,466.24 元／坪；合理總金額 P15/P50/P85：75,219,159.31／90,586,148.64／117,072,210.25，觀測 123,451,604.71；analysisStatus=High、trafficLight=Red。量與價均是真正正式 ASP.NET API（不是 Python 離線代理）合成資料上的演算法執行成功；**不代表真實工程準確度或判定正確**。
+- 關鍵資料問題待確認：數量分析只產生混凝土一組，沒有鋼筋。查證 `generate_full_project_dataset.py` 的 RC CORE 含鋼筋+混凝土、SC CORE 是鋼骨+混凝土；正式 `TwoAPreprocessService` 鋼筋/混凝土才允許判定，鋼骨不在 2A 現有數量估算範圍。應先讀本機 `graduation-v2-project-ready-truth.json` 的 `project.structure_type` 與該案 `SYN-REBAR/SYN-STEEL/SYN-CONCRETE` 筆數，確認 SC 案只出現混凝土是否**符合設計**，不可先認定為鋼筋漏辨識 bug；如 SC，補一個未參與訓練的 RC 測試案，驗證鋼筋與混凝土兩類。不可擴增鋼骨判定規則或修改正式模型政策。
+- 來源限制：歷史及待估都是 SYNTHETIC，項目量價係數並非實際建築工程校準；本次紅燈只是演算法在合成情境下成功分類，**未完成真值標記下的異常檢出準確性／FP/FN 比較**。價格來源權重含 timeWeight（依實際 API 回傳），不得說目前完全沒有時間權重。待做分案型、數量及價格圖表，先確認模型涵蓋案例。
+- 下一驗證點：在本機唯讀查看 `$truth.project.structure_type` 與 truth 材料碼分布；保存已得的數量/價格 API JSON，確認訊息與異常狀態，再選 test split 的 RC 案產生新版標單（新檔名，不覆寫）、上傳另建案件並跑相同 API；後續產生真實 API 對照圖表。原始 train PostgreSQL 210 案／99,959 筆不必重新匯入。
+- 交接為本輪實測紀錄，無程式碼/資料庫/Migration 更新。
