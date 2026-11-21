@@ -239,3 +239,14 @@ npm run build
 - 驗證狀態：上述新增程式及測試已提交 GitHub **但尚未在使用者 Windows 執行新版測試，CI 也未核實結果**；不能以舊版 12/12 PASS 取代新測試。公開資料之工程細目類別/價格規範已查考工程會與水利署，但 **v2 模板與數值目前並非真實標單抽取或經工程師校準**。
 - 下一驗證點：使用者在 feature 分支安全取回工具目錄，跑全套 unittest，生成 300 案 v2；輸出與對應歷史一致的 Excel／JSON 和新 holdout；確認 `boq_line_count=transaction_count`、歷史材料碼種類 >2、各建案明細數與範圍差異。取得可合法使用的住宅工程詳細標單後，另做真實資料驗證；**未來如需進 DB，先定獨立畢專 DB、主檔映射、Migration、回滾方案**。
 - 已淘汰：舊 300 案／600 交易不再作為「廣泛工程標單數量精度」主要展示資料；常態分布仍只在離線對照模型，沒有替換正式估算 API。
+
+
+### 2026-11-21 — 目標重定義：完整測試環境（歷史 DB、未見過的待估標單、正式估算與視覺化）
+- 使用者明確表示：生成模擬資料的目標是讓 2A **實際跑起來且驗證演算法可行性**，不是為了得到一個好看的「精準度」數字；歷史建案與目標標單要完整、條件多樣，11/25 報告應能以圖表證明而非只列數值。
+- 現有 v2 多工種完整資料生成、歷史/明細 1:1 對應與 test-only Excel 匯出仍是正確方向；但 **CSV 生成 ≠ 資料已進 ASP.NET 的 PostgreSQL**。不可宣稱應用 E2E 已完成。
+- 新增 `tools/graduation-synthetic/build_evidence_report.py` Commit `32a3932d`，用具來源驗證的 v2 `projects.csv`、`project_boq_rows.csv`、`historical_transactions.csv` 和 `evaluate_full_project_holdout.py` 結果，輸出離線 HTML 圖表：P50 MAPE、P15-P85 涵蓋率、工項工程類別筆數、RC/SC 建案數與資料量，含醒目 `SYNTHETIC / OFFLINE_FULL_BOQ_PROXY_NOT_CSHARP_API` 標記，禁止冒稱真實精度。
+- 新增 `tools/graduation-synthetic/test_build_evidence_report.py` Commit `c913acdd`：檢驗圖表包含必要資訊、來源和跨檔案筆數一致，偽造 `REAL` 標記會被拒絕。
+- 新增 `docs/GRADUATION_E2E_ACCEPTANCE_2026-11-25.md` Commit `a492e59a`：明確分隔 train 歷史基準、validation 模型選型與 test 目標標單，列出與 ASP.NET 實際 DB 主檔、歷史審核流程、`AnalysisCaseController` 上傳接口、`DetectionCategoryRangeService` 可估算細項政策的差異及驗收證據。
+- DB 現況（以 feature 分支程式碼查證）：`ApplicationDbContext` 需要 `project_master`、`material_master`、`unit_master`、`historical_transaction`、`detection_category` 等表；`FinalBidImportService` 的新標單先是 Draft，不直接發佈歷史資料，並須完成各材料碼的 `MaterialId` / `UnitId` 映射。尚無獨立畢專 PostgreSQL 的連線／Migration 驗證，**本輪不碰產學正式 DB**。
+- 目前狀態：v2 新版程式碼、離線 HTML 圖表、測試與交付規範 **均已提交**；新腳本 Windows、GitHub CI、C# E2E 與資料庫匯入 **尚未實測**；不能以先前 12/12 PASS 當新版本驗收，不能將舊 9.246% MAPE 當完整模型的精度。
+- 下一步優先：Windows 執行全套工具測試 → v2 多類別 300 案資料 → 確認 test-only Excel → v2 holdout JSON → HTML 圖表；下一組將對**隔離畢專 PostgreSQL**做唯讀 schema preflight、設計可回滾種子匯入、依正式 AnalysisCase 進行真實端到端估算。
