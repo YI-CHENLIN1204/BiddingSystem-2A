@@ -105,8 +105,8 @@ def cell_xml(ref, value):
     if value is None or value == '':
         return ''
     if isinstance(value, (int, Decimal, float)):
-        return f'<c r="{ref}"><v>{value}</v></c>'
-    return f'<c r="{ref}" t="inlineStr"><is><t>{escape(str(value))}</t></is></c>'
+        return f'<c r="{ref}" s="1"><v>{value}</v></c>'
+    return f'<c r="{ref}" s="1" t="inlineStr"><is><t>{escape(str(value))}</t></is></c>'
 
 
 def worksheet_xml(rows, headers=None):
@@ -131,13 +131,25 @@ def make_xlsx(sheets):
         raise ValueError('duplicate sheet names')
     strings = [f'<sheet name="{escape(name)}" sheetId="{i}" r:id="rId{i}"/>' for i, name in enumerate(sheets, 1)]
     sheet_rels = [f'<Relationship Id="rId{i}" Type="{REL}/worksheet" Target="worksheets/sheet{i}.xml"/>' for i in range(1, len(sheets)+1)]
+    sheet_rels.append(f'<Relationship Id="rId{len(sheets)+1}" Type="{REL}/styles" Target="styles.xml"/>')
     overrides = ''.join(f'<Override PartName="/xl/worksheets/sheet{i}.xml" ContentType="application/vnd.openxmlformats-officedocument.spreadsheetml.worksheet+xml"/>' for i in range(1, len(sheets)+1))
     parts = {
-        '[Content_Types].xml': ('<?xml version="1.0" encoding="utf-8"?><Types xmlns="http://schemas.openxmlformats.org/package/2006/content-types"><Default Extension="rels" ContentType="application/vnd.openxmlformats-package.relationships+xml"/><Default Extension="xml" ContentType="application/xml"/><Override PartName="/xl/workbook.xml" ContentType="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet.main+xml"/>' + overrides + '</Types>'),
+        '[Content_Types].xml': ('<?xml version="1.0" encoding="utf-8"?><Types xmlns="http://schemas.openxmlformats.org/package/2006/content-types"><Default Extension="rels" ContentType="application/vnd.openxmlformats-package.relationships+xml"/><Default Extension="xml" ContentType="application/xml"/><Override PartName="/xl/workbook.xml" ContentType="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet.main+xml"/>' + overrides + '<Override PartName="/xl/styles.xml" ContentType="application/vnd.openxmlformats-officedocument.spreadsheetml.styles+xml"/></Types>'),
         '_rels/.rels': f'<?xml version="1.0" encoding="utf-8"?><Relationships xmlns="http://schemas.openxmlformats.org/package/2006/relationships"><Relationship Id="rId1" Type="{REL}/officeDocument" Target="xl/workbook.xml"/></Relationships>',
         'xl/workbook.xml': f'<?xml version="1.0" encoding="utf-8"?><workbook xmlns="{BASE}" xmlns:r="{REL}"><sheets>{"".join(strings)}</sheets></workbook>',
         'xl/_rels/workbook.xml.rels': f'<?xml version="1.0" encoding="utf-8"?><Relationships xmlns="http://schemas.openxmlformats.org/package/2006/relationships">{"".join(sheet_rels)}</Relationships>',
     }
+    parts['xl/styles.xml'] = (
+        f'<?xml version="1.0" encoding="utf-8"?><styleSheet xmlns="{BASE}">'
+        '<fonts count="1"><font><sz val="11"/><name val="Microsoft JhengHei"/></font></fonts>'
+        '<fills count="2"><fill><patternFill patternType="none"/></fill>'
+        '<fill><patternFill patternType="gray125"/></fill></fills>'
+        '<borders count="1"><border><left/><right/><top/><bottom/><diagonal/></border></borders>'
+        '<cellStyleXfs count="1"><xf numFmtId="0" fontId="0" fillId="0" borderId="0"/></cellStyleXfs>'
+        '<cellXfs count="2"><xf numFmtId="0" fontId="0" fillId="0" borderId="0" xfId="0"/>'
+        '<xf numFmtId="0" fontId="0" fillId="0" borderId="0" xfId="0" applyAlignment="1">'
+        '<alignment vertical="center" wrapText="1"/></xf></cellXfs></styleSheet>'
+    )
     for i, rows in enumerate(sheets.values(), 1):
         # Sheet one is the summary; detail header rows vary among sheets.
         header = None if i == 1 else LAYOUTS[(i - 2) % len(LAYOUTS)]
