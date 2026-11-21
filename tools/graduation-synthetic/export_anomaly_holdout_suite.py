@@ -55,6 +55,20 @@ def main():
         cases = plan(args.source)
         args.output_dir.mkdir(parents=True, exist_ok=True)
         summary = []
+        # Pair every manipulated case with a zero-multiplier baseline workbook
+        # from the SAME project; a variant is not an independent project.
+        baselines = {}
+        for _, project in cases:
+            pid = project["synthetic_project_id"]
+            if pid in baselines:
+                continue
+            name = "baseline_" + pid
+            base = args.output_dir / name
+            baseline_result = export(args.source, Path(str(base) + ".xlsx"),
+                                     Path(str(base) + "-truth.json"), pid)
+            baselines[pid] = {
+                "base_project_id": pid, "xlsx": name + ".xlsx",
+                "truth": name + "-truth.json", "detail_rows": baseline_result["detail_rows"]}
         for scenario, project in cases:
             prefix = args.output_dir / (scenario + "_" + project["synthetic_project_id"])
             xlsx = Path(str(prefix) + ".xlsx")
@@ -78,6 +92,8 @@ def main():
             "origin": "HELDOUT_ONLY_NOT_TRAINING_HISTORY",
             "test_only": True,
             "scenario_count": len(summary),
+            "baseline_count": len(baselines),
+            "baseline_workbooks": list(baselines.values()),
             "scenarios": summary,
             "ground_truth_definition": "Injected multipliers, not guaranteed model alarm correctness",
         }
