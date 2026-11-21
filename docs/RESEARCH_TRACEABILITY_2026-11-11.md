@@ -214,3 +214,11 @@ E3：從 GitHub 開發分支讀取 `frontend/src/services/api.ts`、`frontend/sr
 - **E3 程式修正：** 本分支加入 main 已有來源驗證與 test-only XLSX 產生器及相依的 OOXML 產生器（`97558ce`、`3235696`），並建立 `test_prepare_ui_case.py`（`0aca507`）驗證 XLSX/JSON 產出、來源完整性、test-only 及拒絕覆寫。
 - **E3 CI 治理：** 更新 `2a-build.yml`（`9f68b3a`），刪除重複的 `graduation-ui-build.yml`（`71738d9`），不修改量價模型或 DB。**CI 結果須查 Actions 實際狀態，不得只憑提交宣稱通過。**
 - **未測：** 本地重新產出新 Excel、透過 UI 逐筆上傳／生成 AnalysisRun、正式歷史回寫與 Audit；不得把 holdout 加入 Approved 當新訓練歷史。後續準確度仍待獨立真值。
+
+
+## V. 2026-11-21：UI 測試標單來源缺失的正式消除方案
+
+- **E1 失敗證據**：使用者 Windows `test_prepare_ui_case.py` 2/2 PASS，產生器因 `graduation-src-extreme-v3/manifest.json` 不存在而失敗；預檢的 `ENOENT` 為連鎖錯誤，Excel 真正預覽未執行。
+- **E3 提交修正**：`prepare_ui_case.py` 新增省略 `--source` 的獨立 UI smoke 工作簿，完全不需要大型來源 CSV/manifest，並保留原 SHA/test split 模式。資料包含示意鋼筋、混凝土、模板、鋼骨與基礎工項，數量／單價只是操作測試值，**不參與模型訓練，也不是獨立 holdout 的準確度真值**。
+- **E3 永久回歸**：`test_prepare_ui_case.py` 新增真正 subprocess 執行 CLI 的測試和 XLSX SHA/ZIP、逐列 amount 及 metadata 安全條款；利用既有 `2a-build.yml`，不再新增臨時 CI。
+- **未驗證**：使用者本機修正版匯出 Excel／HTTP preview+inspect、瀏覽器建立案件與 Run、決標回寫／Audit。
