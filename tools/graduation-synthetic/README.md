@@ -220,3 +220,56 @@ dotnet run --project .\tools\graduation-synthetic\GraduationSeed\GraduationSeed.
 **驗收順序：** unittest → v2 資料生成 → train-only seed → PostgreSQL 匯入 → test Excel 上傳 → 正式 API P15/P50/P85 → 圖表/回測。每個檢查點必須留下實際執行結果；沒有結果就保持「未驗證」。
 
 > 精準度和可信度：任何帶有 `SYNTHETIC` 標籤的 MAPE 與涵蓋率都只能證明模型在**受控合成條件**下的表現，不能作為真實工程預測能力的外部驗證。
+
+
+## 2026-11-21：SRC + 極端條件嚴格模式（新隔離資料集）
+
+本階段新增 **實驗性 SRC 核心材料（鋼骨／鋼筋／混凝土）**與六組刻意設計的極端條件（超小低樓層、超大型高樓、深地下室、狹窄基地、大基地低樓層、偏遠且舊年份）。每種情境分別配置於 **train / validation / test**，以建案為切分單位，且寫入 `extreme_scenario` 欄位以便分層回測。這些不是實際施工設計或建材用量規範。
+
+舊 `graduation-data-v2` 與 `127.0.0.1:55432/bidding2a_graduation` **保留不動**。新版採不同資料夾、不同 DB、不同 Port、獨立 Docker Compose Project + Volume。請從專案根目錄執行：
+
+```powershell
+git fetch origin main
+git restore --source=FETCH_HEAD --worktree -- tools/graduation-synthetic
+python -m unittest discover -s tools/graduation-synthetic -p "test_*.py" -v
+python tools/graduation-synthetic/generate_full_project_dataset.py --count 300 --seed 20261119 --include-src --include-extremes --output .\graduation-src-extreme-v3
+python tools/graduation-synthetic/prepare_training_seed.py --source .\graduation-src-extreme-v3 --target-database bidding2a_graduation_src --output .\graduation-src-train-seed.json
+python tools/graduation-synthetic/export_src_holdout_suite.py --source .\graduation-src-extreme-v3 --output-dir .\graduation-src-holdouts
+python tools/graduation-synthetic/evaluate_full_project_holdout.py --source .\graduation-src-extreme-v3 --output .\graduation-src-offline-proxy.json
+python tools/graduation-synthetic/audit_candidate_scope.py --source .\graduation-src-extreme-v3 --output .\graduation-src-candidate-audit.json
+```
+
+所有產生器均不覆寫既有輸出。使用者應先確認測試結果無錯誤，並查看 `manifest.json` 的 `structure_type_counts`、`extreme_cases_per_split`（預期 train/validation/test 各 6）、train seed 筆數與 `graduation-src-holdouts/suite_manifest.json`（1 個普通 SRC test + 6 個極端 test，每個 Excel 附 truth）。
+
+建置並啟動 SRC **新的隔離** PostgreSQL（絕不連正式 Supabase，勿回傳密碼）：
+
+```powershell
+dotnet build .\tools\graduation-synthetic\GraduationSeed\GraduationSeed.csproj -c Release
+$secure = Read-Host "新的 SRC 測試資料庫密碼" -AsSecureString
+$env:GRADUATION_SRC_DB_PASSWORD = [System.Net.NetworkCredential]::new("", $secure).Password
+docker compose -f tools/graduation-synthetic/compose.graduation-src-db.yaml up -d
+docker compose -f tools/graduation-synthetic/compose.graduation-src-db.yaml ps
+$env:GRADUATION_DB_CONNECTION = "Host=127.0.0.1;Port=55433;Database=bidding2a_graduation_src;Username=graduation;Password=$env:GRADUATION_SRC_DB_PASSWORD"
+dotnet run --no-build -c Release --project .\tools\graduation-synthetic\GraduationSeed\GraduationSeed.csproj -- --seed-json .\graduation-src-train-seed.json
+```
+
+匯入器會檢查目標 JSON 的 `target_database` 與連線的名稱、埠一致，並拒絕已有資料的 DB。只可在**全新**且本機隔離的 SRC DB 執行一次；不要對既有 55432 DB 重跑 Seed，也不要使用 `docker compose down -v` 破壞資料。
+
+用目前含 SRC／基地面積實作的 **`feature/1d-api-integration`** 版本 ASP.NET 連接新資料庫（需關掉舊埠的後端或另選未使用埠），再做**唯讀**城市與基地面積敏感度檢查：
+
+```powershell
+$env:ConnectionStrings__DefaultConnection = $env:GRADUATION_DB_CONNECTION
+dotnet run -c Release --project .\崴正\崴正.csproj --urls http://127.0.0.1:5261
+# 在另一個 PowerShell 視窗：
+python tools/graduation-synthetic/verify_similarity_sensitivity.py --source .\graduation-src-extreme-v3 --api http://127.0.0.1:5261 --output .\graduation-src-city-site-audit.json
+```
+
+`verify_similarity_sensitivity.py` 僅呼叫 `POST /api/major-category-price/range`，不建立 analysis case、不寫歷史資料；控制同一 SRC 測試建案的城市、基地面積變化，比較參考建案 ID / 相似度分數。它若回報 `INVESTIGATE`，先核實後端使用的 Git 分支、城市 / 基地值與 SRC 歷史資料，不可把未通過當作已驗證。
+
+### 嚴格工項上線門檻
+
+`audit_candidate_scope.py` 只產生 **OFFLINE_PROXY_NOT_REAL_CSHARP_API** 研究資訊，列出鋼骨、模板及土方等候選工項及各 RC／SC／SRC 資料量、離線預測誤差／涵蓋率。**不會修改 `TwoAScopePolicy`、`DetectionCategories`、`DetectionCategoryMaterialMaps`，亦不會啟用新紅綠燈。**
+
+正式納入任何新工項需獨立驗證：可比的計量單位／穩定材料定義、足夠的每結構樣本、獨立 test／極端建案回測、正式 ASP.NET API 的 P15/P50/P85 覆蓋與誤報/漏報評估，以及業界設計依賴性審查。所有條件通過並取得明確決策後才可以另行修改 scope 與 DB mapping。**SRC 只有新增資料實驗，不能將鋼骨誤認成既有核准的鋼筋類別。**
+
+本工具產出的數字全屬 SYNTHETIC，不能用來宣稱真實營造工程準確率。注意：GitHub `main` 的相似度與 `feature/1d-api-integration` 尚有不同步之處，實際正式環境版本應先按交接文件核對；不要只因 CLI PASS 就認定不同分支功能相同。
