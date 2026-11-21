@@ -141,6 +141,22 @@ namespace 崴正.Controllers
         }
 
 
+        [HttpGet(
+            "{analysisCaseId:int}/versions/{versionId:long}/quantity-scope")]
+        public async Task<IActionResult> GetVersionQuantityScope(
+            int analysisCaseId,
+            long versionId)
+        {
+            return ToActionResult(
+                await _analysisCaseService
+                    .GetVersionQuantityScopeAsync(
+                        analysisCaseId,
+                        versionId
+                    )
+            );
+        }
+
+
         [HttpGet("{analysisCaseId:int}/runs")]
         public async Task<IActionResult> GetRuns(
             int analysisCaseId)
