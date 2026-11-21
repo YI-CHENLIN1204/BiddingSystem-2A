@@ -500,3 +500,10 @@ TwoAQuantityAnalysisService.AnalyzeAsync 現新增執行時 fail-closed：僅 Tw
 - 使用者首次產生測試工作簿時遇到 `ModuleNotFoundError`，確認 feature 分支缺少 main 既有的 `export_full_project_excel.py`，而 exporter 依賴 `generate_irregular_excel.py`。已同步兩者到 feature，新增 `test_prepare_ui_case.py` 作可長期運行的**真實匯出契約測試**；後續 `ENOENT` 是 XLSX 不存在，不能當成 API 解析失敗。
 - 使用者要求不要建立臨時 CI/CD，故保留長期 `.github/workflows/2a-build.yml` 作正式 build/test 入口、保留 handoff guard，移除重複的 `graduation-ui-build.yml`；不清除使用者本機未追蹤檔或 DB。
 - 下一步同批 cherry-pick 五個 commits 並跑 Windows 本機 Excel 產生器和唯讀解析；真實 UI 上傳與資料持久化、決標回寫、異常準確度仍尚未完成。
+
+
+## 2026-11-21 — UI smoke fixture 不再依賴本機未存在的大型來源資料夾
+
+- Windows 對完整相依模組跑 Python 2/2 PASS，但指定 `graduation-src-extreme-v3` 缺 manifest，產生 Excel 與後續唯讀解析並未執行成功。
+- 修正 `prepare_ui_case.py`：不帶 `--source` 時內建製作獨立合成多工作表 XLSX + truth JSON（不使用歷史、DB、API）；保留指定來源時 strict SHA 驗證；絕不可把 UI fixture 當 holdout 或決標真值。
+- 在既有永久 Python 合成產生器測試加入真正 CLI 測試；不新增或刪除任何其他 CI。接下來只需同步本批兩 commit 並重跑無 `--source` 的指令。
