@@ -746,3 +746,10 @@ npm run build
 - 提供使用者單檔 `src_batch_audit.py`（對話附件，由使用者本機下載運行，尚未存進 GitHub repo），在已啟動的 5263 + 55433 上用 Docker CLI 只讀取 SRC Approved metadata，向三個現有 API 發出 baseline／只變城市／基地面積×1.5 的 **9 次只讀範圍運算**，每次核對 references 非空、ID 不重複、count 對得上、歷史建案確實屬 SRC Approved，輸出本機 `src-batch-api-audit.json` 作後續差異比較。腳本尚未在使用者 Windows 環境執行；**不表示9/9已 PASS、不表示模型準確率或紅黃燈品質**。檔案不是專案原有測試工具；不得宣稱已推 GitHub。
 - 之後優先以既有 holdout 90 案與 13 份成對 baseline/anomaly XLSX 的 synthetic truth（保留 train/holdout 隔離）作正式批次回測，彙整 P15/P85 coverage、價格/量誤差、模型權重/TopK 敏感度與真值已明確的混淆矩陣；不能將純合成 truth 或零注入基準的紅燈直接宣稱為企業真實假陽性率。**不要再建/覆蓋 55433、重新 seed、重傳原 13 件或把 holdout 放入 Approved**。
 - `CS8604` null 單位警告與 EF Core 版本衝突另併成一組低風險修復，不阻塞唯讀計算實驗；完整程式修改經本機建置+測試後再提交並更新交接。
+
+
+### 2026-11-21 — 新版 SRC 三情境 × 三估算範圍 9/9 API/DB 批次 PASS，待敏感度數值比較
+- 使用者在本機 `BiddingSystem-2A-integration` 執行 `python .\\src_batch_audit.py` 實測成功，回報 9/9 PASS：`baseline`、`city_changed`、`site_area_x1_5` 三情境各自的 `price`／`rebar`／`concrete` 8 筆 references **均在 55433 DB 回查確認為 SRC Approved**，共 9 個 POST/SQL 驗證案例，報告落在本機 `src-batch-api-audit.json`；本回合未收到該報告內容，**不得猜測相似度分數、參考排序或 P15/P50/P85 實際增減**。
+- 已檢查使用者先前取得的 `src_batch_audit.py`：檢查資料庫 compose labels、55433、5263 API health，從 SRC Approved DB 隨機固定 project_id 最小者（固定 ORDER BY）讀取 target，變更城市或基地面積×1.5，逐一比對 top8 實際 project IDs 全部 SRC Approved。這是**參考 cohort 的敏感度煙霧測試，不是預測準確率、也不是 holdout**；目前 9/9 PASS 只代表 HTTP+歷史來源純度，尚未檢查分數或區間是否對城市／基地面積有適當反應。
+- 為加速比較，已建立對話可下載的 `compare_src_sensitivity.py`（目前只在對話的 /mnt/data，**尚未提交 GitHub**），此程式**離線唯讀** `src-batch-api-audit.json`、拒絕不足9情境/不滿8來源，對 baseline 比較 city_changed、site_area_x1_5 各 scope 的 top8 ID 重疊、排序、相似分數向量改變與 P15/P50/P85 變化，輸出 `src-sensitivity-comparison.json`；已通過 Python 語法及自造 6 comparison + fail-closed missing case 小型測試，**尚未使用本機真實 JSON 驗證或得出數值結果**。
+- 下一重點：請使用者在同一 integration 目錄執行 `python .\\compare_src_sensitivity.py` 並提供 6 行比較摘要與 JSON；隨即轉向原有 90 holdout + 13 pairing synthetic truth 正確的資料隔離驗證、P15/P85 coverage/MAE/MAPE、標籤完整條件下 precision/recall/FPR，並比較現行 weights/TopK/time weight 的可靠性；不能把未測的 accuracy 指標標記 PASS。不要重新 seed 55433、不要將 holdout 插入 Approved、不要 rerun 原 13 份 target uploads。
