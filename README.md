@@ -1,5 +1,12 @@
 # BiddingSystem-2A
 
+> **📌 組員請看這個版本（2A 專題報告／目前共享開發碼）**  
+> **分支：[`feature/1d-api-integration`](https://github.com/YI-CHENLIN1204/BiddingSystem-2A/tree/feature/1d-api-integration)**  
+> GitHub 預設的 `main` **尚未整合最新 2A 功能**，目前不要直接以 `main` 的程式碼寫功能說明。  
+> 本分支是**持續開發版本，不是已驗收的正式發行版**；報告若要固定版次，請記錄當時使用的 Commit SHA。  
+> 交接及實際驗證狀態請看分支內的 [CURRENT_HANDOFF](https://github.com/YI-CHENLIN1204/BiddingSystem-2A/blob/feature/1d-api-integration/docs/CURRENT_HANDOFF_2026-11-11.md)。
+
+
 > **2026-11-11 最新交接入口：** [完整交接主檔](docs/CURRENT_HANDOFF_2026-11-11.md) · [研究版本／證據回溯](docs/RESEARCH_TRACEABILITY_2026-11-11.md) · [新對話可複製提示](docs/NEW_CHAT_START_2026-11-11.md)。舊 2026-10-15 文件與零資料庫紀錄為歷史快照，不應當成現況。專題模擬研究請見 [研究操作](research/2a_synthetic/README.md)。
 
 
