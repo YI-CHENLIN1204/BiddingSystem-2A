@@ -85,3 +85,12 @@
 - RC：18 test（16 非 extreme），混凝土無生成器 shock 18/18、鋼筋 17/18、結構大項 15/18；SC：17 test（15 非 extreme），混凝土 15/17、鋼筋不適用、結構大項 11/17；SRC：10 test（8 非 extreme），混凝土 10/10、鋼筋 10/10、結構大項 7/10。
 - 三 baseline：RC `SYN-00029` 鋼筋 Low/shockedLineCount=0，結構總價 Normal/0；SRC `SYN-00030` 鋼筋 Low/0，結構總價 Low/0；SC `SYN-00026` 結構總價 Low/shockedLineCount=4（混凝土 Normal/0）。**RC、SRC 的基準紅燈不能用已記錄生成器 shock 直接解釋**；SC 四筆 shock 可能影響總價，但尚未證明因果。注意生成器未加 shock 不等於合格正常標單。
 - 收斂下一段：先對無 shock 的 RC/SRC 基準 Low 做**離線診斷**（同結構篩選、參考建案特徵與範圍成分、生成器係數的量級差異），不要直接為了消除紅燈調整量價門檻。若要取得可靠正常誤報率，需另定具工程情境、獨立分布的正常 holdout 並驗證正式 API。
+
+
+## P0 第二個落地工具：已保存 Run 的來源參考組診斷（2026-11-21）
+
+新增 `tools/graduation-synthetic/diagnose_baseline_low.py` + `test_diagnose_baseline_low.py`。只讀本機 5262 既存 3 baseline 案件的 6 筆 Quantity/MajorPrice Run，計算各偵錯 Scope `observed/lower/upper` 相對差距（比例以下界或上界為分母）、列出參考建案結構型式與相似度，對照前階段的 generator shock provenance。校驗 `projects.csv` SHA、run ID 及保存 summary 的實際值一致性；未驗證前不可宣稱結果是估算模型錯誤。
+
+- **用途**：先診斷 RC `SYN-00029` 鋼筋、SRC `SYN-00030` 鋼筋/總價及 SC `SYN-00026` 總價的參考案組成，決定是否要另行提出可重現的問題。
+- **狀態**：新工具與 4 個離線單元測試已提交；使用者 Windows 原 26 tests PASS，此次新增 4 tests / 實際 5262 GET **尚未執行**。預期 30 tests，不能將其記為 PASS。
+- **安全**：沒有 POST、沒有 DB migration、沒有新標單、沒有生成器重跑、沒有模型門檻修改，也不把 Red 當誤報率；請參考 `tools/graduation-synthetic/README.md`。
