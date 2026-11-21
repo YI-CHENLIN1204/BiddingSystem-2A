@@ -72,6 +72,15 @@ class FullProjectDatasetTests(unittest.TestCase):
             answer=json.loads(truth.read_text(encoding="utf-8"))
             self.assertEqual({x["synthetic_line_id"] for x in matching},
                              {x["synthetic_line_id"] for x in answer["cases"]})
+            # Current AnalysisCase/from-upload rejects uncategorized lines;
+            # each synthetic line must supply an explicit supported major group.
+            approved = {
+                "結構體工程", "內外牆裝修工程", "假設工程",
+                "土方及基礎工程", "安全觀測工程", "防水工程",
+                "門窗工程", "外部裝修工程", "雜項工程", "景觀工程"
+            }
+            self.assertTrue(all(x["analysis_major_category"] in approved
+                                for x in answer["cases"]))
             self.assertEqual(answer["xlsx_sha256"],hashlib.sha256(output.read_bytes()).hexdigest())
             with ZipFile(output) as workbook:
                 self.assertIsNone(workbook.testzip())
