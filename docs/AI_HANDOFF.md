@@ -457,3 +457,8 @@ npm run build
 ### 2026-11-21 — SRC/extreme 套件納入 CI 驗證路徑
 - 新增 `.github/workflows/graduation-synthetic.yml` commit `ae8e085a` 的 SRC/extreme 離線驗證步驟：產生獨立 120 案含 SRC/極端 train/validation/test 資料 → 產生 SRC-only DB 指向的 train seed JSON → 輸出 SRC+極端七份 test-only 標單與真值 → 產生候選工項 STRICT research audit → 以 `test -s` 檢查關鍵輸出非空。原有 .NET build 與 Python unittest 步驟仍保留。
 - 因目前尚未從 GitHub Actions 取得該 commit 對應的 run/step 結果，也未取得使用者 Windows 回測，**CI 工作定義已提交但此輪是否執行 PASS 尚未驗證**；請以下輪實際測試結果為準。此工作流程不會啟動 Docker、不會修改任何 DB，也不會把候選工項正式啟用。
+
+
+### 2026-11-21 — SRC 大量訓練種子 CLI 輸出限縮
+- `tools/graduation-synthetic/prepare_training_seed.py` commit `b3eefde1`：因原本 CLI stdout 會額外印出全部 `boq_rows`（300 案可達 10 萬行），現只輸出摘要 metadata/數量，不把完整資料列灌入終端；JSON 原始 seed 檔仍保存全部 train-only project、BOQ、transaction，內容與 DB 契約未刪減。Windows 尚未實際重跑此變更。
+- 整組 SRC/extreme 最新交接 commit 以前後續 `main` 最新為準；任何實測 FAIL 需更新此文件，修正後才執行新 DB 種子匯入。仍禁更動原本 55432 正式 RC/SC 畢專資料。
