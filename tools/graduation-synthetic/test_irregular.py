@@ -58,6 +58,24 @@ class IrregularTests(unittest.TestCase):
                 self.assertTrue(any(float(col.attrib['width']) >= 28 for col in widths))
                 self.assertTrue(all(row.get('customHeight') == '1'
                     for row in sheet.findall(f'.//{{{BASE}}}row')))
+    def test_no_basement_project_does_not_invent_underground_items(self):
+        import csv
+        with (self.source/'projects.csv').open(encoding='utf-8-sig', newline='') as stream:
+            projects = list(csv.DictReader(stream))
+        ground = next(p for p in projects if int(p['basement_floor_count']) == 0)
+        underground = next(p for p in projects if int(p['basement_floor_count']) > 0)
+        for label, chosen in (('ground', ground), ('underground', underground)):
+            out = self.root/f'{label}.xlsx'
+            answer = self.root/f'{label}.json'
+            generate(self.source, out, answer, project_id=chosen['synthetic_project_id'])
+            truth = json.loads(answer.read_text(encoding='utf-8'))
+            self.assertEqual(len(truth['cases']), 360)
+            self.assertEqual(truth['project']['basement_floor_count'], chosen['basement_floor_count'])
+            if label == 'ground':
+                forbidden = ('地下室', '連續壁', '擋土', '基坑', '地下停車場', '地下機房')
+                self.assertFalse(any(any(word in row['rendered_item_name'] for word in forbidden)
+                                     for row in truth['cases']))
+
     def test_no_overwrite_and_tamper(self):
         out=self.root/'out.xlsx';truth=self.root/'truth.json'
         out.write_bytes(b'protect')
