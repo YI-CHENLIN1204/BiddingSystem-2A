@@ -355,3 +355,10 @@ npm run build
 - 來源限制：歷史及待估都是 SYNTHETIC，項目量價係數並非實際建築工程校準；本次紅燈只是演算法在合成情境下成功分類，**未完成真值標記下的異常檢出準確性／FP/FN 比較**。價格來源權重含 timeWeight（依實際 API 回傳），不得說目前完全沒有時間權重。待做分案型、數量及價格圖表，先確認模型涵蓋案例。
 - 下一驗證點：在本機唯讀查看 `$truth.project.structure_type` 與 truth 材料碼分布；保存已得的數量/價格 API JSON，確認訊息與異常狀態，再選 test split 的 RC 案產生新版標單（新檔名，不覆寫）、上傳另建案件並跑相同 API；後續產生真實 API 對照圖表。原始 train PostgreSQL 210 案／99,959 筆不必重新匯入。
 - 交接為本輪實測紀錄，無程式碼/資料庫/Migration 更新。
+
+
+### 2026-11-21 — 查證 SYN-00002 標單材料組成為 SC 核心：鋼骨與混凝土各 6 筆
+- 使用者於 `graduation-v2-project-ready-truth.json` 執行 `$truth.cases | Group-Object material_code | Sort-Object Name | Select-Object Name,Count`，核心結果 `SYN-CONCRETE=6`、`SYN-STEEL=6`，`SYN-REBAR=0`；其他多種 `SYN-WORK-xxx` 工項。
+- 依本 repo `generate_full_project_dataset.py` CORE 的結構條件，`SYN-STEEL + SYN-CONCRETE` 而無 `SYN-REBAR` 符合 SC 建案的材料配置；現有 `TwoAPreprocessService` 與 `TwoAScopePolicy` 限制正式數量偵錯只涵蓋結構體鋼筋與混凝土、不包含鋼骨，因此先前 quantity API 僅返回混凝土 1 組為**符合預期的結果**，不應誤報鋼筋辨識 bug。建案 structure_type 欄位的實際 PowerShell 輸出尚未單獨貼出，該結構判讀來自已知生成器與材料組合。
+- 下一驗證點：從 v2 `projects.csv` test split 選取 `structure_type=RC` 且 `project_boq_rows.csv` 同時具 `SYN-REBAR` 與 `SYN-CONCRETE` 的未訓練案，指定 `--project-id` 輸出獨立 workbook + truth（不同檔名），正式 `POST /api/analysis-cases/from-upload` 明確帶入 includedSheetNames，隨後 quantity+major-price 分析。上傳成功件數與兩種 category 結果都要實際核實；不修改 seed / 產學 DB。
+- 測試結果區分：SC quantity+price API **執行 PASS**，但數量只涵蓋混凝土；**RC 雙材料案例尚未測試**。合成價格紅燈與混凝土用量紅燈不代表真實工程異常判定準確率。
