@@ -30,6 +30,7 @@ class FullProjectDatasetTests(unittest.TestCase):
             self.assertEqual(row["unit_price"], tx["unit_price"])
             self.assertEqual(row["split"], tx["split"])
             project = project_map[row["synthetic_project_id"]]
+            self.assertGreater(float(project["site_area"]), 0)
             self.assertEqual(row["structure_type"], project["structure_type"])
             if int(project["basement_floor_count"]) == 0:
                 for word in ("地下", "基坑", "連續壁", "擋土", "筏式"):
@@ -50,7 +51,7 @@ class FullProjectDatasetTests(unittest.TestCase):
             source=Path(temp)/"source"
             source.mkdir()
             projects, history, detail=generate_full(75, 20261119)
-            extended=PROJECT_FIELDS+["facade_system","finish_level","foundation_system","site_condition"]
+            extended=PROJECT_FIELDS+["site_area","facade_system","finish_level","foundation_system","site_condition"]
             for name, fields, records in (
                 ("projects.csv",extended,projects),
                 ("historical_transactions.csv",HISTORY_FIELDS,history),
