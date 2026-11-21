@@ -337,7 +337,11 @@ namespace 崴正.Services
                         p.ProjectId !=
                             targetProjectId &&
                         p.ProjectType ==
-                            target.ProjectType
+                            target.ProjectType &&
+                        // Strict SRC cohort: never borrow RC/SC structural
+                        // quantities or prices as formal SRC references.
+                        (target.StructureType != "SRC" ||
+                         p.StructureType == "SRC")
                     )
                     .ToListAsync();
 
@@ -365,7 +369,11 @@ namespace 崴正.Services
                         !p.IsDeleted &&
                         p.HistoryStatus == "Approved" &&
                         p.ProjectType ==
-                            target.ProjectType
+                            target.ProjectType &&
+                        // Strict SRC cohort: never borrow RC/SC structural
+                        // quantities or prices as formal SRC references.
+                        (target.StructureType != "SRC" ||
+                         p.StructureType == "SRC")
                     )
                     .ToListAsync();
 
