@@ -514,3 +514,11 @@ npm run build
 - **本階段資料庫匯入 PASS**，且明確 90 validation/test 專案未植入訓練歷史；新庫已非空，**禁止重跑 seed**、重建或刪除 volume。原 55432 `bidding2a_graduation` 完整保留，沒有任何正式 Supabase 操作。用戶未貼 `dotnet build` 的文字輸出，僅 `dotnet run --no-build` 的可執行結果可證實 Seed 執行成功。
 - 下一驗證點：`docker compose ... ps` 重新確認健康、在獨立命令視窗將 `ConnectionStrings__DefaultConnection` 設為新的 SRC DB、確認當前 C# Git 分支確實含 `AnalysisCaseController` 及基地面積相似度，不可直接在未確認 branch 的情況覆蓋主系統。使用獨立 HTTP Port（例如5262）啟動 ASP.NET API → GET readiness → 唯讀城市/基地敏感度 → 完整 SRC baseline + quantity/major price 雙路徑 → 10 組注入標單 pairwise API 測試（互相關聯的衍生案不得充當獨立建案計數）；記錄正式結果而非注入的真值倍率。
 - 模型嚴格模式維持鋼筋/混凝土範圍，鋼骨、模板、土方僅研究；正式量價異常是否符合注入預期、模型品質仍 NOT RUN。無本次新程式碼變更、Migration 或工程資料外洩。
+
+
+### 2026-11-21 — 使用者指出多資料庫造成跨裝置遷移負擔；調整長期架構決策
+- 使用者詢問為何 RC/SC 之前的 `55432/bidding2a_graduation` 與新增 SRC `55433/bidding2a_graduation_src` 分開，擔心換裝置麻煩。明確釐清：此分庫**僅為暫時隔離舊有 RC/SC E2E 成果，避免新版種子毀損既有資料**；並非每種結構應使用不同 PostgreSQL 的長期架構。
+- **長期方向**：RC、SC、SRC 及歷史標單應在同一套 PostgreSQL 中按 `ProjectMaster.StructureType`、個案/版本/資料表分辨，避免新增結構就增加資料庫。現行新版 `55433` 已含三種結構的 210 train 建案和 101166 交易，可視作目前**整合測試的目標庫**，但尚未完成正式 SRC API E2E，也不代表正式 production 資料庫。原 `55432` 只保留歷史比較/回退，在新版正式驗證及備份策略完成之前不可刪除。
+- **不能直接 append 合併新舊 Seed**：舊/新兩套合成資料共用 `SYN-xxxxx` ID，而新生成器變更材料量、結構類型及極端情境，盲目合併會造成跨建案關聯或基準污染。使用者尚未批准實際資料搬遷/刪除；本次不修改任何 DB。
+- **換裝置策略**：程式與腳本/Compose 在 GitHub；合成測試資料靠固定 seed+manifest 重建；需要保存分析案件、真實資料或既存 DB 時，必須有加密/限制存取的 `pg_dump`、`pg_restore` 與版本相容的 EF Core Migration/建庫程序。**Git clone 不會攜帶 Docker Volume 或 DB 真實資料**。未來要建立單一權威測試庫的重建指南、完整可攜備份與還原演練，才可標記跨裝置流程 PASS。
+- 本次為重要技術決策與架構釐清，僅同步更新交接；並未完成 DB 合併、搬遷、Migration 或跨裝置測試。
