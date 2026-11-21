@@ -1,3 +1,18 @@
+## 2026-11-22 最新：改採四階段收尾，工項擴充第一批已提交
+
+**本節覆蓋下方歷史段落的工作順序。** 使用者最新順序為 **①擴充估算與異常偵錯工項 → ②真正瀏覽器完整 UI 驗收 → ③集中修正／回歸／分支整合 → ④最後獨立 Holdout 準確度與演算法比較**。既有回測只保留為歷史基線，本輪未重跑準確度。
+
+- 最新程式提交：[db40e874](https://github.com/YI-CHENLIN1204/BiddingSystem-2A/commit/db40e874e3267faa62557a28d528522a186a1f2d)，分支 `feature/1d-api-integration`。**本次 main 僅更新交接索引與審查紀錄，功能程式尚未合併至 main。** 請讀 feature 實際程式及下列報告，不能以 main 舊程式判定本批功能已部署。
+- 新增 8 類工項能力矩陣：鋼筋、混凝土、養護劑、脫模劑、鋼骨、模板、土方開挖、防水材料；名稱命中僅是候選，檢查正式材料對應、相容單位、Approved 獨立建案及缺少工程條件。新候選不因合成樣本多而直接開啟正式紅燈。
+- 新增養護劑／脫模劑的 3 組指定產品規格試算，使用實際施工面積；材料總量仍受設計及工程條件影響，未宣稱完全不受設計影響。廠商理論用量不是 P15/P85，超出只提示人工確認；既有統計模型白名單未擴張。
+- UI 位於工程估算與案件明細；新增 `GET /api/material-capabilities`、`GET /api/material-capabilities/specifications`、`POST /api/material-capabilities/specification-estimate`。無 DB schema／Migration／seed／回寫或既有模型參數改動。
+- 實際通過：Release build 0 warnings / 0 errors；Parser 全部（含 11 新檢核）；前端 vue-tsc + Vite（初次 option 標籤錯誤已修復）；Python 11/11；臨時獨立服務純計算 HTTP 契約 7/7；交接審查 16 檔、1 筆新紀錄。另修正 feature CURRENT_HANDOFF 的權重誤植，實際參數一直是 `25/30/10/15/10/10`。
+- GitHub CI [44930323986](https://github.com/YI-CHENLIN1204/BiddingSystem-2A/actions/runs/44930323986)：completed / success；backend-build、frontend-build、synthetic-fixture-contracts 三項成功。
+- **未測且不得宣稱完成**：DB 能力矩陣 GET（隔離 DB 環境變數密碼未提供至工作程序）、真正瀏覽器全流程（本工作階段無瀏覽器控制工具）。前端編譯與 API 契約不能替代 UI 驗收。
+- 原 `Desktop/BiddingSystem-2A-integration` 對此工作程序仍唯讀；程式在可寫副本實作並已提交 GitHub。原 :5263／:5174 未重啟或部署此批；不再要求使用者重加資料夾，也未猜 DB 密碼或連正式 DB。
+- **下一個驗證點**：用可取得隔離 DB 環境的開發程序啟動本批前後端，核對能力矩陣實際資料及不足原因；再以真正瀏覽器走上傳、解析、人工確認、估算、異常偵錯、決標回寫、歷史資料與操作紀錄。第一階段尚未全部驗收，不跳過第二階段宣稱結案。
+- [完整變更／產品來源／驗證／回滾報告](https://github.com/YI-CHENLIN1204/BiddingSystem-2A/blob/db40e874e3267faa62557a28d528522a186a1f2d/docs/MATERIAL_CAPABILITY_PHASE1_2026-11-22.md)；交接識別 `material-capability-phase1-20261122`。
+
 # BiddingSystem-2A — AI 開發交接（動態更新）
 
 > **單一事實來源**：以本儲存庫 `main` 的實際程式碼、配置及驗證結果為準。本文件是開發交接索引，不保證未讀取 GitHub 的 ChatGPT 對話自動同步。本文件建立日期：2026-11-15。
