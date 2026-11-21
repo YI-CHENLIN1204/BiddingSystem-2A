@@ -110,3 +110,24 @@ python tools/graduation-synthetic/generate_irregular_excel.py --source .\graduat
 v0.4 輸出 **7 張工作表**（1 張摘要、6 張不同工程類別明細），預設 **360 筆詳細工項**。不同明細表有表頭偏移、表頭用詞與欄位順序差異；工項名稱加入工程部位、棟別、樓層與規格。部分工項故意缺單價、缺數量、缺單位，部分為預期未對應材料；另保留分類、空白、備註、合計列。JSON 會記錄工作表、列號、預期數量／單價、缺漏情境，以及各工作表工項計數。不可把缺漏資料當正常歷史交易。
 
 **限制與界線：** 為測試解析器承載能力所建立的**合成壓力資料**，不是透過企業真正標單逐案抽樣學到的格式分布；名稱、數量、單價仍未經專家校準。因此 360 筆不等於 360 種不同材料，也不等於企業工程估算的可信度。未完成畢專隔離 DB 前，不能將測試 Excel 上傳正式資料庫。
+
+
+## v0.5：2026-11-25 交付前資料真實性、可讀性及比較測試
+
+原始 v0.3 / v0.4 說明仍保留作版本紀錄，**此節優先於前述版本的輸出格式敘述**。
+
+- 標單明細欄位已加寬，項目名稱/規格/備註的儲存格增加換行樣式，列高提高；請以新檔名重新產生 Excel，舊版檔案不會被自動修改。
+- 生成器讀取 `basement_floor_count` 與 `floor_count`，無地下室時過濾部分地下室、連續壁、擋土等工項，並避免生成超過實際地上樓層的樓層代碼。**這是初步建案條件限制，不代表完整的建築設計、規範或工料係數模型**。
+- 保留其他工程類別明細，包括假設、土方、基礎、結構、泥作、防水、門窗、電氣、消防、空調、弱電、裝修、電梯與景觀等；但不能稱作已涵蓋所有建築工項。
+- 新增 `evaluate_synthetic_holdout.py`：以 `train` 歷史建案預測 `test` 合成建案，隔離植入異常的測試交易，比較加權分位數與加權常態基準；依材料分別報告有物理單位的 MAE、區間寬度與評分，避免混算 kg/m² 和 m³/m²。
+- 這個評估是 **OFFLINE_PROXY_NOT_API / SYNTHETIC**，相似度分數是簡化代理，不等於 C# 後端真正端到端精度。不可將輸出的 MAPE 宣稱為真實建案或企業精準度。
+
+```powershell
+git fetch origin main
+git restore --source=origin/main --worktree -- tools/graduation-synthetic
+python -m unittest discover -s tools/graduation-synthetic -p "test_*.py" -v
+python tools/graduation-synthetic/generate_irregular_excel.py --source .\graduation-data --output .\graduation-irregular-v05.xlsx --truth .\graduation-irregular-v05-truth.json --items 360
+python tools/graduation-synthetic/evaluate_synthetic_holdout.py --source .\graduation-data --output .\graduation-synthetic-holdout-v01.json --top-k 8 --min-sample 5
+```
+
+所有輸出檔都拒絕覆寫，若名稱已存在請更換檔名。2026-11-25 教授交付的資料來源區分、真實精度驗收規則，請閱讀 `docs/GRADUATION_DELIVERY_2026-11-25.md`。
