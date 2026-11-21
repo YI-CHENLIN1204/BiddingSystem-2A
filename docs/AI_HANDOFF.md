@@ -274,3 +274,13 @@ npm run build
 - **修正後 17 項測試仍待 Windows 重跑**；不能宣稱已全數 PASS。v2 大型資料生成、實際隔離 PostgreSQL 匯入、正式 API 數量估算／價格異常端到端和圖表仍未取得本機實證。
 - 下一驗證點：使用者維持 `feature/1d-api-integration`，先 `git fetch origin main` 和 `git restore --source=origin/main --worktree -- tools/graduation-synthetic/test_full_project_dataset.py`，重跑全部 Python unittest。通過後只先生成 v2 歷史資料與 test-only Excel，確認兩種偵錯的資料庫可用性；不得連線產學正式 Supabase。
 - 11/25 報告核心圖形：數量預測 P15/P50/P85 與真值、P50 誤差與區間涵蓋率；價格異常的歷史大項單位面積金額分布與待估值位置及判定；所有數據註明是合成模擬或已驗證真實來源，不將離線代理精度稱為正式 C# 系統精度。
+
+
+### 2026-11-21 — Windows v2 全套 Python 測試 17/17 PASS
+- 用戶於 `C:\\Users\\User\\Desktop\\BiddingSystem-2A` 執行 `git fetch origin main`，Git 顯示 `origin/main` 由 `8f32767` 更新至 `d64d528`，但亦顯示 `fetching ref refs/remotes/origin/main failed: incorrect old value provided`，屬遠端追蹤參照更新衝突；不可單憑 fetch 文字認定本機 ref 一定完整更新，且不建議清理／重設使用者尚未提交工作樹。
+- 用戶後續執行 `git restore --source=origin/main --worktree -- tools/graduation-synthetic/test_full_project_dataset.py` 無錯誤；`python -m unittest discover -s tools/graduation-synthetic -p "test_*.py" -v` 顯示 **Ran 17 tests in 5.346s; OK（17/17 PASS）**，含 `test_variety_history_alignment_and_scope`、`test_export_same_history_and_holdout`、`test_seed_contains_training_data_only_and_exact_lineage`、`test_verified_report_contains_comparison_and_category_figures`。
+- 防覆寫 `test_refuse_overwrite` 列印的 argparse error 為刻意觸發的正常拒絕流程，結果為 `ok`。
+- 版本與驗證界線：這證明 Python 單元測試通過，但**尚未證明 300 案 v2 資料實際在用戶工作目錄產生、資料已匯入隔離 PostgreSQL、C# 種子程式已建置、正式 API 數量／價格偵錯 E2E 通過，或真實工程精度已驗證**。
+- 畢專目標已收斂：只驗證數量估算與價格異常偵錯，完整多工種資料仍用來驗證標單多樣性及歷史參考，不擴充其它估算模型。
+- 下一驗證點：在目前工作目錄生成 `graduation-data-v2`；由來源資料產出 `graduation-v2-train-seed.json`，另以 test 建案產生 `graduation-v2-project.xlsx`、`graduation-v2-project-truth.json`，確認來源、筆數與 train/test 隔離；再做隔離 DB 的 .NET 建置／匯入，最後通過正式服務 API。
+- 此段僅紀錄測試結果與下一步，**無新程式碼、DB 或 Migration 修改**。
