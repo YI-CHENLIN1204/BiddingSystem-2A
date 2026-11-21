@@ -55,3 +55,5 @@ jobs:
           test -s /tmp/graduation-src-seed.json
           test -s /tmp/graduation-src-holdouts/suite_manifest.json
           test -s /tmp/graduation-src-candidate-audit.json
+          python tools/graduation-synthetic/export_anomaly_holdout_suite.py --source /tmp/graduation-src-extreme --output-dir /tmp/graduation-anomaly-holdouts
+          test -s /tmp/graduation-anomaly-holdouts/anomaly_suite_manifest.json
