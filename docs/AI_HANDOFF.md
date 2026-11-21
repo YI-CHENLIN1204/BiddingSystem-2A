@@ -480,3 +480,8 @@ npm run build
 - **驗證狀態**：上述檔案已透過 GitHub 工具提交及重新讀取程式（程式碼審核/路徑已確認），但**尚未取得新版 Python unittest、GitHub Actions 及 ASP.NET 端到端的實際 PASS**；目前標記 NOT RUN。須先跑 `python -m unittest discover ...`，再生成 SRC v3 / anomaly holdouts，核對 truth、SC/RC/SRC API quantity/major price 異常與預期方向。不可單憑已知注入倍率宣稱偵測成功。
 - 資料版本相容：舊 `graduation-data-v2`、`55432/bidding2a_graduation` 一律保留；新 SRC 專用 `55433/bidding2a_graduation_src` 不需因本輪增補異常 workbook 重跑 seed，只要使用者尚未匯入時沿用最新版產生的原 train-only seed 即可。無 Migration/正式 Supabase/production 調整。後續新工項仍採 **嚴格模式：正式 C# API 留出回測及設計適用性核准後方可開放紅綠燈**。
 - **下一驗證點**：先新/舊 Python regression，進入 SRC 合成 300 案 + 七件基本/極端測試標單 + 10 個量價異常變體與 paired baseline，確認 `injection.changed_lines`、原 CSV digest 和 workbook 金額；再到新隔離 DB 執行正式 API，將數量異常（尤其混凝土用量變多）與單價異常拆開評估，並產生 per-source-project 的 paired delta report（不重複計算獨立樣本）。
+
+
+### 2026-11-21 — 量價異常註記補正：合理設計變動不得自動視為違失
+- `tools/graduation-synthetic/export_full_project_excel.py` commit `41c98701`：test-only 注入真值中的 `injection.cause_kind` 明確分為 `DESIGN_VARIATION_POSSIBLY_JUSTIFIED`、`UNIT_PRICE_STRESS_NOT_PROOF_OF_OVERPRICING`、`MIXED_DESIGN_AND_PRICE_STRESS`，並設定 `manual_review_required=true`。建築師或結構設計造成高低材料用量可為合理設計，價高/低也不必然代表不當；正式 2A 紅燈僅供稽核/人工審核，不能將標籤直接視為違規或系統判定應當通過的真值。
+- 狀態：已提交程式碼，單元測試、CI 與正式 API 仍待實際驗證；資料庫未更動。
