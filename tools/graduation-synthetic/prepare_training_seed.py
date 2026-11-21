@@ -12,7 +12,9 @@ from collections import Counter
 from pathlib import Path
 
 
-def prepare(source):
+def prepare(source, target_database="bidding2a_graduation"):
+    if target_database not in ("bidding2a_graduation", "bidding2a_graduation_src"):
+        raise ValueError("unapproved target database")
     manifest=json.loads((source/"manifest.json").read_text(encoding="utf-8"))
     if manifest.get("generator_version")!="2.0.0" or manifest.get("data_origin")!="SYNTHETIC":
         raise ValueError("SYNTHETIC v2 manifest required")
@@ -68,7 +70,7 @@ def prepare(source):
                         "transaction_date":t["transaction_date"],
                         "is_outlier":t["synthetic_label"]=="injected_anomaly"})
     return {"data_origin":"SYNTHETIC","dataset_version":"2.0.0",
-            "target_database":"bidding2a_graduation",
+            "target_database":target_database,
             "split":"train","source_manifest_sha256":hashlib.sha256((source/"manifest.json").read_bytes()).hexdigest(),
             "train_project_count":len(train_projects),"train_transaction_count":len(cleaned),
             "excluded_holdout_projects":len(projects)-len(train_projects),
@@ -82,11 +84,13 @@ def prepare(source):
 def main():
     parser=argparse.ArgumentParser(description=__doc__)
     parser.add_argument("--source",type=Path,required=True)
+    parser.add_argument("--target-database", choices=("bidding2a_graduation", "bidding2a_graduation_src"),
+                        default="bidding2a_graduation")
     parser.add_argument("--output",type=Path,required=True)
     args=parser.parse_args()
     if args.output.exists():parser.error("refusing overwrite")
     try:
-        result=prepare(args.source)
+        result=prepare(args.source, args.target_database)
     except (ValueError,KeyError,OSError,json.JSONDecodeError) as e:
         parser.error(str(e))
     args.output.parent.mkdir(parents=True,exist_ok=True)
