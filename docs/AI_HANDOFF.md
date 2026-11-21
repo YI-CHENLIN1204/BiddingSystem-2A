@@ -724,3 +724,9 @@ npm run build
 - 已重新讀取 GitHub feature `崴正/Controllers/DetectionCategoryController.cs`，確認 `GET /api/detection-category` 為 `ToActionResult(ServiceResult.Ok(data))`，成功時回 `Ok(result.Data)`；`崴正/Services/DetectionCategoryService.cs` 確認 data 是 `DetectionCategories.Select({detectionCategoryId,detectionCategoryName,isActive,materialCount,...}).ToList()`。因此 Controller **不是 result/data envelope**；這次更可能是 Windows PowerShell 對頂層 JSON array 的 Invoke-RestMethod / `@(...)` 包裝形成巢狀 array。尚未實際確認 `$cats` 內容，不能斷言根因。
 - 下一驗證點只做小段唯讀 `$cats=Invoke-RestMethod ...; $cats=@($cats | ForEach-Object { $_ }); $cats | Select-Object ... | Format-Table`；仍空則用 `$cats | ConvertTo-Json -Depth 4` 觀察實際形狀，得到真實 ID 後再發數量 range POST，必須 fail-closed 驗證 refs 至少1筆、DB 覆蓋與 all SRC 才可 PASS。禁止執行舊殘留的 `$response/$ids` 或無條件 `Write-Host PASS`。
 - 55433 SRC synthetic cohort 存在、價格 API 8/8 SRC 既有 PASS 不受影響。鋼筋/混凝土量 API **NOT VERIFIED**；本輪未改程式碼/DB/schema/migration，不重 Seed、不碰正式環境。
+
+
+### 2026-11-21 — 5263 偵錯類別清單 PowerShell 陣列枚舉問題解決，SRC 數量驗證待結果
+- 使用者使用 `$cats=Invoke-RestMethod "http://127.0.0.1:5263/api/detection-category"; $cats=@($cats | ForEach-Object { $_ })` 成功列出兩筆真實有效項目：`detectionCategoryId=1, detectionCategoryName=鋼筋, unitName=kg, isActive=true, materialCount=1`；`detectionCategoryId=2, detectionCategoryName=混凝土, unitName=m3, isActive=true, materialCount=1`，皆屬 `結構體工程`；`ConvertTo-Json -Depth 4` 確認同一清單與欄位。先前 @() 包裹回應後空白的問題已排除，當時的 404/假 PASS 不是實際數量結果。
+- 接續驗證只以確認過的 ID 對新版 5263 `POST /api/detection-category/1/range` 和 `/2/range` 送入已有 SRC target，必須 HTTP 成功、references 不空，`referenceProjectCount` 與唯一 ID 數相同，然後在 Docker SRC 55433 測試庫唯讀查 `project_master`，核對所有回傳 ID 皆存在且結構為 SRC。短流程且拒絕假陽性；鋼筋/混凝土實際 POST 與 DB 比對 **尚未執行、不得標記 PASS**。
+- 已確認的 SRC 結構體價格 POST/DB reference 8/8 SRC PASS、55433 SRC Approved 77、37,504 交易不變。本次僅確認分類清單，沒有修改程式碼、資料庫、schema、migration；本機 Vue/Vite 修補 `d725379` 尚未 Push。
