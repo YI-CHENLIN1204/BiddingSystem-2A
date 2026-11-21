@@ -107,26 +107,23 @@ await db.SaveChangesAsync();
 var units = await db.UnitMasters.AsNoTracking().ToDictionaryAsync(x=>x.UnitName,x=>x.UnitId);
 
 var materialIds = new Dictionary<string,int>(StringComparer.Ordinal);
+var createdMaterials = new List<(string Code, MaterialMaster Material)>();
 foreach (var row in materials)
-    db.MaterialMasters.Add(new MaterialMaster {
+{
+    var entry = new MaterialMaster {
         MaterialName = ReadString(row,"name"),
         CategoryId = cats[ReadString(row,"category")],
         UnitId = units[ReadString(row,"unit")],
         IsActive = true
-    });
-await db.SaveChangesAsync();
-var masterRows = await db.MaterialMasters.AsNoTracking()
-    .OrderBy(x=>x.MaterialId).ToListAsync();
-var catalog = materials.Select(m => (
-    Code: ReadString(m,"code"), Name: ReadString(m,"name"),
-    Category: ReadString(m,"category"), Unit: ReadString(m,"unit"))).ToArray();
-// Resolve by category/name/unit; material name can repeat in separate categories.
-foreach (var mat in catalog)
-{
-    var match = masterRows.Single(x => x.MaterialName == mat.Name &&
-        x.CategoryId == cats[mat.Category] && x.UnitId == units[mat.Unit]);
-    materialIds[mat.Code] = match.MaterialId;
+    };
+    db.MaterialMasters.Add(entry);
+    createdMaterials.Add((ReadString(row,"code"),entry));
 }
+await db.SaveChangesAsync();
+// Preserve the exact synthetic code -> generated PK mapping, even if two
+// different work families legitimately share the same descriptive name.
+foreach (var row in createdMaterials)
+    materialIds[row.Code] = row.Material.MaterialId;
 
 foreach (var (code, name, unit) in new [] {
     ("SYN-REBAR","鋼筋","kg"), ("SYN-CONCRETE","混凝土","m3")
