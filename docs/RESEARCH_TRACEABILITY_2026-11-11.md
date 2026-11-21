@@ -230,3 +230,9 @@ E3：從 GitHub 開發分支讀取 `frontend/src/services/api.ts`、`frontend/sr
 - **E1 使用者實測 FAIL**：Python 3.12 Windows `test_offline_standalone_ui_fixture_without_source_dataset`，子程序使用 CP950 而父用 UTF-8 解碼，發生 `UnicodeDecodeError` 及 `TypeError`，3 項測試中 2 PASS / 1 ERROR。錯誤與已成功生成的 Excel/API 無因果。
 - **E3 代碼修正**：`test_prepare_ui_case.py` 對 subprocess child 顯式使用 `PYTHONIOENCODING=utf-8` commit `79af4b822`，父 decoder UTF-8 不變；`verify-ui-state.mjs` 擴充 `--case-id` 嚴格 synthetic case + same-version Quantity/MajorPrice Runs 與 payload GET，commit `d6b3fb146`。兩者僅修改永久驗證工具，零 DB schema、model、授權/標準範圍變更。
 - **仍待**：Windows Python 回歸 PASS、瀏覽器實際自行上傳並保存 2 Runs、跨刷新成功、決標審核與稽核 E2E。4 warning rows 必須讀實際警告內容，不臆測工程缺陷。
+
+
+## X. 2026-11-21：Case #15 UI 成功與工項排除統計對照
+- **E1 使用者截圖**：17? 不採猜測。正式證據為 `/analysis-cases/15` 的 V1 自行上傳 **15 條**、價格分析 `Run #31` 已顯示保存成功，實際大項總價 **29,268,000 元**／每坪 **8,062.81**，相對人工合成歷史區間顯示 Low；數量分析顯示鋼筋 **38,000kg**／混凝土 **3,650m³** 並列出各 8 個參考案。尚未用 `verify-ui-state --case-id 15` 對照 DB 保存 payload，故「API 重新讀回 5/5」**未驗證**。
+- **E3 原始 fixture／分類程式核對**：結構體原始鋼筋共 130,000kg，混凝土共 5,450m³；`ClassifyQuantityCandidate` 將前 3 條鋼筋加工、組立、綁紮／工資與第一條預拌混凝土澆置標為 `Excluded`，合計被排除 92,000kg、1,800m³，符合 preflight 的 4 警示；量估納入 38,000kg/3,650m³。價估計所有結構體 10 行共 29,268,000 元，與畫面一致。只是關鍵字分類策略，**不代表已證實複合項目無材料，也不代表工程數量/價錢推估有外部真實有效性**。
+- 下個驗證點：對已存在 #15，執行永久 script `node scripts/verify-ui-state.mjs --case-id 15`（read-only），再按歷次偵錯查看刷新保存；分類邊界／排除理由 UI 顯示列為待查，不改模型閾值或資料庫。
