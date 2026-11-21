@@ -323,3 +323,11 @@ npm run build
 - 修改 `tools/graduation-synthetic/test_full_project_dataset.py` commit `760267ca`：測試 truth 中每筆輸出列的有效工程大項。原已生成的 `graduation-v2-project.xlsx` 不受 Github 修改影響，需要**另以新檔名重新生成**待估標單（如 `graduation-v2-project-ready.xlsx`）；不可覆寫既有證據。
 - 驗證界線：輸出修正已提交 GitHub **但未取得用戶 Windows 回測或 ASP.NET API 上傳結果**；不得宣稱正式數量/價格偵錯已可成功執行。完整 train DB 已匯入；圖表與獨立 test 案尚需 API E2E。
 - 下一步：同步新版 exporter/test，重跑 Python unittest → 新檔名輸出有 `工程大項` 的 test-only Excel → 以 `ConnectionStrings__DefaultConnection=$env:GRADUATION_DB_CONNECTION` 啟動**本機獨立 DB**的 ASP.NET → read-only `GET /api/analysis-cases/policy`、`/api/detection-category/readiness`、`/api/major-category-price/readiness` → 正式 POST 上傳 / quantity-analysis / major-price-analysis；最後比對真值與圖表。沒有 DB Migration，原產學資料庫未動。
+
+
+### 2026-11-21 — 正式 ASP.NET 已從獨立畢專資料庫讀取數量與價格偵錯準備狀態
+- 使用者在 `C:\\Users\\User\\Desktop\\BiddingSystem-2A`，後端 `http://127.0.0.1:5261` 連接已種入 210 案的本機畢專庫，`Invoke-RestMethod http://127.0.0.1:5261/api/analysis-cases/policy` 成功回覆 `provisional=True`、`targetSources={Upload,OneD}`、`selfUpload.mode=StructuredOnly`、數量偵錯限結構體工程鋼筋／混凝土及價格大項限結構體工程。
+- `GET /api/detection-category/readiness` 回覆 `categoryCount=2`、`minimumSampleCount=5`、`readyCount=2`；列表 PowerShell 截斷，但依政策與前次 Seed mapping 為鋼筋、混凝土。此為 readiness，而非實際預測已完成。
+- `GET /api/major-category-price/readiness` 回覆 `majorCategory=結構體工程`、`eligibleMetadataProjectCount=210`、`availableProjectCount=210`、`minimumSampleCount=5`、`missingProjectCount=0`、`status=ReadyForEstimation`。確認價格估算的正式查詢路徑已可取得全部 210 案合成歷史價格；不代表判定精準度已被驗證。
+- 本輪無 DB 內容變更、Migration 或正式估算演算法更動。待驗證：使用新版包含逐筆 `工程大項` 欄的 `graduation-v2-project-ready.xlsx` 作為 test-only；以 `POST /api/analysis-cases/from-upload` 建立案件，取得 `analysisCaseId` / `analysisBidVersionId`；然後分別呼叫 `POST /api/analysis-cases/{caseId}/versions/{versionId}/quantity-analysis` 和 `major-price-analysis`（request majorCategory=結構體工程），核對回傳與 truth。沒有實際 API 成功輸出前不得聲稱偵錯已通過。
+- 注意：此前初版 `graduation-v2-project.xlsx` 尚未包含 `工程大項`，不應拿它當正式 API 驗證。PowerShell 只印回傳中的非敏感欄位，不提供任何 DB 密碼或連線字串。
