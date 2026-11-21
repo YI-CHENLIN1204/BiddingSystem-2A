@@ -1,6 +1,13 @@
 # BiddingSystem-2A
 
-> **Repository Policy:** 此專案涉及產學合作內容與合作資料，因此維持 Private。對外作品集只描述可公開的架構、方法與本人實際參與內容，不公開合作方原始資料、資料庫內容或未經授權的程式碼。
+> **📌 組員請看這個版本（2A 專題報告／目前共享開發碼）**  
+> **分支：[`feature/1d-api-integration`](https://github.com/YI-CHENLIN1204/BiddingSystem-2A/tree/feature/1d-api-integration)**  
+> GitHub 預設的 `main` **尚未整合最新 2A 功能**，目前不要直接以 `main` 的程式碼寫功能說明。  
+> 本分支是**持續開發版本，不是已驗收的正式發行版**；報告若要固定版次，請記錄當時使用的 Commit SHA。  
+> 交接及實際驗證狀態請看分支內的 [CURRENT_HANDOFF](https://github.com/YI-CHENLIN1204/BiddingSystem-2A/blob/feature/1d-api-integration/docs/CURRENT_HANDOFF_2026-11-11.md)。
+
+
+> **資料公開注意：** 此 Repository 目前為 Public，但不表示合作方的資料、未授權文件或憑證可以公開。組員撰寫報告只應使用已授權的內容與合成／去識別化資料；公開 Git 歷史與封存檔仍應另行審查。
 
 專案採完全前後端分離架構：Vue 單頁應用程式只透過 HTTP API 與
 ASP.NET Core 後端溝通，後端不包含 Razor Views 或前端靜態資產。
