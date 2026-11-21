@@ -515,3 +515,9 @@ TwoAQuantityAnalysisService.AnalyzeAsync 現新增執行時 fail-closed：僅 Tw
 - 本機 Python 永久回歸 3 項中 2 PASS／1 ERROR；Windows 預設 CP950 stdout 和父程序 UTF-8 decoder 衝突，與 Excel 匯出/API 成功無關。改用 `PYTHONIOENCODING=utf-8` 限定測試子程序，不變動全機環境。
 - 擴充既有 `verify-ui-state.mjs --case-id` 為正式 UI 後續保存驗收：核對 current version 的 Quantity／MajorPrice:結構體工程 同一版兩筆 Run 及完整結果讀回；仍全部 GET/SELECT，不產生新 Run 或歷史資料。永久 `2a-build.yml` 不變、不建臨時 CI。
 - 下個唯一未驗證工作：Windows Python 測試修正實測；UI 上傳與保存 Run／刷新驗證，再來決標草稿及權限稽核；準確度最後。
+
+
+## 2026-11-21 — UI #15 價格與數量畫面首次真實成功，排除明細解釋
+- 使用者瀏覽器截圖顯示 V1 15 工項、數量偵錯與結構體工程大項價格偵錯均有回應；價格 Run #31 顯示已保存、總價 29,268,000 元。這是 UI 操作成功，不代表跨刷新查詢或準確度 PASS。
+- 檢查後端兩個既存服務：預檢的四筆 warning 對應含加工/組立/綁紮/工資的三筆鋼筋、含澆置的一筆混凝土；在材料數量模型排除但不從大項價格剔除。因此鋼筋量 38,000kg 與混凝土 3,650m³ 相對於原始 130,000kg/5,450m³ 是分類範圍差異，不是算術漏加；複合項目是否需材料部分仍要人工審核。
+- 保留現有資料與 Run，先跑永久 `verify-ui-state --case-id 15`，再驗證跨重新整理。只更新文件，不改正式估算 scope/DB/模型參數。
