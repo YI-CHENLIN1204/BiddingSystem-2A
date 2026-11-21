@@ -302,3 +302,13 @@ npm run build
 - **修正後建置結果尚待用戶重跑**，不可宣稱 warning 已經排除；若仍有衝突需要先檢查 `dotnet list ... package --include-transitive` 再處理，避免不必要地修改主程式套件。
 - 下一驗證點：`git fetch origin main` + 在 feature 分支只 restore `tools/graduation-synthetic/GraduationSeed/GraduationSeed.csproj` + `dotnet build ... -c Release`，確認警告消失；然後設置本機畢專資料庫密碼，透過 `compose.graduation-db.yaml` 啟動 **127.0.0.1:55432/bidding2a_graduation**，以 Docker health status 驗證。**尚未有匯入成功的證據，不可碰正式 Supabase**。
 - 11/25 目標僅數量估算／價格異常偵錯；現有 Python 17/17 PASS 及 Excel 574 行輸出已完成，C# 實際 DB 匯入、API 數量/價格 E2E 尚未測試。
+
+
+### 2026-11-21 — 本機隔離 PostgreSQL 容器實際啟動、Seed 專案無警告建置成功
+- 用戶在 Windows `C:\\Users\\User\\Desktop\\BiddingSystem-2A` 執行 `dotnet build .\\tools\\graduation-synthetic\\GraduationSeed\\GraduationSeed.csproj -c Release`，輸出 `崴正 net10.0 成功`、`GraduationSeed net10.0 成功`、3.3 秒內 `建置 成功`；本次沒有出現之前的 EF Core Relational MSB3277 警告。此為編譯成功，不代表 DB 寫入已成功。
+- `Test-Path .\\graduation-v2-train-seed.json` 回傳 True（本輪先前已確認）。用戶執行 `docker version` 顯示 Client/Server 29.8.0，Docker Engine 運作正常。
+- 用戶 `docker compose -f tools/graduation-synthetic/compose.graduation-db.yaml up -d` 成功下載 postgres:17-alpine，創建 `graduation-synthetic_graduation_pgdata`、`graduation-synthetic_default`，啟動 `graduation-synthetic-graduation-postgres-1`。隨後 `docker compose ... ps` 顯示 `Up (healthy)` 且只映射 `127.0.0.1:55432->5432/tcp`。
+- **安全事項**：用戶將此本機測試庫初始密碼直接輸入並貼於對話內容；交接文件**不記錄密碼明文**。下一步先使用容器內 `psql` 的 `\\password graduation` 交互命令輪替，避免明文出現在指令歷史。更新本機 `GRADUATION_DB_PASSWORD` 與 `GRADUATION_DB_CONNECTION`，**只改 PowerShell 環境變數不會更新已初始化的 Postgres 角色密碼**。
+- 現況：ASP.NET 與 GraduationSeed 編譯通過、Docker local Postgres **healthy**；`train` 歷史 JSON **尚未匯入**，`AnalysisCase` 的數量估算和價格異常偵錯 API **尚未端到端驗證**，不得標示為完成。
+- 下一驗證點：先輪替本機測試庫密碼；以 `GRADUATION_DB_CONNECTION` 本機限定連線執行 `dotnet run --no-build -c Release --project tools/graduation-synthetic/GraduationSeed/GraduationSeed.csproj -- --seed-json .\\graduation-v2-train-seed.json`；紀錄真實建案數、材料數、歷史交易與決標明細筆數及錯誤，之後再啟動 ASP.NET 使用相同隔離連線進行數量估算/價格異常 E2E。不得指向 Supabase。
+- 本段是執行結果與安全交接紀錄，沒有資料庫 Migration/正式程式碼改動。
