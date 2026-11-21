@@ -334,7 +334,7 @@ async function createMaterial() {
 
 async function openExistingReview() {
   const raw = route.query.projectId
-  if (typeof raw !== 'string' || !/^[1-9]\\d*$/.test(raw) || !Number.isSafeInteger(Number(raw))) {
+  if (typeof raw !== 'string' || !/^[1-9][0-9]*$/.test(raw) || !Number.isSafeInteger(Number(raw))) {
     if (raw != null) error.value = '決標審核的建案編號無效'
     return
   }
