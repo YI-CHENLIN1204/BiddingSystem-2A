@@ -339,3 +339,13 @@ PublishHistory 已有 advisory transaction lock／Idempotency receipt／SyncHist
 靜態對照 `tools/graduation-synthetic/prepare_ui_case.py`、`崴正/Services/TenderImportInspectionService.cs`、`崴正/Services/TwoAPreprocessService.cs` 和 `TwoAQuantityAnalysisService.cs`：合成 Excel 的結構體工項中鋼筋名義數量 **130,000 kg**，混凝土名義數量 **5,450m³**。預檢前述 **4 warning rows** 恰對應三條名稱含「加工／組立／綁紮／工資」的鋼筋工項（42,000+32,000+18,000kg）及一條「預拌混凝土澆置」（1,800m³）。這四條目前被分類為 `Excluded`，故正式數量偵錯只用 **38,000kg** 及 **3,650m³**；大項價格仍計入結構體所有 10 條數量×單價，合計 **29,268,000 元**，與畫面一致。**沒有證據是算術漏加或 DB 資料遺失**。但名稱型關鍵字分類不等於材料/勞務真正拆分，且「鋼筋施工」「混凝土泵送與搗實」同樣屬複合措辭、當前卻被納入；這是**待人工審核的分類邊界及 UI 可解釋性問題**，絕不可直接把統計 Low 當成真實工程異常或為消掉紅燈調演算法。
 
 本次對應主程式並未修改；只驗證 UI 顯示與追查納入範圍。下一步直接在現有 5263→55433 獨立 DB 執行 `node .\scripts\verify-ui-state.mjs --case-id 15`，需要結果 5/5 才算 Run 保存／跨 API 讀回驗收；若失敗先查原案件，不重傳 Excel 或清空 DB。再評估在正式 UI 顯示「排除項數／工項名稱與理由」以避免把已排除含料複合工項的 38,000kg 誤讀為整案鋼筋用量。決標發布與真實準確率仍未驗證；smoke fixture 禁止 Approved History。
+
+
+## 28. 2026-11-21：Case #15 隔離資料庫 Run 持久化已 5/5 PASS，新增唯讀工項排除說明
+
+- 使用者 Windows 執行 `node scripts/verify-ui-state.mjs --case-id 15` **5/5 read-only PASS**。Docker SRC isolated DB identity (127.0.0.1:55433)、5263 API 對應 DB 全 15 個案件 ID/名稱指紋一致、210 Approved 合成 train 不變、15 版本/32 Runs，抽讀15份 Run payload；同版本 #15 的 `Quantity` 與 `MajorPrice:結構體工程` Run 都能重新讀取。這完成本輪「UI 上傳→數量與價格 Run 建立→API/DB 持久化」證據鏈；**不是**模型誤報率、真實工程推估準確度、決標回寫／Audit 的完成證據。
+- 下一組程式修改均在 `feature/1d-api-integration`，未合併 main、亦尚未於使用者 Windows 執行：`崴正/Services/AnalysisCaseService.cs`、`崴正/Controllers/AnalysisCaseController.cs` 新增只讀 `GET /api/analysis-cases/{id}/versions/{versionId}/quantity-scope`。用相同 `TwoAPreprocessService.Build` 和相同工項對映產出每筆 Included／Excluded／Pending、排除理由、Excel 原列號、材料相關 Excluded 數。正式 RunQuantityAnalysis 也改用共用 `ToPreprocessSourceItems` 函式以確保二者來源一致，不改數量估算算法或類別門檻。Commits `eae57e4d`、`3819ad10`、`2bfb3166`。
+- `frontend/src/views/AnalysisCaseDetailView.vue` commit `4f6ccc02`：新增數量納入範圍卡，列出總工項／納入／排除／待確認、可展開的工項及具體原因；材料相關名稱被排除時提醒人工審查複合勞務材料。附加 API 若未更新則顯示提醒，既有 V1／歷次 Run 仍可查看，不讓 UI 整頁失敗。
+- `tests/WorkbookParserTests/Program.cs` commit `3be3a5bb`：增加同源 case #15 的 15 工項／4 被排除候選／候選量 38,000kg、3,650m³／價格總額 29,268,000 元，避免保守排除與價格統計混淆。擴充**永久** `scripts/verify-ui-state.mjs` commit `9c7ed7c8`：`--case-id 15` 新增唯讀 scope 回讀與逐列分類契約對照、預期**新版 backend** 6/6 PASS；不建立臨時 CI/CD。
+- 分類現況：版本實際鋼筋名義 130,000kg、混凝土 5,450m³，4 條有加工／組立／綁紮／澆置的名稱被保守排除後只納入 38,000kg／3,650m³；其它工程類別排除是目前未核定數量模型，不能將單純「排除」解讀為工項無材料。重要限制：此唯讀分類是**目前規則重算**，並非舊 Run 的原始記錄或工程人工覆核結果。
+- CI 真實狀態依 GitHub Actions 最新 run 查核；**使用者 Windows 新 backend/新版 UI 實測仍 NOT RUN**。下個實測：在本機 `integration/src-closure` cherry-pick 此批相關 commits，停掉舊 5263／以同一 55433 isolated DB 重新啟動後端，5174 重新整理 #15，確認新增卡片及4條材料相關 Excluded，執行 `node scripts/verify-ui-state.mjs --case-id 15` 取得新版 6/6；勿重傳 V1、重跑 Quantity/Price、清除 Docker volume。決標審核／稽核和準確度下一階段。
