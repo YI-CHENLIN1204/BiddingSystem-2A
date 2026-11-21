@@ -338,3 +338,11 @@ npm run build
 - 依 `feature/1d-api-integration` 的 `崴正/Services/TenderExcelParser.cs` 查證：`includedSheetNames == null && worksheetNames.Count > 1` 時**明確丟出 InvalidDataException**「此檔案包含多個工作表，請先預覽並明確選擇要匯入的工作表。」本次上傳恰好沒有傳 `includedSheetNames`，而待估 Excel 有 7 張工作表。這是高度確定且可由程式直接推導的 400 主因；因實際訊息亂碼，目前尚未驗證伺服器是否同時存在其它拒絕原因。
 - 下一步**不修改 DB、不重跑 seed、不修改估算算法**。只重新上傳同一 test-only 標單，在 multipart form 加入依 `truth.detail_rows_per_sheet` 選出的 6 張詳細表 `includedSheetNames` JSON 陣列（不含「工程總表」），使用 PowerShell `System.Net.Http.HttpClient` 的 UTF-8 解碼讀出伺服器回應及具體錯誤。上傳成功才取得 `analysisCaseId`、`analysisBidVersionId`，再執行數量與價格 API；若仍是 400 先觀察原始 UTF-8 message，不可猜測其它修正。
 - 驗證狀態：正式 ASP.NET 兩個 readiness 先前 PASS，SYN-00002 **上傳 FAIL (400)**，Quantity 和 MajorPrice 分析 **NOT RUN**；沒有程式碼 / DB / Migration 變更。
+
+
+### 2026-11-21 — SYN-00002 正式 2A 待估標單上傳首次全數成功（HTTP 200、574/574）
+- 使用者改以 UTF-8 `System.Net.Http.HttpClient` multipart 上傳 `graduation-v2-project-ready.xlsx`，並從 `graduation-v2-project-ready-truth.json` 的 `detail_rows_per_sheet` 傳入 6 張明細工作表 `includedSheetNames`，不含工程總表。
+- `POST http://127.0.0.1:5261/api/analysis-cases/from-upload` **實測 HTTP 200**，回應 `analysisCaseId=1`、`analysisBidVersionId=1`、`versionNo=1`、`sourceType=Upload`、`sourceFileName=graduation-v2-project-ready.xlsx`、`itemCount=574`，原始訊息「已建立 2A 待偵錯案件，上傳標單只儲存於 Target Pipeline，不會寫入歷史資料。」確認 574 列已由正式 parser 接受並存放 target pipeline。
+- 驗證狀態：train-only 210 歷史案／99,959 筆資料庫寫入成功，數量偵錯 readiness 2/2、價格估算 readiness 210/210，**SYN-00002 574/574 上傳及解析 PASS**；正式 C# `quantity-analysis` 與 `major-price-analysis` **尚未執行，不能把上傳成功視為估算成功**。價格／數量演算法沒有修改。
+- 下一實際驗證點：不再重複上傳；用現有 caseId=1、versionId=1 分別呼叫 `POST /api/analysis-cases/1/versions/1/quantity-analysis` body `{}`，與 `POST /api/analysis-cases/1/versions/1/major-price-analysis` body `{"majorCategory":"結構體工程","topCount":8}`，保存原始 JSON（注意 PowerShell UTF-8），記錄 HTTP Status、run IDs、正式 P15/P50/P85 判定、有效樣本數、無法判定原因，再與 test-only truth 比對。若任一步失敗應停止，檢查該 API 錯誤，不可重新 seed。DB 尚未再次用 SQL 獨立核對資料筆數。
+- 本次更新僅交接文件，沒有新的程式碼/資料庫/Migration 修改。隱私：正式連線字串及密碼不可貼到 GitHub／對話。
