@@ -74,6 +74,7 @@ def prepare(source):
             "excluded_holdout_projects":len(projects)-len(train_projects),
             "project_rows":train_projects,
             "material_rows":sorted(materials.values(),key=lambda x:x["code"]),
+            "boq_rows":[b for b in boq if b["synthetic_project_id"] in train_ids],
             "transaction_rows":cleaned,
             "disclaimer":"Disposable localhost graduation database ONLY. Do not upload to collaboration production database."}
 
