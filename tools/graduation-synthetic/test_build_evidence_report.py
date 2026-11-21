@@ -14,7 +14,7 @@ class EvidenceReportTests(unittest.TestCase):
         with tempfile.TemporaryDirectory() as folder:
             src=Path(folder)
             projects,histories,lines=generate_full(75,20261119)
-            extended=PROJECT_FIELDS+["facade_system","finish_level","foundation_system","site_condition"]
+            extended=PROJECT_FIELDS+["site_area","facade_system","finish_level","foundation_system","site_condition"]
             files=[("projects.csv",extended,projects),("historical_transactions.csv",HISTORY_FIELDS,histories),
                    ("project_boq_rows.csv",BOQ_FIELDS,lines)]
             for name,header,records in files:
