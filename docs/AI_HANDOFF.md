@@ -554,3 +554,11 @@ npm run build
 - 重新以 GitHub connector 驗證遠端 `main` 確實含 `audit_paired_anomaly_api.py`、`test_paired_anomaly_api.py`。下一修復採 **`git fetch --no-tags --refmap= origin main`**（空 refmap 避免依 config 同步更新衝突的 `origin/main`，只取得 FETCH_HEAD），然後明確檢查 `git cat-file -e "FETCH_HEAD:tools/..."`（兩檔都存在）才 `git restore --source=FETCH_HEAD --worktree -- <兩個檔案>`。不要使用 `reset --hard`、`clean -fd`、強制更新 `origin/main`、刪資料庫或重 seed。
 - 下一驗證點：兩個腳本在 Windows `Test-Path` 成功 → unittest 預期新增 2 測試（共 23）→ dry-run 13 SHA/test-only 驗證 → 用既有 localhost:5262 + 55433 API 進行成對分析。若仍報 fetch ref 競態，先輸出 `git remote -v`、`git rev-parse FETCH_HEAD`、`git status -sb` 查核再採更精確修復，不覆蓋 feature 工作樹。
 - 此輪僅因真實使用者回報修訂交接；未修改應用程式、資料庫或 Migration。
+
+
+### 2026-11-21 — Git refmap 修復後，成對 API 稽核腳本 23/23 單元測試與 13/13 dry-run PASS
+- 使用者於 Windows `feature/1d-api-integration` 執行 `git fetch --no-tags --refmap= origin main`，成功只下載 FETCH_HEAD，避免先前 `origin/main` 遠端追蹤參照競態。由 FETCH_HEAD 執行 `git cat-file -e` 與 `git restore --source=FETCH_HEAD --worktree -- tools/graduation-synthetic/audit_paired_anomaly_api.py tools/graduation-synthetic/test_paired_anomaly_api.py`，`Test-Path` 兩檔均 `True`。使用者回報 status scoped 沒有既有未提交修改。
+- `python -m unittest discover -s tools/graduation-synthetic -p "test_*.py" -v` **Ran 23 tests in 19.459s，OK，23/23 PASS**；新增 `test_paired_delta_keeps_same_project_and_existing_baseline_red` 和 `test_summary_tracks_only_approved_quantity_categories` 均 OK。其間 `test_refuse_overwrite` 觸發 `argparse ... output directory must be empty` 是刻意的安全測試，整體 OK。
+- `python tools/graduation-synthetic/audit_paired_anomaly_api.py --suite .\\graduation-anomaly-holdouts --api http://127.0.0.1:5262 --output .\\graduation-src-paired-api-report.json` 未加 `--execute` 回傳 `{"status":"DRY_RUN","verifiedXlsxAndTruth":13,"api":"http://127.0.0.1:5262","next":"run again with --execute to create 13 analysis cases"}`。**13份標單/test-only真值/XLSX SHA 存在及一致性檢查 PASS**，此階段沒有 HTTP 上傳/DB 寫入。注意 DRY_RUN 也沒有驗證 HTTP API 實際仍連接指定 55433 DB。
+- 下一階段在明確確認 `5262` 連接本機新 `55433/bidding2a_graduation_src` 後，執行相同腳本加 `--execute`；此步將建 13 個 AnalysisCase 與最多 26 個 AnalysisRun（target pipeline），不能重跑或在正式庫執行。完成後從 `graduation-src-paired-api-report.json` 讀 paired_deltas，區分 baseline 原有 Red、注入後 status 變化，避免錯算為獨立樣本或準確率；中途錯誤保留 `.partial.json` 做復原。嚴格模式鋼骨仍不納入正式紅綠燈。
+- 無程式碼 / Migration / DB schema 更動；本次僅更新實際測試結果交接。
