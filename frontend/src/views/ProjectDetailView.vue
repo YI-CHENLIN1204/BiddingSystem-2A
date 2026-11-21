@@ -473,7 +473,10 @@ onMounted(async () => {
 
 <template>
   <div>
-    <div class="mb-3"><RouterLink class="text-decoration-none" to="/projects">← 返回建案管理</RouterLink></div>
+    <div class="mb-3 d-flex flex-wrap justify-content-between align-items-center gap-2">
+      <RouterLink class="text-decoration-none" to="/projects">← 返回建案管理</RouterLink>
+      <RouterLink v-if="project?.hasFinalBid" class="btn btn-outline-primary btn-sm" :to="{ path: '/final-bid', query: { projectId: String(projectId) } }">開啟決標工項審核</RouterLink>
+    </div>
     <div v-if="error" class="alert alert-danger">{{ error }}</div>
     <div v-if="message" class="alert alert-success alert-dismissible">
       {{ message }}<button type="button" class="btn-close" @click="message = ''"></button>
