@@ -1,5 +1,6 @@
 # SRC/extreme-fixture graduation-only Postgres. Separate from the existing 55432 DB.
 # Requires a NEW local password; never use collaboration/production credentials.
+name: graduation-src-synthetic
 services:
   graduation-src-postgres:
     image: postgres:17-alpine
