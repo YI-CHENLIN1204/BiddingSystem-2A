@@ -76,3 +76,12 @@
 - 來源唯一有證據的標籤是**已記錄的群組倍率變化**，不是工程正常/異常的正式 ground truth。
 - `noRecordedGeneratorShock` ≠ 工程正常；`readyForFalsePositiveRate` 一律 false。後續若要正式誤報/漏報率，必須先擬定獨立工程情境與正常標記的驗收方法。
 - **狀態**：GitHub 實作已提交、Windows 單元測試與實際 CSV 報告**尚未執行**。下一次驗證點請直接依 `tools/graduation-synthetic/README.md` 執行新 3 tests + 既有 23 tests，再產生 provenance JSON；未通過前不可勾選上方 P0 的最終驗收項目。
+
+
+### 2026-11-21 實際 Windows 來源稽核驗證
+
+- 使用者 `git fetch --no-tags --refmap= origin main`、還原兩個新稽核工具後，在 Windows 跑 `python -m unittest discover -s tools/graduation-synthetic -p "test_*.py" -v`，結果 **Ran 26 tests in 19.041s / OK**，新增三項全 PASS。
+- 既有 `graduation-src-extreme-v3` + `graduation-src-paired-api-report.json` 的**唯讀來源稽核 PASS**，輸出 `graduation-src-holdout-provenance.json`：45 test 建案，3 baseline 可對照，`readyForFalsePositiveRate=false`。
+- RC：18 test（16 非 extreme），混凝土無生成器 shock 18/18、鋼筋 17/18、結構大項 15/18；SC：17 test（15 非 extreme），混凝土 15/17、鋼筋不適用、結構大項 11/17；SRC：10 test（8 非 extreme），混凝土 10/10、鋼筋 10/10、結構大項 7/10。
+- 三 baseline：RC `SYN-00029` 鋼筋 Low/shockedLineCount=0，結構總價 Normal/0；SRC `SYN-00030` 鋼筋 Low/0，結構總價 Low/0；SC `SYN-00026` 結構總價 Low/shockedLineCount=4（混凝土 Normal/0）。**RC、SRC 的基準紅燈不能用已記錄生成器 shock 直接解釋**；SC 四筆 shock 可能影響總價，但尚未證明因果。注意生成器未加 shock 不等於合格正常標單。
+- 收斂下一段：先對無 shock 的 RC/SRC 基準 Low 做**離線診斷**（同結構篩選、參考建案特徵與範圍成分、生成器係數的量級差異），不要直接為了消除紅燈調整量價門檻。若要取得可靠正常誤報率，需另定具工程情境、獨立分布的正常 holdout 並驗證正式 API。
