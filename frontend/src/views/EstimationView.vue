@@ -1,7 +1,8 @@
 <script setup lang="ts">
-import { ref } from 'vue'
+import { computed, ref } from 'vue'
 import ProjectFields from '../components/ProjectFields.vue'
 import MaterialCapabilityPanel from '../components/MaterialCapabilityPanel.vue'
+import BulkMaterialEstimatePanel from '../components/BulkMaterialEstimatePanel.vue'
 import { useSystemOptions } from '../composables/useSystemOptions'
 import { api } from '../services/api'
 import type { ProjectForm } from '../types'
@@ -39,6 +40,12 @@ interface StructuralEstimationResult {
 
 const { options, error: optionsError } = useSystemOptions()
 const form = ref<ProjectForm>(emptyForm())
+const bulkTarget = computed(() => ({
+  projectType: form.value.projectType, structureType: form.value.structureType, city: form.value.city,
+  totalFloorArea: form.value.totalFloorArea, siteArea: form.value.siteArea, floorCount: form.value.floorCount,
+  basementFloorCount: form.value.basementFloorCount,
+  projectDate: form.value.projectMonth ? `${form.value.projectMonth}-01` : '',
+}))
 const topCount = ref<number | null>(null)
 const result = ref<StructuralEstimationResult | null>(null)
 const loading = ref(false)
@@ -125,7 +132,7 @@ function formatMonth(value?: string | null) {
     <div class="page-intro">
       <div>
         <h2>工程與材料估算</h2>
-        <p>輸入建案條件，以相似歷史建案的「結構體工程每坪單價」建立 P15 / P50 / P85 合理價格區間。</p>
+        <p>輸入建案條件，估算結構體工程價格，或依標準材料比較鋼骨、模板與土方的歷史用量。</p>
       </div>
     </div>
 
@@ -134,8 +141,8 @@ function formatMonth(value?: string | null) {
     <MaterialCapabilityPanel :structure-type="form.structureType" allow-specification-estimate />
 
     <section class="notice info">
-      <strong>目前估算單位：結構體工程。</strong>
-      鋼筋與混凝土屬於細項數量偵錯，不在這個頁面分別估價。這裡只建立結構體工程整體價格合理範圍。
+      <strong>整體價格與材料數量分開估算。</strong>
+      下方提供結構體工程整體價格，以及鋼骨、模板、土方的歷史用量概算。鋼筋與混凝土仍使用案件內既有數量偵錯流程。
     </section>
 
     <section class="card">
@@ -168,6 +175,8 @@ function formatMonth(value?: string | null) {
         </div>
       </div>
     </section>
+
+    <BulkMaterialEstimatePanel :target="bulkTarget" />
 
     <section v-if="result" class="card result-card">
       <div class="card-header result-head">

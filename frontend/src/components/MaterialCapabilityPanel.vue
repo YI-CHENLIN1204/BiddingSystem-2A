@@ -8,6 +8,7 @@ const props = withDefaults(defineProps<{ structureType?: string; allowSpecificat
 interface Capability {
   key: string; name: string; standardUnit: string; status: string; statusLabel: string
   currentModelSupported: boolean; formalAnomalyEnabled: boolean; specificationEstimateAvailable: boolean
+  historicalEstimateSupported?: boolean
   patternBasis: string; nameCandidateMaterialCount: number; mappedMaterialCount: number
   historicalProjectCount: number; minimumSampleCount: number
   recognizableSyntheticNameProjectCount: number; missingEngineeringConditions: string[]; reasons: string[]
@@ -101,9 +102,9 @@ function number(value: number) { return value.toLocaleString('zh-TW', { maximumF
             <tbody>
               <tr v-for="item in items" :key="item.key" :data-material-key="item.key">
                 <td><strong>{{ item.name }}</strong><div class="text-muted small">{{ item.standardUnit }}</div></td>
-                <td><span class="capability-state" :class="{ available: item.formalAnomalyEnabled }">{{ item.statusLabel }}</span></td>
+                <td><span class="capability-state" :class="{ available: item.formalAnomalyEnabled || item.historicalEstimateSupported }">{{ item.statusLabel }}</span></td>
                 <td>{{ item.nameCandidateMaterialCount }}／{{ item.mappedMaterialCount }}</td>
-                <td>{{ item.historicalProjectCount }} 件<div class="text-muted small">最低 {{ item.minimumSampleCount }} 件；不按交易列計數</div><div v-if="item.recognizableSyntheticNameProjectCount" class="text-muted small">其中 {{ item.recognizableSyntheticNameProjectCount }} 件名稱含合成標記</div></td>
+                <td>{{ item.historicalProjectCount }} 件<div class="text-muted small">最低 {{ item.minimumSampleCount }} 件；不按交易列計數</div><div v-if="item.historicalEstimateSupported" class="text-muted small">此欄為交易表候選；新概算會另查已核准決標來源</div><div v-if="item.recognizableSyntheticNameProjectCount" class="text-muted small">其中 {{ item.recognizableSyntheticNameProjectCount }} 件名稱含合成標記</div></td>
                 <td class="capability-reasons">
                   <div>{{ item.patternBasis }}</div>
                   <details v-if="item.reasons.length"><summary>查看資料不足或使用限制</summary><ul><li v-for="reason in item.reasons" :key="reason">{{ reason }}</li></ul></details>

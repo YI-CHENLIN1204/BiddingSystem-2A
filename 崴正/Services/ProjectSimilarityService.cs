@@ -80,7 +80,7 @@ namespace 崴正.Services
         // 1. 先篩有指定 MaterialId 的建案
         // 2. 再取材料自己的 Top K
         // ==========================================
-        private List<ProjectSimilarityDto>
+        public static List<ProjectSimilarityDto>
             ScoreCandidates(
                 ProjectSimilarityTargetDto target,
                 List<ProjectMaster> candidates,

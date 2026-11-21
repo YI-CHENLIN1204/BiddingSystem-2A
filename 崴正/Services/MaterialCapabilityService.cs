@@ -14,11 +14,11 @@ public class MaterialCapabilityService(ApplicationDbContext context)
             ["實際待養護面積", "核定養護工法與產品", "現場表面及氣候條件", "同產品完整歷史用量與對應面積"], false, ["antisol-e"]),
         new("release-agent", "模板脫模劑", "L", ["脫模劑", "脫膜劑"], "實際模板施作面積 ÷ 指定產品覆蓋率；需分模板材質。",
             ["實際模板接觸面積", "模板材質與表面狀況", "指定產品及工法", "同條件歷史用量與面積"], false, ["separol-wood", "separol-metal-plastic"]),
-        new("structural-steel", "鋼骨", "kg", ["鋼骨", "H型結構鋼"], "同結構系統、跨距與接頭條件下才可比較，不能視為不受設計影響。",
+        new("structural-steel", "鋼骨", "kg", ["鋼骨", "H型結構鋼"], "同結構與同標準材料重量／樓地板面積歷史概算；跨距、載重與接頭範圍仍須核對。",
             ["鋼骨結構系統與構件範圍", "跨距／載重條件", "接頭及施工工法", "經確認的材料與勞務分拆"]),
-        new("formwork", "模板", "m2", ["模板"], "需以實際接觸面積、系統及周轉方式建立可比條件。",
+        new("formwork", "模板", "m2", ["模板"], "同標準模板工項面積／樓地板面積歷史概算；精算仍需實際接觸面積、系統及周轉方式。",
             ["模板實際接觸面積", "模板系統與材質", "周轉次數及計量口徑"]),
-        new("earthwork", "土方開挖", "m3", ["土方開挖", "基坑", "開挖土方"], "開挖幾何條件與土質決定用量，不可只由樓地板面積推算。",
+        new("earthwork", "土方開挖", "m3", ["土方開挖", "基坑", "開挖土方"], "同標準開挖工項、同地下層數之體積／基地面積歷史概算；精算仍需開挖幾何與土質。",
             ["開挖範圍及深度", "土質／地質", "支撐工法及計量口徑"]),
         new("waterproofing", "防水材料", "m2", ["防水"], "指定施作面積、材料系統及層厚後才有可比消耗規律。",
             ["實際防水施作面積", "材料系統及層數／厚度", "同工法完整歷史用量"])
@@ -91,6 +91,7 @@ public class MaterialCapabilityService(ApplicationDbContext context)
         bool supported = definition.ExistingModel && TwoAScopePolicy.IsQuantityDetectionCategory(definition.Name);
         bool ready = supported && official.Count > 0 && mappedCount >= minimum;
         bool spec = (definition.SpecificationKeys?.Length ?? 0) > 0;
+        bool historical = BulkMaterialRangeCalculator.Profiles.Any(x => x.Key == definition.Key);
         var reasons = new List<string>();
         if (candidates.Length == 0) reasons.Add("尚無名稱可辨識的材料候選，不能以名稱猜測正式對應。");
         if (candidates.Length > compatible.Count) reasons.Add("部分材料單位不符，未自動假定換算係數。");
@@ -98,14 +99,16 @@ public class MaterialCapabilityService(ApplicationDbContext context)
         if (count < minimum) reasons.Add($"目前可比歷史建案{count}件，低於最低{minimum}件；不以交易列數補足。");
         if (!supported) reasons.Add("尚未具備經核定的歷史比較口徑，不開放正式數量異常判定。");
         if (definition.MissingEngineeringConditions.Length > 0)
-            reasons.Add("仍缺：" + string.Join("、", definition.MissingEngineeringConditions) + "。");
+            reasons.Add("精算與正式判定仍須核對：" + string.Join("、", definition.MissingEngineeringConditions) + "。");
+        if (historical) reasons.Add("已有獨立標準材料歷史概算入口；實際可用樣本、來源與結構條件由每次估算檢查。此表的正式對應數是既有偵錯分類對應，不代表新概算入口不能選材料。");
         if (spec) reasons.Add("可另依指定產品資料及使用者提供的實際施工面積試算；不等於歷史模型已通過。");
         string status = ready ? "CurrentModelAvailable" : supported ? "InsufficientEvidence" : spec ? "SpecificationOnly" : "EngineeringConditionsRequired";
         string label = ready ? "現行模型支援，仍須逐案檢查" : supported ? "資料條件不足" : spec ? "可依規格試算／未開放異常判定" : "待補工程條件";
+        if (historical) { status = "HistoricalEstimateSupported"; label = "支援歷史概算／須逐案檢查"; }
         return new(definition.Key, definition.Name, definition.Unit, status, label, supported, ready,
             spec, definition.PatternBasis, candidates.Length, official.Count, candidates.Length-compatible.Count,
             count, applicableHistory.Where(h => h.ProjectName.Contains("SYNTHETIC:", StringComparison.OrdinalIgnoreCase))
                 .Select(h => h.ProjectId).Distinct().Count(), minimum, definition.MissingEngineeringConditions,
-            reasons.ToArray(), definition.SpecificationKeys ?? []);
+            reasons.ToArray(), definition.SpecificationKeys ?? [], historical);
     }
 }

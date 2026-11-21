@@ -247,4 +247,6 @@ Check(!TwoAScopePolicy.IsQuantityDetectionCategory("混凝土養護劑") &&
     !TwoAScopePolicy.IsQuantityDetectionCategory("模板脫模劑"),
     "規格試算不會偷偷放寬既有正式異常偵錯範圍");
 
+BulkMaterialTests.Run();
+if (args.Length == 2 && args[0] == "--bulk-snapshot") BulkMaterialTests.ReplaySnapshot(args[1]);
 Console.WriteLine("WorkbookParserTests: all checks passed.");

@@ -4,6 +4,7 @@ import { useRoute } from 'vue-router'
 import { api, apiForm } from '../services/api'
 import WorkbookSheetPicker from '../components/WorkbookSheetPicker.vue'
 import MaterialCapabilityPanel from '../components/MaterialCapabilityPanel.vue'
+import BulkMaterialEstimatePanel from '../components/BulkMaterialEstimatePanel.vue'
 
 interface CaseSummary {
   analysisCaseId: number
@@ -682,6 +683,7 @@ onMounted(loadCase)
       </section>
 
       <MaterialCapabilityPanel :structure-type="detail.case.structureType" />
+      <BulkMaterialEstimatePanel :target="detail.case" />
 
       <div class="tabs">
         <button class="tab" :class="{ active: tab === 'items' }" @click="tab = 'items'">版本工項</button>

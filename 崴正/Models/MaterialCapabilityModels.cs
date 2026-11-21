@@ -12,7 +12,8 @@ public record MaterialCapabilityItem(string Key, string Name, string StandardUni
     bool SpecificationEstimateAvailable, string PatternBasis, int NameCandidateMaterialCount,
     int MappedMaterialCount, int IncompatibleUnitMaterialCount, int HistoricalProjectCount,
     int RecognizableSyntheticNameProjectCount, int MinimumSampleCount,
-    string[] MissingEngineeringConditions, string[] Reasons, string[] SpecificationKeys);
+    string[] MissingEngineeringConditions, string[] Reasons, string[] SpecificationKeys,
+    bool HistoricalEstimateSupported = false);
 
 public record MaterialCapabilityResponse(string? StructureType, string Notice, MaterialCapabilityItem[] Items);
 

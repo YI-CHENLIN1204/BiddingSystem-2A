@@ -1,0 +1,180 @@
+{
+  "date": "2026-11-22",
+  "changeId": "bulk-material-range-20261122",
+  "codeBaseline": "db40e874e3267faa62557a28d528522a186a1f2d",
+  "origin": "ISOLATED_SYNTHETIC_APPROVED_FINAL_BID_API_SNAPSHOT",
+  "accuracyEvaluation": false,
+  "databaseIntegrationExecuted": false,
+  "browserAcceptanceExecuted": false,
+  "noDatabaseWrites": true,
+  "parametersChanged": false,
+  "settingsSnapshotUnchanged": true,
+  "successfulCaptureGetCalls": 87,
+  "parserChecksWithoutReplay": 78,
+  "newBulkChecks": 36,
+  "invalidHttpRequests": [
+    {
+      "field": "profileKey",
+      "status": 400,
+      "message": "請選擇鋼骨、模板或土方開挖。"
+    },
+    {
+      "field": "materialId",
+      "status": 400,
+      "message": "請明確選擇已對應的標準材料。"
+    },
+    {
+      "field": "topCount",
+      "status": 400,
+      "message": "Top K 須為 1–100、排除建案 ID 須為正數，待比用量不可為負數。"
+    },
+    {
+      "field": "observedQuantity",
+      "status": 400,
+      "message": "Top K 須為 1–100、排除建案 ID 須為正數，待比用量不可為負數。"
+    },
+    {
+      "field": "structureType",
+      "status": 400,
+      "message": "鋼骨估算目前僅適用 SC 或 SRC，兩者分開比較。"
+    },
+    {
+      "field": "totalFloorArea",
+      "status": 400,
+      "message": "請完整填寫用途、縣市、有效面積、樓層及年月。"
+    }
+  ],
+  "snapshotLimitations": "Eight source projects selected per scenario for functional replay, not the entire production candidate pool. Direct final-bid rows are replayed; history aggregates matched but individual history flags are not exposed by old API. No new-service DB integration or engineering accuracy claim.",
+  "snapshots": [
+    {
+      "profile": "structural-steel",
+      "structure": "SRC",
+      "materialId": 3,
+      "sourceProjects": 8,
+      "sourceRows": 52,
+      "snapshotSha256": "17bb059aa935257efd30cd5e311767c9315c69f52a180c2e0dff007c1e3ca4b1",
+      "referenceProjectIds": [
+        183,
+        168,
+        108,
+        16,
+        143,
+        63,
+        117,
+        31
+      ],
+      "referenceProjectCount": 8,
+      "lowerQuantity": 174372.5747,
+      "medianQuantity": 213519.1784,
+      "upperQuantity": 301650.9166,
+      "unit": "kg",
+      "effectiveSampleSize": 7.7,
+      "formalAnomalyEnabled": false,
+      "priceComparisonSupported": false
+    },
+    {
+      "profile": "structural-steel",
+      "structure": "SC",
+      "materialId": 3,
+      "sourceProjects": 8,
+      "sourceRows": 58,
+      "snapshotSha256": "714f8c7110364b24510cb1855f8be9ea22572df53dd83d5167532a97d07c9f42",
+      "referenceProjectIds": [
+        62,
+        116,
+        18,
+        94,
+        126,
+        150,
+        23,
+        104
+      ],
+      "referenceProjectCount": 8,
+      "lowerQuantity": 109798.5876,
+      "medianQuantity": 174943.3033,
+      "upperQuantity": 197243.8264,
+      "unit": "kg",
+      "effectiveSampleSize": 7.57,
+      "formalAnomalyEnabled": false,
+      "priceComparisonSupported": false
+    },
+    {
+      "profile": "formwork",
+      "structure": "RC",
+      "materialId": 8,
+      "sourceProjects": 8,
+      "sourceRows": 53,
+      "snapshotSha256": "d8d8ebd7e50db4c08135ff8487bb2af2c81fb79a08521cdc9b8acc35402e64fe",
+      "referenceProjectIds": [
+        80,
+        161,
+        102,
+        165,
+        69,
+        29,
+        125,
+        5
+      ],
+      "referenceProjectCount": 8,
+      "lowerQuantity": 8201.0281,
+      "medianQuantity": 9291.5929,
+      "upperQuantity": 11544.7896,
+      "unit": "m2",
+      "effectiveSampleSize": 7.83,
+      "formalAnomalyEnabled": false,
+      "priceComparisonSupported": false
+    },
+    {
+      "profile": "formwork",
+      "structure": "SRC",
+      "materialId": 52,
+      "sourceProjects": 8,
+      "sourceRows": 49,
+      "snapshotSha256": "8fde0649a85bfb286fe057b347fa8ffb0a781b44a477a82ca8f5327b2c2b54e5",
+      "referenceProjectIds": [
+        183,
+        168,
+        108,
+        16,
+        143,
+        63,
+        117,
+        31
+      ],
+      "referenceProjectCount": 8,
+      "lowerQuantity": 4906.2098,
+      "medianQuantity": 5552.7115,
+      "upperQuantity": 8300.5954,
+      "unit": "m2",
+      "effectiveSampleSize": 7.7,
+      "formalAnomalyEnabled": false,
+      "priceComparisonSupported": false
+    },
+    {
+      "profile": "earthwork",
+      "structure": "SRC",
+      "materialId": 5,
+      "sourceProjects": 8,
+      "sourceRows": 48,
+      "snapshotSha256": "f1156aa7d3d2e1072087396ca885b193d4469b21abdae3d81206cb35efd069d9",
+      "referenceProjectIds": [
+        195,
+        93,
+        51,
+        173,
+        199,
+        59,
+        31,
+        164
+      ],
+      "referenceProjectCount": 8,
+      "lowerQuantity": 449.4758,
+      "medianQuantity": 536.8041,
+      "upperQuantity": 861.6358,
+      "unit": "m3",
+      "effectiveSampleSize": 7.35,
+      "formalAnomalyEnabled": false,
+      "priceComparisonSupported": false
+    }
+  ]
+}
