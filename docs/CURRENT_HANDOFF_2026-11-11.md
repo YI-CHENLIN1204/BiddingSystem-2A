@@ -319,3 +319,14 @@ PublishHistory 已有 advisory transaction lock／Idempotency receipt／SyncHist
 新增 `test_prepare_ui_case.py` 的**真 CLI 子程序**離線測試、Excel OOXML／明細／數量×單價一致性、來源標記、防重覆輸出和 RC/SRC 切換。更動 commits `de6a4f52fd3510164021216082bff0f21e729042`、`29b2a1d092dd951b097b9dca40a1626f2d9084f6`。僅使用既有永久 `.github/workflows/2a-build.yml`，沒有新 workflow；暫無 .NET、DB、Migration、正式模型或檢測類別變更。
 
 **下一步**：同步兩筆 commit，改用 `python tools/graduation-synthetic/prepare_ui_case.py --output graduation-ui-1121-01.xlsx --truth graduation-ui-1121-01-truth.json`（**不帶 --source**），接著 `node scripts/verify-ui-preflight.mjs --excel graduation-ui-1121-01.xlsx`。唯讀解析成功後才做 UI 寫入＋Run 持久化；歷史發布只能使用可回滾、與 holdout 完全分開的測試庫。不能宣稱新功能 E2E 已成功。
+
+
+## 26. 2026-11-21：Windows CP950 測試修正與 UI Run 持久化唯讀核對
+
+**使用者實測證據**：上一批 7 個 feature commits 已 cherry-pick 到 `integration/src-closure`（本機 HEAD `e6af81a`）；合成 `graduation-ui-smoke-1121-02.xlsx` 和對應 JSON 成功生成，`worksheetCount=3`、`detailRows=15`，API `verify-ui-preflight.mjs --excel` **9/9 PASS**，含 `3` 張工作表、`2` 張已識別明細工作表、`15` 筆候選、`4` 筆警示。4 筆警示須查明原因（可能是特意排除非量估工項），9/9 不代表資料品質已人工通過或異常判定正確。
+
+**同輪失敗必須保留**：Windows Python 3.12 跑永久 `test_prepare_ui_case.py` 時，原本離線 CLI 子程序仍用 Windows 預設 CP950 輸出，父程序指定 `encoding="utf-8"` 去讀，造成背景讀取執行緒 `UnicodeDecodeError`、`completed.stdout=None`，再造成 `json.loads(None)` 的 `TypeError`；總計 **2 PASS / 1 ERROR**。這不是 Excel 產生失敗，因為使用者之後執行產生器本體與 9/9 API 都成功。
+
+修正 `tools/graduation-synthetic/test_prepare_ui_case.py`：用 `env=os.environ.copy()` 對 child 單獨設 `PYTHONIOENCODING=utf-8`，與父 `subprocess.run(..., encoding="utf-8")` 配對，**不改全域 Windows 設定**。增加既有永久 `scripts/verify-ui-state.mjs --case-id <ID>`：對新 synthetic UI 案件，確認同一 current version 有已保存 `Quantity`、`MajorPrice:結構體工程` Run，從 API 讀回兩份結果並維持 Docker/DB/API 四項強對照；不執行任何 POST 或 DB 修改。Commits：`79af4b822b523d8843d353f5b6fcd5144381f473`、`d6b3fb1463111e7c502d31f4657c47455e8d8d5a`。沒有新 Workflow，僅沿用永久 `2a-build.yml`。
+
+**下一階段**：使用者同步新 commits、Windows Python 回歸再跑（預期修好 CP950，須以真實結果為準）；接著直接用現有 `graduation-ui-smoke-1121-02.xlsx` 進 `http://127.0.0.1:5174/analysis-cases`，「自行上傳」只勾結構體明細與基礎及地下工程，先於 UI 檢視 4 警示；建立名為 `SYNTHETIC-UI-驗收-graduation-ui-smoke-1121-02` 的 SRC 案件，輸入住宅／臺中市／12000 m²／基地 950 m²／地上 12／地下 2／2025-01，執行「數量偵錯」與「結構體工程」價格異常。重整頁面、開啟歷史 Run 後以 `node scripts/verify-ui-state.mjs --case-id <ID>` 查五項（**尚未實際執行**）。不把這份 smoke test 上傳決標草稿或發布 Approved history。資料庫/Migration/演算法/權限不變。
