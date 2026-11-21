@@ -1,0 +1,20 @@
+# SRC/extreme-fixture graduation-only Postgres. Separate from the existing 55432 DB.
+# Requires a NEW local password; never use collaboration/production credentials.
+services:
+  graduation-src-postgres:
+    image: postgres:17-alpine
+    environment:
+      POSTGRES_DB: bidding2a_graduation_src
+      POSTGRES_USER: graduation
+      POSTGRES_PASSWORD: ${GRADUATION_SRC_DB_PASSWORD:?Set a new local SRC DB password}
+    ports:
+      - "127.0.0.1:55433:5432"
+    volumes:
+      - graduation_src_pgdata:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U graduation -d bidding2a_graduation_src"]
+      interval: 3s
+      timeout: 5s
+      retries: 20
+volumes:
+  graduation_src_pgdata:
