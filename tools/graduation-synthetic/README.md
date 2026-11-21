@@ -347,3 +347,35 @@ $r.pairedBaselines | ConvertTo-Json -Depth 8
 ```
 
 **判讀警告**：`noRecordedGeneratorShock=true` 只能表示指定工項/大項沒有記錄生成器的群組×0.45或×1.8變動；**不是「正常工程」真值**。即使未記錄倍率，仍有合成設計規則、地區/年度差異、合成單價帶、參考分布和自然隨機差異。不得把 API baseline Red 直接計成 false positive。對沒有鋼筋的 SC，rebar scope 標記不適用。報告 `readyForFalsePositiveRate=false` 會固定關閉正式誤報率結論，直到有獨立且經審定的真值。
+
+
+### 收斂 P0：不重跑分析的 baseline 低值原因唯讀診斷（2026-11-21）
+
+`diagnose_baseline_low.py` 只針對已執行完成的 3 個 baseline，透過已存在的 `GET /api/analysis-cases/{caseId}/runs/{analysisRunId}` 查詢當時儲存的數量及價格偵錯結果；它不呼叫任何 POST、沒有新的案件或運算紀錄。對照現有成對 API 摘要與 `audit_holdout_provenance.py` 結果，以及 `projects.csv` SHA 驗證後的專案結構型式。每一項只呈現觀察值和上下界相差百分比、參考案數量/結構、相似度和相對權重、生成器是否有倍率變動，**不推斷異常因果或工程準確率**。
+
+```powershell
+# 在 feature/1d-api-integration 目前本機專案，僅擷取 main 新增工具
+git fetch --no-tags --refmap= origin main
+git status --short -- tools/graduation-synthetic/diagnose_baseline_low.py tools/graduation-synthetic/test_diagnose_baseline_low.py
+git restore --source=FETCH_HEAD --worktree -- tools/graduation-synthetic/diagnose_baseline_low.py tools/graduation-synthetic/test_diagnose_baseline_low.py
+
+python -m unittest discover -s tools/graduation-synthetic -p "test_*.py" -v
+
+# 只讀本機5262的已存在分析紀錄，絕對不重跑13案上傳/分析
+python tools/graduation-synthetic/diagnose_baseline_low.py --api http://127.0.0.1:5262 --source .\\graduation-src-extreme-v3 --paired-report .\\graduation-src-paired-api-report.json --provenance .\\graduation-src-holdout-provenance.json --output .\\graduation-src-baseline-diagnosis.json
+
+$d = Get-Content .\\graduation-src-baseline-diagnosis.json -Raw -Encoding UTF8 | ConvertFrom-Json
+$d.baselines | ForEach-Object {
+  $p = $_
+  $p.scopes.PSObject.Properties | ForEach-Object {
+    [PSCustomObject]@{
+      Project=$p.projectId;Structure=$p.structureType;Scope=$_.Name;Status=$_.Value.status
+      BelowLowerPercent=$_.Value.margin.belowLowerPercent
+      CrossStructureReferences=($_.Value.references.crossStructure -join ",")
+      GeneratorShockedLines=$_.Value.generatorShockedLineCount
+    }
+  }
+} | Format-Table -AutoSize
+```
+
+已核對 Controller 路由在 `feature/1d-api-integration` 存在；但 **Windows 的 30 項測試預期、唯讀診斷及實際資料庫紀錄尚未執行**。若 5262 API 未運行，請使用既有 API 啟動步驟，不要重 seed。參考組跨結構不必然代表實作缺陷：應依現行相似度政策再核對。
