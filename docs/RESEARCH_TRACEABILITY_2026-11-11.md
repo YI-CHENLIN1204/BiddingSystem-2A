@@ -222,3 +222,11 @@ E3：從 GitHub 開發分支讀取 `frontend/src/services/api.ts`、`frontend/sr
 - **E3 提交修正**：`prepare_ui_case.py` 新增省略 `--source` 的獨立 UI smoke 工作簿，完全不需要大型來源 CSV/manifest，並保留原 SHA/test split 模式。資料包含示意鋼筋、混凝土、模板、鋼骨與基礎工項，數量／單價只是操作測試值，**不參與模型訓練，也不是獨立 holdout 的準確度真值**。
 - **E3 永久回歸**：`test_prepare_ui_case.py` 新增真正 subprocess 執行 CLI 的測試和 XLSX SHA/ZIP、逐列 amount 及 metadata 安全條款；利用既有 `2a-build.yml`，不再新增臨時 CI。
 - **未驗證**：使用者本機修正版匯出 Excel／HTTP preview+inspect、瀏覽器建立案件與 Run、決標回寫／Audit。
+
+
+## W. 2026-11-21：Windows Python 子程序 CP950 與 UI 實際 Excel 9/9
+
+- **E1 使用者實測 PASS**：已建 `graduation-ui-smoke-1121-02.xlsx`＋truth JSON，SRC 3 sheets、15 工項。5174/5263 唯讀 API 實際 9/9 PASS，Excel preview 3 sheets (2 detail)、inspect 15 rows/4 warnings；原有 4/4 隔離 DB 14 案／28 runs 已另有實際證據。**不可**把 9/9 當作 UI 真實上傳、審核或模型準確率。
+- **E1 使用者實測 FAIL**：Python 3.12 Windows `test_offline_standalone_ui_fixture_without_source_dataset`，子程序使用 CP950 而父用 UTF-8 解碼，發生 `UnicodeDecodeError` 及 `TypeError`，3 項測試中 2 PASS / 1 ERROR。錯誤與已成功生成的 Excel/API 無因果。
+- **E3 代碼修正**：`test_prepare_ui_case.py` 對 subprocess child 顯式使用 `PYTHONIOENCODING=utf-8` commit `79af4b822`，父 decoder UTF-8 不變；`verify-ui-state.mjs` 擴充 `--case-id` 嚴格 synthetic case + same-version Quantity/MajorPrice Runs 與 payload GET，commit `d6b3fb146`。兩者僅修改永久驗證工具，零 DB schema、model、授權/標準範圍變更。
+- **仍待**：Windows Python 回歸 PASS、瀏覽器實際自行上傳並保存 2 Runs、跨刷新成功、決標審核與稽核 E2E。4 warning rows 必須讀實際警告內容，不臆測工程缺陷。
