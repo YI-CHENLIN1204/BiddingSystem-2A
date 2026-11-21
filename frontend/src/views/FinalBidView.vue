@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { computed, onMounted, ref, watch } from 'vue'
+import { computed, ref, watch } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
 import ProjectFields from '../components/ProjectFields.vue'
 import WorkbookSheetPicker from '../components/WorkbookSheetPicker.vue'
@@ -197,20 +197,53 @@ async function refreshMappings(text?: string) {
 }
 
 async function publishHistory() {
-  if (!projectId.value || !twoASummary.value?.publishReady) return
+  if (publishingHistory.value || !projectId.value || !twoASummary.value?.publishReady) return
   if (!window.confirm(
     '確認將此建案納入 2A 歷史基準嗎？\n\n發布後，本案會開始參與相似建案、結構體價格與鋼筋／混凝土數量模型。'
   )) return
 
+  const id = projectId.value
+  const receiptKey = 'history-operation:' + id + ':publish-history'
+  let operationId = sessionStorage.getItem(receiptKey)
+  if (!operationId) {
+    operationId = crypto.randomUUID()
+    sessionStorage.setItem(receiptKey, operationId)
+  }
+
   publishingHistory.value = true
   error.value = ''
+  message.value = ''
+  let published = false
   try {
-    await api(`/projects/${projectId.value}/publish-history`, { method: 'POST' })
-    await Promise.all([loadSummary(), loadTwoASummary(), loadItems()])
-    message.value = '此建案已確認並納入 2A 歷史基準。'
+    await api('/projects/' + id + '/publish-history', {
+      method: 'POST',
+      headers: { 'Idempotency-Key': operationId },
+    })
+    published = true
   } catch (caught) {
-    error.value = caught instanceof Error ? caught.message : '發布歷史基準失敗'
+    // HTTP timeout does not imply transaction failure. Verify the receipt
+    // committed in the same DB transaction before reporting the outcome.
+    try {
+      const receipt = await api<{ actionType: string }>(
+        '/projects/' + id + '/history-operation/' + operationId,
+      )
+      published = receipt.actionType === 'PublishHistory'
+      if (!published) throw new Error('歷史操作收據與發布動作不符')
+    } catch {
+      const reason = caught instanceof Error ? caught.message : '網路連線失敗'
+      error.value = reason + '；發布結果尚未確認，已保留同一操作識別碼。請在建案詳情核對狀態，勿建立新的發布操作。'
+    }
   } finally {
+    if (published) {
+      sessionStorage.removeItem(receiptKey)
+      try {
+        await Promise.all([loadSummary(), loadTwoASummary(), loadItems()])
+        message.value = '此建案已確認並納入 2A 歷史基準。'
+      } catch (caught) {
+        error.value = '歷史發布已確認成功，但重新載入審核資料失敗：' +
+          (caught instanceof Error ? caught.message : '未知錯誤')
+      }
+    }
     publishingHistory.value = false
   }
 }
@@ -334,8 +367,19 @@ async function createMaterial() {
 
 async function openExistingReview() {
   const raw = route.query.projectId
+  if (raw == null) {
+    projectId.value = null
+    summary.value = null
+    twoASummary.value = null
+    items.value = []
+    return
+  }
   if (typeof raw !== 'string' || !/^[1-9][0-9]*$/.test(raw) || !Number.isSafeInteger(Number(raw))) {
-    if (raw != null) error.value = '決標審核的建案編號無效'
+    projectId.value = null
+    summary.value = null
+    twoASummary.value = null
+    items.value = []
+    error.value = '決標審核的建案編號無效'
     return
   }
   projectId.value = Number(raw)
@@ -347,7 +391,10 @@ async function openExistingReview() {
     error.value = caught instanceof Error ? caught.message : '無法重新載入此建案決標審核'
   }
 }
-onMounted(openExistingReview)
+// 同一個頁面可切換不同建案 query，避免顯示前一案的審核資料。
+watch(() => route.query.projectId, () => {
+  if (!uploading.value) void openExistingReview()
+}, { immediate: true })
 
 function resetAndLoad() { page.value = 1; loadItems(1) }
 watch(search, () => { window.clearTimeout(searchTimer); searchTimer = window.setTimeout(resetAndLoad, 300) })
