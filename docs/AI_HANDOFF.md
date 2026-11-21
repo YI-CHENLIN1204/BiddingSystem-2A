@@ -284,3 +284,12 @@ npm run build
 - 畢專目標已收斂：只驗證數量估算與價格異常偵錯，完整多工種資料仍用來驗證標單多樣性及歷史參考，不擴充其它估算模型。
 - 下一驗證點：在目前工作目錄生成 `graduation-data-v2`；由來源資料產出 `graduation-v2-train-seed.json`，另以 test 建案產生 `graduation-v2-project.xlsx`、`graduation-v2-project-truth.json`，確認來源、筆數與 train/test 隔離；再做隔離 DB 的 .NET 建置／匯入，最後通過正式服務 API。
 - 此段僅紀錄測試結果與下一步，**無新程式碼、DB 或 Migration 修改**。
+
+
+### 2026-11-21 — v2 test-only Excel 首次實際輸出成功
+- 使用者已執行 `python tools/graduation-synthetic/export_full_project_excel.py --source .\\graduation-data-v2 --output .\\graduation-v2-project.xlsx --truth .\\graduation-v2-project-truth.json`，CLI 正常完成、無錯誤。
+- 實測輸出：`project_id=SYN-00002`、`detail_rows=574`、`worksheets=7`。詳細列數：結構體明細 12、基礎及地下工程 68、樓層材料明細 43、防水門窗及外裝 138、機電消防及弱電 194、室內裝修與雜項 119；加總 574。輸出 Excel SHA-256 `0b240db9282116318e5913b44a7d770faa3090c43ec1864688711e6f48bbc14c`。
+- 使用者先前一條 `prepare_training_seed.py` 輸出僅貼最後的 `disclaimer=Disposable localhost graduation database ONLY...`，尚未貼出其 train 筆數，故不能宣稱資料庫成功匯入。
+- 本次僅新增驗證交接紀錄；生成器及 C# 程式未修改。舊 17/17 PASS 仍成立於使用者先前版本；本次是獨立 Excel 匯出成功，尚無正式解析器 API E2E。
+- 下一驗證點：用戶 Windows 先執行 `dotnet build tools/graduation-synthetic/GraduationSeed/GraduationSeed.csproj`，確認 C# 編譯；確認 Docker 環境後才建立獨立 localhost Postgres `127.0.0.1:55432`，限制只匯入 train-only，禁止連正式 Supabase。待估算標單 `SYN-00002` 應保持 test-only，絕不可先寫入歷史基準。
+- 畢專主要範圍：結構體工程鋼筋／混凝土的數量估算，以及結構體工程大項的價格異常偵錯；不擴大其他工項模型。報告仍需實際 API 結果與標準答案比較。
