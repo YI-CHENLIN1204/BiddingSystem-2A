@@ -8,6 +8,7 @@ import csv
 import hashlib
 import json
 import random
+from decimal import Decimal, ROUND_HALF_UP
 from collections import Counter, defaultdict
 from pathlib import Path
 
@@ -81,7 +82,65 @@ def read_source(source):
     return projects, boq
 
 
-def export(source, output, truth, project_id=None, seed=147):
+# Apply scenario multipliers ONLY to a test-only workbook copy, never to
+# historical_transactions.csv or the normal BOQ dataset.
+# Unit-price scenarios affect the entire structural major category, matching
+# the currently approved 2A price model's evaluated scope.
+ANOMALY_SCENARIOS = {
+    "design_concrete_high": ("quantity", "SYN-CONCRETE", Decimal("2.50")),
+    "design_concrete_low": ("quantity", "SYN-CONCRETE", Decimal("0.35")),
+    "design_rebar_high": ("quantity", "SYN-REBAR", Decimal("2.40")),
+    "design_rebar_low": ("quantity", "SYN-REBAR", Decimal("0.40")),
+    "design_steel_high": ("quantity", "SYN-STEEL", Decimal("2.50")),
+    "design_steel_low": ("quantity", "SYN-STEEL", Decimal("0.35")),
+    "structural_price_high": ("price", "結構體工程", Decimal("3.00")),
+    "structural_price_low": ("price", "結構體工程", Decimal("0.20")),
+    "combined_concrete_high_price_high": ("combined", "SYN-CONCRETE", Decimal("2.50")),
+    "combined_concrete_low_price_low": ("combined", "SYN-CONCRETE", Decimal("0.35")),
+}
+
+
+def inject_test_scenario(source_rows, selected, anomaly_scenario):
+    if not anomaly_scenario:
+        return [dict(row) for row in source_rows], []
+    if anomaly_scenario not in ANOMALY_SCENARIOS:
+        raise ValueError("unknown scenario: " + anomaly_scenario)
+    if selected["split"] != "test":
+        raise ValueError("injected anomaly is test-only and may never enter history")
+    kind, material, factor = ANOMALY_SCENARIOS[anomaly_scenario]
+    changed, audit = [], []
+    for source_row in source_rows:
+        row = dict(source_row)
+        affect_quantity = kind in ("quantity", "combined") and row["material_code"] == material
+        affect_price = (kind == "price" and row["major_category"] == material) or (
+            kind == "combined" and row["major_category"] == "結構體工程")
+        if affect_quantity or affect_price:
+            original_qty = row["quantity"]
+            original_price = row["unit_price"]
+            qty = Decimal(original_qty) * (factor if affect_quantity else Decimal("1"))
+            # combined price must also be clearly above/below a normal reference,
+            # independently of changed quantity.
+            price_factor = (
+                (Decimal("3.00") if "high" in anomaly_scenario else Decimal("0.20"))
+                if kind == "combined" else factor if affect_price else Decimal("1"))
+            price = Decimal(original_price) * price_factor
+            row["quantity"] = str(qty.quantize(Decimal("0.001"), rounding=ROUND_HALF_UP))
+            row["unit_price"] = str(price.quantize(Decimal("0.01"), rounding=ROUND_HALF_UP))
+            row["amount"] = str((Decimal(row["quantity"]) * Decimal(row["unit_price"]))
+                                .quantize(Decimal("0.01"), rounding=ROUND_HALF_UP))
+            audit.append({"synthetic_line_id": row["synthetic_line_id"],
+                          "material_code": row["material_code"],
+                          "original_quantity": original_qty, "original_unit_price": original_price,
+                          "injected_quantity": row["quantity"], "injected_unit_price": row["unit_price"],
+                          "quantity_multiplier": str(factor if affect_quantity else 1),
+                          "price_multiplier": str(price_factor)})
+        changed.append(row)
+    if not audit:
+        raise ValueError("scenario target material not present in selected test project")
+    return changed, audit
+
+
+def export(source, output, truth, project_id=None, seed=147, anomaly_scenario=None):
     if output.exists() or truth.exists() or output.resolve() == truth.resolve():
         raise ValueError("refusing to overwrite output")
     projects, boq = read_source(source)
@@ -92,6 +151,10 @@ def export(source, output, truth, project_id=None, seed=147):
     items = [x for x in boq if x["synthetic_project_id"] == selected["synthetic_project_id"]]
     if not items:
         raise ValueError("no project BOQ lines")
+    items, injected_rows = inject_test_scenario(items, selected, anomaly_scenario)
+    baseline_by_line = {x["synthetic_line_id"]: x for x in boq
+                        if x["synthetic_project_id"] == selected["synthetic_project_id"]}
+    injected_ids = {x["synthetic_line_id"] for x in injected_rows}
     rng = random.Random(f"{seed}:{selected['synthetic_project_id']}")
     # Drop empty disciplines, preserving 1 summary and 3-6 actual detail sheets.
     categorized = defaultdict(list)
@@ -116,7 +179,8 @@ def export(source, output, truth, project_id=None, seed=147):
         for n, raw in enumerate(categorized[idx], start=1):
             # A few deliberately defective rows are represented as defects
             # in the Excel only. Source history remains complete and separate.
-            scenario = ("missing_quantity" if n % 47 == 0 else
+            scenario = ("complete" if raw["synthetic_line_id"] in injected_ids else
+                        "missing_quantity" if n % 47 == 0 else
                         "missing_unit_price" if n % 29 == 0 else
                         "missing_unit" if n % 37 == 0 else "complete")
             q = raw["quantity"] if scenario != "missing_quantity" else None
@@ -149,7 +213,10 @@ def export(source, output, truth, project_id=None, seed=147):
                 "rendered_item_name": raw["item_name"], "source_quantity": raw["quantity"],
                 "source_unit_price": raw["unit_price"], "scenario": scenario,
                 "expected_quantity": q, "expected_unit_price": price,
-                "source_data_origin": "SYNTHETIC"
+                "source_data_origin": "SYNTHETIC",
+                "baseline_quantity": baseline_by_line[raw["synthetic_line_id"]]["quantity"],
+                "baseline_unit_price": baseline_by_line[raw["synthetic_line_id"]]["unit_price"],
+                "injection_label": anomaly_scenario if raw["synthetic_line_id"] in injected_ids else None
             })
         body.extend([[], ["備註", "測試用工程明細"], ["合計", "請勿用於正式決標"]])
         sheets[label] = body
@@ -163,6 +230,10 @@ def export(source, output, truth, project_id=None, seed=147):
            "project": selected, "xlsx_sha256": hashlib.sha256(blob).hexdigest(),
            "total_detail_rows": len(truth_rows), "detail_rows_per_sheet": dict(Counter(x["sheet"] for x in truth_rows)),
            "cases": truth_rows,
+           "injection": {"scenario": anomaly_scenario, "source_split": selected["split"],
+                         "is_label_not_model_prediction": bool(anomaly_scenario),
+                         "changed_line_count": len(injected_rows),
+                         "changed_lines": injected_rows} if anomaly_scenario else None,
            "limitations": ["Excel defects are intentional; source history stays complete.",
                            "Synthetic history rows are NOT real transactions.",
                            "The project attributes and quantities are not calibrated to construction specifications."]}
@@ -173,6 +244,7 @@ def export(source, output, truth, project_id=None, seed=147):
     return {"project_id": selected["synthetic_project_id"],
             "detail_rows": len(truth_rows), "worksheets": len(sheets),
             "detail_rows_per_sheet": out["detail_rows_per_sheet"],
+            "injection": anomaly_scenario, "changed_line_count": len(injected_rows),
             "sha256": out["xlsx_sha256"]}
 
 
@@ -182,9 +254,11 @@ def main():
     parser.add_argument("--output", type=Path, required=True)
     parser.add_argument("--truth", type=Path, required=True)
     parser.add_argument("--project-id")
+    parser.add_argument("--anomaly-scenario", choices=sorted(ANOMALY_SCENARIOS))
     args = parser.parse_args()
     try:
-        print(json.dumps(export(args.source, args.output, args.truth, args.project_id), ensure_ascii=False, indent=2))
+        print(json.dumps(export(args.source, args.output, args.truth, args.project_id,
+                                anomaly_scenario=args.anomaly_scenario), ensure_ascii=False, indent=2))
     except (ValueError, KeyError, OSError, json.JSONDecodeError) as error:
         parser.error(str(error))
 
