@@ -471,3 +471,24 @@ feature/1d-api-integration
 除非使用者明確要求，否則不要合併到 `main`。
 
 > **所有開發變更必須審查交接同步：** 請先閱讀 [AGENTS.md](AGENTS.md) 與 [崴正 2A Handoff Guardian Skill](.agents/skills/waizheng-2a-handoff-guardian/SKILL.md)。每次變更後記錄 [交接影響審查](docs/HANDOFF_CHANGE_REVIEWS.jsonl)，必要時更新 [最新主交接](docs/CURRENT_HANDOFF_2026-11-11.md)；可使用 `python scripts/check_handoff_review.py --base <變更前SHA>` 檢查。
+
+
+---
+
+## 19. 永久 CI/CD 與隔離驗收（2026-11-21）
+
+本專案**不再為單次 UI 驗收建立臨時 Workflow**。正式建置入口是 `.github/workflows/2a-build.yml`：對整合分支 Push/PR 執行 ASP.NET Core Release Build、Workbook Parser 回歸測試、Vue TypeScript/Vite Build、兩支唯讀狀態腳本語法檢查，以及 Python 合成 UI 標單產生器實際契約測試。交接審查另由 `2a-handoff-review.yml` 維持。
+
+已移除重複的 `graduation-ui-build.yml`；保留 `scripts/verify-ui-preflight.mjs`、`scripts/verify-ui-state.mjs` 與 `tools/graduation-synthetic/prepare_ui_case.py` 作為可長期重用的工具，而非一次性 CI。
+
+在使用者本機隔離環境、`5263` 指向 `55433/bidding2a_graduation_src` 時，從專案根目錄執行：
+
+```powershell
+node .\scripts\verify-ui-state.mjs
+python .\tools\graduation-synthetic\prepare_ui_case.py --source .\graduation-src-extreme-v3 --output .\graduation-ui-new.xlsx --truth .\graduation-ui-new-truth.json
+node .\scripts\verify-ui-preflight.mjs --excel .\graduation-ui-new.xlsx
+```
+
+`prepare_ui_case.py` 依賴同一目錄中的正式 `export_full_project_excel.py` 和 `generate_irregular_excel.py`，三者及其回歸測試都應存在於同一版本，否則應停止，**不可**把缺少 Excel 造成的 `ENOENT` 解讀成解析 API 故障。產生器要求已校驗的 SYNTHETIC v2 來源與 test 分組，拒絕覆寫既有檔案。
+
+以上驗證皆不提交或發布歷史資料；真正在瀏覽器建立待偵錯案件／Run、決標草稿審核與權限稽核仍須另外 E2E。**test/holdout 案件絕對不可匯入 Approved 歷史基準**。CI 成功也不等於已取得真實工程估算準確度。
