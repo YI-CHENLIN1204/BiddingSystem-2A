@@ -462,3 +462,21 @@ npm run build
 ### 2026-11-21 — SRC 大量訓練種子 CLI 輸出限縮
 - `tools/graduation-synthetic/prepare_training_seed.py` commit `b3eefde1`：因原本 CLI stdout 會額外印出全部 `boq_rows`（300 案可達 10 萬行），現只輸出摘要 metadata/數量，不把完整資料列灌入終端；JSON 原始 seed 檔仍保存全部 train-only project、BOQ、transaction，內容與 DB 契約未刪減。Windows 尚未實際重跑此變更。
 - 整組 SRC/extreme 最新交接 commit 以前後續 `main` 最新為準；任何實測 FAIL 需更新此文件，修正後才執行新 DB 種子匯入。仍禁更動原本 55432 正式 RC/SC 畢專資料。
+
+
+### 2026-11-21 — 用戶追加「設計造成材料量過高/低、價格過貴/便宜」受控異常案例（已提交，尚待本機/CI測試）
+- 用戶要求在已有 RC/SC/SRC 及極端基地、樓層、城市條件之外，**加入可能由不同設計造成的混凝土等材料用量暴增或暴減、價格過高或過低**。確認這是「標單量價異常情境」，不是把所有差異直接當成真實設計缺陷。為避免異常污染歷史正常參考，實作**只對 test split 的 Excel 輸出複本注入倍率**，原 train、validation、history CSV、DB seed 完全不變。
+- `tools/graduation-synthetic/export_full_project_excel.py` commits `d16e167a`,`f652aa8a`：新增可選 `anomaly_scenario` / CLI `--anomaly-scenario`，原預設不變。支援 10 個標籤：
+  1. `design_concrete_high/low` 混凝土用量 ×2.50/×0.35；
+  2. `design_rebar_high/low` 鋼筋用量 ×2.40/×0.40；
+  3. `design_steel_high/low` 鋼骨用量 ×2.50/×0.35，仍然非核准 2A quantity 類別；
+  4. `structural_price_high/low` 結構體工程全體工項單價 ×3.00/×0.20，數量不變；
+  5. `combined_concrete_high_price_high/low_price_low` 混凝土數量 ×2.50/×0.35 且整體結構體單價 ×3.00/×0.20。
+- 此 exporter 不改原歷史資料；每筆 truth JSON 保留 `baseline_quantity`、`baseline_unit_price`、`baseline_amount`、`expected_quantity`、`expected_unit_price`、`expected_amount` 與 `injection_label`；同時 `injection.changed_lines` 紀錄各筆原始與注入後值、量價倍率。對注入的行禁止附加與本目的衝突的隨機缺價／缺量測例，所有金額一致化 `amount=quantity*unit_price`。輸出拒絕覆寫，只允許 test split，不含異常方案時仍維持舊行為。
+- `tools/graduation-synthetic/export_anomaly_holdout_suite.py` commits `7910e63b`,`37e9c6f7`：從新版 SRC/extreme v3 test-only 建案匯出 **10 個異常變體 XLSX + truth**，也匯出每個實際來源建案的**未注入 baseline XLSX + truth**，寫入 `anomaly_suite_manifest.json`，記載 source project id、結構與相關性。多種變體可來自同一來源建案，**不可充當獨立建案計算統計**。
+- `tools/graduation-synthetic/test_src_extended.py` commits `bdc413ac`,`89fc685e`：新增 10 種情境的 XLSX 真實產出、原始 CSV SHA 未變、train split 注入被拒、來源與 target 量價對照、期望金額算式與輸出不覆寫測試。
+- `.github/workflows/graduation-synthetic.yml` commit `7aba70d0`：擴充既有 CI 離線套件，產生異常 suite 並檢查 manifest 非空。
+- `tools/graduation-synthetic/README.md` commits `56099f4a`,`9558a1ab`：新增 `python tools/graduation-synthetic/export_anomaly_holdout_suite.py --source .\\graduation-src-extreme-v3 --output-dir .\\graduation-anomaly-holdouts`，說明 10 個量價異常類型與成對基準、標籤不等於模型判定，以及真值和正式紅綠燈分離。
+- **驗證狀態**：上述檔案已透過 GitHub 工具提交及重新讀取程式（程式碼審核/路徑已確認），但**尚未取得新版 Python unittest、GitHub Actions 及 ASP.NET 端到端的實際 PASS**；目前標記 NOT RUN。須先跑 `python -m unittest discover ...`，再生成 SRC v3 / anomaly holdouts，核對 truth、SC/RC/SRC API quantity/major price 異常與預期方向。不可單憑已知注入倍率宣稱偵測成功。
+- 資料版本相容：舊 `graduation-data-v2`、`55432/bidding2a_graduation` 一律保留；新 SRC 專用 `55433/bidding2a_graduation_src` 不需因本輪增補異常 workbook 重跑 seed，只要使用者尚未匯入時沿用最新版產生的原 train-only seed 即可。無 Migration/正式 Supabase/production 調整。後續新工項仍採 **嚴格模式：正式 C# API 留出回測及設計適用性核准後方可開放紅綠燈**。
+- **下一驗證點**：先新/舊 Python regression，進入 SRC 合成 300 案 + 七件基本/極端測試標單 + 10 個量價異常變體與 paired baseline，確認 `injection.changed_lines`、原 CSV digest 和 workbook 金額；再到新隔離 DB 執行正式 API，將數量異常（尤其混凝土用量變多）與單價異常拆開評估，並產生 per-source-project 的 paired delta report（不重複計算獨立樣本）。
