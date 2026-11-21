@@ -676,3 +676,10 @@ npm run build
 - 使用者 `git -c core.quotePath=false status --short` 列出兩個未追蹤一般檔案 `ersUserDesktopBiddingSystem-2A-integration` (18,217 bytes，20:40:00) 及 `ories` (16,653 bytes，20:40:01)。檔名尾端為特殊字元，不確定是意外重導向還是另有內容；目前未讀取內容，**不得直接刪除或納入 Git**。下一步僅查看檔案第一行與 metadata，若疑似敏感內容不得貼在聊天。
 - 使用者將先前回答中標示的 `target.StructureType != "SRC" || p.StructureType == "SRC"` C# 過濾條件當成 PowerShell 命令執行，出現 `'||' 非有效陳述式分隔符` 和 `target.StructureType 無法辨識`，**純屬命令語言不相容，不是程式建置/執行錯誤**。後續所有使用者執行命令應標明 Powershell，且不要把示意 C# 片段當作操作步驟。
 - 本機 `integration/src-closure` local `d725379` 已成功提交修補 Vue 3.5.46/Vite 7.3.8，`npm audit 0`、`vue-tsc && vite build` PASS，仍未 Push。SRC 55433 已核驗 77 個 Approved、37,504 筆交易/0缺失標單鏈結；嚴格 SRC API/DB E2E **尚未執行**。本次未執行本機命令、無 API/DB/Seed/程式碼變更。
+
+
+### 2026-11-21 — 非預期未追蹤檔案已查第一行；SRC 嚴格查詢雙入口實碼確認
+- 使用者在 `integration/src-closure` 查：`ersUserDesktopBiddingSystem-2A-integration` 是 18,217 bytes 的普通檔，第一行 `diff --git a/frontend/package-lock.json b/frontend/package-lock.json`，高度疑似 git diff/終端輸出意外保存；`ories` 16,653 bytes，第一行空白，**尚不能確定其內容與來源**，不刪除/不 commit，後續檢查數行及敏感內容，再決定是否移至安全備份。兩者不屬 frontend fix commit `d725379`。
+- 使用者 `Select-String -Path '.\\崴正\\Services\\ProjectSimilarityService.cs' -Pattern 'Strict SRC cohort' -Context 0,5` 真正確認本機 feature 程式第 341-344 行及 373-376 行均有 `target.StructureType != "SRC" || p.StructureType == "SRC"`，SRC 限制在兩個查詢 overload 中都存在。此為程式碼存在性驗證，不是實際 API/資料庫結果驗證。
+- 已查 feature API：`POST /api/detection-category/{id}/range` 呼叫 `DetectionCategoryRangeService.EstimateAsync`，`POST /api/major-category-price/range` 呼叫 `MajorCategoryPriceRangeService.EstimateAsync`；兩者透過 `ProjectSimilarityService.GetScoredCandidateProjectsAsync(target)` 取候選，沒有在已見方法中看到建立 AnalysisCase/Run；但要對 55433 執行新版 E2E 仍需**明確隔離後端執行個體與測試連線**，不能向舊 5262 API 誤送測試就當成新版 `86c068b`。不確定部署密碼/環境時不要擅自啟動正式連線。
+- 已知 55433 SRC Approved77、37,504交易、final_bid_item_id 欄位皆有值；`d725379` 前端 patch 已在本機 integration/src-closure commit、npm audit 0/建置 PASS，尚未推 GitHub。SRC 新版 API/DB E2E **待執行**，沒有 DB schema/migration/seed 變更。
