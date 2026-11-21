@@ -96,7 +96,7 @@ function emptyForm(): ProjectForm {
 }
 
 function resetCreate() {
-  sourceType.value = oneDStatus.value.configured ? 'OneD' : 'Upload'
+  sourceType.value = 'Upload'
   oneDProjectId.value = null
   uploadFile.value = null
   includedSheets.value = []
@@ -150,8 +150,8 @@ async function load() {
     const [caseResult, policyResult, oneDResult, readinessResult] = await Promise.all([
       api<AnalysisCaseSummary[]>('/analysis-cases'),
       api<PolicyResponse>('/analysis-cases/policy'),
-      api<OneDStatus>('/one-d/status'),
-      api<ReadinessResponse>('/detection-category/readiness'),
+      api<OneDStatus>('/one-d/status').catch(() => ({ configured: false, message: '1D 服務無法連線，仍可自行上傳 Excel' })),
+      api<ReadinessResponse>('/detection-category/readiness').catch(() => null),
     ])
     cases.value = caseResult
     policy.value = policyResult
