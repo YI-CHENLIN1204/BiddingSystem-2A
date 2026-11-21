@@ -900,3 +900,13 @@ npm run build
 - PR #2 `feature/1d-api-integration` → `main` 仍 **open、unmerged**，而且 `main` vs feature 有大量分岔（查詢時 feature ahead 671 commits、behind 208 commits、177 檔差異）。這個 feature 保存主要 Vue/ASP.NET 2A 系統開發，**絕不可把它當無用舊分支刪除或未經測試直接強制覆蓋 main**。本機 `integration/src-closure` 曾有交接文件 cherry-pick 衝突，最新是否已解決需先在使用者本機 `git status` 查實。下一階段將穩定整合功能到 main、跑永久 CI 及隔離 DB E2E，再刪 feature。
 - 公開安全檢查進度：在 `main` 和 feature Git tree 中均存在 `course-version.zip` 舊版程式封存檔（約 1.9MB），**目前無法證明封存檔內沒有敏感資料**；另外存在開發設定、`.env.example`、容器測試配置、歷史 handoff/研究紀錄。只是初步路徑／部分現行文字檔掃描，**不是完整原始碼、壓縮包與全 Git 歷史的密碼／合作資料掃描**。刪 branch 或刪檔不會自動清除所有 Git 歷史和既有 public exposure；公開前需取得合作資料授權、檢查全歷史／ZIP、必要時撤回公開並旋轉已暴露之憑證。給組員看程式碼可改用 private repo 邀請 Collaborators；若需公開作品集，以去識別、單一乾淨提交的新展示 Repo 比原始產學 Private 開發歷史安全。
 - 已完成：唯讀盤點與關閉舊 POC PR #1。未完成：遠端 branch deletion（目前 GitHub 連接工具不具該操作）、主功能 PR #2 merge、已公開歷史安全查核、任何 visibility 變更。本次**沒有**刪除遠端分支、覆寫 main 或修改資料庫與正式系統。
+
+
+### 2026-11-21 — 工作區實際修復及 Windows 驗證；現有 5263 新端點仍 404
+- GitHub 開發交接提交：`92eedf7ef19396b7d79eccb8e79adef01af4b8bf`，審查紀錄 LF 格式保全提交 `97e582cb971cb60f71ae1ca7b9b44556df426dd7`，分支 `feature/1d-api-integration`。更新主交接、研究回溯、新對話入口、WORKLOG 與 JSONL 審查；未合併開發程式到 main。
+- **分清三種狀態**：桌面原 `integration/src-closure` HEAD `dadc7aa`，仍在最後 `a27f850d` 的 JSONL 衝突。另於可寫工作區 clone 重現並完成修復，recovery branch 本機 commit `ab32e344ef76f67e8c0134f0592ba5b74f136a1f`，完整保留 19 筆有效、無重複紀錄；此修復 commit 尚未發布 GitHub，也不代表桌面原工作樹已完成。
+- Windows .NET SDK 10.0.301：API Release build **PASS，0 errors**；WorkbookParserTests **全部 PASS**（含 case15 工項/排除量/價格契約）；Python 3.12 合成 UI 回歸 **3/3 PASS**；兩個永久 Node 工具 syntax check **PASS**。核心來源與 a27f850d 相同；前端沿用整合副本已安裝 node_modules，未執行 npm ci。
+- 前端標準 build 的 vue-tsc 通過，但預設 Vite config loader 因工作區上層目錄權限失敗；改 `npm.cmd run build --prefix frontend -- --configLoader native` 後 **PASS**（Vite 7.3.8，66 modules）。沒有修改正式設定/套件/CI。保留既有 CS8604 與 Parser build 的 EFCore.Relational MSB3277 警告，尚未修正。
+- 本輪直接 GET：`/api/analysis-cases/15` **200**，currentVersionId=15；`/api/analysis-cases/15/versions/15/quantity-scope` **404**。永久 checker 因 Docker named-pipe 及 config 權限失敗，**新版 6/6 未完成**。不能把副本 build PASS 或前輪 5/5 套用到目前服務。
+- 交接 gate `python scripts/check_handoff_review.py --base a27f850d356aa46b0f201dc2e672af3341e9014c` 在本機文件提交 **PASS（4 files/1 review）**；遠端舊 19 筆審查紀錄逐筆比對完整保留。
+- 下個驗證：以使用者權限完成桌面最後提交、同一已核實 55433 隔離連線重啟新版 5263；確認新 GET 200 後跑永久 checker 6/6。DB、Migration、既存 Run、Approved history、演算法皆未改動。決標/稽核/實際模型準確度仍未完成。
