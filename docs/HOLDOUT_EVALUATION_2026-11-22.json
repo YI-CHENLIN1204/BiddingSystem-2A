@@ -1,0 +1,3132 @@
+{
+  "origin": "SYNTHETIC",
+  "benchmark": "LIVE_RANGE_API_BASELINE_WITH_VALIDATED_COUNTERFACTUAL_REPLAY",
+  "created_utc": "2026-11-21T16:51:23.077865+00:00",
+  "source_manifest": {
+    "generator_version": "2.0.0",
+    "data_origin": "SYNTHETIC",
+    "seed": 20261119,
+    "project_count": 300,
+    "transaction_count": 143700,
+    "boq_line_count": 143700,
+    "files_sha256": {
+      "projects.csv": "18dd95d8e6fc432170148f345053de0a6d78a2b4dfcb7929379dcf233e012414",
+      "historical_transactions.csv": "832c9611c6ab4227671b195d3333dae04b6ed5f2d438a8ea24ffb3db3a435a45",
+      "project_boq_rows.csv": "0ec70c48b781ea587b836f8bda34669d06298b2bad5776f93f7aedede44a360e"
+    },
+    "distinct_material_codes": 100,
+    "experimental_src_enabled": true,
+    "extreme_cases_enabled": true,
+    "extreme_scenario_counts": {
+      "tiny_lowrise": 3,
+      "large_highrise": 3,
+      "deep_basement": 3,
+      "constrained_site": 3,
+      "wide_lowrise": 3,
+      "older_remote_city": 3
+    },
+    "extreme_cases_per_split": {
+      "train": 6,
+      "test": 6,
+      "validation": 6
+    },
+    "structure_type_counts": {
+      "SRC": 102,
+      "RC": 110,
+      "SC": 88
+    },
+    "min_lines_per_project": 238,
+    "max_lines_per_project": 754,
+    "limitations": [
+      "Quantities, design choices, prices and site conditions are synthetic, NOT measured construction facts.",
+      "SRC templates are research-only: no automatic production scope/traffic-light expansion.",
+      "Extreme cases are deliberate synthetic stress tests, NOT plausible benchmark estimates; their flags must not leak into model features.",
+      "All historical rows correspond 1:1 to project_boq_rows.csv, but they are not real executed transactions.",
+      "Template collection is illustrative, not an exhaustive BOQ; no actual supplier quotations.",
+      "Do not report synthetic model errors as real-world engineering accuracy.",
+      "No database writes. Do not import into the official collaboration database."
+    ]
+  },
+  "split_counts": {
+    "train": 210,
+    "test": 45,
+    "validation": 45
+  },
+  "settings_snapshot": {
+    "settingsId": 1,
+    "topK": 8,
+    "minimumSampleCount": 5,
+    "lowerQuantile": 0.15,
+    "medianQuantile": 0.5,
+    "upperQuantile": 0.85,
+    "similarityExponent": 1,
+    "timeHalfLifeYears": 3,
+    "minimumSimilarityScore": 0,
+    "structureWeight": 25,
+    "areaWeight": 30,
+    "siteAreaWeight": 10,
+    "floorWeight": 15,
+    "yearWeight": 10,
+    "cityWeight": 10,
+    "areaDifferenceCutoffRatio": 1,
+    "siteAreaDifferenceCutoffRatio": 1,
+    "groundFloorPenaltyRatio": 0.1,
+    "basementFloorPenaltyRatio": 0.15,
+    "yearDifferenceCutoffYears": 20,
+    "updatedAt": "2026-11-21T09:59:35.428627Z",
+    "updatedBy": "SYNTHETIC_GRADUATION_SEED"
+  },
+  "api": "http://127.0.0.1:5263",
+  "request_pairs_validated": 237,
+  "created_cases": 0,
+  "created_runs": 0,
+  "settings_changed": false,
+  "case_snapshot_unchanged": true,
+  "src_reference_policy": "SRC_ONLY",
+  "validation_selection": "Minimum macro relative interval score over unshocked nonextreme validation observations; no test-based parameter selection.",
+  "normal_label_status": "NO_ENGINEERING_NORMAL_CERTIFICATION; unshocked is a source condition, not engineering truth.",
+  "anomaly_precision": null,
+  "anomaly_recall": null,
+  "anomaly_fpr": null,
+  "anomaly_metric_blocker": "Available labels indicate injected multipliers/design variations; baselines lack certified engineering normal/abnormal labels. Do not substitute baseline for true negative.",
+  "selected_on_validation": {
+    "id": "structure-k32-h3-e1",
+    "weights": [
+      40,
+      25,
+      10,
+      15,
+      5,
+      5
+    ],
+    "top_k": 32,
+    "half_life": 3,
+    "exponent": 1
+  },
+  "limitations": [
+    "Synthetic numeric errors are not company engineering accuracy.",
+    "Existing C# range endpoint is exercised; workbook parsing/UI inclusion and history publication are not rerun.",
+    "Reference lineage is checked against source IDs, metadata and numeric totals, not a new Docker connection attestation.",
+    "Current service permits reference projects later than the target date; this is retrospective held-out estimation, not a chronological forecast.",
+    "Counterfactuals use returned eligible reference pools and inspected C# rules; only the current baseline is executed by the live service.",
+    "MAE is grouped by scope and structure; never average incompatible physical units."
+  ],
+  "baseline_source_commit": "e644edb0b3606189005ed49df0aecb18712249f7",
+  "validation_candidates": [
+    {
+      "config": {
+        "id": "current",
+        "weights": [
+          25,
+          30,
+          10,
+          15,
+          10,
+          10
+        ],
+        "top_k": 8,
+        "half_life": 3,
+        "exponent": 1
+      },
+      "selection_score": 0.6246666645432883
+    },
+    {
+      "config": {
+        "id": "current-k5-h1-e0",
+        "weights": [
+          25,
+          30,
+          10,
+          15,
+          10,
+          10
+        ],
+        "top_k": 5,
+        "half_life": 1,
+        "exponent": 0
+      },
+      "selection_score": 0.8215626497617152
+    },
+    {
+      "config": {
+        "id": "current-k5-h1-e1",
+        "weights": [
+          25,
+          30,
+          10,
+          15,
+          10,
+          10
+        ],
+        "top_k": 5,
+        "half_life": 1,
+        "exponent": 1
+      },
+      "selection_score": 0.8227926455378052
+    },
+    {
+      "config": {
+        "id": "current-k5-h1-e2",
+        "weights": [
+          25,
+          30,
+          10,
+          15,
+          10,
+          10
+        ],
+        "top_k": 5,
+        "half_life": 1,
+        "exponent": 2
+      },
+      "selection_score": 0.8195390393883197
+    },
+    {
+      "config": {
+        "id": "current-k5-h3-e0",
+        "weights": [
+          25,
+          30,
+          10,
+          15,
+          10,
+          10
+        ],
+        "top_k": 5,
+        "half_life": 3,
+        "exponent": 0
+      },
+      "selection_score": 0.7676611212296622
+    },
+    {
+      "config": {
+        "id": "current-k5-h3-e1",
+        "weights": [
+          25,
+          30,
+          10,
+          15,
+          10,
+          10
+        ],
+        "top_k": 5,
+        "half_life": 3,
+        "exponent": 1
+      },
+      "selection_score": 0.7684926388822285
+    },
+    {
+      "config": {
+        "id": "current-k5-h3-e2",
+        "weights": [
+          25,
+          30,
+          10,
+          15,
+          10,
+          10
+        ],
+        "top_k": 5,
+        "half_life": 3,
+        "exponent": 2
+      },
+      "selection_score": 0.7618484754633978
+    },
+    {
+      "config": {
+        "id": "current-k5-h6-e0",
+        "weights": [
+          25,
+          30,
+          10,
+          15,
+          10,
+          10
+        ],
+        "top_k": 5,
+        "half_life": 6,
+        "exponent": 0
+      },
+      "selection_score": 0.7296076604726247
+    },
+    {
+      "config": {
+        "id": "current-k5-h6-e1",
+        "weights": [
+          25,
+          30,
+          10,
+          15,
+          10,
+          10
+        ],
+        "top_k": 5,
+        "half_life": 6,
+        "exponent": 1
+      },
+      "selection_score": 0.7281538770518637
+    },
+    {
+      "config": {
+        "id": "current-k5-h6-e2",
+        "weights": [
+          25,
+          30,
+          10,
+          15,
+          10,
+          10
+        ],
+        "top_k": 5,
+        "half_life": 6,
+        "exponent": 2
+      },
+      "selection_score": 0.7415155984457532
+    },
+    {
+      "config": {
+        "id": "current-k5-hNone-e0",
+        "weights": [
+          25,
+          30,
+          10,
+          15,
+          10,
+          10
+        ],
+        "top_k": 5,
+        "half_life": null,
+        "exponent": 0
+      },
+      "selection_score": 0.7274617975262271
+    },
+    {
+      "config": {
+        "id": "current-k5-hNone-e1",
+        "weights": [
+          25,
+          30,
+          10,
+          15,
+          10,
+          10
+        ],
+        "top_k": 5,
+        "half_life": null,
+        "exponent": 1
+      },
+      "selection_score": 0.7274617975262271
+    },
+    {
+      "config": {
+        "id": "current-k5-hNone-e2",
+        "weights": [
+          25,
+          30,
+          10,
+          15,
+          10,
+          10
+        ],
+        "top_k": 5,
+        "half_life": null,
+        "exponent": 2
+      },
+      "selection_score": 0.7294525229987093
+    },
+    {
+      "config": {
+        "id": "current-k8-h1-e0",
+        "weights": [
+          25,
+          30,
+          10,
+          15,
+          10,
+          10
+        ],
+        "top_k": 8,
+        "half_life": 1,
+        "exponent": 0
+      },
+      "selection_score": 0.6463743522178025
+    },
+    {
+      "config": {
+        "id": "current-k8-h1-e1",
+        "weights": [
+          25,
+          30,
+          10,
+          15,
+          10,
+          10
+        ],
+        "top_k": 8,
+        "half_life": 1,
+        "exponent": 1
+      },
+      "selection_score": 0.6437760918415021
+    },
+    {
+      "config": {
+        "id": "current-k8-h1-e2",
+        "weights": [
+          25,
+          30,
+          10,
+          15,
+          10,
+          10
+        ],
+        "top_k": 8,
+        "half_life": 1,
+        "exponent": 2
+      },
+      "selection_score": 0.6263462893623957
+    },
+    {
+      "config": {
+        "id": "current-k8-h3-e0",
+        "weights": [
+          25,
+          30,
+          10,
+          15,
+          10,
+          10
+        ],
+        "top_k": 8,
+        "half_life": 3,
+        "exponent": 0
+      },
+      "selection_score": 0.6114359416284698
+    },
+    {
+      "config": {
+        "id": "current-k8-h3-e2",
+        "weights": [
+          25,
+          30,
+          10,
+          15,
+          10,
+          10
+        ],
+        "top_k": 8,
+        "half_life": 3,
+        "exponent": 2
+      },
+      "selection_score": 0.6214305208815066
+    },
+    {
+      "config": {
+        "id": "current-k8-h6-e0",
+        "weights": [
+          25,
+          30,
+          10,
+          15,
+          10,
+          10
+        ],
+        "top_k": 8,
+        "half_life": 6,
+        "exponent": 0
+      },
+      "selection_score": 0.6258060679365574
+    },
+    {
+      "config": {
+        "id": "current-k8-h6-e1",
+        "weights": [
+          25,
+          30,
+          10,
+          15,
+          10,
+          10
+        ],
+        "top_k": 8,
+        "half_life": 6,
+        "exponent": 1
+      },
+      "selection_score": 0.6285575382355315
+    },
+    {
+      "config": {
+        "id": "current-k8-h6-e2",
+        "weights": [
+          25,
+          30,
+          10,
+          15,
+          10,
+          10
+        ],
+        "top_k": 8,
+        "half_life": 6,
+        "exponent": 2
+      },
+      "selection_score": 0.6162037524084827
+    },
+    {
+      "config": {
+        "id": "current-k8-hNone-e0",
+        "weights": [
+          25,
+          30,
+          10,
+          15,
+          10,
+          10
+        ],
+        "top_k": 8,
+        "half_life": null,
+        "exponent": 0
+      },
+      "selection_score": 0.6454829145007276
+    },
+    {
+      "config": {
+        "id": "current-k8-hNone-e1",
+        "weights": [
+          25,
+          30,
+          10,
+          15,
+          10,
+          10
+        ],
+        "top_k": 8,
+        "half_life": null,
+        "exponent": 1
+      },
+      "selection_score": 0.6464803692758829
+    },
+    {
+      "config": {
+        "id": "current-k8-hNone-e2",
+        "weights": [
+          25,
+          30,
+          10,
+          15,
+          10,
+          10
+        ],
+        "top_k": 8,
+        "half_life": null,
+        "exponent": 2
+      },
+      "selection_score": 0.6501712359036508
+    },
+    {
+      "config": {
+        "id": "current-k16-h1-e0",
+        "weights": [
+          25,
+          30,
+          10,
+          15,
+          10,
+          10
+        ],
+        "top_k": 16,
+        "half_life": 1,
+        "exponent": 0
+      },
+      "selection_score": 0.6665893093781319
+    },
+    {
+      "config": {
+        "id": "current-k16-h1-e1",
+        "weights": [
+          25,
+          30,
+          10,
+          15,
+          10,
+          10
+        ],
+        "top_k": 16,
+        "half_life": 1,
+        "exponent": 1
+      },
+      "selection_score": 0.6437950206447267
+    },
+    {
+      "config": {
+        "id": "current-k16-h1-e2",
+        "weights": [
+          25,
+          30,
+          10,
+          15,
+          10,
+          10
+        ],
+        "top_k": 16,
+        "half_life": 1,
+        "exponent": 2
+      },
+      "selection_score": 0.6319662432709874
+    },
+    {
+      "config": {
+        "id": "current-k16-h3-e0",
+        "weights": [
+          25,
+          30,
+          10,
+          15,
+          10,
+          10
+        ],
+        "top_k": 16,
+        "half_life": 3,
+        "exponent": 0
+      },
+      "selection_score": 0.6131082740238964
+    },
+    {
+      "config": {
+        "id": "current-k16-h3-e1",
+        "weights": [
+          25,
+          30,
+          10,
+          15,
+          10,
+          10
+        ],
+        "top_k": 16,
+        "half_life": 3,
+        "exponent": 1
+      },
+      "selection_score": 0.6108413714653099
+    },
+    {
+      "config": {
+        "id": "current-k16-h3-e2",
+        "weights": [
+          25,
+          30,
+          10,
+          15,
+          10,
+          10
+        ],
+        "top_k": 16,
+        "half_life": 3,
+        "exponent": 2
+      },
+      "selection_score": 0.6047869771686063
+    },
+    {
+      "config": {
+        "id": "current-k16-h6-e0",
+        "weights": [
+          25,
+          30,
+          10,
+          15,
+          10,
+          10
+        ],
+        "top_k": 16,
+        "half_life": 6,
+        "exponent": 0
+      },
+      "selection_score": 0.6173848048066659
+    },
+    {
+      "config": {
+        "id": "current-k16-h6-e1",
+        "weights": [
+          25,
+          30,
+          10,
+          15,
+          10,
+          10
+        ],
+        "top_k": 16,
+        "half_life": 6,
+        "exponent": 1
+      },
+      "selection_score": 0.6050818335548662
+    },
+    {
+      "config": {
+        "id": "current-k16-h6-e2",
+        "weights": [
+          25,
+          30,
+          10,
+          15,
+          10,
+          10
+        ],
+        "top_k": 16,
+        "half_life": 6,
+        "exponent": 2
+      },
+      "selection_score": 0.6110286108857594
+    },
+    {
+      "config": {
+        "id": "current-k16-hNone-e0",
+        "weights": [
+          25,
+          30,
+          10,
+          15,
+          10,
+          10
+        ],
+        "top_k": 16,
+        "half_life": null,
+        "exponent": 0
+      },
+      "selection_score": 0.617798382733957
+    },
+    {
+      "config": {
+        "id": "current-k16-hNone-e1",
+        "weights": [
+          25,
+          30,
+          10,
+          15,
+          10,
+          10
+        ],
+        "top_k": 16,
+        "half_life": null,
+        "exponent": 1
+      },
+      "selection_score": 0.6120899211244804
+    },
+    {
+      "config": {
+        "id": "current-k16-hNone-e2",
+        "weights": [
+          25,
+          30,
+          10,
+          15,
+          10,
+          10
+        ],
+        "top_k": 16,
+        "half_life": null,
+        "exponent": 2
+      },
+      "selection_score": 0.6119455649465452
+    },
+    {
+      "config": {
+        "id": "current-k32-h1-e0",
+        "weights": [
+          25,
+          30,
+          10,
+          15,
+          10,
+          10
+        ],
+        "top_k": 32,
+        "half_life": 1,
+        "exponent": 0
+      },
+      "selection_score": 0.6713151435080902
+    },
+    {
+      "config": {
+        "id": "current-k32-h1-e1",
+        "weights": [
+          25,
+          30,
+          10,
+          15,
+          10,
+          10
+        ],
+        "top_k": 32,
+        "half_life": 1,
+        "exponent": 1
+      },
+      "selection_score": 0.6706550409842413
+    },
+    {
+      "config": {
+        "id": "current-k32-h1-e2",
+        "weights": [
+          25,
+          30,
+          10,
+          15,
+          10,
+          10
+        ],
+        "top_k": 32,
+        "half_life": 1,
+        "exponent": 2
+      },
+      "selection_score": 0.6564400308128043
+    },
+    {
+      "config": {
+        "id": "current-k32-h3-e0",
+        "weights": [
+          25,
+          30,
+          10,
+          15,
+          10,
+          10
+        ],
+        "top_k": 32,
+        "half_life": 3,
+        "exponent": 0
+      },
+      "selection_score": 0.6526364194462045
+    },
+    {
+      "config": {
+        "id": "current-k32-h3-e1",
+        "weights": [
+          25,
+          30,
+          10,
+          15,
+          10,
+          10
+        ],
+        "top_k": 32,
+        "half_life": 3,
+        "exponent": 1
+      },
+      "selection_score": 0.6326284830749946
+    },
+    {
+      "config": {
+        "id": "current-k32-h3-e2",
+        "weights": [
+          25,
+          30,
+          10,
+          15,
+          10,
+          10
+        ],
+        "top_k": 32,
+        "half_life": 3,
+        "exponent": 2
+      },
+      "selection_score": 0.618334878408517
+    },
+    {
+      "config": {
+        "id": "current-k32-h6-e0",
+        "weights": [
+          25,
+          30,
+          10,
+          15,
+          10,
+          10
+        ],
+        "top_k": 32,
+        "half_life": 6,
+        "exponent": 0
+      },
+      "selection_score": 0.6557166412351948
+    },
+    {
+      "config": {
+        "id": "current-k32-h6-e1",
+        "weights": [
+          25,
+          30,
+          10,
+          15,
+          10,
+          10
+        ],
+        "top_k": 32,
+        "half_life": 6,
+        "exponent": 1
+      },
+      "selection_score": 0.6476264920780085
+    },
+    {
+      "config": {
+        "id": "current-k32-h6-e2",
+        "weights": [
+          25,
+          30,
+          10,
+          15,
+          10,
+          10
+        ],
+        "top_k": 32,
+        "half_life": 6,
+        "exponent": 2
+      },
+      "selection_score": 0.6305803500304956
+    },
+    {
+      "config": {
+        "id": "current-k32-hNone-e0",
+        "weights": [
+          25,
+          30,
+          10,
+          15,
+          10,
+          10
+        ],
+        "top_k": 32,
+        "half_life": null,
+        "exponent": 0
+      },
+      "selection_score": 0.6579710096318782
+    },
+    {
+      "config": {
+        "id": "current-k32-hNone-e1",
+        "weights": [
+          25,
+          30,
+          10,
+          15,
+          10,
+          10
+        ],
+        "top_k": 32,
+        "half_life": null,
+        "exponent": 1
+      },
+      "selection_score": 0.6346406099181295
+    },
+    {
+      "config": {
+        "id": "current-k32-hNone-e2",
+        "weights": [
+          25,
+          30,
+          10,
+          15,
+          10,
+          10
+        ],
+        "top_k": 32,
+        "half_life": null,
+        "exponent": 2
+      },
+      "selection_score": 0.6269750095254594
+    },
+    {
+      "config": {
+        "id": "geometry-k5-h1-e0",
+        "weights": [
+          20,
+          40,
+          15,
+          15,
+          5,
+          5
+        ],
+        "top_k": 5,
+        "half_life": 1,
+        "exponent": 0
+      },
+      "selection_score": 0.7546873674512289
+    },
+    {
+      "config": {
+        "id": "geometry-k5-h1-e1",
+        "weights": [
+          20,
+          40,
+          15,
+          15,
+          5,
+          5
+        ],
+        "top_k": 5,
+        "half_life": 1,
+        "exponent": 1
+      },
+      "selection_score": 0.755737045047704
+    },
+    {
+      "config": {
+        "id": "geometry-k5-h1-e2",
+        "weights": [
+          20,
+          40,
+          15,
+          15,
+          5,
+          5
+        ],
+        "top_k": 5,
+        "half_life": 1,
+        "exponent": 2
+      },
+      "selection_score": 0.7580551839352925
+    },
+    {
+      "config": {
+        "id": "geometry-k5-h3-e0",
+        "weights": [
+          20,
+          40,
+          15,
+          15,
+          5,
+          5
+        ],
+        "top_k": 5,
+        "half_life": 3,
+        "exponent": 0
+      },
+      "selection_score": 0.7150017261147827
+    },
+    {
+      "config": {
+        "id": "geometry-k5-h3-e1",
+        "weights": [
+          20,
+          40,
+          15,
+          15,
+          5,
+          5
+        ],
+        "top_k": 5,
+        "half_life": 3,
+        "exponent": 1
+      },
+      "selection_score": 0.7141502084055733
+    },
+    {
+      "config": {
+        "id": "geometry-k5-h3-e2",
+        "weights": [
+          20,
+          40,
+          15,
+          15,
+          5,
+          5
+        ],
+        "top_k": 5,
+        "half_life": 3,
+        "exponent": 2
+      },
+      "selection_score": 0.7155407366207974
+    },
+    {
+      "config": {
+        "id": "geometry-k5-h6-e0",
+        "weights": [
+          20,
+          40,
+          15,
+          15,
+          5,
+          5
+        ],
+        "top_k": 5,
+        "half_life": 6,
+        "exponent": 0
+      },
+      "selection_score": 0.7299380634835346
+    },
+    {
+      "config": {
+        "id": "geometry-k5-h6-e1",
+        "weights": [
+          20,
+          40,
+          15,
+          15,
+          5,
+          5
+        ],
+        "top_k": 5,
+        "half_life": 6,
+        "exponent": 1
+      },
+      "selection_score": 0.7312271248200646
+    },
+    {
+      "config": {
+        "id": "geometry-k5-h6-e2",
+        "weights": [
+          20,
+          40,
+          15,
+          15,
+          5,
+          5
+        ],
+        "top_k": 5,
+        "half_life": 6,
+        "exponent": 2
+      },
+      "selection_score": 0.725300421962906
+    },
+    {
+      "config": {
+        "id": "geometry-k5-hNone-e0",
+        "weights": [
+          20,
+          40,
+          15,
+          15,
+          5,
+          5
+        ],
+        "top_k": 5,
+        "half_life": null,
+        "exponent": 0
+      },
+      "selection_score": 0.7246250272752237
+    },
+    {
+      "config": {
+        "id": "geometry-k5-hNone-e1",
+        "weights": [
+          20,
+          40,
+          15,
+          15,
+          5,
+          5
+        ],
+        "top_k": 5,
+        "half_life": null,
+        "exponent": 1
+      },
+      "selection_score": 0.7246250272752237
+    },
+    {
+      "config": {
+        "id": "geometry-k5-hNone-e2",
+        "weights": [
+          20,
+          40,
+          15,
+          15,
+          5,
+          5
+        ],
+        "top_k": 5,
+        "half_life": null,
+        "exponent": 2
+      },
+      "selection_score": 0.7246250272752237
+    },
+    {
+      "config": {
+        "id": "geometry-k8-h1-e0",
+        "weights": [
+          20,
+          40,
+          15,
+          15,
+          5,
+          5
+        ],
+        "top_k": 8,
+        "half_life": 1,
+        "exponent": 0
+      },
+      "selection_score": 0.7169375645414356
+    },
+    {
+      "config": {
+        "id": "geometry-k8-h1-e1",
+        "weights": [
+          20,
+          40,
+          15,
+          15,
+          5,
+          5
+        ],
+        "top_k": 8,
+        "half_life": 1,
+        "exponent": 1
+      },
+      "selection_score": 0.7174001419862893
+    },
+    {
+      "config": {
+        "id": "geometry-k8-h1-e2",
+        "weights": [
+          20,
+          40,
+          15,
+          15,
+          5,
+          5
+        ],
+        "top_k": 8,
+        "half_life": 1,
+        "exponent": 2
+      },
+      "selection_score": 0.7103103770741616
+    },
+    {
+      "config": {
+        "id": "geometry-k8-h3-e0",
+        "weights": [
+          20,
+          40,
+          15,
+          15,
+          5,
+          5
+        ],
+        "top_k": 8,
+        "half_life": 3,
+        "exponent": 0
+      },
+      "selection_score": 0.6601815569321855
+    },
+    {
+      "config": {
+        "id": "geometry-k8-h3-e1",
+        "weights": [
+          20,
+          40,
+          15,
+          15,
+          5,
+          5
+        ],
+        "top_k": 8,
+        "half_life": 3,
+        "exponent": 1
+      },
+      "selection_score": 0.669670415149552
+    },
+    {
+      "config": {
+        "id": "geometry-k8-h3-e2",
+        "weights": [
+          20,
+          40,
+          15,
+          15,
+          5,
+          5
+        ],
+        "top_k": 8,
+        "half_life": 3,
+        "exponent": 2
+      },
+      "selection_score": 0.6838959216882964
+    },
+    {
+      "config": {
+        "id": "geometry-k8-h6-e0",
+        "weights": [
+          20,
+          40,
+          15,
+          15,
+          5,
+          5
+        ],
+        "top_k": 8,
+        "half_life": 6,
+        "exponent": 0
+      },
+      "selection_score": 0.6778655294141391
+    },
+    {
+      "config": {
+        "id": "geometry-k8-h6-e1",
+        "weights": [
+          20,
+          40,
+          15,
+          15,
+          5,
+          5
+        ],
+        "top_k": 8,
+        "half_life": 6,
+        "exponent": 1
+      },
+      "selection_score": 0.6757540433385346
+    },
+    {
+      "config": {
+        "id": "geometry-k8-h6-e2",
+        "weights": [
+          20,
+          40,
+          15,
+          15,
+          5,
+          5
+        ],
+        "top_k": 8,
+        "half_life": 6,
+        "exponent": 2
+      },
+      "selection_score": 0.6717616228900948
+    },
+    {
+      "config": {
+        "id": "geometry-k8-hNone-e0",
+        "weights": [
+          20,
+          40,
+          15,
+          15,
+          5,
+          5
+        ],
+        "top_k": 8,
+        "half_life": null,
+        "exponent": 0
+      },
+      "selection_score": 0.6725910591449755
+    },
+    {
+      "config": {
+        "id": "geometry-k8-hNone-e1",
+        "weights": [
+          20,
+          40,
+          15,
+          15,
+          5,
+          5
+        ],
+        "top_k": 8,
+        "half_life": null,
+        "exponent": 1
+      },
+      "selection_score": 0.6727463082339151
+    },
+    {
+      "config": {
+        "id": "geometry-k8-hNone-e2",
+        "weights": [
+          20,
+          40,
+          15,
+          15,
+          5,
+          5
+        ],
+        "top_k": 8,
+        "half_life": null,
+        "exponent": 2
+      },
+      "selection_score": 0.6738508323805634
+    },
+    {
+      "config": {
+        "id": "geometry-k16-h1-e0",
+        "weights": [
+          20,
+          40,
+          15,
+          15,
+          5,
+          5
+        ],
+        "top_k": 16,
+        "half_life": 1,
+        "exponent": 0
+      },
+      "selection_score": 0.6681642024886274
+    },
+    {
+      "config": {
+        "id": "geometry-k16-h1-e1",
+        "weights": [
+          20,
+          40,
+          15,
+          15,
+          5,
+          5
+        ],
+        "top_k": 16,
+        "half_life": 1,
+        "exponent": 1
+      },
+      "selection_score": 0.6696311872019067
+    },
+    {
+      "config": {
+        "id": "geometry-k16-h1-e2",
+        "weights": [
+          20,
+          40,
+          15,
+          15,
+          5,
+          5
+        ],
+        "top_k": 16,
+        "half_life": 1,
+        "exponent": 2
+      },
+      "selection_score": 0.655958878592144
+    },
+    {
+      "config": {
+        "id": "geometry-k16-h3-e0",
+        "weights": [
+          20,
+          40,
+          15,
+          15,
+          5,
+          5
+        ],
+        "top_k": 16,
+        "half_life": 3,
+        "exponent": 0
+      },
+      "selection_score": 0.6338301359792697
+    },
+    {
+      "config": {
+        "id": "geometry-k16-h3-e1",
+        "weights": [
+          20,
+          40,
+          15,
+          15,
+          5,
+          5
+        ],
+        "top_k": 16,
+        "half_life": 3,
+        "exponent": 1
+      },
+      "selection_score": 0.6132344324270629
+    },
+    {
+      "config": {
+        "id": "geometry-k16-h3-e2",
+        "weights": [
+          20,
+          40,
+          15,
+          15,
+          5,
+          5
+        ],
+        "top_k": 16,
+        "half_life": 3,
+        "exponent": 2
+      },
+      "selection_score": 0.6150345606474035
+    },
+    {
+      "config": {
+        "id": "geometry-k16-h6-e0",
+        "weights": [
+          20,
+          40,
+          15,
+          15,
+          5,
+          5
+        ],
+        "top_k": 16,
+        "half_life": 6,
+        "exponent": 0
+      },
+      "selection_score": 0.6296245063663217
+    },
+    {
+      "config": {
+        "id": "geometry-k16-h6-e1",
+        "weights": [
+          20,
+          40,
+          15,
+          15,
+          5,
+          5
+        ],
+        "top_k": 16,
+        "half_life": 6,
+        "exponent": 1
+      },
+      "selection_score": 0.6152503877091178
+    },
+    {
+      "config": {
+        "id": "geometry-k16-h6-e2",
+        "weights": [
+          20,
+          40,
+          15,
+          15,
+          5,
+          5
+        ],
+        "top_k": 16,
+        "half_life": 6,
+        "exponent": 2
+      },
+      "selection_score": 0.6126642080558338
+    },
+    {
+      "config": {
+        "id": "geometry-k16-hNone-e0",
+        "weights": [
+          20,
+          40,
+          15,
+          15,
+          5,
+          5
+        ],
+        "top_k": 16,
+        "half_life": null,
+        "exponent": 0
+      },
+      "selection_score": 0.6296166319220696
+    },
+    {
+      "config": {
+        "id": "geometry-k16-hNone-e1",
+        "weights": [
+          20,
+          40,
+          15,
+          15,
+          5,
+          5
+        ],
+        "top_k": 16,
+        "half_life": null,
+        "exponent": 1
+      },
+      "selection_score": 0.6152261420532741
+    },
+    {
+      "config": {
+        "id": "geometry-k16-hNone-e2",
+        "weights": [
+          20,
+          40,
+          15,
+          15,
+          5,
+          5
+        ],
+        "top_k": 16,
+        "half_life": null,
+        "exponent": 2
+      },
+      "selection_score": 0.6126188127698238
+    },
+    {
+      "config": {
+        "id": "geometry-k32-h1-e0",
+        "weights": [
+          20,
+          40,
+          15,
+          15,
+          5,
+          5
+        ],
+        "top_k": 32,
+        "half_life": 1,
+        "exponent": 0
+      },
+      "selection_score": 0.7408935954444555
+    },
+    {
+      "config": {
+        "id": "geometry-k32-h1-e1",
+        "weights": [
+          20,
+          40,
+          15,
+          15,
+          5,
+          5
+        ],
+        "top_k": 32,
+        "half_life": 1,
+        "exponent": 1
+      },
+      "selection_score": 0.7301902391654521
+    },
+    {
+      "config": {
+        "id": "geometry-k32-h1-e2",
+        "weights": [
+          20,
+          40,
+          15,
+          15,
+          5,
+          5
+        ],
+        "top_k": 32,
+        "half_life": 1,
+        "exponent": 2
+      },
+      "selection_score": 0.7144782111564693
+    },
+    {
+      "config": {
+        "id": "geometry-k32-h3-e0",
+        "weights": [
+          20,
+          40,
+          15,
+          15,
+          5,
+          5
+        ],
+        "top_k": 32,
+        "half_life": 3,
+        "exponent": 0
+      },
+      "selection_score": 0.7090365458171005
+    },
+    {
+      "config": {
+        "id": "geometry-k32-h3-e1",
+        "weights": [
+          20,
+          40,
+          15,
+          15,
+          5,
+          5
+        ],
+        "top_k": 32,
+        "half_life": 3,
+        "exponent": 1
+      },
+      "selection_score": 0.7059597332462165
+    },
+    {
+      "config": {
+        "id": "geometry-k32-h3-e2",
+        "weights": [
+          20,
+          40,
+          15,
+          15,
+          5,
+          5
+        ],
+        "top_k": 32,
+        "half_life": 3,
+        "exponent": 2
+      },
+      "selection_score": 0.6764143867985842
+    },
+    {
+      "config": {
+        "id": "geometry-k32-h6-e0",
+        "weights": [
+          20,
+          40,
+          15,
+          15,
+          5,
+          5
+        ],
+        "top_k": 32,
+        "half_life": 6,
+        "exponent": 0
+      },
+      "selection_score": 0.7069786041683584
+    },
+    {
+      "config": {
+        "id": "geometry-k32-h6-e1",
+        "weights": [
+          20,
+          40,
+          15,
+          15,
+          5,
+          5
+        ],
+        "top_k": 32,
+        "half_life": 6,
+        "exponent": 1
+      },
+      "selection_score": 0.702728766126018
+    },
+    {
+      "config": {
+        "id": "geometry-k32-h6-e2",
+        "weights": [
+          20,
+          40,
+          15,
+          15,
+          5,
+          5
+        ],
+        "top_k": 32,
+        "half_life": 6,
+        "exponent": 2
+      },
+      "selection_score": 0.6845881371641719
+    },
+    {
+      "config": {
+        "id": "geometry-k32-hNone-e0",
+        "weights": [
+          20,
+          40,
+          15,
+          15,
+          5,
+          5
+        ],
+        "top_k": 32,
+        "half_life": null,
+        "exponent": 0
+      },
+      "selection_score": 0.7247920248588692
+    },
+    {
+      "config": {
+        "id": "geometry-k32-hNone-e1",
+        "weights": [
+          20,
+          40,
+          15,
+          15,
+          5,
+          5
+        ],
+        "top_k": 32,
+        "half_life": null,
+        "exponent": 1
+      },
+      "selection_score": 0.6975329358005026
+    },
+    {
+      "config": {
+        "id": "geometry-k32-hNone-e2",
+        "weights": [
+          20,
+          40,
+          15,
+          15,
+          5,
+          5
+        ],
+        "top_k": 32,
+        "half_life": null,
+        "exponent": 2
+      },
+      "selection_score": 0.6866985360744274
+    },
+    {
+      "config": {
+        "id": "structure-k5-h1-e0",
+        "weights": [
+          40,
+          25,
+          10,
+          15,
+          5,
+          5
+        ],
+        "top_k": 5,
+        "half_life": 1,
+        "exponent": 0
+      },
+      "selection_score": 0.7630552290646224
+    },
+    {
+      "config": {
+        "id": "structure-k5-h1-e1",
+        "weights": [
+          40,
+          25,
+          10,
+          15,
+          5,
+          5
+        ],
+        "top_k": 5,
+        "half_life": 1,
+        "exponent": 1
+      },
+      "selection_score": 0.7662340096806117
+    },
+    {
+      "config": {
+        "id": "structure-k5-h1-e2",
+        "weights": [
+          40,
+          25,
+          10,
+          15,
+          5,
+          5
+        ],
+        "top_k": 5,
+        "half_life": 1,
+        "exponent": 2
+      },
+      "selection_score": 0.7559738148852488
+    },
+    {
+      "config": {
+        "id": "structure-k5-h3-e0",
+        "weights": [
+          40,
+          25,
+          10,
+          15,
+          5,
+          5
+        ],
+        "top_k": 5,
+        "half_life": 3,
+        "exponent": 0
+      },
+      "selection_score": 0.6866247660668503
+    },
+    {
+      "config": {
+        "id": "structure-k5-h3-e1",
+        "weights": [
+          40,
+          25,
+          10,
+          15,
+          5,
+          5
+        ],
+        "top_k": 5,
+        "half_life": 3,
+        "exponent": 1
+      },
+      "selection_score": 0.6759218998622218
+    },
+    {
+      "config": {
+        "id": "structure-k5-h3-e2",
+        "weights": [
+          40,
+          25,
+          10,
+          15,
+          5,
+          5
+        ],
+        "top_k": 5,
+        "half_life": 3,
+        "exponent": 2
+      },
+      "selection_score": 0.6864346796220923
+    },
+    {
+      "config": {
+        "id": "structure-k5-h6-e0",
+        "weights": [
+          40,
+          25,
+          10,
+          15,
+          5,
+          5
+        ],
+        "top_k": 5,
+        "half_life": 6,
+        "exponent": 0
+      },
+      "selection_score": 0.6808953286203323
+    },
+    {
+      "config": {
+        "id": "structure-k5-h6-e1",
+        "weights": [
+          40,
+          25,
+          10,
+          15,
+          5,
+          5
+        ],
+        "top_k": 5,
+        "half_life": 6,
+        "exponent": 1
+      },
+      "selection_score": 0.6811475121263703
+    },
+    {
+      "config": {
+        "id": "structure-k5-h6-e2",
+        "weights": [
+          40,
+          25,
+          10,
+          15,
+          5,
+          5
+        ],
+        "top_k": 5,
+        "half_life": 6,
+        "exponent": 2
+      },
+      "selection_score": 0.6868452837982287
+    },
+    {
+      "config": {
+        "id": "structure-k5-hNone-e0",
+        "weights": [
+          40,
+          25,
+          10,
+          15,
+          5,
+          5
+        ],
+        "top_k": 5,
+        "half_life": null,
+        "exponent": 0
+      },
+      "selection_score": 0.6836195253221171
+    },
+    {
+      "config": {
+        "id": "structure-k5-hNone-e1",
+        "weights": [
+          40,
+          25,
+          10,
+          15,
+          5,
+          5
+        ],
+        "top_k": 5,
+        "half_life": null,
+        "exponent": 1
+      },
+      "selection_score": 0.6836195253221171
+    },
+    {
+      "config": {
+        "id": "structure-k5-hNone-e2",
+        "weights": [
+          40,
+          25,
+          10,
+          15,
+          5,
+          5
+        ],
+        "top_k": 5,
+        "half_life": null,
+        "exponent": 2
+      },
+      "selection_score": 0.6836195253221171
+    },
+    {
+      "config": {
+        "id": "structure-k8-h1-e0",
+        "weights": [
+          40,
+          25,
+          10,
+          15,
+          5,
+          5
+        ],
+        "top_k": 8,
+        "half_life": 1,
+        "exponent": 0
+      },
+      "selection_score": 0.6871592852281407
+    },
+    {
+      "config": {
+        "id": "structure-k8-h1-e1",
+        "weights": [
+          40,
+          25,
+          10,
+          15,
+          5,
+          5
+        ],
+        "top_k": 8,
+        "half_life": 1,
+        "exponent": 1
+      },
+      "selection_score": 0.6893153862015123
+    },
+    {
+      "config": {
+        "id": "structure-k8-h1-e2",
+        "weights": [
+          40,
+          25,
+          10,
+          15,
+          5,
+          5
+        ],
+        "top_k": 8,
+        "half_life": 1,
+        "exponent": 2
+      },
+      "selection_score": 0.6877885366078177
+    },
+    {
+      "config": {
+        "id": "structure-k8-h3-e0",
+        "weights": [
+          40,
+          25,
+          10,
+          15,
+          5,
+          5
+        ],
+        "top_k": 8,
+        "half_life": 3,
+        "exponent": 0
+      },
+      "selection_score": 0.6427274248494549
+    },
+    {
+      "config": {
+        "id": "structure-k8-h3-e1",
+        "weights": [
+          40,
+          25,
+          10,
+          15,
+          5,
+          5
+        ],
+        "top_k": 8,
+        "half_life": 3,
+        "exponent": 1
+      },
+      "selection_score": 0.628079499805132
+    },
+    {
+      "config": {
+        "id": "structure-k8-h3-e2",
+        "weights": [
+          40,
+          25,
+          10,
+          15,
+          5,
+          5
+        ],
+        "top_k": 8,
+        "half_life": 3,
+        "exponent": 2
+      },
+      "selection_score": 0.6303902880586806
+    },
+    {
+      "config": {
+        "id": "structure-k8-h6-e0",
+        "weights": [
+          40,
+          25,
+          10,
+          15,
+          5,
+          5
+        ],
+        "top_k": 8,
+        "half_life": 6,
+        "exponent": 0
+      },
+      "selection_score": 0.6485903953171357
+    },
+    {
+      "config": {
+        "id": "structure-k8-h6-e1",
+        "weights": [
+          40,
+          25,
+          10,
+          15,
+          5,
+          5
+        ],
+        "top_k": 8,
+        "half_life": 6,
+        "exponent": 1
+      },
+      "selection_score": 0.6553170977003675
+    },
+    {
+      "config": {
+        "id": "structure-k8-h6-e2",
+        "weights": [
+          40,
+          25,
+          10,
+          15,
+          5,
+          5
+        ],
+        "top_k": 8,
+        "half_life": 6,
+        "exponent": 2
+      },
+      "selection_score": 0.6544166204559214
+    },
+    {
+      "config": {
+        "id": "structure-k8-hNone-e0",
+        "weights": [
+          40,
+          25,
+          10,
+          15,
+          5,
+          5
+        ],
+        "top_k": 8,
+        "half_life": null,
+        "exponent": 0
+      },
+      "selection_score": 0.6515448443863794
+    },
+    {
+      "config": {
+        "id": "structure-k8-hNone-e1",
+        "weights": [
+          40,
+          25,
+          10,
+          15,
+          5,
+          5
+        ],
+        "top_k": 8,
+        "half_life": null,
+        "exponent": 1
+      },
+      "selection_score": 0.6516327568624974
+    },
+    {
+      "config": {
+        "id": "structure-k8-hNone-e2",
+        "weights": [
+          40,
+          25,
+          10,
+          15,
+          5,
+          5
+        ],
+        "top_k": 8,
+        "half_life": null,
+        "exponent": 2
+      },
+      "selection_score": 0.6527559287098598
+    },
+    {
+      "config": {
+        "id": "structure-k16-h1-e0",
+        "weights": [
+          40,
+          25,
+          10,
+          15,
+          5,
+          5
+        ],
+        "top_k": 16,
+        "half_life": 1,
+        "exponent": 0
+      },
+      "selection_score": 0.6184176368232883
+    },
+    {
+      "config": {
+        "id": "structure-k16-h1-e1",
+        "weights": [
+          40,
+          25,
+          10,
+          15,
+          5,
+          5
+        ],
+        "top_k": 16,
+        "half_life": 1,
+        "exponent": 1
+      },
+      "selection_score": 0.6123477076089984
+    },
+    {
+      "config": {
+        "id": "structure-k16-h1-e2",
+        "weights": [
+          40,
+          25,
+          10,
+          15,
+          5,
+          5
+        ],
+        "top_k": 16,
+        "half_life": 1,
+        "exponent": 2
+      },
+      "selection_score": 0.6206650279256518
+    },
+    {
+      "config": {
+        "id": "structure-k16-h3-e0",
+        "weights": [
+          40,
+          25,
+          10,
+          15,
+          5,
+          5
+        ],
+        "top_k": 16,
+        "half_life": 3,
+        "exponent": 0
+      },
+      "selection_score": 0.5862783530868609
+    },
+    {
+      "config": {
+        "id": "structure-k16-h3-e1",
+        "weights": [
+          40,
+          25,
+          10,
+          15,
+          5,
+          5
+        ],
+        "top_k": 16,
+        "half_life": 3,
+        "exponent": 1
+      },
+      "selection_score": 0.5820655900161252
+    },
+    {
+      "config": {
+        "id": "structure-k16-h3-e2",
+        "weights": [
+          40,
+          25,
+          10,
+          15,
+          5,
+          5
+        ],
+        "top_k": 16,
+        "half_life": 3,
+        "exponent": 2
+      },
+      "selection_score": 0.5721124675528104
+    },
+    {
+      "config": {
+        "id": "structure-k16-h6-e0",
+        "weights": [
+          40,
+          25,
+          10,
+          15,
+          5,
+          5
+        ],
+        "top_k": 16,
+        "half_life": 6,
+        "exponent": 0
+      },
+      "selection_score": 0.5894468334921221
+    },
+    {
+      "config": {
+        "id": "structure-k16-h6-e1",
+        "weights": [
+          40,
+          25,
+          10,
+          15,
+          5,
+          5
+        ],
+        "top_k": 16,
+        "half_life": 6,
+        "exponent": 1
+      },
+      "selection_score": 0.5844411329365654
+    },
+    {
+      "config": {
+        "id": "structure-k16-h6-e2",
+        "weights": [
+          40,
+          25,
+          10,
+          15,
+          5,
+          5
+        ],
+        "top_k": 16,
+        "half_life": 6,
+        "exponent": 2
+      },
+      "selection_score": 0.5879116851162145
+    },
+    {
+      "config": {
+        "id": "structure-k16-hNone-e0",
+        "weights": [
+          40,
+          25,
+          10,
+          15,
+          5,
+          5
+        ],
+        "top_k": 16,
+        "half_life": null,
+        "exponent": 0
+      },
+      "selection_score": 0.590171498586991
+    },
+    {
+      "config": {
+        "id": "structure-k16-hNone-e1",
+        "weights": [
+          40,
+          25,
+          10,
+          15,
+          5,
+          5
+        ],
+        "top_k": 16,
+        "half_life": null,
+        "exponent": 1
+      },
+      "selection_score": 0.5835325097591024
+    },
+    {
+      "config": {
+        "id": "structure-k16-hNone-e2",
+        "weights": [
+          40,
+          25,
+          10,
+          15,
+          5,
+          5
+        ],
+        "top_k": 16,
+        "half_life": null,
+        "exponent": 2
+      },
+      "selection_score": 0.5835273664628476
+    },
+    {
+      "config": {
+        "id": "structure-k32-h1-e0",
+        "weights": [
+          40,
+          25,
+          10,
+          15,
+          5,
+          5
+        ],
+        "top_k": 32,
+        "half_life": 1,
+        "exponent": 0
+      },
+      "selection_score": 0.5920292112689576
+    },
+    {
+      "config": {
+        "id": "structure-k32-h1-e1",
+        "weights": [
+          40,
+          25,
+          10,
+          15,
+          5,
+          5
+        ],
+        "top_k": 32,
+        "half_life": 1,
+        "exponent": 1
+      },
+      "selection_score": 0.5920846805943772
+    },
+    {
+      "config": {
+        "id": "structure-k32-h1-e2",
+        "weights": [
+          40,
+          25,
+          10,
+          15,
+          5,
+          5
+        ],
+        "top_k": 32,
+        "half_life": 1,
+        "exponent": 2
+      },
+      "selection_score": 0.5912070731429327
+    },
+    {
+      "config": {
+        "id": "structure-k32-h3-e0",
+        "weights": [
+          40,
+          25,
+          10,
+          15,
+          5,
+          5
+        ],
+        "top_k": 32,
+        "half_life": 3,
+        "exponent": 0
+      },
+      "selection_score": 0.5734381676929486
+    },
+    {
+      "config": {
+        "id": "structure-k32-h3-e1",
+        "weights": [
+          40,
+          25,
+          10,
+          15,
+          5,
+          5
+        ],
+        "top_k": 32,
+        "half_life": 3,
+        "exponent": 1
+      },
+      "selection_score": 0.5655973666221383
+    },
+    {
+      "config": {
+        "id": "structure-k32-h3-e2",
+        "weights": [
+          40,
+          25,
+          10,
+          15,
+          5,
+          5
+        ],
+        "top_k": 32,
+        "half_life": 3,
+        "exponent": 2
+      },
+      "selection_score": 0.5676400281956827
+    },
+    {
+      "config": {
+        "id": "structure-k32-h6-e0",
+        "weights": [
+          40,
+          25,
+          10,
+          15,
+          5,
+          5
+        ],
+        "top_k": 32,
+        "half_life": 6,
+        "exponent": 0
+      },
+      "selection_score": 0.5854691161139342
+    },
+    {
+      "config": {
+        "id": "structure-k32-h6-e1",
+        "weights": [
+          40,
+          25,
+          10,
+          15,
+          5,
+          5
+        ],
+        "top_k": 32,
+        "half_life": 6,
+        "exponent": 1
+      },
+      "selection_score": 0.583603211404992
+    },
+    {
+      "config": {
+        "id": "structure-k32-h6-e2",
+        "weights": [
+          40,
+          25,
+          10,
+          15,
+          5,
+          5
+        ],
+        "top_k": 32,
+        "half_life": 6,
+        "exponent": 2
+      },
+      "selection_score": 0.5852840824347568
+    },
+    {
+      "config": {
+        "id": "structure-k32-hNone-e0",
+        "weights": [
+          40,
+          25,
+          10,
+          15,
+          5,
+          5
+        ],
+        "top_k": 32,
+        "half_life": null,
+        "exponent": 0
+      },
+      "selection_score": 0.5989837509742028
+    },
+    {
+      "config": {
+        "id": "structure-k32-hNone-e1",
+        "weights": [
+          40,
+          25,
+          10,
+          15,
+          5,
+          5
+        ],
+        "top_k": 32,
+        "half_life": null,
+        "exponent": 1
+      },
+      "selection_score": 0.5903812406654999
+    },
+    {
+      "config": {
+        "id": "structure-k32-hNone-e2",
+        "weights": [
+          40,
+          25,
+          10,
+          15,
+          5,
+          5
+        ],
+        "top_k": 32,
+        "half_life": null,
+        "exponent": 2
+      },
+      "selection_score": 0.5936906459385723
+    }
+  ],
+  "test_current": {
+    "config": {
+      "id": "current",
+      "weights": [
+        25,
+        30,
+        10,
+        15,
+        10,
+        10
+      ],
+      "top_k": 8,
+      "half_life": 3,
+      "exponent": 1
+    },
+    "all_source_observations": {
+      "concrete/RC": {
+        "n": 18,
+        "insufficient": 0,
+        "coverage_percent": 66.667,
+        "mae": 876.0773,
+        "mape_percent": 16.562,
+        "relative_interval_score": 0.641413391926328
+      },
+      "concrete/SC": {
+        "n": 17,
+        "insufficient": 0,
+        "coverage_percent": 58.824,
+        "mae": 422.9676,
+        "mape_percent": 21.332,
+        "relative_interval_score": 1.0989883449319766
+      },
+      "concrete/SRC": {
+        "n": 10,
+        "insufficient": 0,
+        "coverage_percent": 80.0,
+        "mae": 574.6846,
+        "mape_percent": 13.234,
+        "relative_interval_score": 0.3613365544204524
+      },
+      "price/RC": {
+        "n": 18,
+        "insufficient": 0,
+        "coverage_percent": 61.111,
+        "mae": 37414400.58,
+        "mape_percent": 24.43,
+        "relative_interval_score": 0.8025626736265856
+      },
+      "price/SC": {
+        "n": 17,
+        "insufficient": 0,
+        "coverage_percent": 52.941,
+        "mae": 12470286.8124,
+        "mape_percent": 32.699,
+        "relative_interval_score": 1.6324690022851243
+      },
+      "price/SRC": {
+        "n": 10,
+        "insufficient": 0,
+        "coverage_percent": 50.0,
+        "mae": 16283988.082,
+        "mape_percent": 17.787,
+        "relative_interval_score": 0.725801050154193
+      },
+      "rebar/RC": {
+        "n": 18,
+        "insufficient": 0,
+        "coverage_percent": 72.222,
+        "mae": 176250.7626,
+        "mape_percent": 25.82,
+        "relative_interval_score": 1.0411660924192316
+      },
+      "rebar/SRC": {
+        "n": 10,
+        "insufficient": 0,
+        "coverage_percent": 60.0,
+        "mae": 88130.2543,
+        "mape_percent": 20.931,
+        "relative_interval_score": 0.7648983250949126
+      }
+    },
+    "unshocked_nonextreme_observations": {
+      "concrete/RC": {
+        "n": 16,
+        "insufficient": 0,
+        "coverage_percent": 68.75,
+        "mae": 724.8247,
+        "mape_percent": 14.592,
+        "relative_interval_score": 0.5257276035404443
+      },
+      "concrete/SC": {
+        "n": 13,
+        "insufficient": 0,
+        "coverage_percent": 76.923,
+        "mae": 235.3329,
+        "mape_percent": 14.284,
+        "relative_interval_score": 0.5889427976430575
+      },
+      "concrete/SRC": {
+        "n": 8,
+        "insufficient": 0,
+        "coverage_percent": 75.0,
+        "mae": 265.7036,
+        "mape_percent": 9.923,
+        "relative_interval_score": 0.3290447254772861
+      },
+      "price/RC": {
+        "n": 13,
+        "insufficient": 0,
+        "coverage_percent": 61.538,
+        "mae": 24558406.4992,
+        "mape_percent": 24.305,
+        "relative_interval_score": 0.7484076907452157
+      },
+      "price/SC": {
+        "n": 9,
+        "insufficient": 0,
+        "coverage_percent": 77.778,
+        "mae": 3863093.67,
+        "mape_percent": 13.171,
+        "relative_interval_score": 0.7873554692279182
+      },
+      "price/SRC": {
+        "n": 5,
+        "insufficient": 0,
+        "coverage_percent": 60.0,
+        "mae": 12586188.252,
+        "mape_percent": 14.563,
+        "relative_interval_score": 0.6134577408110323
+      },
+      "rebar/RC": {
+        "n": 15,
+        "insufficient": 0,
+        "coverage_percent": 73.333,
+        "mae": 138928.8363,
+        "mape_percent": 18.092,
+        "relative_interval_score": 0.5430912489734709
+      },
+      "rebar/SRC": {
+        "n": 8,
+        "insufficient": 0,
+        "coverage_percent": 75.0,
+        "mae": 51141.15,
+        "mape_percent": 17.245,
+        "relative_interval_score": 0.5668997499648754
+      }
+    },
+    "selection_score": 0.5878658782979126
+  },
+  "test_selected": {
+    "config": {
+      "id": "structure-k32-h3-e1",
+      "weights": [
+        40,
+        25,
+        10,
+        15,
+        5,
+        5
+      ],
+      "top_k": 32,
+      "half_life": 3,
+      "exponent": 1
+    },
+    "all_source_observations": {
+      "concrete/RC": {
+        "n": 18,
+        "insufficient": 0,
+        "coverage_percent": 61.111,
+        "mae": 1134.7191,
+        "mape_percent": 17.14,
+        "relative_interval_score": 0.6540573867256039
+      },
+      "concrete/SC": {
+        "n": 17,
+        "insufficient": 0,
+        "coverage_percent": 64.706,
+        "mae": 459.9547,
+        "mape_percent": 22.608,
+        "relative_interval_score": 1.0068726655993028
+      },
+      "concrete/SRC": {
+        "n": 10,
+        "insufficient": 0,
+        "coverage_percent": 70.0,
+        "mae": 506.5196,
+        "mape_percent": 13.455,
+        "relative_interval_score": 0.5638599486135308
+      },
+      "price/RC": {
+        "n": 18,
+        "insufficient": 0,
+        "coverage_percent": 72.222,
+        "mae": 30311857.331,
+        "mape_percent": 16.649,
+        "relative_interval_score": 0.7398450333652388
+      },
+      "price/SC": {
+        "n": 17,
+        "insufficient": 0,
+        "coverage_percent": 52.941,
+        "mae": 11527098.0267,
+        "mape_percent": 29.2,
+        "relative_interval_score": 1.289765490639879
+      },
+      "price/SRC": {
+        "n": 10,
+        "insufficient": 0,
+        "coverage_percent": 50.0,
+        "mae": 16431575.0152,
+        "mape_percent": 20.601,
+        "relative_interval_score": 0.6458999964433243
+      },
+      "rebar/RC": {
+        "n": 18,
+        "insufficient": 0,
+        "coverage_percent": 72.222,
+        "mae": 173279.7635,
+        "mape_percent": 23.098,
+        "relative_interval_score": 1.010626292453293
+      },
+      "rebar/SRC": {
+        "n": 10,
+        "insufficient": 0,
+        "coverage_percent": 60.0,
+        "mae": 90290.8246,
+        "mape_percent": 17.88,
+        "relative_interval_score": 0.6762853064208761
+      }
+    },
+    "unshocked_nonextreme_observations": {
+      "concrete/RC": {
+        "n": 16,
+        "insufficient": 0,
+        "coverage_percent": 68.75,
+        "mae": 705.1786,
+        "mape_percent": 14.205,
+        "relative_interval_score": 0.5319188674803357
+      },
+      "concrete/SC": {
+        "n": 13,
+        "insufficient": 0,
+        "coverage_percent": 76.923,
+        "mae": 247.137,
+        "mape_percent": 14.785,
+        "relative_interval_score": 0.5029355781835639
+      },
+      "concrete/SRC": {
+        "n": 8,
+        "insufficient": 0,
+        "coverage_percent": 87.5,
+        "mae": 214.5698,
+        "mape_percent": 7.937,
+        "relative_interval_score": 0.33641266958327687
+      },
+      "price/RC": {
+        "n": 13,
+        "insufficient": 0,
+        "coverage_percent": 76.923,
+        "mae": 15690515.742,
+        "mape_percent": 16.069,
+        "relative_interval_score": 0.6994660405632076
+      },
+      "price/SC": {
+        "n": 9,
+        "insufficient": 0,
+        "coverage_percent": 88.889,
+        "mae": 3489289.0218,
+        "mape_percent": 13.168,
+        "relative_interval_score": 0.6696903509380968
+      },
+      "price/SRC": {
+        "n": 5,
+        "insufficient": 0,
+        "coverage_percent": 20.0,
+        "mae": 15131997.2764,
+        "mape_percent": 24.331,
+        "relative_interval_score": 0.6813223585861049
+      },
+      "rebar/RC": {
+        "n": 15,
+        "insufficient": 0,
+        "coverage_percent": 80.0,
+        "mae": 106340.4977,
+        "mape_percent": 14.136,
+        "relative_interval_score": 0.5311851442829101
+      },
+      "rebar/SRC": {
+        "n": 8,
+        "insufficient": 0,
+        "coverage_percent": 75.0,
+        "mae": 43115.0017,
+        "mape_percent": 13.195,
+        "relative_interval_score": 0.4416032431522606
+      }
+    },
+    "selection_score": 0.5493167815962195
+  },
+  "previously_diagnosed_test_projects": [
+    "SYN-00026",
+    "SYN-00029",
+    "SYN-00030"
+  ],
+  "secondary_unshocked_nonextreme_metrics_excluding_previously_diagnosed": {
+    "test_current": {
+      "concrete/RC": {
+        "n": 15,
+        "insufficient": 0,
+        "coverage_percent": 66.667,
+        "mae": 723.1202,
+        "mape_percent": 14.277,
+        "relative_interval_score": 0.5147350051079307
+      },
+      "concrete/SC": {
+        "n": 12,
+        "insufficient": 0,
+        "coverage_percent": 83.333,
+        "mae": 238.4418,
+        "mape_percent": 14.514,
+        "relative_interval_score": 0.5873955600595623
+      },
+      "concrete/SRC": {
+        "n": 7,
+        "insufficient": 0,
+        "coverage_percent": 71.429,
+        "mae": 272.8727,
+        "mape_percent": 10.613,
+        "relative_interval_score": 0.33556724348281514
+      },
+      "price/RC": {
+        "n": 12,
+        "insufficient": 0,
+        "coverage_percent": 58.333,
+        "mae": 21980719.2025,
+        "mape_percent": 21.257,
+        "relative_interval_score": 0.7389657824110668
+      },
+      "price/SC": {
+        "n": 9,
+        "insufficient": 0,
+        "coverage_percent": 77.778,
+        "mae": 3863093.67,
+        "mape_percent": 13.171,
+        "relative_interval_score": 0.7873554692279182
+      },
+      "price/SRC": {
+        "n": 4,
+        "insufficient": 0,
+        "coverage_percent": 75.0,
+        "mae": 8237001.0875,
+        "mape_percent": 10.591,
+        "relative_interval_score": 0.5457587441582423
+      },
+      "rebar/RC": {
+        "n": 14,
+        "insufficient": 0,
+        "coverage_percent": 78.571,
+        "mae": 120446.9901,
+        "mape_percent": 13.665,
+        "relative_interval_score": 0.4436206826394429
+      },
+      "rebar/SRC": {
+        "n": 7,
+        "insufficient": 0,
+        "coverage_percent": 71.429,
+        "mae": 55975.1371,
+        "mape_percent": 19.257,
+        "relative_interval_score": 0.6228232998912041
+      }
+    },
+    "test_selected": {
+      "concrete/RC": {
+        "n": 15,
+        "insufficient": 0,
+        "coverage_percent": 66.667,
+        "mae": 718.8401,
+        "mape_percent": 14.294,
+        "relative_interval_score": 0.5308505283850997
+      },
+      "concrete/SC": {
+        "n": 12,
+        "insufficient": 0,
+        "coverage_percent": 83.333,
+        "mae": 238.1517,
+        "mape_percent": 14.295,
+        "relative_interval_score": 0.4919165982681944
+      },
+      "concrete/SRC": {
+        "n": 7,
+        "insufficient": 0,
+        "coverage_percent": 85.714,
+        "mae": 224.9196,
+        "mape_percent": 8.591,
+        "relative_interval_score": 0.3395438328053269
+      },
+      "price/RC": {
+        "n": 12,
+        "insufficient": 0,
+        "coverage_percent": 83.333,
+        "mae": 14622110.3477,
+        "mape_percent": 14.801,
+        "relative_interval_score": 0.6423750243675557
+      },
+      "price/SC": {
+        "n": 9,
+        "insufficient": 0,
+        "coverage_percent": 88.889,
+        "mae": 3489289.0218,
+        "mape_percent": 13.168,
+        "relative_interval_score": 0.6696903509380968
+      },
+      "price/SRC": {
+        "n": 4,
+        "insufficient": 0,
+        "coverage_percent": 25.0,
+        "mae": 12564424.6191,
+        "mape_percent": 23.964,
+        "relative_interval_score": 0.6194712225997987
+      },
+      "rebar/RC": {
+        "n": 14,
+        "insufficient": 0,
+        "coverage_percent": 85.714,
+        "mae": 94691.8643,
+        "mape_percent": 11.271,
+        "relative_interval_score": 0.44480615881550395
+      },
+      "rebar/SRC": {
+        "n": 7,
+        "insufficient": 0,
+        "coverage_percent": 71.429,
+        "mae": 45972.4768,
+        "mape_percent": 14.475,
+        "relative_interval_score": 0.4511979865033254
+      }
+    }
+  },
+  "secondary_test_project_count": 42,
+  "paired_suite_audit": {
+    "verified_files": 13,
+    "independent_projects": 3,
+    "records": [
+      {
+        "project_id": "SYN-00029",
+        "scenario": "baseline",
+        "truth_sha256": "4b4f17fce4508b2346c075ec7dfd6b7d34214cb536b86a5f97fd64165a73d289",
+        "xlsx_sha256": "376b320c03aec3d9cfd7cd44c90d43c470677127cbaca838d1aec2521238d464",
+        "cause_kind": null,
+        "manual_review_required": null
+      },
+      {
+        "project_id": "SYN-00030",
+        "scenario": "baseline",
+        "truth_sha256": "05f545c2a8ef35d0c6fb4f15f2381f8e8f69f6a3d9b9e539a249033dedd4f5ae",
+        "xlsx_sha256": "7d9854ffcd2c1a9234a364df6f0e737731b8df22a3e5dab24e8fc2339099bbec",
+        "cause_kind": null,
+        "manual_review_required": null
+      },
+      {
+        "project_id": "SYN-00026",
+        "scenario": "baseline",
+        "truth_sha256": "b3aa22bd1567c76c67e06d71c1eac40414e03355d3e692a45a189e52c965f0df",
+        "xlsx_sha256": "935af6a3e43a9ce7cb114c6a522aab637b44d117dc09d0514b22f64d9e88c56c",
+        "cause_kind": null,
+        "manual_review_required": null
+      },
+      {
+        "project_id": "SYN-00029",
+        "scenario": "design_concrete_high",
+        "truth_sha256": "cdc79fe2b38959f122336fee5dab1b2eef8857c7e620b7280b72022d616800f8",
+        "xlsx_sha256": "475398400241c155b25f27f701153222106e76f2d7edab46dc8d43175e788cce",
+        "cause_kind": "DESIGN_VARIATION_POSSIBLY_JUSTIFIED",
+        "manual_review_required": true
+      },
+      {
+        "project_id": "SYN-00030",
+        "scenario": "design_concrete_low",
+        "truth_sha256": "885e7f68922e793ca484a13c13877f1198d3deb7accacb84b17a86f988dd9ebb",
+        "xlsx_sha256": "e7c9974429bc20fd91575d44c2f6a75347e60bbf08e74655c103b32b039c13db",
+        "cause_kind": "DESIGN_VARIATION_POSSIBLY_JUSTIFIED",
+        "manual_review_required": true
+      },
+      {
+        "project_id": "SYN-00029",
+        "scenario": "design_rebar_high",
+        "truth_sha256": "1ed935e3e774a189af0c93a9b75dde578c28ff55383fbce5a5a53b72b87560eb",
+        "xlsx_sha256": "1fda8c9bcd1e71dec52cd0c34f5903b4f9a0d47bf06d6a9640fbff4830aa5833",
+        "cause_kind": "DESIGN_VARIATION_POSSIBLY_JUSTIFIED",
+        "manual_review_required": true
+      },
+      {
+        "project_id": "SYN-00030",
+        "scenario": "design_rebar_low",
+        "truth_sha256": "25daa3b824e0e72cc6b6c9ed52a6b9f55f7882f045a67e1662d1423dad8473cd",
+        "xlsx_sha256": "7ecaa74777aa0cd5b967e0607126cf7832da116a5021ebfa88be64ab322096e0",
+        "cause_kind": "DESIGN_VARIATION_POSSIBLY_JUSTIFIED",
+        "manual_review_required": true
+      },
+      {
+        "project_id": "SYN-00026",
+        "scenario": "design_steel_high",
+        "truth_sha256": "96df1a9b6c53e65e898dbd4c13b4a4149ae5d6506a1b7bc7d80de6175cbb2e4a",
+        "xlsx_sha256": "6301577f94bf439cc86c61fa8e69b9bd5c8d7edeb0e2fb6e065039d94e9a5430",
+        "cause_kind": "DESIGN_VARIATION_POSSIBLY_JUSTIFIED",
+        "manual_review_required": true
+      },
+      {
+        "project_id": "SYN-00030",
+        "scenario": "design_steel_low",
+        "truth_sha256": "1dc28fc0a932f5c4a270b2f374f1f7dc15a2aa84bf6e6f39ac06453a44f6e788",
+        "xlsx_sha256": "782937b2043dcb2e5abb8b85d3ee892a0cbc6ed135e240dfe93ae2d7959d340a",
+        "cause_kind": "DESIGN_VARIATION_POSSIBLY_JUSTIFIED",
+        "manual_review_required": true
+      },
+      {
+        "project_id": "SYN-00030",
+        "scenario": "structural_price_high",
+        "truth_sha256": "0de2c47d48afb64f8f75d02c226fd3660737e1fe52d4b2bd873a45b741960bce",
+        "xlsx_sha256": "dad847f1a325a72bd472fedba66483afeea45a0e09ee405bc7717f9a06bc5d8d",
+        "cause_kind": "UNIT_PRICE_STRESS_NOT_PROOF_OF_OVERPRICING",
+        "manual_review_required": true
+      },
+      {
+        "project_id": "SYN-00029",
+        "scenario": "structural_price_low",
+        "truth_sha256": "b31c2c4e83f167c43e74d86a9534184ba4eb104f7e345215f2da8530abbabd04",
+        "xlsx_sha256": "cc32d85febcf96914efafd080dcf7de1f040f873cde53fd9f710b759f47beb4d",
+        "cause_kind": "UNIT_PRICE_STRESS_NOT_PROOF_OF_OVERPRICING",
+        "manual_review_required": true
+      },
+      {
+        "project_id": "SYN-00030",
+        "scenario": "combined_concrete_high_price_high",
+        "truth_sha256": "79a843740bb67e6a687314e9262d9283f670e4599f39f2d94b68de39a387ed4f",
+        "xlsx_sha256": "a4fc459eb8805e4b2d1298cf0482c3a128e6d9d18f43407a8b4b9e01ff2b4fcb",
+        "cause_kind": "MIXED_DESIGN_AND_PRICE_STRESS",
+        "manual_review_required": true
+      },
+      {
+        "project_id": "SYN-00029",
+        "scenario": "combined_concrete_low_price_low",
+        "truth_sha256": "f803ad8d1fe2bc51cbc2d08f3b34b4a938164a74d59a57e71d23ad5f1dfcbe7b",
+        "xlsx_sha256": "0b697426d726025dda0004e085e15956f1e88a3282bb3c017b97b3b3f835f6aa",
+        "cause_kind": "MIXED_DESIGN_AND_PRICE_STRESS",
+        "manual_review_required": true
+      }
+    ],
+    "normal_abnormal_certified": false,
+    "directional_stress_tests_only": true
+  },
+  "source_code_sha256": {
+    "tools\\graduation-synthetic\\evaluate_live_holdout.py": "d4f619a66e96d51d50cf65b6f17a3def9918091d9c66b7dc3d31d5ff95c86b75",
+    "崴正\\Services\\ProjectSimilarityService.cs": "744d11725094b0c714e12c117b351d4ea80ea4dd0839b8b89807f9ae4ddfbf58",
+    "崴正\\Services\\DetectionCategoryRangeService.cs": "01afdec9a13e2d30935cab9d1a84e36ddfd6143b2df7e88370223fa63bfe94c5",
+    "崴正\\Services\\MajorCategoryPriceRangeService.cs": "f27bec299b908f573dfc1fe2b0be7e7d3f4866838623d0ebb9f7a157b61d1c00"
+  },
+  "decision": "KEEP_PRODUCTION_PARAMETERS; validation-selected global replacement worsens SRC price on test; no settings update",
+  "verification": {
+    "windows_api_release_build": "PASS: 0 warnings, 0 errors",
+    "workbook_parser": "PASS",
+    "python_unittest": "PASS: 11/11",
+    "node_syntax": "PASS: both permanent verification tools",
+    "live_api_baseline_replay": "PASS: 237 project/scope pairs",
+    "github_ci": "PENDING_AFTER_COMMIT",
+    "desktop_backend_restart_and_6of6": "NOT_RUN; existing quantity-scope was HTTP404 and Docker access denied",
+    "handoff_gate": "Initial FAIL from Git-quoted Unicode paths; parser changed to NUL-delimited paths, actual temporary Git repository regression PASS; final gate rerun after commit"
+  }
+}

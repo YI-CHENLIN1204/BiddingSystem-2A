@@ -132,7 +132,7 @@ public static class TenderImportInspectionService
 
             return new InspectionRow(
                 item.SheetName, item.RowNumber, item.ItemCode, item.ItemName,
-                item.Spec, item.Unit, item.Qty, item.UnitPrice, item.Amount,
+                item.Spec, item.Unit ?? string.Empty, item.Qty, item.UnitPrice, item.Amount,
                 item.Category1, item.Category2, item.Category3, majorCategory,
                 category, standardQuantity, standardUnit, warnings.ToArray());
         }).ToArray();

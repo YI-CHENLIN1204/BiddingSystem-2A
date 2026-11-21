@@ -42,14 +42,13 @@ def added_records(base, head):
     return result
 
 def inspect(base, head):
-    changes = {
-        p.strip() for p in git("diff", "--name-only", f"{base}..{head}").splitlines()
-        if p.strip() and p.strip() != LOG
+    changed_in_diff = {
+        p for p in git("diff", "--name-only", "-z", f"{base}..{head}").split("\0")
+        if p
     }
+    changes = changed_in_diff - {LOG}
     if not changes:
         return ["No non-log changes to review."], []
-    changed_in_diff = {x.strip() for x in
-        git("diff", "--name-only", f"{base}..{head}").splitlines()}
     if LOG not in changed_in_diff:
         return [], [f"Missing changed {LOG} in this diff range. Every change requires a NEW record."]
     records = added_records(base, head)

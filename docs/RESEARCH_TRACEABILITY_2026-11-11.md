@@ -1,3 +1,13 @@
+## 2026-11-22：正式range API合成留案實測與參數取捨
+
+以GitHub feature e644edb0為本輪基線，核心模型與a27f850d相同。來源SYNTHETIC v2既有300案、143700行，逐檔SHA與逐列BOQ/history lineage核對；train210/validation45/test45。正式API237組Top8/完整池配對通過（474 range POST），重現參考選擇與區間後，validation比較144組，test只評現行/validation-selected方案。完整設定、hash、分層MAE/MAPE/coverage/relative interval score見HOLDOUT_EVALUATION_2026-11-22.md/json。
+
+正式參數不改：全域validation最佳K32/結構權重組在SRC價格test變差；不以test挑參數。13個paired檔案hash通過、只有3個獨立案且無工程正常/異常核定，Precision/Recall/FPR不可識別。另排除已用於診斷3案提供42案補充觀察。此為回溯合成數值實驗，非企業工程/時間順序預測驗收。
+
+Windows API build 0 warning/0 error、Parser PASS、Python11/11及Node checks PASS。CS8604和MSB3277本機已修；0新增cases/runs/history/settings。原機6/6/部署與完整系統整合仍待驗。
+
+---
+
 ## 最新證據補記（2026-11-21）：Windows 工作區修復驗證
 
 - 開發基線 a27f850d；桌面 HEAD dadc7aa，最後審查紀錄仍衝突。獨立 clone 的修復 commit ab32e344ef76f67e8c0134f0592ba5b74f136a1f，不等同桌面已提交或 GitHub 已有該修復 commit。

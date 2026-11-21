@@ -1,3 +1,12 @@
+## 2026-11-22 — 集中完成合成數值回測、參數對照與兩項警告修復
+
+- 依使用者重新指定的三工作包，直接讀既有source/holdout與原機API，未再seed、上傳13案或跑已完成的來源/敏感度smoke。
+- 正式API237個project/scope之Top8與完整池共474次運算全部核對；144組只用validation選參數，test另評，輸出分層coverage/MAE/MAPE與interval score。SRC價格不支持全域換K32/新權重，保留原設定。
+- 檢查13份paired truth/hash，確認manual-review標記不提供工程正常/異常真值，Precision/Recall/FPR留null。資料實際是45validation+45test；保留三個曾用於診斷案件的揭露及排除後補充結果。
+- 新增長期唯讀live holdout工具與8個安全/統計合約測試；修Unit-null CS8604與Relational版本MSB3277。Windows build 0 warnings/0 errors，Parser/Python11/11/Node PASS。報告與機讀摘要、主交接/新對話入口/研究回溯/審查同步提交；CI與原機部署不可混稱。
+
+---
+
 ## 2026-11-21 — 直接開啟工作區副本、完成衝突修復與 Windows 驗證
 
 - 從使用者本機 repo 建立可寫獨立 clone，保留桌面原工作樹及未追蹤測試檔；在 recovery 分支重現並解決最後 a27f850d 審查紀錄衝突，commit ab32e344ef76f67e8c0134f0592ba5b74f136a1f 僅存在此 clone。

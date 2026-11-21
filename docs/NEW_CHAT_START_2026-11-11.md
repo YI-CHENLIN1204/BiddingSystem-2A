@@ -1,3 +1,11 @@
+## 最新接手優先項（2026-11-22）
+
+先讀CURRENT_HANDOFF最上方與HOLDOUT_EVALUATION_2026-11-22.md/json。237組正式range配對、144組參數比較已完成，勿再跑來源9/9、城市/基地6組smoke、重seed或重傳13案。來源為210train/45validation/45test；Precision/Recall/FPR缺工程正常/異常核定，不能假造。保留正式參數，因全域validation最佳方案使SRC價格test變差。
+
+本輪Unit-null與Relational版本警告已修，Windows build 0 warnings/0 errors、Parser與Python11/11已通過。下一個系統驗證點仍是將本輪feature改動安全整合至原機(原HEAD5c0ae5c、無衝突)，用原55433隔離庫重啟5263並完成quantity-scope6/6，之後收尾既定整合/版本；原機Docker/寫權限制未因此消失。不要把合成數值實驗當真實工程認證。
+
+---
+
 ## 優先讀取：2026-11-21 最新接手任務
 
 先讀 CURRENT_HANDOFF 頂部 Windows 工作區驗證記錄。GitHub feature 基線 a27f850d，桌面 integration/src-closure 仍在最後 HANDOFF_CHANGE_REVIEWS.jsonl 衝突；獨立 clone recovery commit ab32e344ef76f67e8c0134f0592ba5b74f136a1f 已完成合併，但未修復桌面原工作樹。
