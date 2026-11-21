@@ -170,7 +170,10 @@ def generate_full(count, seed):
             design = (1.0 + .08 * basement + .035 * (floor_count / 10) +
                       (.11 if project["site_condition"] == "complex" else 0) +
                       (.075 if project["finish_level"] == "premium" else 0))
-            group_total = max(.1, area * coeff * design *
+            # Vary engineering trades within a project; never use the same
+            # m2 coefficient across all work items as an engineering claim.
+            trade_factor = .55 + (template_index % 11) * .085
+            group_total = max(.1, area * coeff * design * trade_factor *
                               project_rng.uniform(.76, 1.24))
             group_anomaly = project_rng.random() < .055
             if group_anomaly:
@@ -183,7 +186,11 @@ def generate_full(count, seed):
                 sid = f"BOQ-{pid}-{serial:06d}"
                 txn = f"SYNTX-{pid}-{serial:06d}"
                 q = max(.001, round(group_total * share / share_total, 3))
-                unit_price = round(project_rng.uniform(*band), 2)
+                # Region/time parameters are only scenario variation, not
+                # recorded market prices or an inflation index.
+                region_factor = {"臺中市":1.03,"臺南市":.97,"高雄市":1.00,"桃園市":1.04}.get(project["city"],1.0)
+                age_factor = 1.0 + .012*(date.fromisoformat(project["start_date"]).year-2016)
+                unit_price = round(project_rng.uniform(*band)*region_factor*age_factor, 2)
                 level = levels[(index + template_index) % len(levels)]
                 # Work zones need not be equivalent to specific buildings.
                 zone = WORK_ZONES[(index + template_index) % len(WORK_ZONES)]
@@ -198,12 +205,19 @@ def generate_full(count, seed):
                           "floor_label": level, "structure_type": project["structure_type"],
                           "data_origin": "SYNTHETIC", "split": project["split"]}
                 detail.append(record)
+                duration = 210 + floor_count * 23 + basement * 35
+                phase = (.08 if category in ("假設工程", "土方工程", "基礎工程")
+                         else .34 if category in ("結構體工程", "泥作工程")
+                         else .60 if category in ("防水工程", "屋頂工程", "門窗工程", "外牆工程")
+                         else .75 if category in ("電氣工程", "給排水工程", "消防工程", "空調工程", "弱電工程")
+                         else .88)
+                transaction_date = date.fromisoformat(project["start_date"]) + timedelta(
+                    days=max(1,int(duration*phase)+project_rng.randint(-16,16)))
                 history.append({
                     "synthetic_transaction_id": txn, "synthetic_project_id": pid,
                     "material_code": code, "material_name": rendered, "unit": unit,
                     "actual_quantity": record["quantity"], "unit_price": record["unit_price"],
-                    "transaction_date": (date.fromisoformat(project["start_date"]) +
-                                         timedelta(days=60)).isoformat(),
+                    "transaction_date": transaction_date.isoformat(),
                     "data_origin": "SYNTHETIC",
                     "synthetic_label": "injected_anomaly" if group_anomaly else "baseline",
                     "split": project["split"]})
