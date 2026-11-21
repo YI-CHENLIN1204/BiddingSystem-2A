@@ -133,6 +133,14 @@ def choose_templates(project):
 
 def enrich_project(project, rng):
     project = dict(project)
+    # Synthetic site footprint: total floor area and floor count are
+    # related, but not identical. This is NOT an architectural calculation.
+    floor_area = float(project["total_floor_area"])
+    floors = int(project["floor_count"])
+    basements = int(project["basement_floor_count"])
+    footprint_ratio = rng.uniform(.55, .83)
+    footprint = floor_area / max(2.5, floors + basements * .65)
+    project["site_area"] = f"{max(100.0, footprint / footprint_ratio):.2f}"
     project["facade_system"] = rng.choice(("paint", "tile", "stone"))
     project["finish_level"] = rng.choice(("basic", "standard", "premium"))
     project["foundation_system"] = ("deep" if int(project["basement_floor_count"]) >= 2
@@ -234,7 +242,7 @@ def main(argv=None):
         parser.error("output directory must be empty (refusing overwrite)")
     projects, histories, lines = generate_full(args.count, args.seed)
     args.output.mkdir(parents=True, exist_ok=True)
-    extended = PROJECT_FIELDS + ["facade_system", "finish_level", "foundation_system", "site_condition"]
+    extended = PROJECT_FIELDS + ["site_area", "facade_system", "finish_level", "foundation_system", "site_condition"]
     output = [("projects.csv", extended, projects),
               ("historical_transactions.csv", HISTORY_FIELDS, histories),
               ("project_boq_rows.csv", BOQ_FIELDS, lines)]
