@@ -408,3 +408,14 @@ npm run build
 - **尚未完成、非本階段阻擋事項**：需以更多 test-only 建案進行正式 API 批次回測，才有條件計算 P15/P85 區間涵蓋率、準確度、假陽性/假陰性、分類別誤差；合成歷史非真實工程校準，不得以此聲稱真實營造工程準確度。價格異常的正確性亦需有獨立正常/異常真值標籤才能判斷。不要將「API 執行 PASS」寫成「模型準確率 PASS」。
 - 重要決策：使用者希望在已完成此輪獨立資料庫／上傳／RC+SC 數量與價格 E2E 的功能驗收後轉入下一項工作；本輪功能驗收可收尾，不繼續要求零碎逐案檢查。下階段由使用者新任務決定；若轉成模型品質/報告工作，需先規劃 batch holdout 回測與實測 API 證據圖表。
 - 已淘汰方案：不採用已移除的 Z-score、LSTM 或 Razor 來敘述目前方法。現行 API 參考樣本具有 similarityWeight/timeWeight，依實際程式和回傳描述。無新資料庫 schema / Migration / C# 演算法改動，本次僅驗證紀錄。
+
+
+### 2026-11-21 — 新階段需求盤點：SRC、低設計依賴工項、城市因素查證（提案尚未實作）
+- 用戶指出結構不應只有 RC/SC，尚有 **SRC**；希望研究其他有可辨識單位用量 pattern 的工項/建材，但排除高度受建築師/設計師設計影響者；詢問城市是否已納入估算。此為新一輪需求/技術範圍評估，**尚未授權或完成實際擴模實作**。
+- 依 `崴正/Services/ProjectSimilarityService.cs` 現行 `main`：`ValidateTarget` 明確接受 RC、SC、SRC；`ScoreCandidates` 包含 `CalculateCityScore`，只有候選城市與目標完全相同才獲 `settings.CityWeight`，不同城市得 0，未實作距離或跨縣市市場區域相似度。City 是相似建案加分，**不是直接乘到工程量**。價格及數量的相似度參考都使用此服務。候選 `ProjectType` 必須相同。
+- 本機合成 DB seed `tools/graduation-synthetic/GraduationSeed/Program.cs` 的權重：Structure=25, Area=30, Floor=15, Year=10, City=10, **SiteArea=10**；但現行 `ScoreCandidates` 分子/分母並未納入 SiteAreaWeight、也未呼叫基地面積比較（當前五權重和=90）。此為現況缺口，需獨立規格/測試後再修正，不能說基地面積已發揮加權作用。
+- `tools/graduation-synthetic/generate_full_project_dataset.py` `CORE` 只定義 RC (SYN-REBAR+SYN-CONCRETE) 與 SC (SYN-STEEL+SYN-CONCRETE)；`choose_templates` 使用 `CORE[structure]`，**SRC 無對應模板、無法保證合成 SRC 資料可產生**，即使 API 已允許 SRC。因此先前兩案 RC/SC E2E PASS 不等於 SRC 已驗證。後續應在不破壞既有合成資料/isolated DB 的新版本中研究 SRC 獨立模板與 heldout 案；不得在未確認前重建現有訓練 DB。
+- 工項候選技術建議（尚未核准為正式 Scope）：優先研究 **結構鋼骨** (SC/SRC 以 kg/m2 檢視，須控制跨度/載重等)、**模板** (RC/SRC，須分工法且有適用面積)、**土方開挖** (基地/地下室/開挖深度/地質條件)，保留現有鋼筋與混凝土。以上仍受結構或工法影響，應先做條件化 P15/P50/P85 回測、資料涵蓋和異常標籤評估，不能直接變成正式紅綠燈。門窗、玻璃、立面、磁磚、天花板、裝修、機電設備等高度設計依賴者先排除。
+- 城市對價格比對可能很重要，但建議避免把城市的價格差異當作工程數量差異；需要實測相同條件跨縣市敏感度以及地區樣本數不足時的退路。合成資料生成器的 region_factor 僅模擬單價變化，不是真實地區價格指數。
+- 新階段下一步：定義 SRC 的核心材料/結構參考樣本隔離策略；列出可計量的工項候選與必要 metadata，先於獨立測試資料研究；設計城市加分/城市優先篩樣與 SITE area 分母不一致的測試；**待用戶確認擴模範圍後才對正式 `TwoAScopePolicy` / 種子 / DB 做相關修改**。原 RC/SC 正式 API 成功紀錄保留。
+- 本次僅更新需求與查證交接，無程式碼、Migration 或測試新結果。
