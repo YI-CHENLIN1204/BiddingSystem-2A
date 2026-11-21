@@ -250,3 +250,16 @@ npm run build
 - DB 現況（以 feature 分支程式碼查證）：`ApplicationDbContext` 需要 `project_master`、`material_master`、`unit_master`、`historical_transaction`、`detection_category` 等表；`FinalBidImportService` 的新標單先是 Draft，不直接發佈歷史資料，並須完成各材料碼的 `MaterialId` / `UnitId` 映射。尚無獨立畢專 PostgreSQL 的連線／Migration 驗證，**本輪不碰產學正式 DB**。
 - 目前狀態：v2 新版程式碼、離線 HTML 圖表、測試與交付規範 **均已提交**；新腳本 Windows、GitHub CI、C# E2E 與資料庫匯入 **尚未實測**；不能以先前 12/12 PASS 當新版本驗收，不能將舊 9.246% MAPE 當完整模型的精度。
 - 下一步優先：Windows 執行全套工具測試 → v2 多類別 300 案資料 → 確認 test-only Excel → v2 holdout JSON → HTML 圖表；下一組將對**隔離畢專 PostgreSQL**做唯讀 schema preflight、設計可回滾種子匯入、依正式 AnalysisCase 進行真實端到端估算。
+
+
+### 2026-11-21 — 本機隔離畢專 PostgreSQL 與完整 train-only 種子程式
+- 核對 feature 分支 `崴正/Data/ApplicationDbContext.cs`、`FinalBidService.cs`、`FinalBidImportService.cs`、`UnitConversionService.cs`、`TwoAScopePolicy.cs`：正式模型需 project/material/unit/detection category mapping；新決標匯入先 Draft 不直接寫歷史；`TwoAScopePolicy` 目前只開放結構體工程「鋼筋」「混凝土」正式數量異常模型；`SiteArea` 已列入相似度，v2 生成器先前缺 `site_area`，已補上。
+- 程式新增：`tools/graduation-synthetic/prepare_training_seed.py` commits `955def44`、`704ca0f8`：驗證 v2 manifest 及 3 份 CSV、BOQ/交易 1:1 關係，僅產 train 專用建案＋材料＋完整標單＋交易 JSON，禁止混入 validation/test。
+- 新增 `tools/graduation-synthetic/compose.graduation-db.yaml` commit `90ecb853`：本機專用 PostgreSQL 17，監聽 `127.0.0.1:55432`、DB `bidding2a_graduation`，獨立 Docker Volume，密碼由 `GRADUATION_DB_PASSWORD` 注入，不共用產學 DB。
+- 新增 `tools/graduation-synthetic/GraduationSeed/GraduationSeed.csproj` / `Program.cs` commits `06708f8f`、`dd24588f`、`80f5ebf0`、`b13cc451`；嚴格拒絕非本機 host、不同 DB 名/port/帳號；以 EF `EnsureCreated` 建立一次性隔離資料表，拒絕非空 DB，單一 transaction 寫入 train-only 建案、單位/材料主檔、鋼筋／混凝土偵錯細項、測試估算設定、完整 `FinalBidItem` 與其歷史交易（含 FK）、並保留異常標記。隔離合成環境的 `Approved` 不代表真實企業歷史核准，也不能取代正式 Migration。
+- 增加 `tools/graduation-synthetic/test_prepare_training_seed.py` commit `d09feec2`，驗證 holdout 隔離、價量與來源一致；CI workflow commits `6c1f7080`、`ae08b5f6` 加入 seed 驗證與 .NET 10 build 工作；正式 CI 執行結果尚未核實。
+- 修正 `generate_full_project_dataset.py` 加入 `site_area` commit `a089a9ea`、校正核心鋼筋項目名稱為可辨識材料而非工資加工項 `9e37de68`；`test_full_project_dataset.py`、`test_build_evidence_report.py` 配套 site area commits `14c8e758`、`b99c24cc`。
+- 修改 `generate_irregular_excel.py` / `export_full_project_excel.py` commits `7ad6608f`、`36efea58`，不再為不同建案硬加無資料的空白工程明細分頁；仍保留多格式表頭與 truth JSON。
+- 新增 `docs/GRADUATION_E2E_ACCEPTANCE_2026-11-25.md` commit `a492e59a`，後續更新 `c13efdc3`；更新 `tools/graduation-synthetic/README.md` commit `c02c9a96`，列出分階段執行及 DB 不得污染產學資料庫的安全檢查。
+- **實測狀態**：使用者舊版 v0.5 Python unittest 12/12 PASS、舊 300 案／600 交易成功、舊 360 行 Excel 已生成、舊代理回測 83 項結果已取得；**v2 新功能 Python unittest、PostgreSQL Docker 啟動、`GraduationSeed` C# 編譯與執行、正式 ASP.NET AnalysisCase API、HTML 圖表均尚未實測**。不可混淆。
+- 下一個驗證點：使用者同步 `tools/graduation-synthetic`、完整 Python unittest、生成 v2 300 建案及 train-only seed，先確認樣本多樣性與來源，再於**全新本機隔離 DB**執行 dotnet build + 匯入，最後 test-only Excel 上傳正式 AnalysisCase API 和視覺化。
