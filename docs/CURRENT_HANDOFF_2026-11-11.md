@@ -362,3 +362,11 @@ PublishHistory 已有 advisory transaction lock／Idempotency receipt／SyncHist
 - `tests/WorkbookParserTests/Program.cs` commit `3be3a5bb`：增加同源 case #15 的 15 工項／4 被排除候選／候選量 38,000kg、3,650m³／價格總額 29,268,000 元，避免保守排除與價格統計混淆。擴充**永久** `scripts/verify-ui-state.mjs` commit `9c7ed7c8`：`--case-id 15` 新增唯讀 scope 回讀與逐列分類契約對照、預期**新版 backend** 6/6 PASS；不建立臨時 CI/CD。
 - 分類現況：版本實際鋼筋名義 130,000kg、混凝土 5,450m³，4 條有加工／組立／綁紮／澆置的名稱被保守排除後只納入 38,000kg／3,650m³；其它工程類別排除是目前未核定數量模型，不能將單純「排除」解讀為工項無材料。重要限制：此唯讀分類是**目前規則重算**，並非舊 Run 的原始記錄或工程人工覆核結果。
 - CI 真實狀態依 GitHub Actions 最新 run 查核；**使用者 Windows 新 backend/新版 UI 實測仍 NOT RUN**。下個實測：在本機 `integration/src-closure` cherry-pick 此批相關 commits，停掉舊 5263／以同一 55433 isolated DB 重新啟動後端，5174 重新整理 #15，確認新增卡片及4條材料相關 Excluded，執行 `node scripts/verify-ui-state.mjs --case-id 15` 取得新版 6/6；勿重傳 V1、重跑 Quantity/Price、清除 Docker volume。決標審核／稽核和準確度下一階段。
+
+
+## 29. 2026-11-21：README 明確標示組員使用的 2A 專題分支
+- GitHub 實際盤點（2026-11-21）：Repository 當時 **Public**、default branch 為 `main`；遠端只有 `main`、`feature/1d-api-integration`，舊 POC `feature/1d-detection-integration` 已由使用者另行處理，PR #1 已關閉；PR #2 `feature/1d-api-integration → main` **仍 Open／未合併**。
+- 明確對組員公告：**撰寫本組 2A 專題的目前共享程式碼，請閱讀 `feature/1d-api-integration`**。這是持續開發分支而非正式發行，若報告需固定版本應記錄特定 Commit SHA；`main` 目前尚未整合最新 2A 功能，不宜當作本次報告技術唯一依據。
+- 已實際更新兩個分支根目錄 `README.md` 最上方導覽：`main` commit `c159f85669d4e98504764312a3fbcb5219e5b9a8`，feature commit `42eac3eeeb668f6c5c531167e6a2955025fc982d`，提供 Github 可直接點開分支與交接文件的連結。
+- 此為文件與對外溝通決定，沒有修改後端 API、資料庫、前端功能、CI 或歷史資料。本輪未再執行 E2E 或編譯，之前的測試成果不可挪作新版本驗收。
+- 公開風險仍存在：公開 Git 原始碼及歷史的敏感檔與 `course-version.zip` 封存檔尚未完整安全檢查，README 告知只用授權內容與合成／去識別化資料；不因 README 提醒就視為授權公開完成。
