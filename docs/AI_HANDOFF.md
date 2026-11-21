@@ -892,3 +892,11 @@ npm run build
 - 同輪 `cd frontend; npm.cmd run build` 真實 **PASS**：Vue `vue-tsc --noEmit && vite build`，Vite 7.3.8，66 modules，1.65s；這驗證已 cherry-pick 的新版 UI build，**不能推論新 backend 已在 Windows 建置成功**。
 - 已有 Case #15 上一輪 `verify-ui-state.mjs --case-id 15` 真實 **5/5 PASS**、15 cases、15 versions、32 Runs、210 歷史合成 approved；新版 `quantity-scope` API 的 Windows `6/6` **尚未執行**，不得誤報已驗收。
 - **修復策略**：只解 `docs/CURRENT_HANDOFF_2026-11-11.md` 的 append-only 衝突、保留 ours 與 incoming Section 28，`git add` + `git cherry-pick --continue`，確認 sequencer 清空；以使用者已開啟之舊後端視窗 Ctrl+C 停止 PID 53748，或驗證 exe 路徑後精準停止該進程，再重新 `dotnet build -c Release`；在原已驗證的 55433 隔離 DB 連線環境重啟 5263，`node scripts/verify-ui-state.mjs --case-id 15` 目標 **6/6**，刷新 5174 查看新排除清單。不要重建、重 Seed 或上傳 synthetic V1。無需新增臨時 CI/CD。
+
+
+### 2026-11-21 — 公開 Repository 前的 GitHub 分支盤點與 POC PR 清理
+- 2026-11-21 由連接 GitHub 實際讀取 repository metadata：`YI-CHENLIN1204/BiddingSystem-2A` **當時 visibility=public**，default branch=`main`；僅有遠端三分支：`main`、`feature/1d-api-integration`、`feature/1d-detection-integration`。**公開狀態已存在，並非本次工具設定。**
+- PR #1 `POC: visualize project-wide 1D to 2A data flow`（`feature/1d-detection-integration` → `main`）屬 2026-10-06 展示用的**非正式**隱藏 POC／不寫資料庫，改動只有 `frontend/src/router/index.ts`、`frontend/src/views/OneDIntegrationView.vue`；本次已**實際將 PR #1 關閉**（closed、unmerged），保留 GitHub PR 歷史以利追查。**遠端 POC 分支尚未刪除**；可透過 GitHub Branches UI 或由使用者執行 `git push origin --delete feature/1d-detection-integration`，不可將關閉 PR 說成刪分支。
+- PR #2 `feature/1d-api-integration` → `main` 仍 **open、unmerged**，而且 `main` vs feature 有大量分岔（查詢時 feature ahead 671 commits、behind 208 commits、177 檔差異）。這個 feature 保存主要 Vue/ASP.NET 2A 系統開發，**絕不可把它當無用舊分支刪除或未經測試直接強制覆蓋 main**。本機 `integration/src-closure` 曾有交接文件 cherry-pick 衝突，最新是否已解決需先在使用者本機 `git status` 查實。下一階段將穩定整合功能到 main、跑永久 CI 及隔離 DB E2E，再刪 feature。
+- 公開安全檢查進度：在 `main` 和 feature Git tree 中均存在 `course-version.zip` 舊版程式封存檔（約 1.9MB），**目前無法證明封存檔內沒有敏感資料**；另外存在開發設定、`.env.example`、容器測試配置、歷史 handoff/研究紀錄。只是初步路徑／部分現行文字檔掃描，**不是完整原始碼、壓縮包與全 Git 歷史的密碼／合作資料掃描**。刪 branch 或刪檔不會自動清除所有 Git 歷史和既有 public exposure；公開前需取得合作資料授權、檢查全歷史／ZIP、必要時撤回公開並旋轉已暴露之憑證。給組員看程式碼可改用 private repo 邀請 Collaborators；若需公開作品集，以去識別、單一乾淨提交的新展示 Repo 比原始產學 Private 開發歷史安全。
+- 已完成：唯讀盤點與關閉舊 POC PR #1。未完成：遠端 branch deletion（目前 GitHub 連接工具不具該操作）、主功能 PR #2 merge、已公開歷史安全查核、任何 visibility 變更。本次**沒有**刪除遠端分支、覆寫 main 或修改資料庫與正式系統。
