@@ -40,8 +40,26 @@ class FullProjectDatasetTests(unittest.TestCase):
                 self.assertLessEqual(int(row["floor_label"][:-1]), int(project["floor_count"]))
             if project["structure_type"] == "RC":
                 self.assertNotEqual(row["material_code"], "SYN-STEEL")
-            else:
+            elif project["structure_type"] == "SC":
                 self.assertNotEqual(row["material_code"], "SYN-REBAR")
+
+    def test_opt_in_src_remains_separate_from_legacy_fixtures(self):
+        original, _, _ = generate_full(36, 20261119)
+        projects, history, detail = generate_full(36, 20261119, include_src=True)
+        self.assertNotIn("SRC", {p["structure_type"] for p in original})
+        self.assertEqual({"RC", "SC", "SRC"},
+                         {p["structure_type"] for p in projects})
+        self.assertEqual(len(history), len(detail))
+        by_project = defaultdict(set)
+        for row in detail:
+            by_project[row["synthetic_project_id"]].add(row["material_code"])
+        src_cases = [p for p in projects if p["structure_type"] == "SRC"]
+        self.assertGreater(len(src_cases), 0)
+        self.assertTrue(any({"SYN-STEEL", "SYN-REBAR", "SYN-CONCRETE"}
+                            <= by_project[p["synthetic_project_id"]]
+                            for p in src_cases))
+        self.assertEqual(generate_full(36, 20261119, include_src=True),
+                         generate_full(36, 20261119, include_src=True))
 
     def test_deterministic_generation(self):
         self.assertEqual(generate_full(25, 5),generate_full(25, 5))
