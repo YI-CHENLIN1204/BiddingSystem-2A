@@ -953,3 +953,10 @@ npm run build
 - **實測PASS**：Windows API Release **0 warnings/0 errors**；WorkbookParser全通過；Python **11/11**；兩個永久Node syntax PASS。交接gate首跑因Git quotePath將中文路徑轉義而FAIL，已改`scripts/check_handoff_review.py`使用NUL分隔並加入真實temp Git/core.quotePath=true測試；最終本機整批gate `--base 853e98d48c592e68b524c4fb4eee5a36a95e350e` **PASS：11 files/2 reviews**，遠端相對e644edb0的變更與review coverage亦核對一致。
 - **永久CI最終PASS**：`2A Build Validation` run `44927779220`，head `ab565eaaca905eb75f2bf2bdbdd764574ad2b61c`，completed/success；backend-build、frontend-build、synthetic-fixture-contracts三Job全部success。不新增臨時workflow。
 - **三包剩餘界線**：(1)合成數值回測已交付，分類Precision/Recall/FPR受真值缺口阻塞；(2)對照已交付並作不換正式參數的決策；(3)兩項編譯警告及交接工具問題已修、回歸與CI通過，但原機寫權/Docker、新5263 quantity-scope 6/6、既定完整系統整合/PR#2與最終版本仍未完成。不得寫「企業準確率通過」或「整個系統已結案」。
+
+
+### 2026-11-22 — Supabase 現況唯讀盤點與跨裝置資料保存
+- 使用者已確認目前 Supabase 畫面 `public.project_master` 的建案皆為模擬用途資料，不能以 Supabase UI 「PRODUCTION」標籤認定為崴正真實建案。使用者 Windows 先確認本機 55433 PostgreSQL 持久層為 Docker named volume `graduation-src-synthetic_graduation_src_pgdata`（`/var/lib/postgresql/data`），並使用 `pg_dump -Fc --no-owner --no-acl` 及 `pg_restore --list` 成功，另以 `docker cp` 實際保存備份 `bidding2a_graduation_src_20261122_014156.dump` 到 Windows 專案外 `Desktop/BiddingSystem-2A-backups`，檔案 5,907,064 bytes；尚未執行完整還原演練，SHA256 指令已下但結果未提供。**不可將備份上傳 Public GitHub。**
+- 2026-11-22 透過已連接 Supabase 直接執行**純 SELECT 計數**確認現有雲端 Supabase 專案（與本機 55433 分開）：`public.project_master=10`，`public.analysis_case=1`，`public.analysis_run=24`，`public.final_bid_item=634`，`public.historical_transaction=23`。這是雲端即時讀取結果，**不同於**此前使用者本機 55433 read-only 5/5 的 `210 synthetic Approved / 15 analysis cases / 15 versions / 32 runs`。兩者資料並未自動同步。使用者另表示 Supabase 10 個建案皆為模擬資料；是否有來源與權限資訊需獨立審核，不據畫面自行推斷真實工程資格。
+- 跨裝置需求：正式授權歷史與合成專題測試必須物理或明確邏輯隔離。**尚未選定、建立、還原或同步任何雲端新資料庫**。建議先備份現有 Supabase、比對雙方 EF/SQL schema 與來源資格，再由使用者授權選擇建立獨立 Supabase 測試 Project 或受控測試環境；本機 55433 `.dump` 應在隔離空環境做還原驗證，不能直接 `pg_restore` 覆寫當前雲端主分支，也不可把合成 Approved 視為實際已鑑真的歷史。多裝置共用應走後端 API + 私密 DB connection，禁止在公開 Vue/GitHub 放資料庫憑證。
+- 這一輪沒有修改任何 PostgreSQL/Supabase 資料、Migration 或分析程式；是既有資料位置與備份狀態的唯讀盤點。11/25 交件期限仍需追查實際平台與上傳內容。
