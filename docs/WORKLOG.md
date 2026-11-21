@@ -492,3 +492,11 @@ TwoAQuantityAnalysisService.AnalyzeAsync 現新增執行時 fail-closed：僅 Tw
 - 前端路由無身份／角色守衛，操作紀錄在側欄無條件顯示；Nginx 僅 reverse proxy /api/ 到 backend:8080，未見內建 Auth；後端同樣未見 AuthN/AuthZ 設置。這不代表實際部署無外部入口限制，需請管理員確認。
 - ProjectDetailView 已有 sessionStorage Idempotency-Key／receipt 對帳；舊 Approved 文案不應混同新 Verified，AnalysisCaseDetailView 已有 DEMO 名稱疑似標記可延續。
 - 新建 `docs/2A_VERIFIED_REFERENCE_FRONTEND_SECURITY_AUDIT_2026-11-13.md`，包含權限分級、前端接口、部署核對、必要測試與分期方案。僅文件變更，未修改程式／資料庫。
+
+
+## 2026-11-21 — 修正 UI 合成 Excel 缺少相依檔、整合永久 CI
+
+- 使用者完成唯讀 7/7 API 預檢及 4/4 Docker/DB/API 來源核對：5263 與 55433 的 14 案指紋、14 版本、28 Runs 及 210 Approved 均可對照；但 UI 寫入尚未驗收。
+- 使用者首次產生測試工作簿時遇到 `ModuleNotFoundError`，確認 feature 分支缺少 main 既有的 `export_full_project_excel.py`，而 exporter 依賴 `generate_irregular_excel.py`。已同步兩者到 feature，新增 `test_prepare_ui_case.py` 作可長期運行的**真實匯出契約測試**；後續 `ENOENT` 是 XLSX 不存在，不能當成 API 解析失敗。
+- 使用者要求不要建立臨時 CI/CD，故保留長期 `.github/workflows/2a-build.yml` 作正式 build/test 入口、保留 handoff guard，移除重複的 `graduation-ui-build.yml`；不清除使用者本機未追蹤檔或 DB。
+- 下一步同批 cherry-pick 五個 commits 並跑 Windows 本機 Excel 產生器和唯讀解析；真實 UI 上傳與資料持久化、決標回寫、異常準確度仍尚未完成。
