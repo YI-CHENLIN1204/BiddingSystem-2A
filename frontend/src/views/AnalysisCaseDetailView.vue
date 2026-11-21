@@ -66,6 +66,36 @@ interface VersionDetail {
   items: BidItem[]
 }
 
+interface QuantityScopeItem {
+  analysisBidItemId: number
+  sheetName?: string | null
+  rowNumber?: number | null
+  itemName: string
+  spec?: string | null
+  unit?: string | null
+  quantity?: number | null
+  majorCategory?: string | null
+  detectionCategory?: string | null
+  status: 'Included' | 'Excluded' | 'Pending'
+  reason: string
+  candidateType: 'Rebar' | 'Concrete' | 'Excluded' | 'Other'
+  unitNormalizationStatus?: string | null
+  normalizedQuantity?: number | null
+  normalizedUnit?: string | null
+}
+
+interface QuantityScope {
+  analysisCaseId: number
+  analysisBidVersionId: number
+  itemCount: number
+  includedItemCount: number
+  excludedItemCount: number
+  pendingItemCount: number
+  excludedQuantityCandidateCount: number
+  items: QuantityScopeItem[]
+  note: string
+}
+
 interface RunSummary {
   analysisRunId: number
   analysisBidVersionId: number
@@ -190,6 +220,11 @@ const route = useRoute()
 const caseId = Number(route.params.id)
 const detail = ref<CaseDetail | null>(null)
 const versionDetail = ref<VersionDetail | null>(null)
+const quantityScope = ref<QuantityScope | null>(null)
+const quantityScopeError = ref('')
+const scopeReviewRows = computed(() =>
+  (quantityScope.value?.items ?? []).filter(item => item.status !== 'Included'),
+)
 const runs = ref<RunSummary[]>([])
 const selectedVersionId = ref<number | null>(null)
 const loading = ref(false)
@@ -302,6 +337,9 @@ async function loadCase() {
 async function selectVersion(versionId: number) {
   selectedVersionId.value = versionId
   versionLoading.value = true
+  versionDetail.value = null
+  quantityScope.value = null
+  quantityScopeError.value = ''
   quantityResult.value = null
   priceResult.value = null
   error.value = ''
@@ -310,6 +348,17 @@ async function selectVersion(versionId: number) {
       `/analysis-cases/${caseId}/versions/${versionId}`,
     )
     selectedMajorCategory.value = majorCategories.value[0] ?? ''
+    // Auxiliary read-only report. Failure must not block older API deployments
+    // from displaying the version or its already saved analysis runs.
+    try {
+      quantityScope.value = await api<QuantityScope>(
+        `/analysis-cases/${caseId}/versions/${versionId}/quantity-scope`,
+      )
+    } catch (caught) {
+      quantityScopeError.value = caught instanceof Error
+        ? caught.message
+        : '無法讀取工項納入範圍'
+    }
   } catch (caught) {
     error.value = caught instanceof Error ? caught.message : '無法載入版本'
   } finally {
@@ -577,6 +626,60 @@ onMounted(loadCase)
         </div>
       </section>
 
+      <section v-if="versionDetail" class="card quantity-scope-panel">
+        <div class="card-header scope-heading">
+          <div>
+            <h3>數量偵錯工項納入範圍</h3>
+            <p class="text-muted small mt-1 mb-0">每筆工項是否計入鋼筋／混凝土數量分析，由後端正式前處理規則判斷；與大項價格總額的納入規則不同。</p>
+          </div>
+        </div>
+        <div v-if="quantityScope" class="scope-body">
+          <div class="scope-counts">
+            <div>版本總工項 <strong>{{ quantityScope.itemCount }}</strong></div>
+            <div>數量偵錯納入 <strong>{{ quantityScope.includedItemCount }}</strong></div>
+            <div>數量偵錯排除 <strong>{{ quantityScope.excludedItemCount }}</strong></div>
+            <div>待確認 <strong>{{ quantityScope.pendingItemCount }}</strong></div>
+          </div>
+          <div v-if="quantityScope.excludedQuantityCandidateCount" class="notice info mb-2">
+            <strong>{{ quantityScope.excludedQuantityCandidateCount }} 筆材料相關名稱工項被排除。</strong>
+            含加工、組立、綁紮、澆置等複合工項可能同時包含材料與勞務；此處僅呈現系統判定，請核對原始標單，不得直接假設材料數量為零。
+          </div>
+          <p class="text-muted small">{{ quantityScope.note }}</p>
+          <details class="scope-details" :open="quantityScope.excludedQuantityCandidateCount > 0">
+            <summary>查看排除／待確認工項及原因（{{ scopeReviewRows.length }} 筆）</summary>
+            <div v-if="!scopeReviewRows.length" class="text-muted small mt-2">沒有排除或待確認的工項。</div>
+            <div v-else class="table-wrap mt-2">
+              <table class="scope-table">
+                <thead>
+                  <tr>
+                    <th>來源</th>
+                    <th>工程大項</th>
+                    <th>工項</th>
+                    <th>數量</th>
+                    <th>分類</th>
+                    <th>原因</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  <tr v-for="item in scopeReviewRows" :key="item.analysisBidItemId">
+                    <td>{{ item.sheetName ?? '-' }}{{ item.rowNumber ? ' #' + item.rowNumber : '' }}</td>
+                    <td>{{ item.majorCategory || '未分類' }}</td>
+                    <td class="item-name">{{ item.itemName }}<span v-if="item.spec" class="text-muted small"> ・ {{ item.spec }}</span></td>
+                    <td class="number">{{ formatNumber(item.quantity, 4) }} {{ item.unit ?? '' }}</td>
+                    <td>{{ item.status === 'Pending' ? '待確認' : '排除' }}<span v-if="item.candidateType === 'Excluded'" class="text-muted small"> ・疑似複合工項</span></td>
+                    <td>{{ item.reason }}</td>
+                  </tr>
+                </tbody>
+              </table>
+            </div>
+          </details>
+        </div>
+        <div v-else-if="quantityScopeError" class="scope-body">
+          <div class="notice info mb-0">無法取得目前版本的工項納入範圍：{{ quantityScopeError }}。既有分析結果仍可查看；請確認後端是否已更新。</div>
+        </div>
+        <div v-else class="scope-body text-muted small">讀取工項分類中...</div>
+      </section>
+
       <div class="tabs">
         <button class="tab" :class="{ active: tab === 'items' }" @click="tab = 'items'">版本工項</button>
         <button class="tab" :class="{ active: tab === 'analysis' }" @click="tab = 'analysis'">本次分析結果</button>
@@ -813,6 +916,15 @@ onMounted(loadCase)
 </template>
 
 <style scoped>
+.quantity-scope-panel .scope-heading { align-items: flex-start; }
+.scope-body { padding: 16px 20px 20px; }
+.scope-counts { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 12px; margin-bottom: 14px; }
+.scope-counts > div { padding: 12px; background: #f7f9fc; border: 1px solid var(--border); border-radius: 7px; font-size: 13px; }
+.scope-counts strong { display: block; margin-top: 4px; font-size: 19px; }
+.scope-details summary { cursor: pointer; font-weight: 700; }
+.table-wrap .scope-table { min-width: 800px; }
+.scope-table th, .scope-table td { font-size: 13px; }
+@media (max-width: 640px) { .scope-counts { grid-template-columns: repeat(2, minmax(0, 1fr)); } }
 .back-link { color: var(--wz-primary); text-decoration: none; font-size: 13px; font-weight: 700; }
 .version-strip { display: flex; gap: 10px; overflow-x: auto; padding-bottom: 2px; }
 .version-chip { min-width: 145px; display: grid; gap: 3px; padding: 12px 14px; text-align: left; color: #526079; background: #fff; border: 1px solid var(--border); border-radius: 8px; }
