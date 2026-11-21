@@ -226,3 +226,16 @@ npm run build
 - 指引：先執行 `python tools/graduation-synthetic/generate.py --count 300 --seed 20261119 --output .\\graduation-data`，再重跑 Excel 與 holdout 命令；輸出檔不得覆寫，如目錄已有資料改用新名稱並同步調整 `--source`。
 - 目前狀態：Python 單元測試 **PASS 12/12**；v0.5 360 列 XLSX 生成 **未完成（缺來源檔）**；離線合成 holdout 報告 **未完成（缺來源檔）**；ASP.NET API E2E、實際企業資料精準度 **尚未測試**。無 DB／Migration／API 修改。
 - 下一步：在目前 Windows 工作目錄先生成 300 建案／600 合成交易與 manifest，再產出 XLSX、JSON 標準答案、離線分位數／常態基準比較結果；記錄真實執行數值供 11/25 報告。
+
+
+### 2026-11-21 — 畢專合成資料 v2.0：從每案 2 材料改為同源多工項歷史資料（11/25 優先）
+- 用戶確認舊 `generate.py` 每案只有 2 筆交易不符合「完整且條件各異的建案」；另使用者本機已成功產生 300 案／600 交易及 360 筆標單，並成功跑出**舊版離線合成**結果：加權分位數代理 MAPE 9.246%、P15-P85 涵蓋率 54.22%；加權常態代理 MAPE 9.133%、涵蓋率 51.81%，有效測試材料案例 83。**僅適用簡化合成資料，不是系統正式精準度／真實工程精準度。**
+- 新增 `tools/graduation-synthetic/generate_full_project_dataset.py`（`8fb0354b`、`39f992a0`、`c753570f`）：繼承舊案基本特徵，加入合成立面工法、裝修等級、基地條件；擴充不同工程類別模板；RC/SC、地下室與樓層條件控制工項是否出現；示例量價及不同工種施工時間產生，**所有數值仍是 SYNTHETIC，不含企業價格及工程真實係數**。
+- 新版資料三表：`projects.csv` 建案特徵、`project_boq_rows.csv` 每案各工項詳細來源、`historical_transactions.csv` 每工項 1:1 對應交易；共用 `synthetic_transaction_id`，不再將獨立造出的 360 測例誤當真實歷史；SHA-256 manifest 確保來源一致，train/validation/test 仍按「建案」切分。
+- 新增 `tools/graduation-synthetic/export_full_project_excel.py`（`9dfc4c91`）：從**相同建案同一批來源工項**匯出多工作表 Excel + truth JSON；少量缺單價／數量／單位僅在 Excel 展示，來源歷史交易保留完整值。預設選 test 案，可指定 --project-id；不寫 DB。
+- 新增 `tools/graduation-synthetic/evaluate_full_project_holdout.py`（`0a105cc2`）：用 train 案推估 test 案的相同材料代碼，**先彙總同建案同材料所有樓層工項**成一個獨立樣本，避免資料洩漏與虛增樣本；比較離線加權分位數代理、加權常態代理的每工項 MAPE、涵蓋率、區間評分，**不等於正式 C# 模型 E2E**。
+- 新增 `tools/graduation-synthetic/test_full_project_dataset.py` commit `378aaefd`；更新 `.github/workflows/graduation-synthetic.yml` commit `a9d20367`（CI 也測完整資料集、Excel、回測）；更新 `tools/graduation-synthetic/README.md` commit `eac426e7`。
+- 變更界線：舊版 2 材料生成器未刪除，以免破壞舊測試；v2 需輸出**新資料夾** `graduation-data-v2`，舊 `graduation-data` 不覆寫也不直接兼容。未修改 PostgreSQL、Migration、現有 ASP.NET API 或正式估算邏輯。
+- 驗證狀態：上述新增程式及測試已提交 GitHub **但尚未在使用者 Windows 執行新版測試，CI 也未核實結果**；不能以舊版 12/12 PASS 取代新測試。公開資料之工程細目類別/價格規範已查考工程會與水利署，但 **v2 模板與數值目前並非真實標單抽取或經工程師校準**。
+- 下一驗證點：使用者在 feature 分支安全取回工具目錄，跑全套 unittest，生成 300 案 v2；輸出與對應歷史一致的 Excel／JSON 和新 holdout；確認 `boq_line_count=transaction_count`、歷史材料碼種類 >2、各建案明細數與範圍差異。取得可合法使用的住宅工程詳細標單後，另做真實資料驗證；**未來如需進 DB，先定獨立畢專 DB、主檔映射、Migration、回滾方案**。
+- 已淘汰：舊 300 案／600 交易不再作為「廣泛工程標單數量精度」主要展示資料；常態分布仍只在離線對照模型，沒有替換正式估算 API。
