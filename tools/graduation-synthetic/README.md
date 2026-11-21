@@ -273,3 +273,27 @@ python tools/graduation-synthetic/verify_similarity_sensitivity.py --source .\gr
 正式納入任何新工項需獨立驗證：可比的計量單位／穩定材料定義、足夠的每結構樣本、獨立 test／極端建案回測、正式 ASP.NET API 的 P15/P50/P85 覆蓋與誤報/漏報評估，以及業界設計依賴性審查。所有條件通過並取得明確決策後才可以另行修改 scope 與 DB mapping。**SRC 只有新增資料實驗，不能將鋼骨誤認成既有核准的鋼筋類別。**
 
 本工具產出的數字全屬 SYNTHETIC，不能用來宣稱真實營造工程準確率。注意：GitHub `main` 的相似度與 `feature/1d-api-integration` 尚有不同步之處，實際正式環境版本應先按交接文件核對；不要只因 CLI PASS 就認定不同分支功能相同。
+
+
+### 設計／量價異常的獨立標單壓力測試（2026-11-21）
+
+除了樓層、基地、城市等**建案條件極端值**，現在還能為現有 **test-only** RC／SC／SRC 建案製作**標單量價異常**，不修改 train、validation、歷史交易 CSV、既有 Seed 或 DB。建議在上述 `graduation-src-extreme-v3` 已產出後執行：
+
+```powershell
+python tools/graduation-synthetic/export_anomaly_holdout_suite.py --source .\graduation-src-extreme-v3 --output-dir .\graduation-anomaly-holdouts
+```
+
+結果是 **10 份 Excel + 10 份 truth JSON + anomaly_suite_manifest.json**，包含：
+- `design_concrete_high/low`：混凝土數量 2.5 倍／0.35 倍。
+- `design_rebar_high/low`：鋼筋數量 2.4 倍／0.4 倍。
+- `design_steel_high/low`：鋼骨數量 2.5 倍／0.35 倍（**鋼骨目前不屬於正式量異常紅綠燈範圍**）。
+- `structural_price_high/low`：結構體工程各列單價 3.0 倍／0.2 倍，數量不變。
+- `combined_concrete_high_price_high/low_price_low`：混凝土數量與整個結構體工程單價同時增／減，驗證系統對總價變動的解釋與獨立量價偵錯能力。
+
+以上比例為**受控測試倍率**，不是一般工程合理幅度或真實建築師設計決策；名稱中的「設計」代表要模擬設計複雜度可能造成的量差，**並非已核實的設計因果資料**。任何一個異常情境都保留 `injection.changed_lines` 的原始／注入後數量、單價、倍率，並在各行的 `baseline_quantity`、`baseline_unit_price`、`injection_label` 顯示變更。採用每行 `金額=注入數量×注入單價` 的一致性規則。
+
+**請勿混淆異常標籤與模型判定**：已知注入價格或數量倍率，只證明人為介入的偏差，不能保證正式 API 必須輸出紅燈；尤其混凝土增量也會使**總金額**上升，這不是單價過高。正式檢測需拿 `quantity-analysis` 的材質用量與 `major-price-analysis` 的整個結構體價格分別比對，再做**基準未修改標單**與每種變體的成對比較。單一基準建案可被多種情境重複使用，統計評估時不得當成多個彼此獨立的真實建案。
+
+預設不使用 `--anomaly-scenario` 時，原 `export_full_project_excel.py` 的行為不改變。可用單次 `--project-id` 加 `--anomaly-scenario` 產生一份新檔，但**僅限 test split**，其餘 split 直接拒絕。所有來源 CSV SHA-256 保持不變、輸出檔拒絕覆寫，`anomaly_suite_manifest.json` 明確標記 `HELDOUT_ONLY_NOT_TRAINING_HISTORY`。
+
+此版本尚未在使用者 Windows / 隔離 SRC DB 中完成正式 ASP.NET API E2E。請先跑 Python 測試、確認真值 JSON 和 Excel 金額一致，再用新的 55433 隔離資料庫測量量價檢出與誤報，**絕不把標籤反寫訓練歷史或放行新的紅綠燈類別**。
