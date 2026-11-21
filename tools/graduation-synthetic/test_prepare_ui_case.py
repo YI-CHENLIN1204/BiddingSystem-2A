@@ -7,7 +7,7 @@ import unittest
 from pathlib import Path
 from zipfile import ZipFile
 
-from prepare_ui_case import select_project
+from prepare_ui_case import select_project, create_standalone_fixture
 from export_full_project_excel import export, read_source
 
 
@@ -101,6 +101,62 @@ class PrepareUiCaseTests(unittest.TestCase):
             self.assertEqual(metadata["cases"][0]["analysis_major_category"], "結構體工程")
             with self.assertRaisesRegex(ValueError, "overwrite"):
                 export(source, path, truth, project_id="SYN-00987")
+
+
+    def test_offline_standalone_ui_fixture_without_source_dataset(self):
+        """Permanent regression for absent graduation-src-extreme-v3 folder."""
+        import subprocess
+        import sys
+        with tempfile.TemporaryDirectory() as directory:
+            folder = Path(directory)
+            output = folder / "smoke-src.xlsx"
+            truth = folder / "smoke-src.json"
+            script = Path(__file__).with_name("prepare_ui_case.py")
+            completed = subprocess.run(
+                [sys.executable, str(script), "--output", str(output),
+                 "--truth", str(truth), "--structure", "SRC"],
+                cwd=folder,
+                capture_output=True,
+                text=True,
+                encoding="utf-8",
+                check=True,
+            )
+            payload = json.loads(completed.stdout)
+            self.assertEqual(payload["status"], "SYNTHETIC_UI_ONLY_NOT_HOLDOUT_OR_HISTORY")
+            self.assertEqual(payload["worksheetCount"], 3)
+            self.assertGreaterEqual(payload["detailRows"], 12)
+            self.assertEqual(payload["structureType"], "SRC")
+            self.assertEqual(payload["caseName"], "SYNTHETIC-UI-驗收-smoke-src")
+            self.assertTrue(output.exists())
+            with ZipFile(output) as book:
+                self.assertIsNone(book.testzip())
+                sheet_names = book.read("xl/workbook.xml").decode("utf-8")
+                self.assertIn("結構體明細", sheet_names)
+                self.assertIn("基礎及地下工程", sheet_names)
+                self.assertIn("工程總表", sheet_names)
+            meta = json.loads(truth.read_text(encoding="utf-8"))
+            self.assertFalse(meta["eligible_for_training_history"])
+            self.assertFalse(meta["is_accuracy_ground_truth"])
+            self.assertEqual(meta["project"]["split"], "ui-smoke-not-holdout")
+            self.assertEqual(meta["xlsx_sha256"],
+                             hashlib.sha256(output.read_bytes()).hexdigest())
+            self.assertEqual(meta["total_detail_rows"], len(meta["cases"]))
+            categories = {row["majorCategory"] for row in meta["cases"]}
+            self.assertIn("結構體工程", categories)
+            self.assertIn("鋼骨鋼構工程", categories)
+            self.assertTrue(any("鋼筋" in row["itemName"] for row in meta["cases"]))
+            self.assertTrue(any("混凝土" in row["itemName"] for row in meta["cases"]))
+            self.assertTrue(all(
+                int(row["quantity"]) > 0 and int(row["unitPrice"]) > 0 and
+                int(row["amount"]) == int(row["quantity"]) * int(row["unitPrice"])
+                for row in meta["cases"]
+            ))
+            with self.assertRaisesRegex(ValueError, "overwritten"):
+                create_standalone_fixture(output, truth, "SRC")
+            other = create_standalone_fixture(
+                folder / "smoke-rc.xlsx", folder / "smoke-rc.json", "RC")
+            self.assertEqual(other["structureType"], "RC")
+            self.assertEqual(other["detailRows"], payload["detailRows"] - 2)
 
     def test_select_project_cannot_use_train_split(self):
         projects = [{
