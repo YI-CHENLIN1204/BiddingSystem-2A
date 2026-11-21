@@ -362,3 +362,11 @@ npm run build
 - 依本 repo `generate_full_project_dataset.py` CORE 的結構條件，`SYN-STEEL + SYN-CONCRETE` 而無 `SYN-REBAR` 符合 SC 建案的材料配置；現有 `TwoAPreprocessService` 與 `TwoAScopePolicy` 限制正式數量偵錯只涵蓋結構體鋼筋與混凝土、不包含鋼骨，因此先前 quantity API 僅返回混凝土 1 組為**符合預期的結果**，不應誤報鋼筋辨識 bug。建案 structure_type 欄位的實際 PowerShell 輸出尚未單獨貼出，該結構判讀來自已知生成器與材料組合。
 - 下一驗證點：從 v2 `projects.csv` test split 選取 `structure_type=RC` 且 `project_boq_rows.csv` 同時具 `SYN-REBAR` 與 `SYN-CONCRETE` 的未訓練案，指定 `--project-id` 輸出獨立 workbook + truth（不同檔名），正式 `POST /api/analysis-cases/from-upload` 明確帶入 includedSheetNames，隨後 quantity+major-price 分析。上傳成功件數與兩種 category 結果都要實際核實；不修改 seed / 產學 DB。
 - 測試結果區分：SC quantity+price API **執行 PASS**，但數量只涵蓋混凝土；**RC 雙材料案例尚未測試**。合成價格紅燈與混凝土用量紅燈不代表真實工程異常判定準確率。
+
+
+### 2026-11-21 — RC test-only SYN-00029 409-row workbook generated; live API runs pending
+- 使用者以 `graduation-data-v2/projects.csv` 的 `split=test`、`structure_type=RC` 條件，且實際 `project_boq_rows.csv` 同時具 `SYN-REBAR` 和 `SYN-CONCRETE` 的材料碼，挑出 `SYN-00029`。測試案總樓地板面積 17,262.89 m²、地上 14 層、地下 0 層。
+- Windows 實測 `python tools/graduation-synthetic/export_full_project_excel.py --source .\\graduation-data-v2 --project-id SYN-00029 --output .\\graduation-v2-rc-ready.xlsx --truth .\\graduation-v2-rc-ready-truth.json`：**成功**，明細 `409`、工作表 `7`（實際 6 張明細+1 總表），明細分布結構體 12、基礎及地下 36、樓層材料 38、防水門窗及外裝 95、機電消防及弱電 136、室內裝修與雜項 92，SHA256 `376b320c03aec3d9cfd7cd44c90d43c470677127cbaca838d1aec2521238d464`。
+- 這只是新 RC test-only workbook 實際生成，**尚未經 AnalysisCase/from-upload 正式上傳、尚未執行 RC quantity/price API**；不能聲稱鋼筋/混凝土雙材料已正式分析。
+- 下一驗證點：重用 `127.0.0.1:5261` 同一隔離資料庫、以 UTF-8 HttpClient multipart 明確選取 `truth.detail_rows_per_sheet` 的六張明細表傳 `includedSheetNames`，建立新的 RC target analysis case；保存真實 case/version ID，才依序呼叫 quantity-analysis、major-price-analysis 並保存各 result JSON；檢查是否真的產生鋼筋與混凝土兩組，否則追查 `TwoAPreprocessService` 的工項分類，不改模型範圍。
+- 不重跑 seed，不刪除舊 SC 案件，不連正式 Supabase；本次僅交接文件更新，沒有程式碼及 Migration 修改。
