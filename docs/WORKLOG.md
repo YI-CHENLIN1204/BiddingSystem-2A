@@ -507,3 +507,11 @@ TwoAQuantityAnalysisService.AnalyzeAsync 現新增執行時 fail-closed：僅 Tw
 - Windows 對完整相依模組跑 Python 2/2 PASS，但指定 `graduation-src-extreme-v3` 缺 manifest，產生 Excel 與後續唯讀解析並未執行成功。
 - 修正 `prepare_ui_case.py`：不帶 `--source` 時內建製作獨立合成多工作表 XLSX + truth JSON（不使用歷史、DB、API）；保留指定來源時 strict SHA 驗證；絕不可把 UI fixture 當 holdout 或決標真值。
 - 在既有永久 Python 合成產生器測試加入真正 CLI 測試；不新增或刪除任何其他 CI。接下來只需同步本批兩 commit 並重跑無 `--source` 的指令。
+
+
+## 2026-11-21 — UI 9/9 預檢通過；修正 Windows 測試子程序 CP950
+
+- 使用者本機最新 7 commits cherry-pick 成功，`graduation-ui-smoke-1121-02.xlsx` 已真實生成（15 筆，3 sheets），`verify-ui-preflight --excel` **9/9 PASS**（15 候選列、4 警示），不必重新產檔。
+- 本機 Python 永久回歸 3 項中 2 PASS／1 ERROR；Windows 預設 CP950 stdout 和父程序 UTF-8 decoder 衝突，與 Excel 匯出/API 成功無關。改用 `PYTHONIOENCODING=utf-8` 限定測試子程序，不變動全機環境。
+- 擴充既有 `verify-ui-state.mjs --case-id` 為正式 UI 後續保存驗收：核對 current version 的 Quantity／MajorPrice:結構體工程 同一版兩筆 Run 及完整結果讀回；仍全部 GET/SELECT，不產生新 Run 或歷史資料。永久 `2a-build.yml` 不變、不建臨時 CI。
+- 下個唯一未驗證工作：Windows Python 測試修正實測；UI 上傳與保存 Run／刷新驗證，再來決標草稿及權限稽核；準確度最後。
