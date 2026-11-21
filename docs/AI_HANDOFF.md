@@ -522,3 +522,11 @@ npm run build
 - **不能直接 append 合併新舊 Seed**：舊/新兩套合成資料共用 `SYN-xxxxx` ID，而新生成器變更材料量、結構類型及極端情境，盲目合併會造成跨建案關聯或基準污染。使用者尚未批准實際資料搬遷/刪除；本次不修改任何 DB。
 - **換裝置策略**：程式與腳本/Compose 在 GitHub；合成測試資料靠固定 seed+manifest 重建；需要保存分析案件、真實資料或既存 DB 時，必須有加密/限制存取的 `pg_dump`、`pg_restore` 與版本相容的 EF Core Migration/建庫程序。**Git clone 不會攜帶 Docker Volume 或 DB 真實資料**。未來要建立單一權威測試庫的重建指南、完整可攜備份與還原演練，才可標記跨裝置流程 PASS。
 - 本次為重要技術決策與架構釐清，僅同步更新交接；並未完成 DB 合併、搬遷、Migration 或跨裝置測試。
+
+
+### 2026-11-21 — SRC 整合庫 API Readiness 與城市/基地敏感度 Windows 實測 PASS
+- 使用者目前 C# Git branch `feature/1d-api-integration`。新 PowerShell 視窗呼叫 `docker compose -f tools/graduation-synthetic/compose.graduation-src-db.yaml ps` 顯示 `GRADUATION_SRC_DB_PASSWORD` 環境變數缺值而 Compose 插值失敗；**不是 PostgreSQL 啟動或 API 失敗證據**（環境變數只存在先前 PowerShell 工作階段，已匯入且 API 可用）；不要重新執行 seed、刪資料庫或重建容器。
+- 使用者在 `http://127.0.0.1:5262` 成功讀取 `GET /api/analysis-cases/policy`、`GET /api/detection-category/readiness`、`GET /api/major-category-price/readiness`：數量偵錯 `categoryCount=2`,`readyCount=2`, 鋼筋 `historicalProjectCount=148`/`historicalTransactionCount=958`、混凝土 `historicalProjectCount=193`/`historicalTransactionCount=1215`，均為 `ReadyForEstimation`、最低樣本數 5。價格估算 `eligibleMetadataProjectCount=210`,`availableProjectCount=210`,`missingProjectCount=0`,`ReadyForEstimation`。
+- 使用者實際執行 `verify_similarity_sensitivity.py --source .\\graduation-src-extreme-v3 --api http://127.0.0.1:5262 --output .\\graduation-src-city-site-audit.json`，回傳 `{"project_id":"SYN-00002","city_scores_changed":true,"site_area_scores_changed":true,"status":"PASS"}`。**僅證明相同 SRC 測試案改變城市/基地面積會使 API 參考案分數/排名不同**；尚未證明估算數量/價格的誤差、召回率或紅綠燈性能。
+- 下一階段先取得一個 test-only SRC baseline 的真實 `POST /api/analysis-cases/from-upload`（multipart，帶全部工項表+建案 metadata）結果，再依 `analysisCaseId`、`analysisBidVersionId` 走 `quantity-analysis` 與 `major-price-analysis`，核對 1) 成功解析且不寫歷史 2) 鋼筋混凝土數量與 truth 3) 價格含單價 4) 有正常參考區間。基準案 PASS 之後才批次跑 10 個相互關聯的異常標單與 paired delta 回測。
+- 本次為真實 Windows API 執行成果及環境變數辨析，沒有程式碼或 DB Migration 修改；正式 SRC 上傳/量價偵測仍 NOT RUN。
