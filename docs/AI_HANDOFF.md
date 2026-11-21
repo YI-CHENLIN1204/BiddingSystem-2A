@@ -593,3 +593,11 @@ npm run build
 - 新增 `tools/graduation-synthetic/test_holdout_provenance.py` commit `f67a4548`：離線 mock CSV 測試 scope/shock/non-normal 声明、hash 篡改拒絕、baseline Red 不推導誤報，預期單元測試從 23 增加至 26。新增 README 使用方法 commit `7d03bb3c`，更新 `docs/PROJECT_CLOSURE_PLAN.md` commit `689ffbe1`。
 - **未執行**使用者 Windows `python -m unittest`（26預期）、未讀取當地來源產生 provenance report、未新增 API/DB/Migration/模型參數或更動歷史資料。下一驗證點：`git fetch --no-tags --refmap= origin main` + 只還原新增兩工具（先確認未提交同名檔案） → unittest 26/26 → 只讀 `audit_holdout_provenance.py --source .\\graduation-src-extreme-v3 --paired-report .\\graduation-src-paired-api-report.json --output .\\graduation-src-holdout-provenance.json`；以實際輸出確認 contamination 分布，再規劃合成乾淨驗證集或業界工程設計標籤。
 - 收斂期間不再重做 13 件 `--execute` 或清空 `55433/55432`，亦不擴大鋼骨正式紅綠燈。舊 `main`/feature API 差異待 P0 下一項整合。
+
+
+### 2026-11-21 — P0 正式 Windows Holdout Provenance 稽核結果：26/26 PASS、45 Test、3 Baseline
+- 使用者在 `feature/1d-api-integration` 成功自 GitHub `main` 取得 `audit_holdout_provenance.py`、`test_holdout_provenance.py`。在 Windows `python -m unittest discover -s tools/graduation-synthetic -p "test_*.py" -v`：**Ran 26 tests in 19.041s, OK**，包含 3 個新增正常標籤/篡改保護測試全部 PASS。刻意的 `test_refuse_overwrite` 測試列印錯誤訊息但 unittest 狀態仍 OK。
+- 實際執行 `audit_holdout_provenance.py --source .\\graduation-src-extreme-v3 --paired-report .\\graduation-src-paired-api-report.json --output .\\graduation-src-holdout-provenance.json` 回傳 `{"status":"PROVENANCE_AUDITED_NOT_ACCURACY","testProjectCount":45,"pairedBaselines":3,"readyForFalsePositiveRate":false}`。只讀 CSV SHA 與 label，不寫 DB、不呼叫正式 API。
+- Test RC18（非 extreme16）：混凝土 18 無 shock／0有、鋼筋 17／1、結構大項15／3。SC17（非 extreme15）：混凝土15／2、鋼筋不適用、結構大項11／6。SRC10（非 extreme8）：混凝土10／0、鋼筋10／0、結構大項7／3。這些是**生成器記錄倍率變化篩檢**，不是正常值保證，也不是模型準確率。
+- 3 Baseline 交叉：RC `SYN-00029` 混凝土 Normal/0、鋼筋 Low/0、結構總價 Normal/0；SRC `SYN-00030` 混凝土 Normal/0、鋼筋 Low/0、結構總價 Low/0；SC `SYN-00026` 混凝土 Normal/0、結構總價 Low/**4 筆原始生成器 shock**。因此 RC/SRC 的基準紅燈不是已記錄的 group shock 直接引起；SC shock 可能與總價有關但未驗證因果。均 `engineeringNormalCertified=false`，不可用來宣稱誤報率。
+- 已更新 `docs/PROJECT_CLOSURE_PLAN.md` commit `de881d5d3e4c9b5e33d073886f69ea24fb8de8c0`。下一點：對 3 baseline Low 根據正式 API 的對照組成與相似建案資訊做只讀離線分析，確認是否為合成結構分布/材料 scope/區間邊界之問題，再決定如何建立經審定正常測試真值。不要重跑13次 `--execute` 或重 seed、改模型門檻；沒有程式碼/資料庫/Migration 變更。
