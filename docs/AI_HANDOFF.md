@@ -398,3 +398,13 @@ npm run build
 - RC 結果仍為混凝土 P15/P50/P85=4635.50/5127.43/5696.79 m3，實際 3885.108 Low/Red；鋼筋 P15/P50/P85=567635.47/830851.50/953640.20 kg，實際 496658.648 Low/Red。由於 target 觀測數量正確，後續優先比對類別 mapping 的歷史建案 `ActualQuantity` 彙總、建案面積歸一化、Top8 相似案件權重、生成器的組數與量係數／注入異常，避免僅為降低紅燈而修改模型。
 - 下一驗證點：使用既有 `graduation-v2-rc-quantity-result.json` 查看鋼筋與混凝土各 Top8 `references` 的 `usagePerArea`、`actualQuantity`、`floorArea`、`similarityScore`、`finalWeight`，和待估案的 `observedUsagePerArea` 比對。用相同 SYNTHETIC 測試集多案回測才能談 coverage/FP/FN/MAE，兩例不足以支持準確率結論。
 - 本次僅文件更新；沒有更動 DB、Migration、估算演算法、訓練資料與檔案解析。
+
+
+### 2026-11-21 — RC SYN-00029 Top8 歷史參考樣本核查完成；本階段功能驗收收尾
+- 使用者以正式 API 保存的 `graduation-v2-rc-quantity-result.json` 唯讀顯示 `references`，核對兩類材料待估案單位面積用量與 Top8 歷史建案的用量範圍。
+- 混凝土：待估 `observedUsagePerArea=0.225055 m3/m2`、`effectiveSampleSize=6.65`；Top8 參考建案的 `usagePerArea` 依各列為 0.252721、0.301232、0.269415、0.268524、0.272406、0.297020、0.334799、0.330002，範圍 **0.252721～0.334799 m3/m2**。待估值低於全部八個參考案，與此前 P15=4635.50 m3、Low/Red 的方向一致。
+- 鋼筋：待估 `observedUsagePerArea=28.770307 kg/m2`、`effectiveSampleSize=6.99`；Top8 `usagePerArea` 依各列為 44.377275、30.088898、32.881833、48.129340、55.242210、39.231814、51.806698、56.700138，範圍 **30.088898～56.700138 kg/m2**。待估值亦低於全部八個參考案，與此前 P15=567635.47 kg、Low/Red 的方向一致。
+- **本階段已完成的功能驗證**：210 train-only 歷史建案、99959 筆歷史交易和標單入隔離 PostgreSQL；Docker/.NET 建置；readiness Quantity 2/2 和 Price 210/210；SC SYN-00002 574/574 解析，Quantity 混凝土 Low/Red、MajorPrice High/Red；RC SYN-00029 409/409 解析，Quantity 鋼筋與混凝土 2/2 有結果且 Low/Red、MajorPrice Normal/Green；RC truth 數量逐項與 API observedQuantity 完全吻合；參考樣本數值與異常方向一致。
+- **尚未完成、非本階段阻擋事項**：需以更多 test-only 建案進行正式 API 批次回測，才有條件計算 P15/P85 區間涵蓋率、準確度、假陽性/假陰性、分類別誤差；合成歷史非真實工程校準，不得以此聲稱真實營造工程準確度。價格異常的正確性亦需有獨立正常/異常真值標籤才能判斷。不要將「API 執行 PASS」寫成「模型準確率 PASS」。
+- 重要決策：使用者希望在已完成此輪獨立資料庫／上傳／RC+SC 數量與價格 E2E 的功能驗收後轉入下一項工作；本輪功能驗收可收尾，不繼續要求零碎逐案檢查。下階段由使用者新任務決定；若轉成模型品質/報告工作，需先規劃 batch holdout 回測與實測 API 證據圖表。
+- 已淘汰方案：不採用已移除的 Z-score、LSTM 或 Razor 來敘述目前方法。現行 API 參考樣本具有 similarityWeight/timeWeight，依實際程式和回傳描述。無新資料庫 schema / Migration / C# 演算法改動，本次僅驗證紀錄。
