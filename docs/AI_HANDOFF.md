@@ -207,3 +207,12 @@ npm run build
 - `main` commit `294a532d`：`docs/GRADUATION_DELIVERY_2026-11-25.md` 新增國立中興大學總務處官方 Excel/ODS 工程預算書下載頁、臺中市住宅發展工程處總標單範本。這些是**格式參考資料**，不是已取得的實際工程決標數量資料。
 - 尚未解決：缺實際可核對來源和建案特徵的多案價格／用量資料，不能回報真正的企業精準度；最新 v0.5 Python 測試及實際編譯結果仍尚未取得。
 - 下一步：以 Windows 執行新的 unittest、v0.5 XLSX、離線 holdout 指標，再收集可授權使用且已去識別化的真實詳細標單做外部驗證。
+
+
+### 2026-11-21 — Windows v0.5 測試 10/12，修正兩個生成器回歸
+- 用戶端：Windows `C:\\Users\\User\\Desktop\\BiddingSystem-2A`，執行 `python -m unittest discover -s tools/graduation-synthetic -p "test_*.py" -v`；結果 **Ran 12 tests in 0.526s; FAILED (failures=2)**。其中 `test_refuse_overwrite` 顯示的 argparse error 為預期測試且回傳 ok。
+- 失敗 1：`test_deterministic_multisheet_and_defect_truth` 斷言任一工作表欄寬 >=28；`工程總表` 沒有明細表表頭，預設寬度均 17。修正為摘要表預設欄寬 38，正式明細表仍按工項名稱、規格、備註及價量欄設定寬度。
+- 失敗 2：`test_no_basement_project_does_not_invent_underground_items`；無地下室時僅過濾「地下室、連續壁、擋土、基坑」，卻漏掉「地下停車場標線及標誌」等名稱。統一將「地下」納入過濾（只在 `basement_floor_count=0` 適用），對有地下室建案保留相關工程。
+- 程式 Commit：`2abb1179510ed5d55fe3e904f774746a2fad97e9`（`main`）；修改 `tools/graduation-synthetic/generate_irregular_excel.py`；本交接另行提交。未修改原測試斷言，無 DB、Migration、API 或正式估算演算法變更。
+- 目前驗證：**修正前 10 項 PASS／2 項 FAIL**，修正已提交；修正後的 Windows unittest 尚未回報，不可聲稱已修復通過。正式企業資料來源、真實精準度與 ASP.NET 解析器 E2E 仍未驗證。
+- 下一步：在 feature 分支安全同步 `git fetch origin main`；`git restore --source=origin/main --worktree -- tools/graduation-synthetic/generate_irregular_excel.py`；重跑 12 個測試，全部 OK 後才產生新 v0.5 Excel 和合成 holdout JSON。
