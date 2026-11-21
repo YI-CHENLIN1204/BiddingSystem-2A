@@ -213,6 +213,8 @@ def export(source, output, truth, project_id=None, seed=147, anomaly_scenario=No
                 "rendered_item_name": raw["item_name"], "source_quantity": raw["quantity"],
                 "source_unit_price": raw["unit_price"], "scenario": scenario,
                 "expected_quantity": q, "expected_unit_price": price,
+                "expected_amount": amount,
+                "baseline_amount": baseline_by_line[raw["synthetic_line_id"]]["amount"],
                 "source_data_origin": "SYNTHETIC",
                 "baseline_quantity": baseline_by_line[raw["synthetic_line_id"]]["quantity"],
                 "baseline_unit_price": baseline_by_line[raw["synthetic_line_id"]]["unit_price"],
