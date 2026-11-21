@@ -794,3 +794,14 @@ npm run build
 - `git status -sb` 執行時有四個未追蹤檔：`compare_src_sensitivity.py`、`src-batch-api-audit.json`、`src-sensitivity-comparison.json`、`src_batch_audit.py`；不得清除或覆蓋。其後未再次執行 status。
 - 驗證界線：**只驗證整合分支的前端建置與成功 cherry-pick**；瀏覽器 UI/5174 proxy 5263/55433、Excel 上傳、分析保存、決標發布與重新整理持久化、權限及稽核 E2E **尚未執行**；不能以此記為系統交付 PASS。
 - 下一驗證：先在同一 PowerShell 明確設定 `VITE_API_PROXY_TARGET=http://127.0.0.1:5263`，避免 Vite 預設 5261；確認實際 5263 API 與隔離 55433 DB 正常，再啟動 `npm.cmd run dev`，使用**新建、獨立且標示 SYNTHETIC 的測試案件**進行 UI 上傳、數量／價格分析與草稿回寫／覆核／發布；不要重跑原 13 案或重新 seed。
+
+
+### 2026-11-21 — 2A UI 一次性收尾套件：案件導覽、決標發布冪等、唯讀驗證腳本與 CI
+- 程式分支：\`feature/1d-api-integration\`（尚未 cherry-pick 到使用者 \`integration/src-closure\`、未合併 \`main\`）；程式 commits：\`95ca789a03badd806d641b609f53b1ab143c0bbb\`（案件建立後開啟明細）、\`51431d38814dee61815cd8e884ed04011bf4af5c\`（唯讀自動檢查）、\`b3528fd99775895c2a3a11657388c23c16449c0e\`（決標發布冪等）、\`b6bc1eb1448f6259f8bd59b6743cd3bc4a13caa2\`（草稿成功與後續載入失敗分流）、\`b6b3e282b72777e944cbc8b204077b86fab70d10\`（前端 CI）；本節另由 \`main\` 文件 commit 保存。
+- \`frontend/src/views/AnalysisCasesView.vue\`：CreateFromUpload 與 CreateFromOneD 讀回 API 的真實 \`analysisCaseId\`，建檔成功後直接導至指定分析案件；導頁失敗不把已成功的後端建檔誤標示為失敗，以免使用者重複匯入。
+- \`frontend/src/views/FinalBidView.vue\`：決標發布採 \`Idempotency-Key\` + \`/projects/{id}/history-operation/{operationId}\` 收據核對，網路失敗未證實提交時保留同一 operation ID；既有 \`ProjectDetailView.vue\` 已使用的後端機制不變。透過 URL \`projectId\` 切換建案時會重新載入，而不是沿用舊審核畫面；成功匯入決標草稿後把導頁／資料重新讀取失敗和「草稿匯入失敗」明確區分，避免重複上傳。正式發布仍需 UI 人工確認。
+- \`scripts/verify-ui-preflight.mjs\`：只對本機 \`127.0.0.1:5263\` 與 \`127.0.0.1:5174\` 進行 health、policy、案件清單、價格/鋼筋/混凝土 readiness、Vite proxy 與 Vue route 檢查；可用 \`--excel\` 呼叫已查證不寫 DB 的 \`/api/tender-import/preview\` 和 \`inspect\`。非空／數量不足時 fail closed；不傳正式建案、不發布歷史。腳本特別註明無法由 HTTP readiness 單獨證實 DB 確實是 55433。
+- \`.github/workflows/graduation-ui-build.yml\`：feature/main 的前端變更觸發 Node22 \`node --check\`、\`npm ci\`、\`npm run build\`。首次 GitHub Actions run \`44912749097\` 建立時為 in_progress，結果須重新查核才可標示 PASS。
+- 安全與資料庫：**無 DB schema、EF Migration、估算演算法或正式 scope 變更**；未動 55432/55433 volume、既有 13 案、Supabase。對鋼骨／模板／土方仍為研究候選，待證據後啟用，不能宣稱已新增正式異常偵測。
+- 驗證：程式檔與 workflow GitHub 提交成功；使用者先前的 5 個 cherry-pick + Vue build PASS 僅適用上一批 \`9caa06c\`，**不等於本批 commit 經 Windows 編譯或 UI E2E 通過**。新一批本機 Vue build、實際 5174→5263→55433 DB、Excel preview、Upload→Quantity/Price Runs→刷新、FinalBid 審核發布及稽核仍 **待執行**。
+- 下一步最短驗證：安全 fetch + cherry-pick 新 5 個 feature commits 至 \`integration/src-closure\`（保留未追蹤比較工具／JSON），\`cd frontend; npm.cmd run build\`，按實際設定啟動 Vite 5174→5263；\`node scripts/verify-ui-preflight.mjs --excel <全新合成標單路徑>\` 先確認唯讀檢查。其後以新合成 UI 測試案執行 UI 寫入，必要時先 DB 備份及核對 55433 身分；不可把 holdout 當 Approved train。最後才做 accuracy。
