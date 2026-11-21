@@ -276,7 +276,7 @@ async function loadCase() {
     const [caseResult, runResult, oneDResult, policyResult] = await Promise.all([
       api<CaseDetail>(`/analysis-cases/${caseId}`),
       api<RunSummary[]>(`/analysis-cases/${caseId}/runs`),
-      api<OneDStatus>('/one-d/status'),
+      api<OneDStatus>('/one-d/status').catch(() => ({ configured: false, message: '1D 服務無法連線，仍可自行上傳 Excel' })),
       api<AnalysisPolicy>('/analysis-cases/policy'),
     ])
     detail.value = caseResult
