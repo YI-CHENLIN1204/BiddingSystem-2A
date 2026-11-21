@@ -777,3 +777,12 @@ npm run build
 - DB/API/Migration/演算法：無修改，沒有碰測試 DB 或 Supabase；1D 正常可用時仍可選擇。
 - 驗證：GitHub 兩檔程式提交 **成功**；前端編譯、瀏覽器 UI、Excel 解析、決標回寫／資料持久化／稽核 E2E **未執行**，不能標記 PASS。
 - 下一步：整合分支的編譯與 UI 功能測試；確定新 5263 backend + 55433 隔離 DB；用新合成案件完成上傳→工作表→分析→決標草稿→人工審核→正式發布→重整持久化；候選工項先評估證據門檻，最後才做 holdout 準確度。禁止重 seed／覆寫原 13 案。
+
+
+### 2026-11-21 — 決標審核 UI 可從既有建案重新進入（feature 分支）
+- Branch: `feature/1d-api-integration`；程式 commits `96a894daff90c73f4d2ffc3669375fe75752e0b8`, `82285b83dc6a2872cb0f6be5d45b48583f1842ca`, `f3d1439824302139a7395c8ef5391349d8bdbbc6`；程式仍未合併 main。
+- 修改 `frontend/src/views/FinalBidView.vue`：新決標草稿上傳成功後，URL 保留 `?projectId=<id>`；重新進入時驗證正整數且 JavaScript safe integer，依既有 API 重新讀取材料主檔、映射摘要、2A 審核狀態及分頁工項。這是從 DB 重新查詢，並非持續保存前端記憶體狀態。
+- 修改 `frontend/src/views/ProjectDetailView.vue`：對有最終標單的建案顯示「開啟決標工項審核」連結，導回指定建案的決標審核 UI。既有工項資料修改／核准規則不變。
+- DB/API/權限/Migration：無變更。歷史發布仍經既有 `/projects/{projectId}/publish-history` 路徑和後端審核；沒有替使用者自動發布或修改正式歷史庫。
+- 驗證：GitHub 檔案提交與後續來源查核成功；**仍未完成前端編譯、實際 UI 跳轉、API E2E、決標持久化／刷新、權限與稽核測試**，絕不可記為已通過。
+- 下一個必要驗證：在使用者 integration worktree 安全取回上述改動，對實際 5174→5263→55433 執行新合成案例瀏覽器流程；檢查刷新後同一 projectId 的 Mapping Summary、2A Summary、Items 與發布狀態確實一致，再做畢專估算／異常及最後準確度比對。
