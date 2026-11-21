@@ -519,3 +519,14 @@ node .\scripts\verify-ui-state.mjs --case-id <案件編號>
 ```
 
 此模式保留既有 4 項唯讀 Docker/DB/API 對帳，額外要求案件名稱以 `SYNTHETIC-UI-驗收-` 開頭、同一個目前版本有已保存的 `Quantity` 與 `MajorPrice:結構體工程` Runs，並能用 GET 讀回兩份完整 payload，成功才回報 **5/5**。這不會建立 Run、寫資料或批准歷史；不等於 UI 瀏覽器操作有自動化測試，也不代表異常判定準確。
+
+
+### 2A 版本工項納入範圍（長期功能）
+
+在待偵錯案件詳情，新增**數量偵錯工項納入範圍**：前端讀取 `GET /api/analysis-cases/{caseId}/versions/{versionId}/quantity-scope`，由正式 `TwoAPreprocessService.Build` 的**同一工項來源轉換**計算每列 Included／Excluded／Pending、原因及單位狀態。介面顯示完整版本工項數、數量偵錯納入／排除／待確認數，並展開排除明細（工項、原始單位數量、來源 Excel 工作表/列號、原因）；材料相關名稱被排除時提供人工覆核提醒。
+
+此 API 為只讀：不重算並存入新 AnalysisRun、不修改歷史交易、也**不修改**既有分類字典/門檻。介面是按現行規則**重新計算**的版本分類，不應宣稱能逐字重現未來規則改動前的舊 Run。複合工項「材料＋施工」是否可拆分，仍須由工程人員核實。
+
+永久回歸：`dotnet run --project tests/WorkbookParserTests/WorkbookParserTests.csproj -c Release` 核對合成 case #15 的 15 列、4 個排除提示、材料候選量（鋼筋 38,000kg／混凝土 3,650m³）及結構體價格仍計入全部 10 列（29,268,000 元）；`node scripts/verify-ui-state.mjs --case-id 15` 在 5263→55433 測試環境中增加第六項 quantity-scope API 驗證（需新版後端，**不能**沿用前一版 5/5 作 6/6）。
+
+變更後應重新啟動本機 5263 API；只有前端 Vite HMR 不足以載入新 C# Controller。不可重 Seed、不重傳已建的 V1、不重跑既有 Quantity/Price Run、不可把合成 smoke 案例發布為 Approved History。
