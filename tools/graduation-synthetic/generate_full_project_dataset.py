@@ -99,6 +99,11 @@ CORE = {
            ("SYN-CONCRETE", "預拌混凝土 f'c=280（結構體）", "m3", "結構體工程", .34)],
     "SC": [("SYN-STEEL", "H型結構鋼骨製作及吊裝", "kg", "結構體工程", 54.0),
            ("SYN-CONCRETE", "樓版與基礎預拌混凝土 f'c=280", "m3", "結構體工程", .22)],
+    # Experimental SRC fixture: three material families, independently
+    # parameterized. This is NOT a quantity standard or a new approved model.
+    "SRC": [("SYN-STEEL", "SRC 鋼骨構材示意", "kg", "結構體工程", 35.0),
+            ("SYN-REBAR", "SRC 鋼筋材料示意", "kg", "結構體工程", 42.0),
+            ("SYN-CONCRETE", "SRC 包覆及樓版混凝土示意", "m3", "結構體工程", .30)],
 }
 UNDERGROUND = ("地下", "基坑", "連續壁", "擋土", "筏式")
 FINISH_KEYWORDS = ("磁磚", "天花板", "油漆", "地坪耐磨", "隔間")
@@ -149,10 +154,16 @@ def enrich_project(project, rng):
     return project
 
 
-def generate_full(count, seed):
+def generate_full(count, seed, include_src=False):
     if not 20 <= count <= 10000:
         raise ValueError("count must be between 20 and 10000")
     projects, _ = make_projects(count, seed)
+    if include_src:
+        # Opt-in and deterministic: preserve all existing RC/SC v2 fixtures.
+        # No database import; SRC must pass held-out verification first.
+        for index, project in enumerate(projects):
+            if index % 3 == 2:
+                project["structure_type"] = "SRC"
     rng = random.Random(seed + 24791)
     projects = [enrich_project(p, rng) for p in projects]
     history, detail = [], []
@@ -236,11 +247,13 @@ def main(argv=None):
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument("--count", type=int, default=300)
     parser.add_argument("--seed", type=int, default=20261119)
+    parser.add_argument("--include-src", action="store_true",
+                        help="opt-in experimental SRC fixtures; use NEW output directory")
     parser.add_argument("--output", type=Path, required=True)
     args = parser.parse_args(argv)
     if args.output.exists() and any(args.output.iterdir()):
         parser.error("output directory must be empty (refusing overwrite)")
-    projects, histories, lines = generate_full(args.count, args.seed)
+    projects, histories, lines = generate_full(args.count, args.seed, include_src=args.include_src)
     args.output.mkdir(parents=True, exist_ok=True)
     extended = PROJECT_FIELDS + ["site_area", "facade_system", "finish_level", "foundation_system", "site_condition"]
     output = [("projects.csv", extended, projects),
@@ -257,10 +270,13 @@ def main(argv=None):
         "project_count": len(projects), "transaction_count": len(histories),
         "boq_line_count": len(lines), "files_sha256": digests,
         "distinct_material_codes": len(catalog),
+        "experimental_src_enabled": args.include_src,
+        "structure_type_counts": dict(Counter(p["structure_type"] for p in projects)),
         "min_lines_per_project": min(counts.values()),
         "max_lines_per_project": max(counts.values()),
         "limitations": [
             "Quantities, design choices, prices and site conditions are synthetic, NOT measured construction facts.",
+            "SRC templates are research-only: no automatic production scope/traffic-light expansion.",
             "All historical rows correspond 1:1 to project_boq_rows.csv, but they are not real executed transactions.",
             "Template collection is illustrative, not an exhaustive BOQ; no actual supplier quotations.",
             "Do not report synthetic model errors as real-world engineering accuracy.",
