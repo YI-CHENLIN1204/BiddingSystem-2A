@@ -263,3 +263,14 @@ npm run build
 - 新增 `docs/GRADUATION_E2E_ACCEPTANCE_2026-11-25.md` commit `a492e59a`，後續更新 `c13efdc3`；更新 `tools/graduation-synthetic/README.md` commit `c02c9a96`，列出分階段執行及 DB 不得污染產學資料庫的安全檢查。
 - **實測狀態**：使用者舊版 v0.5 Python unittest 12/12 PASS、舊 300 案／600 交易成功、舊 360 行 Excel 已生成、舊代理回測 83 項結果已取得；**v2 新功能 Python unittest、PostgreSQL Docker 啟動、`GraduationSeed` C# 編譯與執行、正式 ASP.NET AnalysisCase API、HTML 圖表均尚未實測**。不可混淆。
 - 下一個驗證點：使用者同步 `tools/graduation-synthetic`、完整 Python unittest、生成 v2 300 建案及 train-only seed，先確認樣本多樣性與來源，再於**全新本機隔離 DB**執行 dotnet build + 匯入，最後 test-only Excel 上傳正式 AnalysisCase API 和視覺化。
+
+
+### 2026-11-21 — 11/25 畢專範圍收斂：數量估算與價格異常偵錯，並修正 v2 測試型別
+- 使用者明確要求**停止擴張功能**；本次畢專只驗證 (1) 相似建案工程數量合理範圍／數量異常、(2) 價格異常偵錯。非結構工項依舊保留在真實感標單和歷史資料中作為解析／建案組成／未來擴充依據，**不等於全部工項都已提供正式估算與偵錯**。
+- 核對 `feature/1d-api-integration`：`崴正/Services/TwoAScopePolicy.cs` 目前將正式數量偵錯限制在「結構體工程／鋼筋與混凝土」；`PriceEstimationMajorCategories` 也只包含「結構體工程」。需要優先實測現有 `DetectionCategoryRangeService`、`TwoAQuantityAnalysisService` 及 `MajorCategoryPriceRangeService`，不要自行宣稱其它工程項目已在正式範圍。
+- 使用者 Windows 實測 `python -m unittest discover -s tools/graduation-synthetic -p "test_*.py" -v`：**Ran 17 tests in 5.379s; FAILED (failures=1)**，其他 16 項 PASS。
+- 失敗根因：`tools/graduation-synthetic/test_full_project_dataset.py` 在直接取得 `generate_full()` 的 in-memory 建案時，以字串 `"0"` 比對 `basement_floor_count`；但 `generate.py` 中該欄原型別是 `int`，故 `0 == "0"` 永遠為 false，並非測試已證實生成器完全沒有無地下室建案。該測試其餘欄位是 CSV 讀回時可能成字串，混用型別造成誤判。
+- 修正 commit `f33cf801158d6e738123d1a7ee831f6029a99c3c`（`main`）：只改 `test_full_project_dataset.py` 斷言為 `int(p["basement_floor_count"]) == 0`，不更動合成數量、工程條件、估算算法及 DB。未刪除斷言，不放寬「必須有無地下室案例」要求。
+- **修正後 17 項測試仍待 Windows 重跑**；不能宣稱已全數 PASS。v2 大型資料生成、實際隔離 PostgreSQL 匯入、正式 API 數量估算／價格異常端到端和圖表仍未取得本機實證。
+- 下一驗證點：使用者維持 `feature/1d-api-integration`，先 `git fetch origin main` 和 `git restore --source=origin/main --worktree -- tools/graduation-synthetic/test_full_project_dataset.py`，重跑全部 Python unittest。通過後只先生成 v2 歷史資料與 test-only Excel，確認兩種偵錯的資料庫可用性；不得連線產學正式 Supabase。
+- 11/25 報告核心圖形：數量預測 P15/P50/P85 與真值、P50 誤差與區間涵蓋率；價格異常的歷史大項單位面積金額分布與待估值位置及判定；所有數據註明是合成模擬或已驗證真實來源，不將離線代理精度稱為正式 C# 系統精度。
