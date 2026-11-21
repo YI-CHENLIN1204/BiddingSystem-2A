@@ -492,3 +492,17 @@ node .\scripts\verify-ui-preflight.mjs --excel .\graduation-ui-new.xlsx
 `prepare_ui_case.py` 依賴同一目錄中的正式 `export_full_project_excel.py` 和 `generate_irregular_excel.py`，三者及其回歸測試都應存在於同一版本，否則應停止，**不可**把缺少 Excel 造成的 `ENOENT` 解讀成解析 API 故障。產生器要求已校驗的 SYNTHETIC v2 來源與 test 分組，拒絕覆寫既有檔案。
 
 以上驗證皆不提交或發布歷史資料；真正在瀏覽器建立待偵錯案件／Run、決標草稿審核與權限稽核仍須另外 E2E。**test/holdout 案件絕對不可匯入 Approved 歷史基準**。CI 成功也不等於已取得真實工程估算準確度。
+
+
+### 不需外部資料夾的 UI 驗收 Excel
+
+若 Windows 本機沒有 `graduation-src-extreme-v3`，**不要**再傳 `--source .\graduation-src-extreme-v3`。直接執行：
+
+```powershell
+python .\tools\graduation-synthetic\prepare_ui_case.py --output .\graduation-ui-1121-01.xlsx --truth .\graduation-ui-1121-01-truth.json
+node .\scripts\verify-ui-preflight.mjs --excel .\graduation-ui-1121-01.xlsx
+```
+
+省略 `--source` 時會用內建的結構體／鋼筋／混凝土／鋼骨／基礎測試明細生成三工作表的**純 UI smoke fixture**；不依賴來源資料夾、外部 API 或 DB，亦不需要重新 seed。產生器同時提供建案名稱、結構、年月、面積等 UI 欄位。這份數字僅為人工示例，**不是 holdout 真值或實際估算品質證據**，只能建立 2A 待偵錯案件；不得用於決標回寫／正式歷史發布。
+
+如果**有**受 SHA 驗證的合成資料來源，可明確提供 `--source <資料夾>`，沿用原先挑選 test split 未使用建案的模式。明確指定不存在的來源資料夾仍會 FAIL，不能靜默轉成內建資料。
