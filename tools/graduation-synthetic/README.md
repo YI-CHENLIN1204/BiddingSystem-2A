@@ -326,3 +326,24 @@ $r.paired_deltas | Select-Object scenario,baseProjectId,priceObservedDelta,basel
 ```
 
 此腳本先檢查 13 份檔案與 SHA，僅允許 HTTP localhost，API readiness 未達標就不建立案件，並拒絕覆寫結果；發生中途錯誤會保留 `.partial.json` 記錄已建立案件 ID，避免無聲重跑造成重複測試。輸出結果是 **API smoke test／成對變化**，尚不能充當模型準確率、正式工程驗證或新增鋼骨紅綠燈的審批證據。腳本本身尚待使用者 Windows 真正執行；原 SRC 基準 `SYN-00030` 已成功上傳 446/446、quantity 和 price API 成功，但鋼筋、結構總價在**未注入**版本即為 Red，因此必須將基準異常與注入異常分開。
+
+
+### 收斂階段 P0：不重建資料的 holdout 來源稽核（2026-11-21）
+
+`generate_full_project_dataset.py` 已經把合成工項群組是否加過隨機倍率（約5.5%機率，×0.45或×1.8）寫入 `historical_transactions.csv` 的 `synthetic_label` 欄。透過 `synthetic_transaction_id` 與 `project_boq_rows.csv` 一對一串接，可稽核每個 test 建案的鋼筋、混凝土及結構體價格工項是否存在**生成器記錄的群組倍率變動**。此稽核無 API 呼叫、不修改歷史或資料庫、無新模型。
+
+```powershell
+# 本機 feature branch 不切換；僅拉取 main 中的新工具
+git fetch --no-tags --refmap= origin main
+git restore --source=FETCH_HEAD --worktree -- tools/graduation-synthetic/audit_holdout_provenance.py tools/graduation-synthetic/test_holdout_provenance.py
+python -m unittest discover -s tools/graduation-synthetic -p "test_*.py" -v
+
+# 唯讀300案來源與已完成的13件 API 報告，產生新報告，不覆寫
+python tools/graduation-synthetic/audit_holdout_provenance.py --source .\\graduation-src-extreme-v3 --paired-report .\\graduation-src-paired-api-report.json --output .\\graduation-src-holdout-provenance.json
+
+$r = Get-Content .\\graduation-src-holdout-provenance.json -Raw -Encoding UTF8 | ConvertFrom-Json
+$r.byStructure | ConvertTo-Json -Depth 8
+$r.pairedBaselines | ConvertTo-Json -Depth 8
+```
+
+**判讀警告**：`noRecordedGeneratorShock=true` 只能表示指定工項/大項沒有記錄生成器的群組×0.45或×1.8變動；**不是「正常工程」真值**。即使未記錄倍率，仍有合成設計規則、地區/年度差異、合成單價帶、參考分布和自然隨機差異。不得把 API baseline Red 直接計成 false positive。對沒有鋼筋的 SC，rebar scope 標記不適用。報告 `readyForFalsePositiveRate=false` 會固定關閉正式誤報率結論，直到有獨立且經審定的真值。
