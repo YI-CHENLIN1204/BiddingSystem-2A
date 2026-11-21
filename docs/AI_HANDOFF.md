@@ -216,3 +216,13 @@ npm run build
 - 程式 Commit：`2abb1179510ed5d55fe3e904f774746a2fad97e9`（`main`）；修改 `tools/graduation-synthetic/generate_irregular_excel.py`；本交接另行提交。未修改原測試斷言，無 DB、Migration、API 或正式估算演算法變更。
 - 目前驗證：**修正前 10 項 PASS／2 項 FAIL**，修正已提交；修正後的 Windows unittest 尚未回報，不可聲稱已修復通過。正式企業資料來源、真實精準度與 ASP.NET 解析器 E2E 仍未驗證。
 - 下一步：在 feature 分支安全同步 `git fetch origin main`；`git restore --source=origin/main --worktree -- tools/graduation-synthetic/generate_irregular_excel.py`；重跑 12 個測試，全部 OK 後才產生新 v0.5 Excel 和合成 holdout JSON。
+
+
+### 2026-11-21 — Windows v0.5 生成器修正後實測 12/12 PASS；資料集目錄缺失
+- Commit／Branch：本節為 `main` 交接紀錄；前一修正 `2abb1179510ed5d55fe3e904f774746a2fad97e9`。
+- 使用者於 `C:\\Users\\User\\Desktop\\BiddingSystem-2A` 執行 `git fetch origin main`、`git restore --source=origin/main --worktree -- tools/graduation-synthetic/generate_irregular_excel.py` 後重跑全部測試。
+- **實測 PASS**：`Ran 12 tests in 0.968s; OK`，含 `test_deterministic_multisheet_and_defect_truth`、`test_no_basement_project_does_not_invent_underground_items` 均為 ok。防覆寫測試顯示 argparse error 是預期被拒案例，該測試仍為 ok。
+- 後續 CLI 產生 `graduation-irregular-v05.xlsx` 與 `graduation-synthetic-holdout-v01.json` **均失敗**，原因為 `[Errno 2] No such file or directory: 'graduation-data\\manifest.json'`，即目前工作目錄沒有指定的合成 CSV manifest。此前成功的資料來源工作路徑為另一個 `C:\\Users\\lyich\\OneDrive\\桌面\\BiddingSystem-2A`，不可假定現有檔案已同步或跨電腦存在。
+- 指引：先執行 `python tools/graduation-synthetic/generate.py --count 300 --seed 20261119 --output .\\graduation-data`，再重跑 Excel 與 holdout 命令；輸出檔不得覆寫，如目錄已有資料改用新名稱並同步調整 `--source`。
+- 目前狀態：Python 單元測試 **PASS 12/12**；v0.5 360 列 XLSX 生成 **未完成（缺來源檔）**；離線合成 holdout 報告 **未完成（缺來源檔）**；ASP.NET API E2E、實際企業資料精準度 **尚未測試**。無 DB／Migration／API 修改。
+- 下一步：在目前 Windows 工作目錄先生成 300 建案／600 合成交易與 manifest，再產出 XLSX、JSON 標準答案、離線分位數／常態基準比較結果；記錄真實執行數值供 11/25 報告。
