@@ -585,3 +585,11 @@ npm run build
 - 目前已驗證：Windows Python unittest 23/23；城市/基地面積相似度敏感度；獨立 SRC DB train-only 210 案/101166交易；13份 API Excel/26分析成功；受控量價高低方向大體符合注入邏輯。但 3 baseline 中鋼筋或大項價格原已 Red，故正常誤報率、實際準確性、外部有效性**尚無足夠證據**。不拿 10 個衍生情境當 10 個獨立建案。基準乾淨與可追溯標籤是下一個最先處理的證據缺口。
 - `main` / `feature/1d-api-integration` 差異尚未整合，Vue UI 全流程、build/CI、跨裝置 DB 恢復等仍需驗證。保留既有 `55432` 和 `55433`；不重 seed、不 `down -v`、不修改正式 Supabase。嚴格模式下未核准鋼骨/模板/土方仍不上線。
 - 此次僅新增驗收/收斂文件與同步交接；**未修改應用/資料庫/模型，未執行新的 Python/.NET/E2E 測試**。下一執行點：先建可靠正常 holdout 標籤及明確異常真值，再依現有不變報告檢驗誤報/漏報；不要再重做已 PASS 的 13 案 API 批次。
+
+
+### 2026-11-21 — 收斂 P0：已實作不破壞既有資料的 test holdout 來源倍率稽核（待 Windows 驗證）
+- 使用者要求直接繼續專案收斂。檢視 `main` `generate_full_project_dataset.py` 發現**已有逐交易 synthetic_label**：生成器對每個工項群組以約5.5%機率將數量乘 0.45 或 1.8，同群組產生的歷史交易列註記 `injected_anomaly`，其餘為 `baseline`；`project_boq_rows.csv` 可以由 `synthetic_transaction_id` 與歷史列連接。這提供可追溯的「有無生成器刻意倍率」證據，不必重建 300 筆建案或重 seed；**但它不是獨立工程設計合理性真值**。
+- 新增 `tools/graduation-synthetic/audit_holdout_provenance.py` commit `62a7415d`：read-only SHA256、筆數、交易/BOQ 映射與 split 驗證；按 RC/SC/SRC 及 concrete/rebar/structural_price 彙整 test-only 來源筆數、群組倍率列數、各來源建案可用 scope；可選同時讀取現有 `graduation-src-paired-api-report.json` 的 3 基準 status，映射其群組倍率證據。不適用類別（如 SC rebar）不硬算；`engineeringNormalCertified=false`、`readyForFalsePositiveRate=false`，不能把沒有 group shock 當正常樣本或把未注入基準 Red 當正式 false positive。
+- 新增 `tools/graduation-synthetic/test_holdout_provenance.py` commit `f67a4548`：離線 mock CSV 測試 scope/shock/non-normal 声明、hash 篡改拒絕、baseline Red 不推導誤報，預期單元測試從 23 增加至 26。新增 README 使用方法 commit `7d03bb3c`，更新 `docs/PROJECT_CLOSURE_PLAN.md` commit `689ffbe1`。
+- **未執行**使用者 Windows `python -m unittest`（26預期）、未讀取當地來源產生 provenance report、未新增 API/DB/Migration/模型參數或更動歷史資料。下一驗證點：`git fetch --no-tags --refmap= origin main` + 只還原新增兩工具（先確認未提交同名檔案） → unittest 26/26 → 只讀 `audit_holdout_provenance.py --source .\\graduation-src-extreme-v3 --paired-report .\\graduation-src-paired-api-report.json --output .\\graduation-src-holdout-provenance.json`；以實際輸出確認 contamination 分布，再規劃合成乾淨驗證集或業界工程設計標籤。
+- 收斂期間不再重做 13 件 `--execute` 或清空 `55433/55432`，亦不擴大鋼骨正式紅綠燈。舊 `main`/feature API 差異待 P0 下一項整合。
