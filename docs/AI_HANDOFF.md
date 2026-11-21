@@ -187,3 +187,16 @@ npm run build
 - 影響：前端 UI；**不改 DB、Migration、API 或 1A**；正式交易安全限制維持。
 - 下一驗證點：在本機 `feature/1d-api-integration` 取回單檔、執行 `npm run build`，再上傳 `graduation-irregular-v04.xlsx`；若顯示 0 筆仍須檢查 `TenderExcelParser` 表頭辨識與工作表資料，而不能直接當成有效匯入。
 - 已淘汰判定：「解析 0 筆 = 工作表不可選」已取消；改由人工選取＋唯讀診斷＋匯入階段嚴格確認。
+
+
+### 2026-11-21 — 11/25 畢專交付加速：資料真實性、可讀性、合成回測
+- 緊急期限：使用者需於 **2026-11-25** 前提供測試標單與精準度；不再將非必要產學整合列為目前優先。
+- 已查詢官方公開來源：工程會工程價格資料庫規則、水利署電子標單格式規定、雲林縣學校預算資料審查規定；可供建立資料來源與工項分類規範，但**尚未確認取得、清洗或核驗足以支撐真實估算精準度的多案原始 Excel**。工程預算與決標／結算資料不可混為一談。
+- 修改 `tools/graduation-synthetic/generate_irregular_excel.py`：Commits `94604c35`（欄寬／列高）、`df499758`（儲存格換行樣式）、`43cb867d`（依地下室與樓層限制部分工項）；`test_irregular.py` commits `d536fa4a`（OOXML 欄寬與換行驗證）、`0ce7666e`（有無地下室驗證）。
+- 新增 `tools/graduation-synthetic/evaluate_synthetic_holdout.py` Commit `2266671f`，修正不同單位量測不得混算 `da0a8e84`；新增 `test_evaluate_synthetic_holdout.py` Commit `7a26a007`。輸出 `SYNTHETIC`、`OFFLINE_PROXY_NOT_API`，按建案 train/test，排除植入異常，輸出加權分位數對加權常態模型的數量區間回測；**代理相似度不等同正式 C#，不得稱為真實工程精度**。
+- 使用者前端功能分支 `feature/1d-api-integration`：`frontend/src/components/WorkbookSheetPicker.vue` commit `c09fea4b`，長工作表名稱、工項／規格、警示文字換行與橫向捲動；**尚未合併 main**。既有本機前端 package 修改不得覆寫。
+- 新增 11/25 交付規範文件 `docs/GRADUATION_DELIVERY_2026-11-25.md` Commit `a339656e`；更新工具 README Commit `8f2c6e39`。
+- 驗證：GitHub 相關檔案已成功提交；**本次 v0.5 變更的 Python unittest、Excel 實開、前端 npm build、後端解析器 E2E、資料庫隔離及真實材料精度皆尚待實測**。不得以先前 v0.4 的 8/8 PASS 代替此次驗證。沒有 DB、Migration、正式資料修改。
+- 不足與風險：只有來源標記 `SYNTHETIC` 的 300 建案／600 筆材料交易，每案兩種核心材料；360 筆標單工項多數仍是額外虛構測試明細，未與相同案的真實歷史價量對齊，不能用它當企業精度真值；缺真實匿名標單與建案屬性時，11/25 只能交付合成資料回測和資料可用性限制。
+- 下一驗證點：在本機同步 `tools/graduation-synthetic`；重跑全部 Python 測試；輸出全新 `graduation-irregular-v05.xlsx` 和 `graduation-synthetic-holdout-v01.json`，檢查生成量與模型指標。取得具有合法用途的真實建案資料後，另外進行獨立真實資料保留樣本回測。
+- 淘汰／未採用：目前正式用量估算仍為相似建案加權分位數；**未將常態分布正式替換進 C# 估算 API**；只有離線合成比較基準，不得宣稱正式系統已改採常態分布或其效能較佳。
