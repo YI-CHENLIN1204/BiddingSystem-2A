@@ -61,6 +61,42 @@ class FullProjectDatasetTests(unittest.TestCase):
         self.assertEqual(generate_full(36, 20261119, include_src=True),
                          generate_full(36, 20261119, include_src=True))
 
+    def test_src_extreme_cases_have_split_isolation_and_core_materials(self):
+        projects, history, detail = generate_full(
+            120, 20261119, include_src=True, include_extremes=True)
+        self.assertEqual(len(history), len(detail))
+        self.assertEqual(len({p["synthetic_project_id"] for p in projects}), 120)
+        scenarios = {"tiny_lowrise", "large_highrise", "deep_basement",
+                     "constrained_site", "wide_lowrise", "older_remote_city"}
+        by_split = defaultdict(list)
+        by_project = defaultdict(set)
+        for project in projects:
+            if project.get("extreme_scenario"):
+                by_split[project["split"]].append(project)
+        for row in detail:
+            by_project[row["synthetic_project_id"]].add(row["material_code"])
+        for split in ("train", "validation", "test"):
+            items = by_split[split]
+            self.assertEqual(len(items), 6)
+            self.assertEqual({p["extreme_scenario"] for p in items}, scenarios)
+            self.assertEqual({p["structure_type"] for p in items}, {"RC", "SC", "SRC"})
+            for p in items:
+                self.assertGreater(float(p["site_area"]), 0)
+                self.assertGreater(float(p["total_floor_area"]), 0)
+                self.assertGreater(int(p["floor_count"]), 0)
+                self.assertGreaterEqual(int(p["basement_floor_count"]), 0)
+        srcs = [p for p in projects if p["structure_type"] == "SRC"]
+        self.assertTrue(all(
+            {"SYN-REBAR", "SYN-STEEL", "SYN-CONCRETE"}
+            <= by_project[p["synthetic_project_id"]] for p in srcs))
+        self.assertEqual(
+            generate_full(120, 20261119, include_src=True, include_extremes=True),
+            generate_full(120, 20261119, include_src=True, include_extremes=True))
+        with self.assertRaisesRegex(ValueError, "requires include_src"):
+            generate_full(120, 20261119, include_extremes=True)
+        with self.assertRaisesRegex(ValueError, "at least six projects"):
+            generate_full(30, 20261119, include_src=True, include_extremes=True)
+
     def test_deterministic_generation(self):
         self.assertEqual(generate_full(25, 5),generate_full(25, 5))
 
