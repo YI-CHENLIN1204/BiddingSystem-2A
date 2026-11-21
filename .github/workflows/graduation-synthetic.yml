@@ -21,6 +21,11 @@ jobs:
       - uses: actions/setup-python@v5
         with:
           python-version: '3.12'
+      - uses: actions/setup-dotnet@v4
+        with:
+          dotnet-version: '10.0.x'
+      - name: Compile isolated local-only EF Core seed CLI
+        run: dotnet build tools/graduation-synthetic/GraduationSeed/GraduationSeed.csproj -c Release
       - name: Run generator and XLSX tests
         run: python -m unittest discover -s tools/graduation-synthetic -p 'test_*.py' -v
       - name: Generate offline demonstration data and workbook
