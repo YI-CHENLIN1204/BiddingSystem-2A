@@ -13,6 +13,33 @@ from pathlib import Path
 
 from generate_irregular_excel import LAYOUTS, SHEETS, make_xlsx
 
+# Explicit major categories supported by the current TwoAScopePolicy.
+# Preserve the original finer trade in source CSV/truth, but the workbook
+# includes a 1D-level classification required by AnalysisCase/from-upload.
+APPROVED_MAJOR_CATEGORY = {
+    "結構體工程": "結構體工程",
+    "泥作工程": "內外牆裝修工程",
+    "假設工程": "假設工程",
+    "基礎工程": "土方及基礎工程",
+    "土方工程": "土方及基礎工程",
+    "安全觀測工程": "安全觀測工程",
+    "防水工程": "防水工程",
+    "門窗工程": "門窗工程",
+    "金屬工程": "外部裝修工程",
+    "外牆工程": "外部裝修工程",
+    "屋頂工程": "防水工程",
+    "裝修工程": "內外牆裝修工程",
+    "水電工程": "雜項工程",
+    "弱電工程": "雜項工程",
+    "電氣工程": "雜項工程",
+    "給排水工程": "雜項工程",
+    "消防工程": "雜項工程",
+    "空調工程": "雜項工程",
+    "電梯工程": "雜項工程",
+    "景觀工程": "景觀工程",
+    "雜項工程": "雜項工程",
+}
+
 SHEET_BY_CATEGORY = {
     "結構體工程": 0, "泥作工程": 2,
     "假設工程": 1, "基礎工程": 1, "土方工程": 1, "安全觀測工程": 1,
@@ -83,7 +110,7 @@ def export(source, output, truth, project_id=None, seed=147):
     truth_rows = []
     for idx in sorted(categorized):
         label = SHEETS[idx]
-        headers = LAYOUTS[idx]
+        headers = [*LAYOUTS[idx], "工程大項"]
         body = [[f"施工估價明細／{label}"], ["建案", selected["synthetic_project_id"]], [],
                 headers, ["壹", label]]
         for n, raw in enumerate(categorized[idx], start=1):
@@ -96,7 +123,10 @@ def export(source, output, truth, project_id=None, seed=147):
             price = raw["unit_price"] if scenario != "missing_unit_price" else None
             unit = raw["unit"] if scenario != "missing_unit" else None
             amount = raw["amount"] if scenario not in ("missing_quantity", "missing_unit_price") else None
+            if raw["major_category"] not in APPROVED_MAJOR_CATEGORY:
+                raise ValueError("Unmapped source trade: " + raw["major_category"])
             record = {
+                "工程大項": APPROVED_MAJOR_CATEGORY[raw["major_category"]],
                 "項次": str(n), "編號": str(n), "序號": str(n),
                 "項目名稱": raw["item_name"], "工項名稱": raw["item_name"],
                 "品名": raw["item_name"], "項目及說明": raw["item_name"],
@@ -115,6 +145,7 @@ def export(source, output, truth, project_id=None, seed=147):
                 "sheet": label, "excel_row": len(body), "synthetic_line_id": raw["synthetic_line_id"],
                 "synthetic_transaction_id": raw["synthetic_transaction_id"],
                 "material_code": raw["material_code"], "category": raw["major_category"],
+                "analysis_major_category": record["工程大項"],
                 "rendered_item_name": raw["item_name"], "source_quantity": raw["quantity"],
                 "source_unit_price": raw["unit_price"], "scenario": scenario,
                 "expected_quantity": q, "expected_unit_price": price,
@@ -126,7 +157,7 @@ def export(source, output, truth, project_id=None, seed=147):
     # template. Layouts remain associated with sheet identity.
     sheets = {"工程總表": sheets["工程總表"],
               **{name:sheets[name] for name in SHEETS if name in sheets}}
-    layouts = {name: LAYOUTS[idx] for idx, name in enumerate(SHEETS)}
+    layouts = {name: [*LAYOUTS[idx], "工程大項"] for idx, name in enumerate(SHEETS)}
     blob = make_xlsx(sheets, headers_by_sheet=layouts)
     out = {"generator_version": "2.0.0", "data_origin": "SYNTHETIC",
            "project": selected, "xlsx_sha256": hashlib.sha256(blob).hexdigest(),
