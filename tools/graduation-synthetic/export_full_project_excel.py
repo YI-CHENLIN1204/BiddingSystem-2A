@@ -122,13 +122,12 @@ def export(source, output, truth, project_id=None, seed=147):
             })
         body.extend([[], ["備註", "測試用工程明細"], ["合計", "請勿用於正式決標"]])
         sheets[label] = body
-    # make_xlsx currently uses sheet ordinal to choose column layouts, so
-    # preserve the normal 6-sheet order (even if one is empty).
-    for idx, name in enumerate(SHEETS):
-        if name not in sheets:
-            sheets[name] = [[f"施工估價明細／{name}"], [], LAYOUTS[idx], ["備註", "此案無對應工項"]]
-    sheets = {"工程總表": sheets["工程總表"], **{name:sheets[name] for name in SHEETS}}
-    blob = make_xlsx(sheets)
+    # Do not invent empty disciplines solely to fill a fixed seven-sheet
+    # template. Layouts remain associated with sheet identity.
+    sheets = {"工程總表": sheets["工程總表"],
+              **{name:sheets[name] for name in SHEETS if name in sheets}}
+    layouts = {name: LAYOUTS[idx] for idx, name in enumerate(SHEETS)}
+    blob = make_xlsx(sheets, headers_by_sheet=layouts)
     out = {"generator_version": "2.0.0", "data_origin": "SYNTHETIC",
            "project": selected, "xlsx_sha256": hashlib.sha256(blob).hexdigest(),
            "total_detail_rows": len(truth_rows), "detail_rows_per_sheet": dict(Counter(x["sheet"] for x in truth_rows)),
