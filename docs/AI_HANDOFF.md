@@ -812,3 +812,13 @@ npm run build
 - Job \`frontend-build\` 完成：\`node --check scripts/verify-ui-preflight.mjs\` **PASS**；Node22 \`npm ci\` **PASS**；\`vue-tsc --noEmit && vite build\`（\`npm run build\`）**PASS**。本次驗證涵蓋本輪新增 Vue UI 及其腳本語法。
 - 仍**未執行** 5174/5263 真正 HTTP preflight（GitHub runner 無使用者本機服務與 55433 DB）、瀏覽器 Excel 上傳與 Run 持久化、FinalBid 真正發布／資料庫稽核；CI PASS 不能擴大成系統 E2E 完成。
 - 目前應由使用者 integration worktree cherry-pick 五個新 commit，執行本機唯讀 preflight，再使用新合成案件於 UI 驗證真實寫入路徑。
+
+
+### 2026-11-21 — 使用者 5174/5263 HTTP 唯讀預檢 7/7 PASS；下一階段驗證既存 Run 和準備全新 UI 測試標單
+- 使用者在 `C:\Users\User\Desktop\BiddingSystem-2A-integration` 執行 `node .\scripts\verify-ui-preflight.mjs`，終端實際回報 **7/7 read-only checks PASS**：5263 health、2A standalone upload policy 與量偵錯 scope、現有 14 個案件清單、結構大項價格 readiness 210 可用建案、鋼筋及混凝土 readiness 兩類、5174→5263 API proxy、Vue /analysis-cases HTML。
+- 本次 `--excel` **未提供**，因此 Excel preview/inspect **NOT RUN**；真正瀏覽器上傳、建立案件／Run、決標草稿／正式核准、稽核和 accuracy **尚未驗證**。7/7 PASS 不能當整套系統 E2E PASS，當時 5263 的 DB 身分也未經獨立核對。
+- 新增 `scripts/verify-ui-state.mjs` commit `01258924e95a0003aba2ee9b0bf46091e48414ec`：僅操作 Docker inspect / psql SELECT、GET API；確認 Docker compose label、127.0.0.1:55433、DB 帳號／DB 名稱，逐筆核對 55433 `analysis_case` ID+名稱 MD5 與 5263 API 的所有案件，再核對 Approved 歷史建案數及既存版本／Run 讀回。此為強來源對照，**不是正式連線字串證明**；零 DB 寫入、零 run 重算、零 publish，若任一步空值或不符則 FAIL。
+- 新增 `tools/graduation-synthetic/prepare_ui_case.py` commits `8370dab895b2f5f759d00cfff41d88a1f0c88da3`, `37bed2b1d749d2ad6541a17a4bfe38d92aca1175`：檢查原本 v2 synthetic 來源 manifest 和 SHA，透過 5263 現有案件清單排除已見案例名稱及先前 3 個已測基準 SYN-00026/29/30，優先選尚未使用的 test split SRC/RC 案；從同源資料產 Excel + JSON truth，列出完整 UI 建案欄位；拒絕覆寫，僅供待偵錯 Target Pipeline，不得當最終決標並發布歷史庫。
+- 修改 `.github/workflows/graduation-ui-build.yml` commits `4f16e3738d4dabaea57dcb94263668cabb09ee3d`、`5e69dda39ea79f205c4ac0697cd98f8b9ca54cbe`：Node22 `node --check` 兩個 script、Python `py_compile` fixture generator、Vue `npm ci && npm run build`；GitHub run 44913149083 已 `completed/success`（檢查 Node state script 和 Vue build），較新 run 44913252777 提交當時 `in_progress`，需後續查證。
+- 實測界線：新增 DB identity/readback 工具與 fixture script **已提交 GitHub、尚未在使用者 Windows 執行**，不能宣稱 DB 4/4 PASS 或 UI 業務流程通過。沒有更改 DB／Migration／估算算法／歷史資料；目前仍僅正式支援鋼筋／混凝土量和結構體大項價格，鋼骨／模板／土方未開正式異常燈。
+- 下一驗收：在既有 `integration/src-closure` 保留 untracked JSON 與 Python 腳本；先 cherry-pick 上述5個 commits，執行 `node scripts/verify-ui-state.mjs`，只有 DB 強對照成功後再生成新 Excel；`node scripts/verify-ui-preflight.mjs --excel <新檔>` 先跑 preview/inspect，最後用瀏覽器 UI 自行上傳並產生 Run、刷新再查證；決標發布僅在另外備份且可回滾的隔離測試資料庫執行，禁止將 test holdout 寫入 Approved 歷史。
