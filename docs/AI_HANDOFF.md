@@ -380,3 +380,13 @@ npm run build
 - 與 SC SYN-00002 對照：SC 標單 574/574 PASS，混凝土量 Low/Red，結構體價格 High/Red（price runId=2）；RC 標單 409/409 PASS，鋼筋+混凝土量均 Low/Red，結構體價格 Normal/Green。此為**兩個獨立 held-out 建案上的正式 API 功能實證**，非模型可靠度或真實工程準確性統計。
 - 下一實驗目標只聚焦數量估算與價格異常偵錯：讀取本機保存的四份真實 API 結果，對照兩份 truth JSON，繪製觀測值與正式 P15/P50/P85（含材質單位和建案）比較圖；擴充多個 held-out 案才可計算 MAPE、涵蓋率、異常檢出率及混淆矩陣；明確標示 SYNTHETIC，不能把兩案 Red/Green 算成正確率。不要額外擴充工種模型或重跑歷史資料 seed。
 - 以上是 2026-11-21 使用者實測結果補登；未修改 C# 估算邏輯、DB Migration 或產學正式資料庫。
+
+
+### 2026-11-21 — RC SYN-00029 quantity API P15/P50/P85 complete
+- 使用者已讀取本機正式 C# `graduation-v2-rc-quantity-result.json`，按 `result.items` 輸出完整區間。
+- `SYN-00029` 結構體混凝土 m3：observed=3885.108，P15=4635.50、P50=5127.43、P85=5696.79，參考建案數=8，analysisStatus=Low（觀測低於 P15 約16.19%，低於 P50 約24.23%）。
+- 結構體鋼筋 kg：observed=496658.648，P15=567635.47、P50=830851.50、P85=953640.20，參考建案數=8，analysisStatus=Low（觀測低於 P15 約12.50%，低於 P50 約40.22%）。
+- 與前一輪價格 API 合併：同一 RC 案結構體價格 observedAmount=91153245.71，P15/P50/P85=69512978.87/120860965.10/146643899.77，Normal/Green。SC SYN-00002 混凝土 Low/Red、結構體價格 High/Red。
+- 測試狀態：兩個案例的正式 Quantity/MajorPrice API **執行 PASS**，但量價判定是否與合成異常標準答案相符、回測誤差及涵蓋率等 **尚未驗證**。兩個數量觀測值均低於下限，需要評估生成器規則與服務彙整/分類/相似建案參考差異，**不能先推定一定是算法錯誤或真實工程量偏低**。
+- 下一驗證點：以唯讀腳本比對 target `truth.cases` 中鋼筋/混凝土 `expected_quantity` 總量與正式 API 的 observedQuantity，並比對參考歷史 train-only 用量；接續多個 test holdout 才能計算可解釋的回測指標，製作 SYNTHETIC 註記的報告。不要重 seed、不擴充模型、不修改正式 DB 或 migration。
+- 本次只更新交接文件，無程式碼變更。
