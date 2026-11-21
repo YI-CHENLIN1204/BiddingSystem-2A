@@ -7,5 +7,8 @@
   </PropertyGroup>
   <ItemGroup>
     <ProjectReference Include="../../../崴正/崴正.csproj" />
+    <!-- Align the seed executable's direct relational assembly with the
+         referenced ASP.NET project (EF Core 10.0.5). -->
+    <PackageReference Include="Microsoft.EntityFrameworkCore.Relational" Version="10.0.5" />
   </ItemGroup>
 </Project>
