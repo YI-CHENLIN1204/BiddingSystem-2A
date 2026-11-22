@@ -46,3 +46,7 @@ python research/2a_synthetic/kde_comparison/replay_factory_dictionary.py <factor
 沿用 C1 的訓練材料碼留出與正規化名稱剔除規則。精確與最長包含詞兩法均將 850 驗證列、781 測試列全部轉待審，無自動命中或錯配。自動精確率因零自動命中而無分母。此情境同時留出材料碼與名稱，只支持合成留出下的結果。同材料的新別名與陌生廠商真實資料仍待驗證。
 
 重跑 `python factory_dictionary_unseen.py <source> <output.json>`，機讀結果為 `evening_results/factory_dictionary_unseen.json`。
+
+## T01 同材料新名稱合成測試
+
+固定訓練字典及材料碼，驗證 162、測試 156 筆混凝土／鋼筋來源列。原名稱兩法全對。人工加前綴保留原詞時，最長包含詞全對、精確比對全待審。以預拌砼／鋼質補強筋替換名稱後，兩法全待審。兩類改寫皆為合成，同材料真實廠商別名仍缺。研究目錄執行 `python factory_alias_stress.py <source> <output.csv>`；逐列證據見 `evening_results/factory_alias_stress.csv`。
