@@ -1,3 +1,9 @@
+## 2026-11-23 Run #3 實測及 Word 八頁目視已核實
+
+[GitHub Actions Run #45057125296](https://github.com/YI-CHENLIN1204/BiddingSystem-2A/actions/runs/45057125296) 對應 `da4324596707969ee805a37f68e284a0c0f955d0`，三 Job 均 SUCCESS。隔離 API Artifact `14767619273` SHA256SUMS 4/4、48 JSONL（47 passed=true，30 HTTP 讀取）核對通過：T04 EF PASS、T07 Draft／人工映射／Publish／Reopen／Audit PASS、T09 匿名 401／無效憑證 401／Reader 403／Supervisor 200，主管可讀回三類實際稽核事件，研究隔離 API+DB E2E PASS；T08 讀取 n=30，p50 19.79ms、p95 35.71ms。**實測範圍是隔離 Fixture 與研究授權 Overlay，不等於正式 2A 已部署相同權限**，T07 仍缺上傳建檔，T08 仍缺完整估算效能。
+
+Word Artifact `14768340468` 下載成功，原 DOCX SHA256 `d9fb05c1e4b83422a257f2fb3d3e9ed3d8abbbc275265311b931d511ee2f9ccf`，新 PDF SHA256 `d7349cd99a85b5fe1f86109245ad4bdaa07b28258537091d670775dc04ae25f9`，ZIP 內 10 個 SHA256SUMS 成員全部 PASS。**已逐頁目視 8 張 PNG：表格續頁表頭、孤行、頁碼問題解決，圖 1–8 與中文字完整，版面視覺 PASS**；圖表頁留白較多屬非阻擋改善。詳見 [逐頁](WORD_VISUAL_REVIEW_2026_11_23.md) 和 [驗收查核](RESEARCH_ACTIONS_RUN_VERIFICATION_2026_11_23.md)。此回合沒有修改正式 2A、A0 或正式 Supabase。T00–T11 **全項仍未結案**，下一步需外部工程資料盲測、工程師獨立真值、真人工時，以及剩餘 API／工料整合驗證。
+
 ## 2026-11-23 研究 Run #3 通過隔離驗收與 Word 重渲染
 
 [Run 45057125296](https://github.com/YI-CHENLIN1204/BiddingSystem-2A/actions/runs/45057125296) 對應修正提交 `da4324596707969ee805a37f68e284a0c0f955d0`。三個 Job 均已完成並通過。修正後本機以相同非 Web SDK 與 ASP.NET Core framework reference 編譯稽核驗證類別，0 警告／0 錯誤。實際 runner 成功建置並啟動 PostgreSQL 17 隔離 API。

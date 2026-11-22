@@ -1,3 +1,11 @@
+## 2026-11-23 Run #3：研究隔離 E2E 與 Word 八頁人工目視最終核對
+
+GitHub Actions [Run #45057125296](https://github.com/YI-CHENLIN1204/BiddingSystem-2A/actions/runs/45057125296) 實際三 Job SUCCESS；head `da4324596707969ee805a37f68e284a0c0f955d0`。下載原始 [isolated-api Artifact #14767619273](https://github.com/YI-CHENLIN1204/BiddingSystem-2A/actions/runs/45057125296/artifacts/14767619273)，核對 ZIP 內 4 份 SHA256SUMS、48 筆 JSONL（47 筆 `passed=true`、30 筆 benchmark、0 筆 `passed=false`）。隔離 PostgreSQL EF T04 PASS；T07 Draft→人工映射→Publish→Reopen、狀態回讀、重複操作與跨案金鑰 409 PASS（上傳建檔未測）；T09 匿名 401、錯誤 token 401、Reader 403、Supervisor 200，實際讀回 UpdateMapping／PublishHistoryBaseline／ReopenHistoryReview，**研究隔離 API+DB 權限 E2E PASS**；T08 30 次建案讀取 HTTP p50=19.7865 ms、p95=35.7117 ms，非完整估算 API 效能。
+
+下載原始 [word-rendered-pages Artifact #14768340468](https://github.com/YI-CHENLIN1204/BiddingSystem-2A/actions/runs/45057125296/artifacts/14768340468)，PDF SHA256 `d7349cd99a85b5fe1f86109245ad4bdaa07b28258537091d670775dc04ae25f9`，DOCX SHA256 `d9fb05c1e4b83422a257f2fb3d3e9ed3d8abbbc275265311b931d511ee2f9ccf`；8 頁 PDF + 8 張 PNG 均與 SHA256SUMS 完全一致。已**人工逐頁目視 1–8 頁**：第 3 頁續表表頭重複可見，第 4 頁不再有舊頁首孤行，頁碼 1–8 全部可見；圖 1–8、圖說、中文字無明顯裁切、溢出與亂碼。**Word 渲染 PASS、人工視覺版面 PASS**；5–8 頁留白仍多屬非阻擋性美觀建議。原報告為歷史研究快照，內文舊的 PostgreSQL NOT RUN 不能代表最新 CI 狀態；圖表數值未於本次重算。
+
+上述 PASS 只涵蓋明確實測子項，T00–T11 原始整體驗收仍 PARTIAL（需住宅原始快照、獨立標單、工程師真值、真人 AB/BA、完整 B1/API 負載等）。正式 2A、A0、正式 Supabase 未更動。後續研究請先處理缺失的獨立工程資料與人工驗收，或另行專門排程剩餘整合測試，勿重新做已通過的 Run #3。詳情見 [Word 逐頁](WORD_VISUAL_REVIEW_2026_11_23.md) 及 [Actions 驗證](RESEARCH_ACTIONS_RUN_VERIFICATION_2026_11_23.md)。
+
 ## 2026-11-23 研究 Run #3 通過隔離驗收與 Word 重渲染
 
 [Run 45057125296](https://github.com/YI-CHENLIN1204/BiddingSystem-2A/actions/runs/45057125296) 對應修正提交 `da4324596707969ee805a37f68e284a0c0f955d0`。三個 Job 均已完成並通過。修正後本機以相同非 Web SDK 與 ASP.NET Core framework reference 編譯稽核驗證類別，0 警告／0 錯誤。實際 runner 成功建置並啟動 PostgreSQL 17 隔離 API。

@@ -1,3 +1,23 @@
+## Run #3 新版 PDF 真正八頁目視｜2026-11-23
+
+- Run：[`45057125296`](https://github.com/YI-CHENLIN1204/BiddingSystem-2A/actions/runs/45057125296)，提交 `da4324596707969ee805a37f68e284a0c0f955d0`，Word job SUCCESS。
+- [Artifact `14768340468`](https://github.com/YI-CHENLIN1204/BiddingSystem-2A/actions/runs/45057125296/artifacts/14768340468)，已實際下載 ZIP 並驗證其中 **10 個 SHA256SUMS 檔案項目全 PASS**；PDF 8 頁、逐頁 PNG 8 張。
+- PDF SHA256 `d7349cd99a85b5fe1f86109245ad4bdaa07b28258537091d670775dc04ae25f9`；DOCX SHA256 `d9fb05c1e4b83422a257f2fb3d3e9ed3d8abbbc275265311b931d511ee2f9ccf`。與上一輪報告版本不同，不得混用雜湊。
+- 非僅 PDF 文字檢查：已**直接開啟 8 張 PNG 逐頁觀察**。
+
+| 頁碼 | 目視觀察 | 結果 |
+|---|---|---|
+| 1 | 標題、摘要、E1 表格完整；頁碼 1 可見 | PASS |
+| 2 | E2／E3 數值表及可引用範圍表格前半完整；頁碼 2 可見 | PASS |
+| 3 | 跨頁續表的「實驗／可引用性／覆核結論」三欄表頭已重複，跨頁孤句未再出現；頁碼 3 可見 | PASS |
+| 4 | 從新段落開始，沒有上輪頁首的孤句；其他段落、頁碼 4 可見 | PASS |
+| 5 | 圖 1、圖 2 及圖說無裁切，頁碼 5 可見 | PASS |
+| 6 | 圖 3、圖 4 及圖說無裁切，頁碼 6 可見 | PASS |
+| 7 | 圖 5、圖 6 及圖說無裁切，頁碼 7 可見 | PASS |
+| 8 | 圖 7、圖 8 及圖說無裁切，頁碼 8 可見 | PASS |
+
+**視覺結論：PASS**，繁中、圖表、表格皆無明顯亂碼、重疊或裁切；5–8 頁下半部留白較多，屬可選改善而非阻擋事項。只代表版面視覺驗收，不代表原 CSV/模型研究數字皆重算合格。文件保留舊的實驗狀態文字，應視作 2026-11-22 教授版研究快照，不可取代 2026-11-23 最新 T00–T11 交接。
+
 ## 2026-11-23 研究 Run #3 通過隔離驗收與 Word 重渲染
 
 [Run 45057125296](https://github.com/YI-CHENLIN1204/BiddingSystem-2A/actions/runs/45057125296) 對應修正提交 `da4324596707969ee805a37f68e284a0c0f955d0`。三個 Job 均已完成並通過。修正後本機以相同非 Web SDK 與 ASP.NET Core framework reference 編譯稽核驗證類別，0 警告／0 錯誤。實際 runner 成功建置並啟動 PostgreSQL 17 隔離 API。
