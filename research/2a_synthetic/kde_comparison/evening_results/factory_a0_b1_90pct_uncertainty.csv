@@ -1,0 +1,4 @@
+scope,a0_available,b1_available,paired,a0_score,b1_score,difference,ci95_low,ci95_high
+SYN-CONCRETE,26,9,9,0.512638,0.972379,0.459741,0.199776,0.834327
+SYN-REBAR,26,9,9,0.766880,1.745995,0.979115,0.624325,1.479579
+structure_price,26,26,26,0.648735,2.526782,1.878048,1.230664,2.623125

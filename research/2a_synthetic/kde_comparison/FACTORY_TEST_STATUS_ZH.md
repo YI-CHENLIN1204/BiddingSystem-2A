@@ -109,3 +109,7 @@ T05 補報 70% 主分析的 P50 平均絕對百分比誤差與有效樣本數。
 名義 70%，按結構分層，以共同可估建案重抽 2,000 次。B1 減 A0 的區間分數差在混凝土、鋼筋、結構金額各為 +0.228、+0.697、+1.337，95% 區間各為 [0.121,0.320]、[0.592,0.832]、[0.833,2.004]。共同可估案數為 9、9、26；兩個數量結果僅適用於共同可估子集。分數越低越好。這是已檢視合成資料的探索性補充，B1 依報告重建。金額涵蓋 B1 17/26、A0 13/26，採用判斷仍保留 A0。
 
 重跑 `python factory_a0_b1_uncertainty.py evening_results/factory_a0_b1_pairs.csv`。結果存於 `evening_results/factory_a0_b1_uncertainty.csv`。
+
+## A0／B1 的 90% 敏感度分析
+
+以相同測試案項與真值配對。B1 減 A0 的相對區間分數差，混凝土 +0.460（95% 區間 +0.200 至 +0.834）、鋼筋 +0.979（+0.624 至 +1.480）、結構體金額 +1.878（+1.231 至 +2.623）。共同可估案數為 9、9、26。方向與 70% 主分析一致。此補測使用已檢視的合成案。重跑 `python factory_a0_b1_uncertainty.py <factory_b1_pairs.csv> evening_results/factory_a0_a1_90pct_pairs.csv`。結果見研究目錄的 `evening_results/factory_a0_b1_90pct_uncertainty.csv`。
