@@ -1,3 +1,7 @@
+## 2026-11-22 實驗證據索引
+
+完成區間、擾動及字典分層的資料對帳。[報告證據索引](../research/2a_synthetic/kde_comparison/FACTORY_REPORT_EVIDENCE_INDEX_ZH.md)
+
 ## 2026-11-22 T05 指標與原計畫覆核
 
 補分層 P50 MAPE、有效樣本數與棄答。正式 API 等價驗證待完成。[原計畫進度](../research/2a_synthetic/kde_comparison/FACTORY_TEST_STATUS_ZH.md)
