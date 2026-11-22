@@ -251,7 +251,8 @@ const priceResult = ref<PriceRunResponse | null>(null)
 interface ExtraResult {
   name: string
   summary: string
-  range?: string
+  estimate?: BulkRange
+  majorCategory?: string
 }
 interface BulkOption {
   key: string
@@ -261,6 +262,7 @@ interface BulkOption {
 interface BulkRange {
   unit: string
   message: string
+  referenceProjectCount: number
   lowerQuantity: number | null
   medianQuantity: number | null
   upperQuantity: number | null
@@ -268,9 +270,9 @@ interface BulkRange {
 const extraResults = ref<ExtraResult[]>([])
 const additionalPrices = ref<PriceRunResponse[]>([])
 const quantityGroups = [
-  { key: 'structural-steel', name: '鋼骨' },
-  { key: 'formwork', name: '模板' },
-  { key: 'earthwork', name: '土方開挖' },
+  { key: 'structural-steel', name: '鋼骨', majorCategory: '鋼骨鋼構工程' },
+  { key: 'formwork', name: '模板', majorCategory: '結構體工程' },
+  { key: 'earthwork', name: '土方開挖', majorCategory: '土方及基礎工程' },
 ]
 const specificationItems = ['養護劑', '脫模劑']
 const unsupportedPriceItems = ['鋼筋', '混凝土', ...quantityGroups.map(x => x.name), ...specificationItems]
@@ -460,23 +462,23 @@ async function estimateAdditionalQuantities(version: VersionDetail, requestedTop
   try {
     profiles = (await api<{ profiles: BulkOption[] }>('/bulk-material-estimates/options')).profiles
   } catch {
-    return [...quantityGroups.map(({ name }) => ({ name, summary: '無法讀取歷史估算工項。' })), ...specifications]
+    return [...quantityGroups.map(({ name, majorCategory }) => ({ name, majorCategory, summary: '無法讀取歷史估算工項。' })), ...specifications]
   }
   const results: ExtraResult[] = []
   const itemNames = new Set(version.items.map(item => item.itemName.trim()))
-  for (const { key, name } of quantityGroups) {
+  for (const { key, name, majorCategory } of quantityGroups) {
     const profile = profiles.find(option => option.key === key)
     if (!profile?.structures.includes(version.case.structureType)) {
-      results.push({ name, summary: '目前結構類型不適用此估算。' })
+      results.push({ name, majorCategory, summary: '目前結構類型不適用此估算。' })
       continue
     }
     if (key === 'earthwork' && !version.case.basementFloorCount) {
-      results.push({ name, summary: '缺少可比較的地下開挖條件。' })
+      results.push({ name, majorCategory, summary: '缺少可比較的地下開挖條件。' })
       continue
     }
     const materials = profile.materials.filter(material => itemNames.has(material.materialName.trim()))
     if (!materials.length) {
-      results.push({ name, summary: '本版沒有可按標準材料名稱確認的工項。' })
+      results.push({ name, majorCategory, summary: '本版沒有可按標準材料名稱確認的工項。' })
       continue
     }
     for (const material of materials) {
@@ -485,11 +487,9 @@ async function estimateAdditionalQuantities(version: VersionDetail, requestedTop
           method: 'POST',
           body: JSON.stringify({ profileKey: key, materialId: material.materialId, target: version.case, topCount: requestedTopCount }),
         })
-        const range = response.medianQuantity == null ? undefined :
-          [response.lowerQuantity, response.medianQuantity, response.upperQuantity].map(value => formatNumber(value)).join(' / ') + ' ' + response.unit
-        results.push({ name: material.materialName, summary: response.message, range })
+        results.push({ name: material.materialName, majorCategory, summary: response.message, estimate: response })
       } catch (caught) {
-        results.push({ name: material.materialName, summary: caught instanceof Error ? caught.message : '數量估算失敗' })
+        results.push({ name: material.materialName, majorCategory, summary: caught instanceof Error ? caught.message : '數量估算失敗' })
       }
     }
   }
@@ -699,61 +699,6 @@ onMounted(loadCase)
         </div>
       </section>
 
-      <section v-if="versionDetail" class="card quantity-scope-panel">
-        <div class="card-header scope-heading">
-          <div>
-            <h3>數量偵錯工項納入範圍</h3>
-            <p class="text-muted small mt-1 mb-0">每筆工項是否計入鋼筋／混凝土數量分析，由後端正式前處理規則判斷；與大項價格總額的納入規則不同。</p>
-          </div>
-        </div>
-        <div v-if="quantityScope" class="scope-body">
-          <div class="scope-counts">
-            <div>版本總工項 <strong>{{ quantityScope.itemCount }}</strong></div>
-            <div>數量偵錯納入 <strong>{{ quantityScope.includedItemCount }}</strong></div>
-            <div>數量偵錯排除 <strong>{{ quantityScope.excludedItemCount }}</strong></div>
-            <div>待確認 <strong>{{ quantityScope.pendingItemCount }}</strong></div>
-          </div>
-          <div v-if="quantityScope.excludedQuantityCandidateCount" class="notice info mb-2">
-            <strong>{{ quantityScope.excludedQuantityCandidateCount }} 筆材料相關名稱工項被排除。</strong>
-            含加工、組立、綁紮、澆置等複合工項可能同時包含材料與勞務；此處僅呈現系統判定，請核對原始標單，不得直接假設材料數量為零。
-          </div>
-          <p class="text-muted small">{{ quantityScope.note }}</p>
-          <details class="scope-details" :open="quantityScope.excludedQuantityCandidateCount > 0">
-            <summary>查看排除／待確認工項及原因（{{ scopeReviewRows.length }} 筆）</summary>
-            <div v-if="!scopeReviewRows.length" class="text-muted small mt-2">沒有排除或待確認的工項。</div>
-            <div v-else class="table-wrap mt-2">
-              <table class="scope-table">
-                <thead>
-                  <tr>
-                    <th>來源</th>
-                    <th>工程大項</th>
-                    <th>工項</th>
-                    <th>數量</th>
-                    <th>分類</th>
-                    <th>原因</th>
-                  </tr>
-                </thead>
-                <tbody>
-                  <tr v-for="item in scopeReviewRows" :key="item.analysisBidItemId">
-                    <td>{{ item.sheetName ?? '-' }}{{ item.rowNumber ? ' #' + item.rowNumber : '' }}</td>
-                    <td>{{ item.majorCategory || '未分類' }}</td>
-                    <td class="item-name">{{ item.itemName }}<span v-if="item.spec" class="text-muted small"> ・ {{ item.spec }}</span></td>
-                    <td class="number">{{ formatNumber(item.quantity, 4) }} {{ item.unit ?? '' }}</td>
-                    <td>{{ item.status === 'Pending' ? '待確認' : '排除' }}<span v-if="item.candidateType === 'Excluded'" class="text-muted small"> ・疑似複合工項</span></td>
-                    <td>{{ item.reason }}</td>
-                  </tr>
-                </tbody>
-              </table>
-            </div>
-          </details>
-        </div>
-        <div v-else-if="quantityScopeError" class="scope-body">
-          <div class="notice info mb-0">無法取得目前版本的工項納入範圍：{{ quantityScopeError }}。既有分析結果仍可查看；請確認後端是否已更新。</div>
-        </div>
-        <div v-else class="scope-body text-muted small">讀取工項分類中...</div>
-      </section>
-
-
       <div class="tabs">
         <button class="tab" :class="{ active: tab === 'items' }" @click="tab = 'items'">版本工項</button>
         <button class="tab" :class="{ active: tab === 'analysis' }" @click="tab = 'analysis'">本次分析結果</button>
@@ -809,7 +754,7 @@ onMounted(loadCase)
         <template v-if="quantityResult">
           <div class="card-header">
             <div>
-              <h3>數量偵錯</h3>
+              <h3>數量估算</h3>
               <div class="text-muted small mt-1">
                 可分析 {{ quantityResult.result.analyzedGroupCount }} 組 ・
                 樣本不足 {{ quantityResult.result.insufficientDataCount }} 組 ・
@@ -817,7 +762,7 @@ onMounted(loadCase)
               </div>
             </div>
           </div>
-          <div class="notice info" style="margin: 12px 20px;">歷史案例先按樓地板面積換算單位用量，再以本案面積轉成 P15／P50／P85 預估總量；異常判定比較的是同一單位的材料總數量。區間是歷史統計參考，並非工程設計上限。</div>
+          <div class="notice info" style="margin: 12px 20px;">鋼筋、混凝土按樓地板面積估算，鋼骨、模板和土方依各自的計量基準估算。P15／P50／P85 是歷史參考區間。</div>
           <div class="table-wrap">
             <table>
               <thead>
@@ -847,6 +792,17 @@ onMounted(loadCase)
                     <span :class="trafficClass(item.trafficLight)"></span>
                     {{ statusLabel(item.analysisStatus) }}
                   </td>
+                </tr>
+                <tr v-for="(item, index) in extraResults" :key="'extra-' + index">
+                  <td>{{ item.majorCategory ?? '—' }}</td>
+                  <td><strong>{{ item.name }}</strong></td>
+                  <td class="number">—</td>
+                  <td class="number">—</td>
+                  <td class="number">{{ formatNumber(item.estimate?.lowerQuantity, 2) }} {{ item.estimate?.lowerQuantity != null ? item.estimate.unit : '' }}</td>
+                  <td class="number">{{ formatNumber(item.estimate?.medianQuantity, 2) }} {{ item.estimate?.medianQuantity != null ? item.estimate.unit : '' }}</td>
+                  <td class="number">{{ formatNumber(item.estimate?.upperQuantity, 2) }} {{ item.estimate?.upperQuantity != null ? item.estimate.unit : '' }}</td>
+                  <td>{{ item.estimate?.referenceProjectCount ?? '—' }}</td>
+                  <td>{{ item.summary }}</td>
                 </tr>
               </tbody>
             </table>
@@ -907,13 +863,12 @@ onMounted(loadCase)
             <div><span>最大案例權重占比</span><strong>{{ formatNumber(priceResult.result.largestWeightSharePercent, 2) }}%</strong></div>
           </div>
         </template>
-        <div v-if="extraResults.length" class="table-wrap">
+        <div v-if="!quantityResult && extraResults.length" class="table-wrap">
           <table>
-            <thead><tr><th>工項</th><th v-if="quantityResult">P15／P50／P85 預估總量</th><th>結果或原因</th></tr></thead>
+            <thead><tr><th>工項</th><th>結果或原因</th></tr></thead>
             <tbody>
               <tr v-for="(item, index) in extraResults" :key="index">
                 <td>{{ item.name }}</td>
-                <td v-if="quantityResult">{{ item.range ?? '—' }}</td>
                 <td>{{ item.summary }}</td>
               </tr>
             </tbody>
@@ -943,6 +898,61 @@ onMounted(loadCase)
           </table>
         </div>
       </section>
+      <section v-if="versionDetail" class="card quantity-scope-panel">
+        <div class="card-header scope-heading">
+          <div>
+            <h3>數量偵錯工項納入範圍</h3>
+            <p class="text-muted small mt-1 mb-0">每筆工項是否計入鋼筋／混凝土數量分析，由後端正式前處理規則判斷；與大項價格總額的納入規則不同。</p>
+          </div>
+        </div>
+        <div v-if="quantityScope" class="scope-body">
+          <div class="scope-counts">
+            <div>版本總工項 <strong>{{ quantityScope.itemCount }}</strong></div>
+            <div>數量偵錯納入 <strong>{{ quantityScope.includedItemCount }}</strong></div>
+            <div>數量偵錯排除 <strong>{{ quantityScope.excludedItemCount }}</strong></div>
+            <div>待確認 <strong>{{ quantityScope.pendingItemCount }}</strong></div>
+          </div>
+          <div v-if="quantityScope.excludedQuantityCandidateCount" class="notice info mb-2">
+            <strong>{{ quantityScope.excludedQuantityCandidateCount }} 筆材料相關名稱工項被排除。</strong>
+            含加工、組立、綁紮、澆置等複合工項可能同時包含材料與勞務；此處僅呈現系統判定，請核對原始標單，不得直接假設材料數量為零。
+          </div>
+          <p class="text-muted small">{{ quantityScope.note }}</p>
+          <details class="scope-details" :open="quantityScope.excludedQuantityCandidateCount > 0">
+            <summary>查看排除／待確認工項及原因（{{ scopeReviewRows.length }} 筆）</summary>
+            <div v-if="!scopeReviewRows.length" class="text-muted small mt-2">沒有排除或待確認的工項。</div>
+            <div v-else class="table-wrap mt-2">
+              <table class="scope-table">
+                <thead>
+                  <tr>
+                    <th>來源</th>
+                    <th>工程大項</th>
+                    <th>工項</th>
+                    <th>數量</th>
+                    <th>分類</th>
+                    <th>原因</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  <tr v-for="item in scopeReviewRows" :key="item.analysisBidItemId">
+                    <td>{{ item.sheetName ?? '-' }}{{ item.rowNumber ? ' #' + item.rowNumber : '' }}</td>
+                    <td>{{ item.majorCategory || '未分類' }}</td>
+                    <td class="item-name">{{ item.itemName }}<span v-if="item.spec" class="text-muted small"> ・ {{ item.spec }}</span></td>
+                    <td class="number">{{ formatNumber(item.quantity, 4) }} {{ item.unit ?? '' }}</td>
+                    <td>{{ item.status === 'Pending' ? '待確認' : '排除' }}<span v-if="item.candidateType === 'Excluded'" class="text-muted small"> ・疑似複合工項</span></td>
+                    <td>{{ item.reason }}</td>
+                  </tr>
+                </tbody>
+              </table>
+            </div>
+          </details>
+        </div>
+        <div v-else-if="quantityScopeError" class="scope-body">
+          <div class="notice info mb-0">無法取得目前版本的工項納入範圍：{{ quantityScopeError }}。既有分析結果仍可查看；請確認後端是否已更新。</div>
+        </div>
+        <div v-else class="scope-body text-muted small">讀取工項分類中...</div>
+      </section>
+
+
     </template>
 
     <div v-if="showAddVersion" class="modal-backdrop-custom" @mousedown.self="showAddVersion = false">
