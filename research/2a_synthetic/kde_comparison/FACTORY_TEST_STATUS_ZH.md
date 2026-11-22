@@ -35,3 +35,7 @@ T08 已補三份完整測試標單的 C# 解析量測，163–167 列，每份 2
 ## 2026-11-22 B1／B2 金額分母
 
 已補 26 案配對、結構分層 bootstrap。詳見 `FACTORY_DENOMINATOR_BOOTSTRAP_ZH.md`。
+
+## 2026-11-22 T10 未見名稱補測
+
+781 列合成留出測試，Top-1 262、Top-3 553。詳見 `FACTORY_C1_UNSEEN_ZH.md`。

@@ -1,0 +1,39 @@
+{
+  "chapters": 21,
+  "held": [
+    "FAC-METAL-ROOF",
+    "FAC-ROLLING-DOOR",
+    "SYN-CONCRETE",
+    "SYN-WORK-001",
+    "SYN-WORK-002",
+    "SYN-WORK-003",
+    "SYN-WORK-008",
+    "SYN-WORK-011",
+    "SYN-WORK-012",
+    "SYN-WORK-021",
+    "SYN-WORK-022",
+    "SYN-WORK-023",
+    "SYN-WORK-033",
+    "SYN-WORK-051",
+    "SYN-WORK-084",
+    "SYN-WORK-094"
+  ],
+  "summary": [
+    {
+      "split": "validation",
+      "n": 850,
+      "top1": 290,
+      "top3": 607,
+      "unseen": 850,
+      "unclassified": 0
+    },
+    {
+      "split": "test",
+      "n": 781,
+      "top1": 262,
+      "top3": 553,
+      "unseen": 781,
+      "unclassified": 0
+    }
+  ]
+}

@@ -14,16 +14,25 @@ def grams(s):
     return Counter(s[i:i+n] for n in (1,2,3) for i in range(len(s)-n+1))
 
 
-def main(src,out):
+def main(src,out,hold_out_materials=False):
     manifest=src/"manifest.json"
     assert hashlib.sha256(manifest.read_bytes()).hexdigest()=="e04d7fa10e012825561031befff1f9d7f63b6e88272c9e528eb523fdcab6bfd0"
     raw=src/"project_boq_rows.csv"
     assert hashlib.sha256(raw.read_bytes()).hexdigest()==json.loads(manifest.read_text(encoding="utf8"))["files_sha256"][raw.name]
     rows=read(raw)
+    held = set()
+    if hold_out_materials:
+        codes = defaultdict(set)
+        for row in rows:
+            if row["split"] == "train":
+                codes[row["major_category"]].add(row["material_code"])
+        held = {sorted(group)[0] for group in codes.values() if len(group) >= 2}
+    removed_names = {normalize(r["item_name"]) for r in rows
+                     if r["split"] == "train" and r["material_code"] in held}
     groups=defaultdict(Counter)
     seen=set()
     for r in rows:
-        if r["split"]=="train":
+        if r["split"]=="train" and normalize(r["item_name"]) not in removed_names:
             groups[r["major_category"]].update(grams(r["item_name"]))
             seen.add(normalize(r["item_name"]))
     freq=Counter(k for v in groups.values() for k in v)
@@ -41,6 +50,8 @@ def main(src,out):
             if r["split"]!=split or r["synthetic_project_id"]=="FAC-20261122-SC-0052":
                 continue
             text=normalize(r["item_name"])
+            if hold_out_materials and (r["material_code"] not in held or text in seen):
+                continue
             if text not in scores:
                 v=vector(grams(text))
                 ranking=sorted(((round(100*sum(x*w.get(k,0) for k,x in v.items()),1),c) for c,w in chapters.items()),key=lambda t:(-t[0],t[1]))
@@ -52,9 +63,11 @@ def main(src,out):
             unseen+=text not in seen
             unknown+=not ranked
         summary.append(dict(split=split,n=n,top1=top1,top3=top3,unseen=unseen,unclassified=unknown))
-    (out/"factory_c1_summary.json").write_text(json.dumps(dict(chapters=len(groups),summary=summary),indent=2),encoding="utf8")
+    filename = "factory_c1_held_materials.json" if hold_out_materials else "factory_c1_summary.json"
+    (out/filename).write_text(json.dumps(dict(chapters=len(groups),held=sorted(held),summary=summary),indent=2),encoding="utf8")
     print(summary)
 
 
 if __name__=="__main__":
-    main(Path(sys.argv[1]),Path(sys.argv[2]))
+    main(Path(sys.argv[1]),Path(sys.argv[2]),"--held-materials" in sys.argv[3:])
+
