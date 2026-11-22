@@ -1,3 +1,7 @@
+## 2026-11-22 廠房比較補充紀錄
+
+[比較紀錄](../research/2a_synthetic/kde_comparison/FACTORY_COMPARISON_LOG_ZH.md) 收錄 A0／B1 配對、A0／A1 70% 主分析及 90% 敏感度、三份逐案 CSV 與重跑方式。A0 仍待 API 逐案驗證。
+
 ## 2026-11-22 廠房研究結果與重現
 
 事前選值提交 6a46be8，安全規則提交 527cb72，C1 提交 915a3ad。結果提交以 `research: publish factory evening results and report` 識別。說明、命令及限制見 [廠房實驗報告](../research/2a_synthetic/kde_comparison/FACTORY_EVENING_RESULTS_ZH.md)。B1 逐案 CSV 兩次 SHA256 同為 6ae62704923abf6351717acff8c3c7d190748e3341a14d59956da58c7c21e107，直接平均連結比對 126 案分組相符。數量各 9/26 案可估，價格 26/26；重建假設不代表作者實作。材料碼匹配 3386/3386，保守規則放行 207/3386；配對壓力 182/182 轉人工；章節評估僅涵蓋已見名稱。Python 18+21 與既有 Release 解析器 79 項通過。住宅缺原始檔，A0/A1 未評分；下一步是另以獨立可追溯原始資料執行 A0 基線驗證。無生產變更或演算法替換。
