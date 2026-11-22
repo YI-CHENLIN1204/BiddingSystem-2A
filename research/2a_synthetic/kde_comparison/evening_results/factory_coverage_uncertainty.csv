@@ -1,0 +1,5 @@
+level,metric,difference,ci95_low,ci95_high
+70,coverage,0.064815,-0.024691,0.160494
+70,relative_width,0.025839,0.004277,0.046765
+90,coverage,0.027778,-0.012346,0.078704
+90,relative_width,0.059393,0.042693,0.074716
