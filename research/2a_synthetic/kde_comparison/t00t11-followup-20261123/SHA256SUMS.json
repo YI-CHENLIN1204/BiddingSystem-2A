@@ -1,0 +1,18 @@
+{
+  "UnitConversionService.cs": "3eea408c55321444ce4ea8bf0a2d25bc57323146e5a4cc3e9573c905334b39bb",
+  "UnitSafety.csproj": "68ec05f600440c4061cefeb29474e5c74363defffbcc925f5daea0125bddfca2",
+  "Program.cs": "f87bdae7df70ac7184eb7610816bd8bfec52111733f8620ce3d11e4810437633",
+  "CatalogFixture.cs": "8132d3fd7e83d2675c2d8011283ea2f6667382f1db2f214fcd496244439a98d3",
+  "baseline.jsonl": "2973b6486f494d2dc6204734cb4421846bccd3be2a4839a88fe90cdd4e88df30",
+  "patched.jsonl": "36a1996391ed34ae77dfc5feaf050edd4232210c7a5b338cb102b749ca806ea3",
+  "build.log": "1d259e550f80bbff22c834469086bbe45510c592757156ec7c174b7a7941cb0a",
+  "benchmark_pipeline.py": "75f9dbc5d10ad2d13a9b06cde30990dfb08cb664ae0b05763f6d2d4c1f217da2",
+  "environment.log": "c00c2bad76ecb45a724432fb250c8c407ffc6abfead84d9a0024f5ef7120b8b1",
+  "pipeline.json": "69fb70ffcbbfb11eff0c812776e3e463d56acdb0ec9657f2412b000b7706e936",
+  "pipeline-cases.csv": "f63f7d2cba792ec967cea2222648f22b930542aae94e0ce075fc71f20951e296",
+  "parser-source-blobs.json": "42201d80a6136d1ac0798d97a1cad1baf7f2866cd380c944e9bc752947f7211e",
+  "parser-verify.log": "3a20d7902d4a492f32678ab4ae542eae2fa519464df0a135a7a7a237b84a9512",
+  "parser-build.log": "5a3cf80cff89f47fd9570b1b471fc712a2e9e2c60090af6d66d558213014e41f",
+  "parser-run.log": "b79b8c3e4ecd46bd01c3a89faf342d191aecaa9c5c095722f3f692b8c3f0cff8",
+  "verify_parser_snapshot.py": "7a79bc39ef0397b923aff8ef3e9eab090ce94279653dfcfc5f1bb1544e63fbae"
+}

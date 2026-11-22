@@ -1,0 +1,28 @@
+git fetch
+fatal: unable to access 'https://github.com/YI-CHENLIN1204/BiddingSystem-2A.git/': Failed to connect to github.com port 443 after 46 ms: Could not connect to server
+docker info
+WARNING: Error loading config file: open C:\Users\User\.docker\config.json: Access is denied.
+permission denied while trying to connect to the docker API at npipe:////./pipe/docker_engine
+
+wsl --list --quiet (exit 4294967295)
+存取被拒。 
+
+錯誤碼： Wsl/E_ACCESSDENIED
+
+如果這是未預期的錯誤，請考慮搜尋現有的問題，或在 https://github.com/microsoft/WSL/issues 提交新問題。
+PATH commands
+postgres not found
+initdb not found
+pg_ctl not found
+soffice not found
+pandoc not found
+abiword not found
+Word COM startup
+Retrieving the COM class factory for component with CLSID {000209FF-0000-0000-C000-000000000046} failed due to the following error: 80070520 指定的登入工作階段不存在。可能已被終止。 (0x80070520).
+LibreOffice download
+  % Total    % Received % Xferd  Average Speed   Time    Time     Time  Current
+                                 Dload  Upload   Total   Spent    Left  Speed
+
+  0     0    0     0    0     0      0      0 --:--:-- --:--:-- --:--:--     0
+  0     0    0     0    0     0      0      0 --:--:-- --:--:-- --:--:--     0
+curl: (7) Failed to connect to download.documentfoundation.org port 443 after 9 ms: Could not connect to server

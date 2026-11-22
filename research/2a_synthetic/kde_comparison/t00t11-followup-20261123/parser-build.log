@@ -1,0 +1,11 @@
+  正在判斷要還原的專案...
+  已還原 C:\Users\User\Documents\Codex\2026-11-21\new-chat-2\outputs\parser-clean\tests\WorkbookParserTests\WorkbookParserTests.csproj (215 毫秒 內)。
+  已還原 C:\Users\User\Documents\Codex\2026-11-21\new-chat-2\outputs\parser-clean\崴正\崴正.csproj (252 毫秒 內)。
+  崴正 -> C:\Users\User\Documents\Codex\2026-11-21\new-chat-2\outputs\parser-clean\崴正\bin\Release\net10.0\崴正.dll
+  WorkbookParserTests -> C:\Users\User\Documents\Codex\2026-11-21\new-chat-2\outputs\parser-clean\tests\WorkbookParserTests\bin\Release\net10.0\WorkbookParserTests.dll
+
+建置成功。
+    0 個警告
+    0 個錯誤
+
+經過時間 00:00:04.85

@@ -1,0 +1,130 @@
+{
+  "utc": "2026-11-22T17:02:44.579005+00:00",
+  "runtime": "3.12.10",
+  "host": "Windows-10-10.0.19045-SP0",
+  "replay_sha256": "871aad8d7ca290a4a64bc86ea9405d0bd92050cbd90a565fe83d4f3780232e6c",
+  "pairs_sha256": "2e46e6020ac41822f5f582d99483a188d35f86509f074a752bba757dbc4cb57d",
+  "benchmark_sha256": "75f9dbc5d10ad2d13a9b06cde30990dfb08cb664ae0b05763f6d2d4c1f217da2",
+  "compare_scope": "offline K5 conditional workload; each method selects its own frozen five references",
+  "load_and_integrity_ms": 153.2853,
+  "combined_process_peak_rss_bytes": 62373888,
+  "checked_case_method_results": 180,
+  "methods": {
+    "A0-K": {
+      "pool_ms": {
+        "p50": 0.0176,
+        "p95": 0.0334,
+        "n": 90
+      },
+      "cluster_ms": {
+        "p50": 0.0,
+        "p95": 0.0,
+        "n": 90
+      },
+      "select_ms": {
+        "p50": 0.08485,
+        "p95": 0.2985,
+        "n": 90
+      },
+      "prepare_ms": {
+        "p50": 0.0015,
+        "p95": 0.003,
+        "n": 90
+      },
+      "bandwidth_ms": {
+        "p50": 0.0,
+        "p95": 0.0,
+        "n": 90
+      },
+      "quantile_ms": {
+        "p50": 0.0042,
+        "p95": 0.0084,
+        "n": 90
+      },
+      "total_ms": {
+        "p50": 0.12265000000000001,
+        "p95": 0.3335,
+        "n": 90
+      },
+      "batch_ms": {
+        "p50": 4.274,
+        "p95": 6.5262,
+        "n": 3
+      }
+    },
+    "B1-K": {
+      "pool_ms": {
+        "p50": 0.0496,
+        "p95": 0.0633,
+        "n": 90
+      },
+      "cluster_ms": {
+        "p50": 1.7471999999999999,
+        "p95": 64.2955,
+        "n": 90
+      },
+      "select_ms": {
+        "p50": 0.294,
+        "p95": 0.5599,
+        "n": 90
+      },
+      "prepare_ms": {
+        "p50": 0.0022,
+        "p95": 0.0034,
+        "n": 90
+      },
+      "bandwidth_ms": {
+        "p50": 166.6137,
+        "p95": 200.911,
+        "n": 90
+      },
+      "quantile_ms": {
+        "p50": 1.7643,
+        "p95": 2.8284,
+        "n": 90
+      },
+      "total_ms": {
+        "p50": 179.4084,
+        "p95": 237.8833,
+        "n": 90
+      },
+      "batch_ms": {
+        "p50": 5617.6285,
+        "p95": 5818.4816,
+        "n": 3
+      }
+    }
+  },
+  "batches": [
+    {
+      "trial": 0,
+      "method": "A0-K",
+      "ms": 4.274
+    },
+    {
+      "trial": 0,
+      "method": "B1-K",
+      "ms": 5225.9671
+    },
+    {
+      "trial": 1,
+      "method": "B1-K",
+      "ms": 5617.6285
+    },
+    {
+      "trial": 1,
+      "method": "A0-K",
+      "ms": 6.5262
+    },
+    {
+      "trial": 2,
+      "method": "A0-K",
+      "ms": 4.1412
+    },
+    {
+      "trial": 2,
+      "method": "B1-K",
+      "ms": 5818.4816
+    }
+  ]
+}
