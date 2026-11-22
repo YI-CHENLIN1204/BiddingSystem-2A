@@ -11,3 +11,17 @@
 p95 採 nearest-rank。配置量計算目前執行緒的累積位元組。三份檔在同一程序連續執行，程序峰值工作集 84,144,128 bytes（80.25 MiB），包含 .NET 執行環境及前序工作。這些結果限於本次測試機與這三份 163–167 列標單，完整 API 與大規模標單效能仍待測。
 
 重跑：`dotnet run -c Release --project tools/graduation-synthetic/ParserBenchmark -- <Excel 路徑...>`。輸出每檔 SHA256、列數與原始計量欄位。
+
+## 大型標單解析補測
+
+2026-11-22。合成單一明細工作表，每列六欄。正式 TenderExcelParser 在 .NET 10 Release 執行，每個規模在獨立程序暖機一次後量測 20 次，列數全數符合預期。計時包含列出分頁與解析，Excel 檔已先載入記憶體。
+
+| 明細列 | 檔案 bytes | 中位 ms | p95 ms | 中位配置 bytes | 程序峰值工作集 bytes |
+|---:|---:|---:|---:|---:|---:|
+| 1,000 | 28,983 | 80.101 | 181.054 | 12,652,740 | 102,264,832 |
+| 10,000 | 228,294 | 292.269 | 437.395 | 111,720,540 | 134,750,208 |
+| 50,000 | 1,119,934 | 1,417.204 | 1,450.953 | 556,425,496 | 203,788,288 |
+
+配置量為每次解析在目前執行緒累積配置。程序峰值包含暖機、執行環境及 GC。單一工作表的規模測試與完整 API 負載仍有不同的適用範圍。
+
+先執行 `dotnet run -c Release --project tools/graduation-synthetic/ParserBenchmark -- --generate <output-dir>`。每份輸出 XLSX 各用獨立 `dotnet run -c Release --no-build --project tools/graduation-synthetic/ParserBenchmark -- <xlsx>` 量測。
