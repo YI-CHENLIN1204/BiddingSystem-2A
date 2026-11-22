@@ -1,3 +1,7 @@
+## 2026-11-22 演算法等樣本數公平性更正（研究規格，尚未重跑）
+
+使用者要求比較兩套算法時同測試案、每案每scope同樣**有效歷史樣本筆數**；已核對 A0/A1 是同26件test×3項、每項同8個參考IDs，為KDE-only消融；舊A0/B1為Top8對B1變動群組樣本量，**不是嚴格等N的完整方案比較**。因此撤回「已證明完整B1不如A0」的表述。正式A0繼續運作只為風險控制，而非已證實勝出。新增 docs/EQUAL_SAMPLE_ALGORITHM_FAIRNESS_PROTOCOL_2026-11-22.md：K5主與K8敏感度；兩法共同可比test案、同scope/真值/單位/面積、相同有效參考K；原B1與B1-K研究變體分開，缺K者報不可比，不借用test或造假。**新版測試NOT RUN**；沒有修改正式DB、程式或歷史結果。
+
 ## 2026-11-22 算法採用門檻覆核
 
 [採用判斷](../research/2a_synthetic/kde_comparison/FACTORY_ADOPTION_DECISION_ZH.md)：目前保留 A0，隔離環境重查仍阻塞。

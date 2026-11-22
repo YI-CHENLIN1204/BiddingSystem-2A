@@ -1,3 +1,5 @@
+**公平比較重要更正：A0對B1的舊報告使用不同有效歷史筆數，不能宣稱完整方法的等N勝負。請先讀 docs/EQUAL_SAMPLE_ALGORITHM_FAIRNESS_PROTOCOL_2026-11-22.md，並實際完成K5/K8等有效歷史樣本控制研究。原A0/A1同8筆參考ID結果屬KDE-only消融。**
+
 # Codex 今晚執行指令（整段可貼）
 
 請使用繁體中文，在 `YI-CHENLIN1204/BiddingSystem-2A` 的**獨立研究工作樹**完成完整測試，最後一次整合提交到 `research/kde-comparison-20261122`。開始先 fetch 最新 `feature/1d-api-integration` 與 research HEAD，檢查 `git status`，不得覆蓋現有工作樹／未提交檔案。**先讀** AGENTS.md、.agents/skills/waizheng-2a-handoff-guardian/SKILL.md、README.md、docs/CURRENT_HANDOFF_2026-11-11.md、docs/RESEARCH_TRACEABILITY_2026-11-11.md、docs/HOLDOUT_EVALUATION_2026-11-22.md、docs/ALGORITHM_KDE_EXPERIMENT_PLAN_2026-11-22.md、**docs/EVENING_FULL_TEST_PLAN_2026-11-22.md**。

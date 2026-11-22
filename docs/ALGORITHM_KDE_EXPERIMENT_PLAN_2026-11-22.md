@@ -1,3 +1,5 @@
+**公平比較重要更正：A0對B1的舊報告使用不同有效歷史筆數，不能宣稱完整方法的等N勝負。請先讀 docs/EQUAL_SAMPLE_ALGORITHM_FAIRNESS_PROTOCOL_2026-11-22.md，並實際完成K5/K8等有效歷史樣本控制研究。原A0/A1同8筆參考ID結果屬KDE-only消融。**
+
 # 2A 演算法對照實驗計畫：現行加權分位數 vs KDE／階層分群
 
 日期：2026-11-22。識別：kde-isolated-comparison-plan-20261122。狀態：**只有計畫，尚未建立比較頁、執行 KDE 或產出任何勝負數據**。
