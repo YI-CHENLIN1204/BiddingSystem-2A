@@ -1,0 +1,21 @@
+{
+  "chapters": 21,
+  "summary": [
+    {
+      "split": "validation",
+      "n": 3644,
+      "top1": 3644,
+      "top3": 3644,
+      "unseen": 0,
+      "unclassified": 0
+    },
+    {
+      "split": "test",
+      "n": 3386,
+      "top1": 3386,
+      "top3": 3386,
+      "unseen": 0,
+      "unclassified": 0
+    }
+  ]
+}
