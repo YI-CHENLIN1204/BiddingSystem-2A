@@ -1,0 +1,39 @@
+{
+  "held": [
+    "FAC-METAL-ROOF",
+    "FAC-ROLLING-DOOR",
+    "SYN-CONCRETE",
+    "SYN-WORK-001",
+    "SYN-WORK-002",
+    "SYN-WORK-003",
+    "SYN-WORK-008",
+    "SYN-WORK-011",
+    "SYN-WORK-012",
+    "SYN-WORK-021",
+    "SYN-WORK-022",
+    "SYN-WORK-023",
+    "SYN-WORK-033",
+    "SYN-WORK-051",
+    "SYN-WORK-084",
+    "SYN-WORK-094"
+  ],
+  "terms": 148,
+  "results": {
+    "validation": {
+      "exact": {
+        "pending": 850
+      },
+      "contains": {
+        "pending": 850
+      }
+    },
+    "test": {
+      "exact": {
+        "pending": 781
+      },
+      "contains": {
+        "pending": 781
+      }
+    }
+  }
+}
