@@ -26,8 +26,9 @@ for (structure, scope), rows in sorted(groups.items()):
         project = differences[structure].setdefault(row["project"], [])
         project.append(tuple(metrics[0] - base[m+"_score"] for m in ("a0","a1")))
     output.append([structure, scope, len(rows), *map(mean, zip(*outcomes))])
-assert sum(row[2] for row in output) == 78
-path = Path(sys.argv[2])/f"factory_a2_{round(100*(1-alpha))}.csv"
+assert sum(row[2] for row in output) == len(baselines) == len(run["test"])
+prefix = "past_only_" if run["past_only"] else ""
+path = Path(sys.argv[2])/f"{prefix}factory_a2_{round(100*(1-alpha))}.csv"
 with path.open("w", encoding="utf8", newline="") as stream:
     writer = csv.writer(stream)
     writer.writerow(["structure","scope","n","relative_score","coverage","relative_width"])
