@@ -31,3 +31,7 @@ T08 已補三份完整測試標單的 C# 解析量測，163–167 列，每份 2
 ## 2026-11-22 T08 大規模解析
 
 1,000／10,000／50,000 列各 20 次解析完成，列數一致。詳見 `FACTORY_PARSER_BENCHMARK_ZH.md`。完整 API 負載仍待隔離環境。
+
+## 2026-11-22 B1／B2 金額分母
+
+已補 26 案配對、結構分層 bootstrap。詳見 `FACTORY_DENOMINATOR_BOOTSTRAP_ZH.md`。
