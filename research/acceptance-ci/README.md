@@ -1,7 +1,7 @@
 # 2A 研究驗收 CI
 以研究分支 push 自動觸發。隔離作業使用 GitHub Ubuntu runner 的 PostgreSQL 17 service 與合成資料。流程中的 Draft 由 EF fixture 建立。後續流程呼叫實際 API。換算副本只覆蓋 runner 的編譯工作樹。Workflow 不載入 GitHub Secrets。
 
-作業保留資料庫身分及空 schema 的寫入前驗證、EF 轉換、HTTP 請求日誌、專案狀態與稽核檢查。匿名稽核不符合預期會令作業失敗。正式 API 該提交沒有註冊 Authentication/Authorization，中間代理層的角色策略及測試帳號驗收依然需要獨立環境。不將匿名測試當作角色矩陣。HTTP 效能只量測建案讀取。
+作業保留資料庫身分及空 schema 的寫入前驗證、EF 轉換、HTTP 請求日誌、專案狀態與稽核檢查。runner 以一次性亂數憑證驗收稽核角色。匿名應回 401／403、無效憑證 401、Reader 403，Supervisor 應回 200 並讀回已發布與重開事件。這些條件均納入作業通過門檻。驗收使用實際研究 API 路由與隔離身分，正式部署授權另行驗收。HTTP 效能只量測建案讀取。
 
 Word 作業輸出 PDF、逐頁 PNG、每頁文字診斷及 SHA-256。每頁均保留待人工覆核。
 

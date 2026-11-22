@@ -1,6 +1,7 @@
 """Only call the ephemeral runner API using synthetic identifiers."""
 import json
 import math
+import os
 import statistics
 import urllib.error
 import urllib.parse
@@ -13,8 +14,10 @@ fixture = json.loads(Path("evidence/api/fixture.json").read_text())
 project = f"/api/projects/{fixture['project']}"
 other = f"/api/projects/{fixture['other']}"
 
-def request(label, path, *, post=False, key=None, form=None, expected=200, required=True):
+def request(label, path, *, post=False, key=None, form=None, expected=200, required=True, token=None):
     headers = {"Idempotency-Key": key} if key else {}
+    if token:
+        headers['Authorization'] = f'Bearer {token}'
     data = urllib.parse.urlencode(form).encode() if form is not None else None
     call = urllib.request.Request("http://127.0.0.1:18081" + path, data,
                                   headers, method="POST" if post else "GET")
@@ -53,7 +56,12 @@ reopened = request("reopen", project + "/reopen-history-review", post=True, key=
 assert request("read-reopened", project)[1]["historyStatus"] == "Draft"
 assert request("repeat-reopen", project + "/reopen-history-review", post=True, key=key)[1] == reopened
 assert request("other-project-still-draft", other)[1]["historyStatus"] == "Draft"
-audit = request("audit-read", "/api/audit-logs")[1]
+reader = request("reader-audit-policy", "/api/audit-logs", expected=403,
+                 required=False, token=os.environ["RESEARCH_AUDIT_READER_TOKEN"])[0]
+invalid = request("invalid-audit-credential", "/api/audit-logs", expected=401,
+                  required=False, token="invalid")[0]
+audit = request("audit-read", "/api/audit-logs",
+                token=os.environ["RESEARCH_AUDIT_SUPERVISOR_TOKEN"])[1]
 rows = [row for row in audit["items"] if row.get("projectId") == fixture["project"]]
 actions = [row["actionType"] for row in rows]
 assert sum("publish" in action.lower() for action in actions) == 1, actions
@@ -62,5 +70,5 @@ elapsed = [request("benchmark-read", project)[2] for _ in range(30)]
 print(json.dumps(dict(test="read-http-summary", n=len(elapsed), p50_ms=statistics.median(elapsed),
                       p95_ms=sorted(elapsed)[math.ceil(.95*len(elapsed))-1],
                       anonymous_audit_status=anonymous)), flush=True)
-if anonymous not in (401, 403):
-    raise SystemExit("Anonymous audit access did not meet the deny policy.")
+if anonymous not in (401, 403) or reader != 403 or invalid != 401:
+    raise SystemExit("Audit access did not meet the role policy.")

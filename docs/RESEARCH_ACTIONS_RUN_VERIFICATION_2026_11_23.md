@@ -1,26 +1,17 @@
 # 研究 Actions 執行查核｜2026-11-23
 
-目標提交 `b3bceb90b2d8775ba7006ac146bed3d0ecffbc27`。研究分支 `research/kde-comparison-20261122` 上可讀回 `.github/workflows/2a-research-acceptance.yml`，Git blob 為 `75b0d7be7fd94e03cc522afa635f9cdcd6582412`。此提交的分支與變更路徑符合 YAML 的 push 篩選。看見 workflow 原始碼只能確認檔案存在，GitHub 的註冊和啟用狀態尚無證據。
+[Run 45049455364](https://github.com/YI-CHENLIN1204/BiddingSystem-2A/actions/runs/45049455364) 已核實，測試提交為 `b3bceb90b2d8775ba7006ac146bed3d0ecffbc27`。本次修改從 `e0109ade56e34f225efd001022ba3745bcbde838` 接續，提交訊息為 `research: enforce isolated audit roles and reconcile acceptance evidence`。
 
-- GitHub 連接器的 commit workflow runs 查詢回傳 `workflow_runs: []`，其涵蓋 PR 事件。
-- Commit combined status 回傳 `statuses: []`。
-- 本機無 GitHub CLI，直接連 `api.github.com` 的 run 查詢回報 TCP 443 連線失敗。
-- Run ID、job 狀態、日誌、Artifact ID 及執行產物 SHA-256 未取得。尚無法判定 Actions 停用、註冊失敗、push 未觸發或 run 已存在。
+- T04 隔離 EF 換算 PASS。T07 隔離 Draft 讀取、人工映射、Publish、Reopen、重複提交與稽核核對 PASS。兩項保留原本完整驗收門檻。
+- T08 隔離建案讀取 30 次，p50 19.04 ms、p95 26.33 ms。正式全流程效能仍待測。
+- T09 原 Run FAIL，匿名稽核 HTTP 200。研究 runner 編譯時加入隔離授權，門檻為匿名 401／403、無效憑證 401、一般使用者 403、主管 200 且讀回 T07 稽核紀錄。修正後 Actions 結果待核實。正式角色整合仍待驗收。
+- Word 渲染 job PASS，產出 8 頁 PDF 與 PNG。逐頁視覺仍待取得可開啟的頁面。下載產物後需按下列雜湊核對來源。
+- 本批範圍是 `research/acceptance-ci/` 與研究交接文件。隔離 runner 使用一次性 PostgreSQL，無 Migration。下一步核實新 Run 角色矩陣並完成八頁視覺判讀。研究算法與 A0 維持既有版本。
 
-| 項目 | 驗收狀態 | 已有證據與缺項 |
-|---|---|---|
-| T00 | PARTIAL | 缺住宅原始包、獨立時點與 API／SQL 候選核對。 |
-| T01 | PARTIAL | 缺授權的獨立標單及人工材料真值。 |
-| T02 | PARTIAL | 缺獨立切分詞彙與跨來源標單。 |
-| T03 | PARTIAL | 真人 AB/BA 計時待做。 |
-| T04 | PARTIAL | 沿用研究版 23/23。隔離 EF 載入與換算的 run 證據未取得。 |
-| T05 | PARTIAL | 缺住宅重播與獨立工程時點盲測。 |
-| T06 | PARTIAL | 缺工程師真值。 |
-| T07 | PARTIAL | 沿用乾淨 Parser 78 條 PASS。隔離 PostgreSQL HTTP 狀態流程未取得證據。 |
-| T08 | PARTIAL | 沿用離線 K5。HTTP 延遲與執行數據未取得。 |
-| T09 | PARTIAL | 沿用 Parser 與交接檢查。匿名稽核的實際 HTTP 狀態、角色與稽核 run 證據未取得。 |
-| T10 | PARTIAL | 缺未見名稱與人工驗收。 |
-| T11 | PARTIAL | 缺獨立盲測與原法實作參數證據。 |
-| Word | 未驗證 | 尚未取得 PDF 及逐頁 PNG。無頁面視覺結論。 |
 
-取得 run 後，以 `isolated-api` 的 `fixture.log` 判定 T04，以 `http.jsonl` 中 Draft、人工映射、發布、重開、重複提交與稽核紀錄逐項判定 T07，另判定 T09 匿名稽核是否回傳 401／403。Job 失敗須保留各先前步驟已完成的證據。以 `word-rendered-pages` 逐頁檢閱圖像及 PDF。此輪僅記錄可觀察結果，無正式分支、A0 或 Supabase 變更。
+| 產物 | GitHub SHA-256 |
+|---|---|
+| [隔離 API](https://github.com/YI-CHENLIN1204/BiddingSystem-2A/actions/runs/45049455364/artifacts/14764044670) | `f377309bc77ed310d2a19ffe4f61db8973f33661462dce790b418d769f82c078` |
+| [Word 渲染](https://github.com/YI-CHENLIN1204/BiddingSystem-2A/actions/runs/45049455364/artifacts/14764009657) | `211cd7572a9f37798e4118ce70cb8e4e36a3945cfadb354acd37101ec35d2680` |
+
+GitHub 已核實兩件產物與相同的 head SHA。環境未能下載頁面位元組。第 1–8 頁的字型、圖表、分頁、頁邊與溢出均待視覺覆核。
