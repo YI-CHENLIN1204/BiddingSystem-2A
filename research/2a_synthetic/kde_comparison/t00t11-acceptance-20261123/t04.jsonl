@@ -1,0 +1,13 @@
+{"Id":"fractional_tonne_amount","Passed":true,"Expected":1000,"Success":true,"ConversionFactor":1000,"Quantity":125.000,"UnitPrice":3.2}
+{"Id":"fractional_kg_amount","Passed":true,"Expected":0.001,"Success":true,"ConversionFactor":0.001,"Quantity":0.000125,"UnitPrice":3200000}
+{"Id":"base_normalization","Passed":true,"Expected":1000,"Success":true,"ConversionFactor":1000,"Quantity":2000,"UnitPrice":0}
+{"Id":"base_missing","Passed":true,"Expected":null,"Success":false,"ConversionFactor":0,"Quantity":0,"UnitPrice":0}
+{"Id":"base_source_unknown","Passed":true,"Expected":null,"Success":false,"ConversionFactor":0,"Quantity":0,"UnitPrice":0}
+{"Id":"area_vs_volume","Passed":true,"Expected":null,"Success":false,"ConversionFactor":0,"Quantity":0,"UnitPrice":0}
+{"Id":"volume_vs_area","Passed":true,"Expected":null,"Success":false,"ConversionFactor":0,"Quantity":0,"UnitPrice":0}
+{"Id":"disabled_same_unit","Passed":true,"Expected":1,"Success":true,"ConversionFactor":1,"Quantity":2,"UnitPrice":300}
+{"Id":"disabled_cross_unit","Passed":true,"Expected":null,"Success":false,"ConversionFactor":0,"Quantity":0,"UnitPrice":0}
+{"Id":"missing_source_factor","Passed":true,"Expected":null,"Success":false,"ConversionFactor":0,"Quantity":0,"UnitPrice":0}
+{"Id":"zero_target_factor","Passed":false,"Error":"DivideByZeroException"}
+{"Id":"zero_source_factor","Passed":false,"Error":"DivideByZeroException"}
+{"Id":"negative_source_factor","Passed":false,"Expected":null,"Success":true,"ConversionFactor":-2,"Quantity":-4,"UnitPrice":-150}

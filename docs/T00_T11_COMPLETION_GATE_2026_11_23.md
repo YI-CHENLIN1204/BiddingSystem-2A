@@ -1,3 +1,7 @@
+## 2026-11-23 T00～T11 優先補測
+
+以 `3eef29061e8ab46a12da62c2a4b390f5031bfdba` 為研究基準。T04 服務 fixture 13 案中 10 通過、3 失敗（零或負係數）。T08 K5 共同可估的 30 案項預測計時完成。T07／T09 解析器既有二進位 78 條 PASS，Python 18/18。隔離 Docker daemon 拒絕存取，未執行資料庫寫入流程或角色測試。Word 通過封裝與嵌圖核對，視覺驗收仍未執行。完整狀態、重現命令及缺少的資料欄位見[補測紀錄](../research/2a_synthetic/kde_comparison/t00t11-acceptance-20261123/README.md)。下輪需先取得隔離 PostgreSQL 或可操作的 Word 渲染器，再補資料與人工驗收。
+
 # T00～T11 原始實驗全完成驗收門檻（2026-11-23）
 
 研究基準 `b38ea147ecd5d7209608e6f344385a99e6cec5ed`；研究分支 `research/kde-comparison-20261122`。狀態依實際證據，不用「已交報告」冒充「全測完成」。最新補測見 [合成 TRAIN DB 唯讀實測](../research/2a_synthetic/kde_comparison/LIVE_TRAIN_AUDIT_2026_11_23_ZH.md)。

@@ -1,0 +1,12 @@
+{
+  "UnitSafety.csproj": "68ec05f600440c4061cefeb29474e5c74363defffbcc925f5daea0125bddfca2",
+  "CatalogFixture.cs": "8132d3fd7e83d2675c2d8011283ea2f6667382f1db2f214fcd496244439a98d3",
+  "Program.cs": "4130c80c953a2b794b2fd266406ad79c58e672bfdb7bed0d8b59b840c3c1293e",
+  "benchmark_equal_workload.py": "d22d58af259462ed3c9d44f7a6beff5b81a2e23308883a0d372b9906aa7ec430",
+  "verify_word_package.py": "df6436952d3511a2acb25c398d276210c904d0810999b28a118e6ca04a601ab0",
+  "t04.jsonl": "4572385ce0a13c28289e63a0c9d7f56b84cbd996d43cfd335424e5bae98f3862",
+  "t08.json": "33dfdf5950cfb820c916a7681128a09ad8dfdf9fbee7a211749dcc5fb7bef615",
+  "t09-parser.log": "adbed31a9c73fd632a67005e0a8b96a3effa27f3573aa76aa3cdb5a96102e050",
+  "t09-python.log": "44b90e18289caf994005e6dd543d532ff399cdd3b2b8aa1795e19524ac97d24a",
+  "word-package.json": "0b2dd19f873e4117e87fa1bed4d41910277daefbb80197c2d566e64e90335014"
+}

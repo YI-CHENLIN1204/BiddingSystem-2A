@@ -1,0 +1,54 @@
+{
+  "utc": "2026-11-22T16:44:38.234787+00:00",
+  "runtime": "3.12.10",
+  "platform": "Windows-10-10.0.19045-SP0",
+  "processor": "AMD64 Family 25 Model 33 Stepping 0, AuthenticAMD",
+  "pairs_sha256": "2e46e6020ac41822f5f582d99483a188d35f86509f074a752bba757dbc4cb57d",
+  "source_manifest_sha256": "e04d7fa10e012825561031befff1f9d7f63b6e88272c9e528eb523fdcab6bfd0",
+  "program_sha256": "d22d58af259462ed3c9d44f7a6beff5b81a2e23308883a0d372b9906aa7ec430",
+  "kernel_sha256": "7f978778876efce6e55b0cd976c8213dcb29a124ca7bbf89276848e62d7b711a",
+  "scope_counts": {
+    "structure_price": 18,
+    "SYN-CONCRETE": 6,
+    "SYN-REBAR": 6
+  },
+  "trials": 10,
+  "references_per_case_item": 5,
+  "warmup_batches": 1,
+  "scope": "in-process prediction only; excludes selection, IO, API and DB",
+  "paired_outputs_verified": 60,
+  "methods": {
+    "A0-K": {
+      "batch_ms": [
+        0.1265,
+        0.2356,
+        0.2193,
+        0.1227,
+        0.1028,
+        0.1226,
+        0.1017,
+        0.1214,
+        0.102,
+        0.1224
+      ],
+      "p50_ms": 0.1225,
+      "p95_ms": 0.2356
+    },
+    "B1-K": {
+      "batch_ms": [
+        4736.3554,
+        4893.2097,
+        4737.1918,
+        4755.6225,
+        4820.2052,
+        4702.2186,
+        4929.1508,
+        5011.4075,
+        4751.6515,
+        4820.3946
+      ],
+      "p50_ms": 4787.913850000001,
+      "p95_ms": 5011.4075
+    }
+  }
+}
