@@ -9,3 +9,6 @@
 KDE A0/A1固定同一參考ID/相同權重；validation選帶寬、test不回調；比較70%（雙方P15/P85）與90%、相對Interval Score、P50 MAPE、Coverage、Width；不重做已完成144組權重搜尋。異常Precision/Recall/FPR缺工程核准真值不得填。來源或工具缺失就以NOT RUN記理由，繼續其他工作，不得偽造結果。
 
 最後必產 **Markdown＋Word 測試報告**、逐案與彙總CSV/JSON、run_manifest、test_status、**至少6張以真實輸出數據製成的300dpi PNG＋SVG**（字典成長、Auto錯誤、安全節省工時、KDE score、Coverage/Width、MAPE）。報告每圖要 n、單位、合成來源、圖說和文字分析；不能只有漂亮示意。結果不能自動改正式演算法。照守門Skill同步 docs/HANDOFF_CHANGE_REVIEWS.jsonl、主交接、WORKLOG、研究追溯，執行 `python scripts/check_handoff_review.py --base <start-SHA>` 與可用測試。整批提交後回覆我：每項PASS/FAIL/NOT RUN、真實數據、報告與圖檔路徑、Git SHA、正式資料是否完全沒變。今晚時間是規劃配額，不能犧牲安全或虛構驗證。
+
+
+**務必先讀 `docs/EXTERNAL_REPORT_ALGORITHM_SPEC_2026-11-22.md`**；A1 是我方加權 KDE 消融，不是外部作者整套算法。B1 才是依外部報告第3.2～3.7節重建的分群＋等權 KDE；如群數、網格等原文缺值，先明列假設並在看test前凍結，不可宣稱exact reproduction。

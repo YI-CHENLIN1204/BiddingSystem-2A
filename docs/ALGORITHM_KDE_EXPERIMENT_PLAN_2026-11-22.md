@@ -93,3 +93,8 @@ KDE 實作須明示高斯核加權 CDF、非負截斷、二分反解分位數、
 - 5185 的研究網站需展示同一 JSON、可篩選用途／結構／項目並提供匯出，不得有資料庫連線。
 
 Codex 開始時必讀 AGENTS.md、.agents/skills/waizheng-2a-handoff-guardian/SKILL.md、docs/CURRENT_HANDOFF_2026-11-11.md、docs/RESEARCH_TRACEABILITY_2026-11-11.md、docs/HOLDOUT_EVALUATION_2026-11-22.md、README.md，先檢查工作樹與現有144組比較。每批程式變更依 guardian 同步 docs/HANDOFF_CHANGE_REVIEWS.jsonl 與交接。**此計畫沒有修改現行演算法、DB、正式 API、UI 或正式估算設定，也尚無任何KDE結果。**
+
+
+## 外部報告演算法來源鎖定（重要）
+
+Codex 要比較的**外部作者原法不是 A1 加權KDE**。必須先讀 [外部專題報告演算法重建規格](EXTERNAL_REPORT_ALGORITHM_SPEC_2026-11-22.md)，其中含原報告第3.2～3.7節八因子 30/15/7/11/7/5/20/5 權重、非對稱距離與對稱化、平均連結階層分群、群內等權 Gaussian KDE、臨界單峰帶寬、非負 CDF、價格用地面積/數量樓地板面積、TF-IDF與容許偏差公式、報告金標數值與尚未指定的參數。A0/A1 是公平 KDE-only 消融；B1 才是外部報告的完整**依文字重建**方案。沒有作者程式/群數等設定就不可稱「忠實重現原始實作」。本次不直接上傳原作者 DOCX 到 Public GitHub。
