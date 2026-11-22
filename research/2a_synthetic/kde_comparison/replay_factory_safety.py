@@ -4,7 +4,7 @@ import hashlib
 import json
 import math
 import sys
-from collections import defaultdict
+from collections import Counter, defaultdict
 from pathlib import Path
 
 from replay_factory_dictionary import normalize
@@ -53,6 +53,7 @@ def main(source, dest):
     summaries=[]
     stress=[]
     labor=[]
+    breakdown=defaultdict(Counter)
     for split in ("validation","test"):
         targets=[r for r in rows if r["split"]==split and r["synthetic_project_id"]!=EXCLUDED]
         counts=[0,0,0]
@@ -63,6 +64,14 @@ def main(source, dest):
             contains_auto+=pred is not None
             contains_correct+=pred==r["material_code"]
             counts[1 if safe is None else 0 if safe==r["material_code"] else 2]+=1
+            exact = terms.get(normalize(r["item_name"]), set())
+            for field in FIELDS:
+                for method, prediction in (
+                    ("zero", None), ("exact", next(iter(exact)) if len(exact)==1 else None),
+                    ("contains", pred), ("guarded", safe)
+                ):
+                    outcome = "pending" if prediction is None else "correct" if prediction==r["material_code"] else "wrong"
+                    breakdown[split,field,r[field],method][outcome]+=1
         n=len(targets)
         c,m,w=counts
         assert n==c+m+w
@@ -89,6 +98,11 @@ def main(source, dest):
                 stress.append(dict(split=split,project=i,source_line=r["synthetic_line_id"],case=case,
                                    review_required=case!="control",contains_auto=pred is not None,guard_auto=safe is not None))
     write("factory_mapping_safety.csv",summaries)
+    write("factory_mapping_strata.csv", [
+        dict(split=split,field=field,value=value,method=method,total=c.total(),
+             correct=c["correct"],wrong=c["wrong"],pending=c["pending"])
+        for (split,field,value,method),c in sorted(breakdown.items())
+    ])
     write("factory_safety_cases.csv",stress)
     write("labor_savings_scenarios.csv",labor)
     print(json.dumps(summaries))
@@ -96,3 +110,4 @@ def main(source, dest):
 
 if __name__=="__main__":
     main(Path(sys.argv[1]),Path(sys.argv[2]))
+
