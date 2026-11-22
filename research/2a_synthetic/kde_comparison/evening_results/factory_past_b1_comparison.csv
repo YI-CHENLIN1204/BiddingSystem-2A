@@ -1,0 +1,7 @@
+level,scope,total,a0_available,b1_available,paired,a0_score,b1_score
+0.7,SYN-CONCRETE,26,20,6,6,0.388628,0.463844
+0.7,SYN-REBAR,26,20,6,6,0.381270,0.672346
+0.7,structure_price,26,20,18,18,0.478589,2.055658
+0.9,SYN-CONCRETE,26,20,6,6,0.573946,0.585840
+0.9,SYN-REBAR,26,20,6,6,0.600482,0.970820
+0.9,structure_price,26,20,18,18,0.749644,2.906178

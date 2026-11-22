@@ -39,7 +39,7 @@ def cluster(train, features_by_id, count):
     return groups
 
 
-def main(source, output):
+def main(source, output, past_only=False):
     freeze = json.loads(Path(__file__).with_name("factory_b1_freeze.json").read_text(encoding="utf8"))
     digest = lambda p: hashlib.sha256(p.read_bytes()).hexdigest()
     manifest = source / "manifest.json"
@@ -53,7 +53,12 @@ def main(source, output):
     f = {i:features(p) for i,p in projects.items()}
     train = {i for i,p in projects.items() if p["split"] == "train"}
     assert len(train) == 126 and len(projects) == 180
-    groups = cluster(train, f, freeze["groups"])
+    groups = [] if past_only else cluster(train, f, freeze["groups"])
+
+    @lru_cache(None)
+    def historical_groups(cutoff):
+        pool = {i for i in train if projects[i]["start_date"] < cutoff}
+        return cluster(pool, f, freeze["groups"]) if len(pool) >= freeze["groups"] else []
     cost = ("structure_price",)
     totals = defaultdict(lambda:defaultdict(float))
     for r in rows("project_boq_rows.csv"):
@@ -75,8 +80,10 @@ def main(source, output):
     for i,p in sorted(projects.items()):
         if i in train or i == "FAC-20261122-SC-0052":
             continue
-        g = min(groups, key=lambda g:(mean(distance(f[i], f[j]) for j in g),g))
+        candidate_groups = historical_groups(p["start_date"]) if past_only else groups
+        g = min(candidate_groups, key=lambda g:(mean(distance(f[i], f[j]) for j in g),g), default=())
         assert i not in g
+        assert not past_only or all(projects[j]["start_date"] < p["start_date"] for j in g)
         assert {s[0] for s in totals[i]} == {"SYN-CONCRETE","SYN-REBAR","structure_price"}
         for scope,truth in totals[i].items():
             assert truth > 0 and math.isfinite(truth)
@@ -112,4 +119,5 @@ def main(source, output):
 
 
 if __name__ == "__main__":
-    main(Path(sys.argv[1]),Path(sys.argv[2]))
+    main(Path(sys.argv[1]),Path(sys.argv[2]),"--past-only" in sys.argv[3:])
+
