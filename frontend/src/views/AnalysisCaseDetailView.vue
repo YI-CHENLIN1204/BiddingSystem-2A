@@ -267,6 +267,8 @@ interface MappedBulkQuantity {
   observedQuantity: number | null
 }
 interface BulkRange {
+  basisLabel: string
+  references: { projectId: number; projectName: string; basisArea: number; quantity: number; usagePerArea: number; similarityScore: number; finalWeight: number }[]
   unit: string
   message: string
   referenceProjectCount: number
@@ -332,6 +334,7 @@ function statusLabel(value: string) {
 function trafficClass(value: string) {
   if (value === 'Green') return 'traffic green'
   if (value === 'Red') return 'traffic red'
+  if (value === 'Yellow') return 'traffic yellow'
   return 'traffic gray'
 }
 
@@ -615,6 +618,22 @@ async function runPrice() {
   }
 }
 
+function bulkVerdict(item: ExtraResult) {
+  const observed = item.observed?.quantity
+  const low = item.estimate?.lowerQuantity
+  const high = item.estimate?.upperQuantity
+  if (observed == null || low == null || high == null) return ''
+  if (observed < low) return '偏低'
+  if (observed > high) return '偏高'
+  return '正常'
+}
+
+function bulkUsagePerArea(item: ExtraResult) {
+  const target = versionDetail.value?.case
+  const area = item.majorCategory === '土方及基礎工程' ? target?.siteArea : target?.totalFloorArea
+  return area && item.observed ? item.observed.quantity / area : null
+}
+
 const visibleQuantityItems = computed(() => (quantityResult.value?.result.items ?? [])
   .filter(item => item.range?.lowerQuantity != null && item.range.medianQuantity != null && item.range.upperQuantity != null))
 const visiblePrices = computed(() => (priceResult.value ? [priceResult.value] : additionalPrices.value)
@@ -800,12 +819,16 @@ onMounted(loadCase)
                   <td>{{ item.majorCategory ?? '—' }}</td>
                   <td><strong>{{ item.name }}</strong></td>
                   <td class="number">{{ item.observed ? formatNumber(item.observed.quantity, 4) + ' ' + item.observed.unit : '—' }}</td>
-                  <td class="number">—</td>
+                  <td class="number">{{ formatNumber(bulkUsagePerArea(item), 6) }}</td>
                   <td class="number">{{ formatNumber(item.estimate?.lowerQuantity, 2) }} {{ item.estimate?.lowerQuantity != null ? item.estimate.unit : '' }}</td>
                   <td class="number">{{ formatNumber(item.estimate?.medianQuantity, 2) }} {{ item.estimate?.medianQuantity != null ? item.estimate.unit : '' }}</td>
                   <td class="number">{{ formatNumber(item.estimate?.upperQuantity, 2) }} {{ item.estimate?.upperQuantity != null ? item.estimate.unit : '' }}</td>
                   <td>{{ item.estimate?.referenceProjectCount ?? '—' }}</td>
-                  <td>{{ item.summary }}</td>
+                  <td>
+                    <span :class="trafficClass(bulkVerdict(item) === '正常' ? 'Green' : 'Yellow')"></span>
+                    {{ bulkVerdict(item) }}
+                    <span class="text-muted small">（歷史用量）</span>
+                  </td>
                 </tr>
               </tbody>
             </table>
@@ -842,6 +865,25 @@ onMounted(loadCase)
               </div>
             </details>
           </div>
+          <details v-for="item in extraResults" :key="'bulk-reference-' + item.name" style="margin: 12px 20px;">
+            <summary style="cursor: pointer; font-weight: 600;">查看 {{ item.name }} 歷史參考案件明細（{{ item.estimate?.referenceProjectCount }} 案）</summary>
+            <p class="text-muted small mt-2">{{ item.summary }} 面積基準：{{ item.estimate?.basisLabel }}。</p>
+            <div class="table-wrap">
+              <table>
+                <thead><tr><th>建案</th><th>基準面積 m²</th><th>材料數量</th><th>單位用量</th><th>相似度 %</th><th>最終權重</th></tr></thead>
+                <tbody>
+                  <tr v-for="reference in item.estimate?.references ?? []" :key="reference.projectId">
+                    <td>{{ reference.projectName }} (#{{ reference.projectId }})</td>
+                    <td>{{ formatNumber(reference.basisArea, 2) }}</td>
+                    <td>{{ formatNumber(reference.quantity, 4) }} {{ item.estimate?.unit }}</td>
+                    <td>{{ formatNumber(reference.usagePerArea, 6) }}</td>
+                    <td>{{ formatNumber(reference.similarityScore, 2) }}</td>
+                    <td>{{ formatNumber(reference.finalWeight, 6) }}</td>
+                  </tr>
+                </tbody>
+              </table>
+            </div>
+          </details>
         </template>
 
         <template v-for="priceResult in visiblePrices" :key="priceResult.analysisRunId">
@@ -1039,6 +1081,7 @@ onMounted(loadCase)
 .major-tag { display: inline-block; padding: 4px 7px; color: #34425d; background: #eef1f5; border-radius: 5px; font-size: 12px; font-weight: 700; }
 .traffic { display: inline-block; width: 9px; height: 9px; margin-right: 5px; border-radius: 50%; }
 .traffic.green { background: var(--wz-success); }
+.traffic.yellow { background: #d97706; }
 .traffic.red { background: var(--wz-danger); }
 .traffic.gray { background: #8a949e; }
 .result-status { font-weight: 800; }
