@@ -1,3 +1,18 @@
+## 2026-11-22 廠房資料包已完成並交付（雲端尚未匯入）
+
+使用者同意補獨立廠房資料後，已完成離線生成、檢核與資料包交付。**這不等於 Supabase 已有廠房或新服務／瀏覽器已驗收。** 最新工具／測試提交 [d7f7eb3e](https://github.com/YI-CHENLIN1204/BiddingSystem-2A/commit/d7f7eb3e868e9422dc852623789243e91ac63fdf)，`feature/1d-api-integration`；main 本次僅同步交接。
+
+- 廠房180案：RC／SC／SRC各60；每結構42 train／9 validation／9 test，共126／27／27。獨立FAC前綴ID，原住宅300案與原Holdout未動；住宅來源三CSV SHA均與原manifest相符。
+- 最終23,980筆正量正價基準明細，歷史CSV一對一；每案39–59種工項。型錄104種、基準實際67種。4個新增廠房素材模板為金屬鋼板屋面、金屬外牆板、工業捲門、耐磨地坪，尚未建立雲端主檔。
+- 情境區分單層／倉儲附辦公／多層生產／地下室／耐磨地坪／裝卸場，含有無辦公區、不同屋面及地下條件。適用性sidecar區分ApplicablePresent、NotApplicableAssumed、OutOfScope，缺項不補0；6個test配對漏項／明確零量變體與基準及歷史隔離，不算6個獨立案。
+- 交付 `factory-synthetic-v1-20261122.zip`（2,110,357 bytes；SHA256 `b6d4d69188d7713ab8d86624e3f4eaa015ec4d1b51910ddf558d4ba7f53f4e4e`），內含來源、假設、真值、6份完整Excel、雜湊，以及**僅126 train／16,786列**的匯入候選。已實際保存並在對話交付；Git保留可重現程式、報告及雜湊，不塞大型CSV。
+- 新 `generate_factory_dataset.py`、`factory_material_catalog.json`、`prepare_factory_delivery.py`、10項廠房測試；Excel exporter新增 `--complete` 保留所有數量／單位／價格，舊預設缺欄測試保留。生成與封裝拒覆寫，沒有資料庫寫入路徑。
+- 已通過：Python21/21、API／Parser專案Release0 warnings/errors、原78回歸及6份train/test Excel逐列數量／單價／金額／工程分類核對、ZIP CRC與全部封裝SHA、住宅SHA；交接審查16檔1筆通過。GitHub CI [44984804587](https://github.com/YI-CHENLIN1204/BiddingSystem-2A/actions/runs/44984804587) 三項 completed/success。
+- **本輪雲端只SELECT，最後實查仍住宅210、廠房0；沒有匯入、建立主檔、自動Approved、Schema/Migration或模型權重變更。** 用量、價格與適用性都是明示的未校準假設；是所選工種示例，非完整結構合約、真實工程標準或企業準確率。
+- 初版辦公區套用過廣及型錄／實際材料數混淆已在發布前修正，最終是23,980列及39–59種，不使用中間輸出的25,690列／47–59種。以最終ZIP及報告雜湊為準。
+- 下一步確認隔離合成測試目標、4個新模板的名稱／單位／範圍，準備只新增train的匯入／回滾；不能把validation/test/配對變體發布成歷史或覆寫住宅。接著新服務DB及完整UI、集中回歸整合，最後準確度。既有5184→5264→Supabase讀取成功紀錄仍保留，但不代表已載入本批。
+- [完整生成與實測報告](https://github.com/YI-CHENLIN1204/BiddingSystem-2A/blob/d7f7eb3e868e9422dc852623789243e91ac63fdf/docs/FACTORY_DATASET_2026-11-22.md)及同名JSON；識別 `factory-dataset-v1-20261122`。
+
 ## 2026-11-22 資料範圍確認：目前全住宅，廠房仍是缺口
 
 使用者指出廠房缺資料，並確認工項不必每個建案都有。本輪 Supabase 純 SELECT 與既有 CSV 已核對；**沒有修改程式或雲端資料，也尚未生成／匯入廠房**。
