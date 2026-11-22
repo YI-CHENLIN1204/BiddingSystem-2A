@@ -1,3 +1,7 @@
+## 2026-11-22 算法採用門檻覆核
+
+[採用判斷](../research/2a_synthetic/kde_comparison/FACTORY_ADOPTION_DECISION_ZH.md)：目前保留 A0，隔離環境重查仍阻塞。
+
 ## 2026-11-22 實驗證據索引
 
 完成區間、擾動及字典分層的資料對帳。[報告證據索引](../research/2a_synthetic/kde_comparison/FACTORY_REPORT_EVIDENCE_INDEX_ZH.md)
