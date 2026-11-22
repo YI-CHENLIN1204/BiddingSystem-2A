@@ -10,3 +10,7 @@
 python research/2a_synthetic/kde_comparison/export_a0_contract.py <source> <b1-output>
 dotnet run -c Release --project tools/graduation-synthetic/QuantileContract -- <b1-output>/factory_a0_contract.json
 ```
+
+## 固定候選池選案核對
+
+固定候選池新增正式 ProjectSimilarityService.ScoreCandidates 核對。159 案項共 1,272 個參考 ID、順位與權重相符（權重絕對誤差 ≤ 1e-12），477 個分位對照再度通過。候選資格由離線快照提供，排序與權重公式由驗證程式重播；SQL、正式 API 與入庫資料範圍仍待隔離環境驗證。
