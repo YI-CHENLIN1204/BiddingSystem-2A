@@ -19,3 +19,7 @@
 本輪以 `python -m unittest discover -s research/2a_synthetic -p test_research.py`、`python -m unittest discover -s tools/graduation-synthetic -p 'test_*.py'`、`dotnet run --no-build -c Release --project tests/WorkbookParserTests` 驗證。最後一項使用現有編譯結果。舊報告的 79 行計數包含最終成功摘要，本表計 78 條以 PASS 開頭的檢查。
 
 端到端驗證需可使用的隔離 PostgreSQL。獨立驗證需可追溯資料及實際可用日期。論文中的估算結論目前限於已封存合成資料。
+
+## 2026-11-22 補充驗證
+
+T06 已完成四組同案量價混合擾動。T08 已完成 Python KDE 批次微基準，完整解析效能及正式 API 尚待驗證。
