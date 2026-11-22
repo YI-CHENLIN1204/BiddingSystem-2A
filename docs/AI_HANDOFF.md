@@ -1,3 +1,13 @@
+## 2026-11-23 Factory Fairness V2 報告及證據包交付
+
+研究基準 `ce0c90d97bd731bc00aff13c048aa8a1bd763995`。本輪沿用 E1、E2、E3 封存結果。Word 補入 8 張核心圖，附圖號、繁體中文圖說及樣本數。完整證據包含 Word、Markdown、14 組 300 dpi PNG／SVG、封存逐案與彙總資料、重現說明及逐檔 SHA256。
+
+- [Word](../research/2a_synthetic/output/fairness-v2/final-delivery/Factory-Fairness-Report-ZH.docx)
+- [完整證據包](../research/2a_synthetic/output/fairness-v2/final-delivery/Factory-Fairness-V2-Evidence.zip)
+- [驗收紀錄](../research/2a_synthetic/output/fairness-v2/final-delivery/README.md)
+
+合成結果僅供探索性引用。E2 B1-K5／K8 屬等樣本控制，E3 全群 B1 是研究重建。正式 A0 的採用結論維持。Word 版面逐頁驗收尚未完成，Word COM 無法啟動，未取得可供目視核對的渲染頁。
+
 ## 2026-11-22 Fairness V2 交付檔案結構驗收（研究數字未改）
 
 識別 `factory-fairness-v2-deliverable-qa-20261122`。使用者帶回Codex  `d2a71c9` E2/K5/K8等樣本結果及教授版報告。本輪GitHub核對：`fairness-v2` 直接有14張SVG、沒有獨立PNG，雖manifest列出PNG SHA；`Factory-Fairness-V2-Raw.zip` 僅含 `equal_sample_per_case.csv`、`e3_per_case.csv`、`dictionary_material_per_case.csv` 三份原始CSV；GitHub Word DOCX 只有主XML等3個OOXML檔、沒有`word/media/`或嵌圖。使用者提到的 Evidence.zip 在該GitHub資料夾未找到（可能另在Codex本機）。報告實際版面未render目視，正式API/DB未驗證，原E2試驗未由本輪重跑。具體補圖、PNG/證據包、逐頁QA與結論引用要求見 [`docs/FACTORY_FAIRNESS_V2_DELIVERABLE_QA_2026-11-22.md`](FACTORY_FAIRNESS_V2_DELIVERABLE_QA_2026-11-22.md)。E2結構金額K5/K8結果可引用為合成探索性研究，但K8鋼筋混凝土各只有1個共同可估；正式A0保持不變，不是實務勝負已驗證。
