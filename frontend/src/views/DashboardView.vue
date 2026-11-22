@@ -178,18 +178,6 @@ onMounted(load)
           </div>
         </RouterLink>
 
-        <RouterLink to="/estimation" class="workflow-card">
-          <div class="workflow-number">03</div>
-          <div>
-            <h3>結構體工程估算</h3>
-            <p>利用相似歷史建案的結構體工程每坪單價，建立 P15 / P50 / P85 價格合理區間。</p>
-            <div class="flow">
-              <span>結構體工程</span>
-              <span>→ 每坪單價</span>
-              <span>→ 合理總價</span>
-            </div>
-          </div>
-        </RouterLink>
       </section>
 
       <section v-if="readiness" class="card">

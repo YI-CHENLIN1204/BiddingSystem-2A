@@ -1,6 +1,8 @@
 <script setup lang="ts">
-import { onMounted, ref } from 'vue'
-import { useRouter } from 'vue-router'
+import { computed, defineAsyncComponent, onMounted, ref } from 'vue'
+import { useRoute, useRouter } from 'vue-router'
+import ProjectSearch from '../components/ProjectSearch.vue'
+import { emptyProjectSearch, matchesProject, type SearchableProject } from '../services/projectSearch'
 import ProjectFields from '../components/ProjectFields.vue'
 import WorkbookSheetPicker from '../components/WorkbookSheetPicker.vue'
 import { api, apiForm } from '../services/api'
@@ -31,43 +33,24 @@ interface OneDStatus {
   message: string
 }
 
-interface ReadinessItem {
-  detectionCategoryId: number
-  majorCategoryName: string
-  detectionCategoryName: string
-  unitName: string
-  mappedMaterialCount: number
-  historicalTransactionCount: number
-  historicalProjectCount: number
-  minimumSampleCount: number
-  missingProjectCount: number
-  status: string
-  message: string
-}
-
-interface ReadinessResponse {
-  categoryCount: number
-  minimumSampleCount: number
-  readyCount: number
-  items: ReadinessItem[]
-}
-
-interface PolicyResponse {
-  provisional: boolean
-  oneDUsage: string
-  selfUpload: {
-    enabled: boolean
-    mode: string
-    requirement: string
-    priceFields: string
-  }
-}
 
 const router = useRouter()
 const { options, error: optionsError } = useSystemOptions()
+const route = useRoute()
+const showEstimate = computed(() => route.query.tab === 'estimate')
+const EstimationView = defineAsyncComponent(() => import('./EstimationView.vue'))
+const filters = ref(emptyProjectSearch())
+const sources = [
+  { value: 'Upload', label: '自行上傳' },
+  { value: 'OneD', label: '1D 匯入' },
+]
+function searchFields(item: AnalysisCaseSummary): SearchableProject {
+  return { ...item, name: item.caseName, stage: item.currentSourceType }
+}
+const searchableCases = computed(() => cases.value.map(searchFields))
+const filteredCases = computed(() => cases.value.filter(item => matchesProject(searchFields(item), filters.value)))
+
 const cases = ref<AnalysisCaseSummary[]>([])
-const policy = ref<PolicyResponse | null>(null)
-const readiness = ref<ReadinessResponse | null>(null)
 const oneDStatus = ref<OneDStatus>({ configured: false, message: '1D API 尚未設定' })
 const loading = ref(false)
 const saving = ref(false)
@@ -149,16 +132,12 @@ async function load() {
   loading.value = true
   error.value = ''
   try {
-    const [caseResult, policyResult, oneDResult, readinessResult] = await Promise.all([
+    const [caseResult, oneDResult] = await Promise.all([
       api<AnalysisCaseSummary[]>('/analysis-cases'),
-      api<PolicyResponse>('/analysis-cases/policy'),
       api<OneDStatus>('/one-d/status').catch(() => ({ configured: false, message: '1D 服務無法連線，仍可自行上傳 Excel' })),
-      api<ReadinessResponse>('/detection-category/readiness').catch(() => null),
     ])
     cases.value = caseResult
-    policy.value = policyResult
     oneDStatus.value = oneDResult
-    readiness.value = readinessResult
   } catch (caught) {
     error.value = caught instanceof Error ? caught.message : '無法載入待偵錯案件'
   } finally {
@@ -251,98 +230,62 @@ onMounted(load)
     <div class="page-intro">
       <div>
         <h2>待偵錯案件</h2>
-        <p>待偵錯資料與已決標歷史資料分開管理。1D 或自行上傳只負責建立 2A 的版本快照，後續可反覆偵錯。</p>
       </div>
-      <button class="btn btn-primary" type="button" @click="openCreate">新增待偵錯案件</button>
+      <button v-if="!showEstimate" class="btn btn-primary" type="button" @click="openCreate">新增待偵錯案件</button>
     </div>
 
     <div v-if="optionsError || error" class="notice error">{{ optionsError || error }}</div>
     <div v-if="message" class="notice success">{{ message }}</div>
 
-    <section v-if="policy?.provisional" class="notice info">
-      <strong>目前依暫定流程實作：</strong>
-      2A 可獨立用「自行上傳」運作；有連接 1D 的產學環境則會額外開放「從 1D 匯入」。
-      偵錯範圍先以「鋼筋、混凝土」作為細項數量偵錯單位，並以「結構體工程」作為大項估算／價格異常單位。
-    </section>
+    <nav class="nav nav-tabs" aria-label="待偵錯案件工作區">
+      <RouterLink to="/analysis-cases" class="nav-link" :class="{ active: !showEstimate }" :aria-current="!showEstimate ? 'page' : undefined">案件清單</RouterLink>
+      <RouterLink :to="{ path: '/analysis-cases', query: { tab: 'estimate' } }" class="nav-link" :class="{ active: showEstimate }" :aria-current="showEstimate ? 'page' : undefined">工程與材料估算</RouterLink>
+    </nav>
 
-    <section v-if="readiness" class="history-readiness card">
-      <div class="card-header readiness-head">
-        <div>
-          <h3>歷史基準狀態</h3>
-          <div class="text-muted small mt-1">
-            細項數量偵錯至少需要 {{ readiness.minimumSampleCount }} 個有效歷史建案。
-            目前只追蹤鋼筋與混凝土。
-          </div>
-        </div>
-        <RouterLink to="/projects" class="btn btn-sm btn-outline-primary">前往建案管理</RouterLink>
+    <EstimationView v-if="showEstimate" />
+    <template v-else>
+      <ProjectSearch v-model="filters" :projects="searchableCases" stage-label="資料來源" :stages="sources" />
+
+      <div v-if="loading" class="card p-4 text-muted">載入待偵錯案件中...</div>
+      <div v-else-if="!cases.length" class="card empty-state">
+        尚未建立待偵錯案件。{{ oneDStatus.configured ? '可從 1D 匯入，或直接上傳結構化標單。' : '目前未連接 1D，請直接上傳結構化標單建立案件。' }}
       </div>
-      <div class="readiness-grid">
-        <div v-for="item in readiness.items" :key="item.detectionCategoryId" class="readiness-item">
-          <div class="readiness-title">
-            <strong>{{ item.detectionCategoryName }}</strong>
-            <span>{{ item.unitName }}</span>
-          </div>
-          <div class="readiness-count">
-            <strong>{{ item.historicalProjectCount }}</strong>
-            <span>/ {{ item.minimumSampleCount }} 案</span>
-          </div>
-          <div class="readiness-bar">
-            <span
-              :style="{ width: Math.min(100, (item.historicalProjectCount / item.minimumSampleCount) * 100) + '%' }"
-            ></span>
-          </div>
-          <div class="small" :class="item.status === 'ReadyForEstimation' ? 'text-success' : 'text-muted'">
-            {{ item.message }}
-          </div>
-        </div>
-      </div>
-    </section>
 
-    <section class="stat-grid">
-      <div class="stat"><span>待偵錯案件</span><strong>{{ cases.length }}</strong></div>
-      <div class="stat"><span>目前版本總數</span><strong>{{ cases.reduce((sum, item) => sum + item.versionCount, 0) }}</strong></div>
-      <div class="stat"><span>目前來源：1D</span><strong>{{ cases.filter(x => x.currentSourceType === 'OneD').length }}</strong></div>
-      <div class="stat"><span>目前來源：自行上傳</span><strong>{{ cases.filter(x => x.currentSourceType === 'Upload').length }}</strong></div>
-    </section>
-
-    <div v-if="loading" class="card p-4 text-muted">載入待偵錯案件中...</div>
-    <div v-else-if="!cases.length" class="card empty-state">
-      尚未建立待偵錯案件。{{ oneDStatus.configured ? '可從 1D 匯入，或直接上傳結構化標單。' : '目前未連接 1D，請直接上傳結構化標單建立案件。' }}
-    </div>
-
-    <section v-else class="case-grid">
-      <RouterLink
-        v-for="item in cases"
-        :key="item.analysisCaseId"
-        :to="`/analysis-cases/${item.analysisCaseId}`"
-        class="case-card"
-      >
-        <div class="case-card-head">
-          <div>
-            <h3>{{ item.caseName }}</h3>
-            <div class="text-muted small">
-              {{ item.projectType }} ・ {{ item.structureType }} ・ {{ item.city }}
+      <div v-else-if="!filteredCases.length" class="card empty-state">找不到符合條件的案件。</div>
+      <section v-else class="case-grid">
+        <RouterLink
+          v-for="item in filteredCases"
+          :key="item.analysisCaseId"
+          :to="`/analysis-cases/${item.analysisCaseId}`"
+          class="case-card"
+        >
+          <div class="case-card-head">
+            <div>
+              <h3>{{ item.caseName }}</h3>
+              <div class="text-muted small">
+                {{ item.projectType }} ・ {{ item.structureType }} ・ {{ item.city }}
+              </div>
             </div>
+            <span class="source-badge" :class="item.currentSourceType === 'OneD' ? 'one-d' : 'upload'">
+              {{ sourceLabel(item.currentSourceType) }}
+            </span>
           </div>
-          <span class="source-badge" :class="item.currentSourceType === 'OneD' ? 'one-d' : 'upload'">
-            {{ sourceLabel(item.currentSourceType) }}
-          </span>
-        </div>
 
-        <div class="case-meta">
-          <div><span>總樓地板面積</span><strong>{{ formatNumber(item.totalFloorArea) }} m²</strong></div>
-          <div><span>基地面積</span><strong>{{ formatNumber(item.siteArea) }} m²</strong></div>
-          <div><span>樓層</span><strong>{{ item.floorCount }}F / B{{ item.basementFloorCount }}</strong></div>
-          <div><span>建案日期</span><strong>{{ formatDate(item.projectDate) }}</strong></div>
-          <div><span>版本</span><strong>{{ item.versionCount }} 版</strong></div>
-        </div>
+          <div class="case-meta">
+            <div><span>總樓地板面積</span><strong>{{ formatNumber(item.totalFloorArea) }} m²</strong></div>
+            <div><span>基地面積</span><strong>{{ formatNumber(item.siteArea) }} m²</strong></div>
+            <div><span>樓層</span><strong>{{ item.floorCount }}F / B{{ item.basementFloorCount }}</strong></div>
+            <div><span>建案日期</span><strong>{{ formatDate(item.projectDate) }}</strong></div>
+            <div><span>版本</span><strong>{{ item.versionCount }} 版</strong></div>
+          </div>
 
-        <div class="case-card-foot">
-          <span>目前版本：V{{ item.currentVersionNo ?? '-' }}</span>
-          <span>查看案件 →</span>
-        </div>
-      </RouterLink>
-    </section>
+          <div class="case-card-foot">
+            <span>目前版本：V{{ item.currentVersionNo ?? '-' }}</span>
+            <span>查看案件 →</span>
+          </div>
+        </RouterLink>
+      </section>
+    </template>
 
     <div v-if="showCreate" class="modal-backdrop-custom" @mousedown.self="showCreate = false">
       <div class="modal-dialog modal-xl" role="dialog" aria-modal="true" aria-labelledby="create-analysis-title">
@@ -466,25 +409,9 @@ onMounted(load)
 .modal-body { min-width: 0; }
 .modal-backdrop-custom :deep(.form-grid) { grid-template-columns: repeat(4, minmax(0, 1fr)); }
 .modal-backdrop-custom :deep(.form-grid .span-2:first-child) { grid-column: span 2; }
-.history-readiness { overflow: hidden; }
-.readiness-head { display: flex; justify-content: space-between; align-items: center; gap: 12px; }
-.readiness-head h3 { margin: 0; font-size: 16px; }
-.readiness-grid { display: grid; grid-template-columns: repeat(2, 1fr); gap: 0; }
-.readiness-item { padding: 18px; border-right: 1px solid #edf0f4; }
-.readiness-item:last-child { border-right: 0; }
-.readiness-title { display: flex; align-items: baseline; justify-content: space-between; gap: 12px; }
-.readiness-title span { color: var(--muted); font-size: 12px; }
-.readiness-count { display: flex; align-items: baseline; gap: 6px; margin-top: 12px; }
-.readiness-count strong { font-size: 24px; }
-.readiness-count span { color: var(--muted); font-size: 13px; }
-.readiness-bar { height: 7px; margin: 10px 0; overflow: hidden; background: #edf0f4; border-radius: 999px; }
-.readiness-bar span { display: block; height: 100%; background: var(--wz-primary); border-radius: inherit; }
 
 @media (max-width: 1050px) {
   .case-grid { grid-template-columns: 1fr; }
-  .readiness-grid { grid-template-columns: 1fr; }
-  .readiness-item { border-right: 0; border-bottom: 1px solid #edf0f4; }
-  .readiness-item:last-child { border-bottom: 0; }
   .case-meta { grid-template-columns: 1fr 1fr; }
   .modal-backdrop-custom :deep(.form-grid) { grid-template-columns: repeat(2, minmax(0, 1fr)); }
 }

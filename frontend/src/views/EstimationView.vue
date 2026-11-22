@@ -129,13 +129,6 @@ function formatMonth(value?: string | null) {
 
 <template>
   <div class="page-stack structural-estimation">
-    <div class="page-intro">
-      <div>
-        <h2>工程與材料估算</h2>
-        <p>輸入建案條件，估算結構體工程價格，或依標準材料比較鋼骨、模板與土方的歷史用量。</p>
-      </div>
-    </div>
-
     <div v-if="optionsError || error" class="notice error">{{ optionsError || error }}</div>
 
     <MaterialCapabilityPanel :structure-type="form.structureType" allow-specification-estimate />

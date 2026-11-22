@@ -1,12 +1,25 @@
 <script setup lang="ts">
-import { onMounted, ref, watch } from 'vue'
+import { computed, onMounted, ref } from 'vue'
+import ProjectSearch from '../components/ProjectSearch.vue'
+import { emptyProjectSearch, matchesProject, type SearchableProject } from '../services/projectSearch'
 import ProjectFields from '../components/ProjectFields.vue'
 import { useSystemOptions } from '../composables/useSystemOptions'
-import { api, queryString } from '../services/api'
+import { api } from '../services/api'
 import type { ProjectForm, ProjectSummary } from '../types'
 
 const projects = ref<ProjectSummary[]>([])
-const search = ref('')
+const filters = ref(emptyProjectSearch())
+const stages = [
+  { value: 'approved', label: '已納入 2A 模型' },
+  { value: 'draft', label: '待歷史基準審核' },
+  { value: 'no-bid', label: '尚無決標資料' },
+]
+function searchFields(project: ProjectSummary): SearchableProject {
+  const stage = project.hasFinalBid ? (project.historyStatus === 'Approved' ? 'approved' : 'draft') : 'no-bid'
+  return { ...project, name: project.projectName, stage }
+}
+const searchableProjects = computed(() => projects.value.map(searchFields))
+const filteredProjects = computed(() => projects.value.filter(project => matchesProject(searchFields(project), filters.value)))
 const loading = ref(false)
 const saving = ref(false)
 const error = ref('')
@@ -15,7 +28,6 @@ const editingId = ref<number | null>(null)
 const showEditor = ref(false)
 const { options, error: optionsError } = useSystemOptions()
 const form = ref<ProjectForm>(emptyForm())
-let searchTimer: number | undefined
 
 function emptyForm(): ProjectForm {
   return {
@@ -53,7 +65,7 @@ async function load() {
   loading.value = true
   error.value = ''
   try {
-    const response = await api<{ items: ProjectSummary[] }>(`/projects${queryString({ search: search.value.trim() })}`)
+    const response = await api<{ items: ProjectSummary[] }>('/projects')
     projects.value = response.items
   } catch (caught) {
     error.value = caught instanceof Error ? caught.message : '無法載入建案'
@@ -90,11 +102,6 @@ async function remove(project: ProjectSummary) {
   }
 }
 
-watch(search, () => {
-  window.clearTimeout(searchTimer)
-  searchTimer = window.setTimeout(load, 300)
-})
-
 onMounted(load)
 </script>
 
@@ -111,14 +118,12 @@ onMounted(load)
       <button type="button" class="btn-close" aria-label="關閉" @click="message = ''"></button>
     </div>
 
-    <div class="card p-3 mb-3">
-      <input v-model="search" class="form-control" placeholder="搜尋建案名稱或縣市" aria-label="搜尋建案" />
-    </div>
+    <ProjectSearch v-model="filters" :projects="searchableProjects" stage-label="歷史基準狀態" :stages="stages" />
 
     <div v-if="loading" class="card p-4 text-muted">載入建案資料中...</div>
-    <div v-else-if="!projects.length" class="card p-4 text-muted">目前沒有符合條件的建案</div>
+    <div v-else-if="!filteredProjects.length" class="card p-4 text-muted">目前沒有符合條件的建案</div>
 
-    <article v-for="project in projects" v-else :key="project.projectId" class="card p-3 mb-3 project-card">
+    <article v-for="project in filteredProjects" v-else :key="project.projectId" class="card p-3 mb-3 project-card">
       <div class="d-flex justify-content-between align-items-start gap-3">
         <div>
           <div class="d-flex align-items-center gap-2 mb-2 flex-wrap">
