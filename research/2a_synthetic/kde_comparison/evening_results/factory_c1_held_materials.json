@@ -25,7 +25,13 @@
       "top1": 290,
       "top3": 607,
       "unseen": 850,
-      "unclassified": 0
+      "unclassified": 0,
+      "review_ranks": {
+        "fallback": 243,
+        "2": 308,
+        "1": 290,
+        "3": 9
+      }
     },
     {
       "split": "test",
@@ -33,7 +39,13 @@
       "top1": 262,
       "top3": 553,
       "unseen": 781,
-      "unclassified": 0
+      "unclassified": 0,
+      "review_ranks": {
+        "fallback": 228,
+        "2": 283,
+        "1": 262,
+        "3": 8
+      }
     }
   ]
 }

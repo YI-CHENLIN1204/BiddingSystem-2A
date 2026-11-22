@@ -46,6 +46,7 @@ def main(src,out,hold_out_materials=False):
     summary=[]
     for split in ("validation","test"):
         n=top1=top3=unseen=unknown=0
+        review_ranks = Counter()
         for r in rows:
             if r["split"]!=split or r["synthetic_project_id"]=="FAC-20261122-SC-0052":
                 continue
@@ -62,7 +63,11 @@ def main(src,out,hold_out_materials=False):
             top3+=r["major_category"] in ranked[:3]
             unseen+=text not in seen
             unknown+=not ranked
-        summary.append(dict(split=split,n=n,top1=top1,top3=top3,unseen=unseen,unclassified=unknown))
+            rank = next((i for i, chapter in enumerate(ranked[:3], 1)
+                         if chapter == r["major_category"]), None)
+            review_ranks[str(rank) if rank else "fallback"] += 1
+        summary.append(dict(split=split,n=n,top1=top1,top3=top3,unseen=unseen,unclassified=unknown,
+                            review_ranks=dict(review_ranks)))
     filename = "factory_c1_held_materials.json" if hold_out_materials else "factory_c1_summary.json"
     (out/filename).write_text(json.dumps(dict(chapters=len(groups),held=sorted(held),summary=summary),indent=2),encoding="utf8")
     print(summary)
