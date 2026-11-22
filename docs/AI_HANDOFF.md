@@ -1,3 +1,7 @@
+## 2026-11-22 A0 正式分位核對
+
+159 個案項、477 個 C# 分位對照通過，正式 API 候選池仍待驗證。詳見研究分支 A0_QUANTILE_CONTRACT_ZH.md。
+
 ## 2026-11-22 廠房時間順序敏感度
 
 只採日期早於目標的訓練案，三項各可估 20/26，70% 主區間改善 3.1%，未達採用門檻。[驗證紀錄](../research/2a_synthetic/kde_comparison/FACTORY_TEMPORAL_SENSITIVITY_ZH.md)
