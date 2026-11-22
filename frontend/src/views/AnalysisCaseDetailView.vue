@@ -3,8 +3,6 @@ import { computed, onMounted, ref } from 'vue'
 import { useRoute } from 'vue-router'
 import { api, apiForm } from '../services/api'
 import WorkbookSheetPicker from '../components/WorkbookSheetPicker.vue'
-import MaterialCapabilityPanel from '../components/MaterialCapabilityPanel.vue'
-import BulkMaterialEstimatePanel from '../components/BulkMaterialEstimatePanel.vue'
 
 interface CaseSummary {
   analysisCaseId: number
@@ -250,7 +248,32 @@ const versionSaving = ref(false)
 
 const quantityResult = ref<QuantityRunResponse | null>(null)
 const priceResult = ref<PriceRunResponse | null>(null)
-const selectedMajorCategory = ref('')
+interface ExtraResult {
+  name: string
+  summary: string
+  range?: string
+}
+interface BulkOption {
+  key: string
+  structures: string[]
+  materials: { materialId: number; materialName: string }[]
+}
+interface BulkRange {
+  unit: string
+  message: string
+  lowerQuantity: number | null
+  medianQuantity: number | null
+  upperQuantity: number | null
+}
+const extraResults = ref<ExtraResult[]>([])
+const additionalPrices = ref<PriceRunResponse[]>([])
+const quantityGroups = [
+  { key: 'structural-steel', name: '鋼骨' },
+  { key: 'formwork', name: '模板' },
+  { key: 'earthwork', name: '土方開挖' },
+]
+const specificationItems = ['養護劑', '脫模劑']
+const unsupportedPriceItems = ['鋼筋', '混凝土', ...quantityGroups.map(x => x.name), ...specificationItems]
 const topCount = ref<number | null>(null)
 
 const currentVersion = computed(() =>
@@ -344,12 +367,13 @@ async function selectVersion(versionId: number) {
   quantityScopeError.value = ''
   quantityResult.value = null
   priceResult.value = null
+  extraResults.value = []
+  additionalPrices.value = []
   error.value = ''
   try {
     versionDetail.value = await api<VersionDetail>(
       `/analysis-cases/${caseId}/versions/${versionId}`,
     )
-    selectedMajorCategory.value = majorCategories.value[0] ?? ''
     // Auxiliary read-only report. Failure must not block older API deployments
     // from displaying the version or its already saved analysis runs.
     try {
@@ -430,10 +454,56 @@ async function addVersion() {
   }
 }
 
+async function estimateAdditionalQuantities(version: VersionDetail, requestedTopCount: number | null) {
+  const specifications = specificationItems.map(name => ({ name, summary: '需確認指定產品及實際施工面積，標單版本未提供試算所需資料。' }))
+  let profiles: BulkOption[]
+  try {
+    profiles = (await api<{ profiles: BulkOption[] }>('/bulk-material-estimates/options')).profiles
+  } catch {
+    return [...quantityGroups.map(({ name }) => ({ name, summary: '無法讀取歷史估算工項。' })), ...specifications]
+  }
+  const results: ExtraResult[] = []
+  const itemNames = new Set(version.items.map(item => item.itemName.trim()))
+  for (const { key, name } of quantityGroups) {
+    const profile = profiles.find(option => option.key === key)
+    if (!profile?.structures.includes(version.case.structureType)) {
+      results.push({ name, summary: '目前結構類型不適用此估算。' })
+      continue
+    }
+    if (key === 'earthwork' && !version.case.basementFloorCount) {
+      results.push({ name, summary: '缺少可比較的地下開挖條件。' })
+      continue
+    }
+    const materials = profile.materials.filter(material => itemNames.has(material.materialName.trim()))
+    if (!materials.length) {
+      results.push({ name, summary: '本版沒有可按標準材料名稱確認的工項。' })
+      continue
+    }
+    for (const material of materials) {
+      try {
+        const response = await api<BulkRange>('/bulk-material-estimates/range', {
+          method: 'POST',
+          body: JSON.stringify({ profileKey: key, materialId: material.materialId, target: version.case, topCount: requestedTopCount }),
+        })
+        const range = response.medianQuantity == null ? undefined :
+          [response.lowerQuantity, response.medianQuantity, response.upperQuantity].map(value => formatNumber(value)).join(' / ') + ' ' + response.unit
+        results.push({ name: material.materialName, summary: response.message, range })
+      } catch (caught) {
+        results.push({ name: material.materialName, summary: caught instanceof Error ? caught.message : '數量估算失敗' })
+      }
+    }
+  }
+  return [...results, ...specifications]
+}
+
 async function runQuantity() {
-  if (!selectedVersionId.value) return
+  const version = versionDetail.value
+  if (!selectedVersionId.value || !version) return
+  additionalPrices.value = []
+  extraResults.value = []
   analyzing.value = true
   error.value = ''
+  message.value = ''
   priceResult.value = null
   try {
     quantityResult.value = await api<QuantityRunResponse>(
@@ -443,6 +513,11 @@ async function runQuantity() {
         body: JSON.stringify({ topCount: topCount.value || null }),
       },
     )
+    const baseItems = quantityResult.value.result.items
+    const missing = ['鋼筋', '混凝土']
+      .filter(name => !baseItems.some(item => item.detectionCategoryName.includes(name)))
+      .map(name => ({ name, summary: '此版本沒有符合數量偵錯納入條件的工項。' }))
+    extraResults.value = [...missing, ...await estimateAdditionalQuantities(version, topCount.value || null)]
     tab.value = 'analysis'
     message.value = `數量異常分析完成，已保存 Run #${quantityResult.value.analysisRunId}。`
     runs.value = await api<RunSummary[]>(`/analysis-cases/${caseId}/runs`)
@@ -505,38 +580,40 @@ async function viewRun(run: RunSummary) {
 
 
 async function runPrice() {
-  if (!selectedVersionId.value) return
-  if (!selectedMajorCategory.value) {
-    error.value = '此版本沒有可選擇的工程大項'
-    return
-  }
-
+  const versionId = selectedVersionId.value
+  if (!versionId) return
   analyzing.value = true
   error.value = ''
+  message.value = ''
   quantityResult.value = null
+  priceResult.value = null
+  additionalPrices.value = []
+  const requestedTopCount = topCount.value || null
+  const categories = majorCategories.value
+  const unavailable = unsupportedPriceItems.map(name => ({ name, summary: '缺少一致計價口徑的材料歷史單價基準。' }))
+  if (!categories.length) unavailable.unshift({ name: '結構體工程', summary: '此版本沒有可執行價格分析的工程大項。' })
   try {
-    priceResult.value = await api<PriceRunResponse>(
-      `/analysis-cases/${caseId}/versions/${selectedVersionId.value}/major-price-analysis`,
-      {
-        method: 'POST',
-        body: JSON.stringify({
-          majorCategory: selectedMajorCategory.value,
-          topCount: topCount.value || null,
-        }),
-      },
-    )
+    for (const majorCategory of categories) {
+      try {
+        additionalPrices.value.push(await api<PriceRunResponse>(
+          `/analysis-cases/${caseId}/versions/${versionId}/major-price-analysis`,
+          { method: 'POST', body: JSON.stringify({ majorCategory, topCount: requestedTopCount }) },
+        ))
+      } catch (caught) {
+        unavailable.unshift({ name: majorCategory, summary: caught instanceof Error ? caught.message : '價格分析失敗' })
+      }
+    }
+    extraResults.value = unavailable
     tab.value = 'analysis'
-    message.value = `大項價格分析完成，已保存 Run #${priceResult.value.analysisRunId}。`
     runs.value = await api<RunSummary[]>(`/analysis-cases/${caseId}/runs`)
   } catch (caught) {
-    error.value = caught instanceof Error ? caught.message : '大項價格分析失敗'
+    error.value = caught instanceof Error ? caught.message : '讀取歷次偵錯失敗'
   } finally {
     analyzing.value = false
   }
 }
 
 onMounted(loadCase)
-const analysisMode = ref('standard')
 </script>
 
 <template>
@@ -552,7 +629,7 @@ const analysisMode = ref('standard')
           {{ detail.case.floorCount }}F / B{{ detail.case.basementFloorCount }}
         </p>
       </div>
-      <button class="btn btn-primary" type="button" :disabled="!detail" @click="openAddVersion">
+      <button class="btn btn-primary" type="button" :disabled="!detail || analyzing" @click="openAddVersion">
         新增版本
       </button>
     </div>
@@ -570,6 +647,7 @@ const analysisMode = ref('standard')
           type="button"
           class="version-chip"
           :class="{ active: selectedVersionId === version.analysisBidVersionId }"
+          :disabled="analyzing"
           @click="selectVersion(version.analysisBidVersionId)"
         >
           <span class="version-title">
@@ -610,34 +688,15 @@ const analysisMode = ref('standard')
           </div>
 
           <div class="action-controls">
-            <label class="field">
-              <span>分析項目</span>
-              <select v-model="analysisMode" class="form-select">
-                <option value="standard">鋼筋／混凝土數量偵錯與價格異常</option>
-                <option value="bulk">數量估算（鋼骨、模板、土方）</option>
-                <option value="spec">數量估算（養護劑、脫模劑）</option>
-              </select>
-            </label>
-          </div>
-          <div v-if="analysisMode === 'standard'" class="action-controls">
             <label>
               <span>Top K（選填）</span>
-              <input v-model.number="topCount" type="number" min="1" class="form-control" placeholder="系統預設" />
+              <input v-model.number="topCount" :disabled="analyzing" type="number" min="1" class="form-control" placeholder="系統預設" />
             </label>
-            <button class="btn btn-primary" type="button" :disabled="analyzing" @click="runQuantity">
-              {{ analyzing ? '分析中...' : '數量偵錯' }}
-            </button>
-            <select v-model="selectedMajorCategory" class="form-select" :disabled="!majorCategories.length">
-              <option value="">選擇估算大項</option>
-              <option v-for="category in majorCategories" :key="category" :value="category">{{ category }}</option>
-            </select>
-            <button class="btn btn-outline-primary" type="button" :disabled="analyzing || !selectedMajorCategory" @click="runPrice">
-              價格異常
-            </button>
+            <button class="btn btn-primary" type="button" :disabled="analyzing" @click="runQuantity">數量估算</button>
+            <button class="btn btn-outline-primary" type="button" :disabled="analyzing" @click="runPrice">價格異常</button>
+            <span v-if="analyzing" role="status">分析中…</span>
           </div>
         </div>
-        <BulkMaterialEstimatePanel v-if="analysisMode === 'bulk'" :key="versionDetail.version.analysisCaseVersionId" :target="detail.case" />
-        <MaterialCapabilityPanel v-else-if="analysisMode === 'spec'" :key="versionDetail.version.analysisCaseVersionId" />
       </section>
 
       <section v-if="versionDetail" class="card quantity-scope-panel">
@@ -743,7 +802,7 @@ const analysisMode = ref('standard')
       </section>
 
       <section v-else-if="tab === 'analysis'" class="card">
-        <div v-if="!quantityResult && !priceResult" class="empty-state">
+        <div v-if="!quantityResult && !priceResult && !additionalPrices.length && !extraResults.length" class="empty-state">
           尚未對目前選取的版本執行分析。
         </div>
 
@@ -826,7 +885,7 @@ const analysisMode = ref('standard')
           </div>
         </template>
 
-        <template v-if="priceResult">
+        <template v-for="priceResult in (priceResult ? [priceResult] : additionalPrices)" :key="priceResult.analysisRunId">
           <div class="card-header">
             <div>
               <h3>價格異常：{{ priceResult.result.majorCategory }}</h3>
@@ -848,6 +907,18 @@ const analysisMode = ref('standard')
             <div><span>最大案例權重占比</span><strong>{{ formatNumber(priceResult.result.largestWeightSharePercent, 2) }}%</strong></div>
           </div>
         </template>
+        <div v-if="extraResults.length" class="table-wrap">
+          <table>
+            <thead><tr><th>工項</th><th v-if="quantityResult">P15／P50／P85 預估總量</th><th>結果或原因</th></tr></thead>
+            <tbody>
+              <tr v-for="(item, index) in extraResults" :key="index">
+                <td>{{ item.name }}</td>
+                <td v-if="quantityResult">{{ item.range ?? '—' }}</td>
+                <td>{{ item.summary }}</td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
       </section>
 
       <section v-else class="card">
@@ -863,7 +934,7 @@ const analysisMode = ref('standard')
                 <td>{{ run.status }}</td>
                 <td>{{ formatDate(run.createdAt) }}</td>
                 <td>
-                  <button class="btn btn-sm btn-outline-primary" type="button" @click="viewRun(run)">
+                  <button class="btn btn-sm btn-outline-primary" type="button" :disabled="analyzing" @click="viewRun(run)">
                     查看結果
                   </button>
                 </td>
