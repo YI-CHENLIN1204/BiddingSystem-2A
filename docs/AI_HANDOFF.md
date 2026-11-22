@@ -1,3 +1,7 @@
+## 2026-11-22 合成廠房第一版結案
+
+三份 CSV 重跑 SHA256 相符，維持探索性結論。第二版先核對正式 A0，再以獨立資料做時間切分。[結案紀錄](../research/2a_synthetic/kde_comparison/FACTORY_EXPERIMENT_V1_CLOSEOUT_ZH.md)
+
 ## 2026-11-22 廠房比較補充紀錄
 
 [比較紀錄](../research/2a_synthetic/kde_comparison/FACTORY_COMPARISON_LOG_ZH.md) 收錄 A0／B1 配對、A0／A1 70% 主分析及 90% 敏感度、三份逐案 CSV 與重跑方式。A0 仍待 API 逐案驗證。
