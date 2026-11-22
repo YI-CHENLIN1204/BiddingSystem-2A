@@ -32,3 +32,7 @@ python research/2a_synthetic/kde_comparison/replay_factory_dictionary.py <factor
 ## T02 訓練字典 67 詞對照
 
 同一組凍結測試案，沿用訓練案出現次數排序及名稱精確比對。50／67／100 詞分別正確對應 1300／1742／2384 列（分母 3386），各組錯配 0。67 詞待審 1644 列，驗證集命中 1809／3644。測試名稱都曾出現在完整訓練集。正式 67 詞的實際內容與來源仍未核實，保留 NOT RUN。重跑原字典程式，指向新輸出目錄。[完整曲線](evening_results/dictionary_growth_67.csv)
+
+## T01／T02 建案宏平均補測
+
+每案先算正確列／明細列，再等權平均。驗證 27 案、測試 26 案，按建案重抽 2000 次，種子 20261122。測試 50／67／100 詞為 39.86%／53.41%／72.52%，67 詞的 95% 區間為 49.49–57.30%。只涵蓋凍結的合成已見名稱。從研究目錄執行 `python factory_dictionary_macro.py <mapping_per_item.csv> <output.csv>`。機讀結果位於 `evening_results/dictionary_macro.csv`。

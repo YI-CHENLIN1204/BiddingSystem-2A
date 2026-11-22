@@ -67,3 +67,7 @@ T05 補報 70% 主分析的 P50 平均絕對百分比誤差與有效樣本數。
 ## T02 訓練字典 67 詞補測
 
 合成測試正確 1742／3386，正式字典來源待核。詳見 `FACTORY_DICTIONARY_REPORT_ZH.md`。
+
+## T01／T02 建案宏平均補測
+
+每案先算正確列／明細列，再等權平均。驗證 27 案、測試 26 案，按建案重抽 2000 次，種子 20261122。測試 50／67／100 詞為 39.86%／53.41%／72.52%，67 詞的 95% 區間為 49.49–57.30%。只涵蓋凍結的合成已見名稱。從研究目錄執行 `python factory_dictionary_macro.py <mapping_per_item.csv> <output.csv>`。機讀結果位於 `evening_results/dictionary_macro.csv`。
