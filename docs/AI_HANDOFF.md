@@ -141,3 +141,7 @@ vue-tsc、Vite runner（75 modules）、git diff --check 通過；瀏覽器待�
 ## 2026-11-22 補充驗證
 
 T06 已完成四組同案量價混合擾動。T08 已完成 Python KDE 批次微基準，完整解析效能及正式 API 尚待驗證。
+
+## 2026-11-22 Excel 解析效能
+
+T08 已補三份完整測試標單的 C# 解析量測，163–167 列，每份 20 輪。大標單與完整 API 負載尚待驗證。詳見 `FACTORY_PARSER_BENCHMARK_ZH.md`。
