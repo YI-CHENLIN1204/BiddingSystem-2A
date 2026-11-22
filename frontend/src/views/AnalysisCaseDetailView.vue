@@ -283,7 +283,6 @@ const quantityGroups = [
 ]
 const specificationItems = ['養護劑', '脫模劑']
 const unsupportedPriceItems = ['鋼筋', '混凝土', ...quantityGroups.map(x => x.name), ...specificationItems]
-const topCount = ref<number | null>(null)
 
 const currentVersion = computed(() =>
   detail.value?.versions.find(x => x.isCurrent) ?? null,
@@ -463,7 +462,7 @@ async function addVersion() {
   }
 }
 
-async function estimateAdditionalQuantities(version: VersionDetail, requestedTopCount: number | null) {
+async function estimateAdditionalQuantities(version: VersionDetail) {
   const specifications = specificationItems.map(name => ({ name, summary: '需確認指定產品及實際施工面積，標單版本未提供試算所需資料。' }))
   let profiles: BulkOption[]
   let mapped: MappedBulkQuantity[]
@@ -502,7 +501,7 @@ async function estimateAdditionalQuantities(version: VersionDetail, requestedTop
       try {
         const response = await api<BulkRange>('/bulk-material-estimates/range', {
           method: 'POST',
-          body: JSON.stringify({ profileKey: key, materialId: material.materialId, target: version.case, topCount: requestedTopCount, observedQuantity: observed.quantity }),
+          body: JSON.stringify({ profileKey: key, materialId: material.materialId, target: version.case, observedQuantity: observed.quantity }),
         })
         results.push({ name: material.materialName, majorCategory, summary: response.message, estimate: response, observed })
       } catch (caught) {
@@ -527,14 +526,14 @@ async function runQuantity() {
       `/analysis-cases/${caseId}/versions/${selectedVersionId.value}/quantity-analysis`,
       {
         method: 'POST',
-        body: JSON.stringify({ topCount: topCount.value || null }),
+        body: JSON.stringify({}),
       },
     )
     const baseItems = quantityResult.value.result.items
     const missing = ['鋼筋', '混凝土']
       .filter(name => !baseItems.some(item => item.detectionCategoryName.includes(name)))
       .map(name => ({ name, summary: '此版本沒有符合數量偵錯納入條件的工項。' }))
-    extraResults.value = [...missing, ...await estimateAdditionalQuantities(version, topCount.value || null)]
+    extraResults.value = [...missing, ...await estimateAdditionalQuantities(version)]
     tab.value = 'analysis'
     message.value = `數量異常分析完成，已保存 Run #${quantityResult.value.analysisRunId}。`
     runs.value = await api<RunSummary[]>(`/analysis-cases/${caseId}/runs`)
@@ -605,7 +604,6 @@ async function runPrice() {
   quantityResult.value = null
   priceResult.value = null
   additionalPrices.value = []
-  const requestedTopCount = topCount.value || null
   const categories = majorCategories.value
   const unavailable = unsupportedPriceItems.map(name => ({ name, summary: '缺少一致計價口徑的材料歷史單價基準。' }))
   if (!categories.length) unavailable.unshift({ name: '結構體工程', summary: '此版本沒有可執行價格分析的工程大項。' })
@@ -614,7 +612,7 @@ async function runPrice() {
       try {
         additionalPrices.value.push(await api<PriceRunResponse>(
           `/analysis-cases/${caseId}/versions/${versionId}/major-price-analysis`,
-          { method: 'POST', body: JSON.stringify({ majorCategory, topCount: requestedTopCount }) },
+          { method: 'POST', body: JSON.stringify({ majorCategory }) },
         ))
       } catch (caught) {
         unavailable.unshift({ name: majorCategory, summary: caught instanceof Error ? caught.message : '價格分析失敗' })
@@ -705,10 +703,6 @@ onMounted(loadCase)
           </div>
 
           <div class="action-controls">
-            <label>
-              <span>Top K（選填）</span>
-              <input v-model.number="topCount" :disabled="analyzing" type="number" min="1" class="form-control" placeholder="系統預設" />
-            </label>
             <button class="btn btn-primary" type="button" :disabled="analyzing" @click="runQuantity">數量估算</button>
             <button class="btn btn-outline-primary" type="button" :disabled="analyzing" @click="runPrice">價格異常</button>
             <span v-if="analyzing" role="status">分析中…</span>

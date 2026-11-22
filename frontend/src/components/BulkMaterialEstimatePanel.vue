@@ -26,7 +26,6 @@ const props = defineProps<{ target: Target }>()
 const profiles = ref<Profile[]>([])
 const profileKey = ref('structural-steel')
 const materialId = ref<number | ''>('')
-const topCount = ref<number | ''>('')
 const observed = ref<number | ''>('')
 const excludeProjectId = ref<number | ''>('')
 const result = ref<Estimate | null>(null)
@@ -41,7 +40,7 @@ onMounted(async () => {
   catch (err) { optionsError.value = err instanceof Error ? err.message : '工項讀取失敗' }
 })
 watch(profileKey, () => { materialId.value = ''; observed.value = '' })
-watch(() => JSON.stringify([props.target, profileKey.value, materialId.value, topCount.value, observed.value, excludeProjectId.value]), () => {
+watch(() => JSON.stringify([props.target, profileKey.value, materialId.value, observed.value, excludeProjectId.value]), () => {
   generation++; result.value = null; error.value = ''; loading.value = false
 })
 function optionalNumber(value: number | '') { return value === '' ? null : Number(value) }
@@ -55,12 +54,11 @@ async function estimate() {
   }
   if (!structureSupported.value) { error.value = '此工項不支援目前結構類型，請查看適用範圍。'; return }
   const payload = { profileKey: profileKey.value, materialId: Number(materialId.value), target: { ...t },
-    topCount: optionalNumber(topCount.value), observedQuantity: optionalNumber(observed.value),
+    observedQuantity: optionalNumber(observed.value),
     excludeProjectId: optionalNumber(excludeProjectId.value) }
-  if ((payload.topCount != null && (!Number.isInteger(payload.topCount) || payload.topCount <= 0 || payload.topCount > 100)) ||
-      (payload.observedQuantity != null && (!Number.isFinite(payload.observedQuantity) || payload.observedQuantity < 0)) ||
+  if ((payload.observedQuantity != null && (!Number.isFinite(payload.observedQuantity) || payload.observedQuantity < 0)) ||
       (payload.excludeProjectId != null && (!Number.isInteger(payload.excludeProjectId) || payload.excludeProjectId <= 0))) {
-    error.value = '請確認 Top K（1–100）、非負待比用量與正整數排除建案 ID。'; return
+    error.value = '請確認 待比用量為非負數、排除建案 ID 為正整數。'; return
   }
   const current = ++generation
   loading.value = true
@@ -89,7 +87,6 @@ function number(value: number | null, digits = 4) { return value == null ? '—'
             </select>
           </label>
           <label class="field"><span>待比總用量（選填，{{ selected?.unit }}）</span><input v-model.number="observed" aria-label="大宗待比用量" type="number" min="0" step="any" placeholder="請確認同材料與計量範圍" /></label>
-          <label class="field"><span>參考 Top K（選填）</span><input v-model.number="topCount" aria-label="大宗 Top K" type="number" min="1" max="100" step="1" placeholder="使用系統預設" /></label>
           <label class="field"><span>排除歷史建案 ID（選填）</span><input v-model.number="excludeProjectId" aria-label="排除歷史建案 ID" type="number" min="1" step="1" placeholder="本案已在歷史庫時請排除" /></label>
         </div>
         <div v-if="selected" class="notice info mt-3">

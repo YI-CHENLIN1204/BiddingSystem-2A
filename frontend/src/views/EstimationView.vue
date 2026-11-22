@@ -46,7 +46,6 @@ const bulkTarget = computed(() => ({
   basementFloorCount: form.value.basementFloorCount,
   projectDate: form.value.projectMonth ? `${form.value.projectMonth}-01` : '',
 }))
-const topCount = ref<number | null>(null)
 const result = ref<StructuralEstimationResult | null>(null)
 const loading = ref(false)
 const error = ref('')
@@ -74,7 +73,6 @@ function validate() {
   if (!form.value.floorCount || form.value.floorCount <= 0) throw new Error('請輸入有效的地上樓層')
   if (form.value.basementFloorCount == null || form.value.basementFloorCount < 0) throw new Error('請輸入有效的地下樓層')
   if (!form.value.projectMonth) throw new Error('請選擇建案年月')
-  if (topCount.value != null && topCount.value <= 0) throw new Error('Top K 必須大於 0')
 }
 
 async function estimate() {
@@ -100,7 +98,6 @@ async function estimate() {
         },
         majorCategory: '結構體工程',
         observedAmount: null,
-        topCount: topCount.value || null,
       }),
     })
   } catch (caught) {
@@ -112,7 +109,6 @@ async function estimate() {
 
 function clear() {
   form.value = emptyForm()
-  topCount.value = null
   result.value = null
   error.value = ''
 }
@@ -159,10 +155,6 @@ const analysisMode = ref('price')
             </label>
         </div>
         <div v-if="analysisMode === 'price'" class="estimate-options mt-4">
-          <label class="field">
-            <span>參考 Top K（選填）</span>
-            <input v-model.number="topCount" type="number" min="1" placeholder="留空使用系統預設" />
-          </label>
           <div class="action-buttons">
             <button type="button" class="btn btn-outline-secondary" :disabled="loading" @click="clear">清除</button>
             <button type="button" class="btn btn-primary" :disabled="loading" @click="estimate">
@@ -285,8 +277,8 @@ const analysisMode = ref('price')
 <style scoped>
 .structural-estimation { max-width: 1500px; margin: 0 auto; }
 .card-header h3 { margin: 0; font-size: 16px; }
-.estimate-options { display: flex; align-items: end; justify-content: space-between; gap: 20px; }
-.estimate-options .field { width: 240px; }
+.estimate-options { display: flex; justify-content: flex-end; }
+
 .action-buttons { display: flex; gap: 8px; }
 .result-head { display: flex; justify-content: space-between; align-items: flex-start; gap: 16px; }
 .status-badge { padding: 6px 10px; border-radius: 999px; font-size: 12px; font-weight: 800; }
@@ -308,7 +300,7 @@ const analysisMode = ref('price')
 .number { text-align: right; font-variant-numeric: tabular-nums; }
 @media (max-width: 800px) {
   .estimate-options { align-items: stretch; flex-direction: column; }
-  .estimate-options .field { width: 100%; }
+
   .action-buttons { justify-content: flex-end; }
   .summary-grid, .range-grid { grid-template-columns: 1fr; }
   .summary-grid div { border-right: 0; border-bottom: 1px solid #edf0f4; }
