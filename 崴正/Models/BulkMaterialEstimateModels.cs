@@ -1,6 +1,8 @@
 namespace 崴正.Models;
 
 public record BulkMaterialProfile(string Key, string Name, string Unit, string Basis, string[] Structures, string Notice);
+public record BulkMaterialObservedQuantity(string ProfileKey, int MaterialId, string MaterialName,
+    string Unit, decimal? ObservedQuantity, int SourceRowCount);
 public record BulkMaterialOption(int MaterialId, string MaterialName, string UnitName, string CategoryName);
 public record BulkMaterialCandidate(int ProjectId, string ProjectName, string ProjectType, string StructureType,
     decimal FloorArea, decimal SiteArea, int FloorCount, int BasementFloorCount, DateTime ProjectDate,

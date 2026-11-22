@@ -18,6 +18,55 @@ public class BulkMaterialEstimateService(ApplicationDbContext context, ProjectSi
         }) };
     }
 
+    public async Task<IReadOnlyList<BulkMaterialObservedQuantity>?> GetVersionQuantitiesAsync(
+        int caseId, long versionId, MaterialMappingService mapping, CancellationToken ct)
+    {
+        var version = await context.AnalysisBidVersions.AsNoTracking()
+            .Where(v => v.AnalysisCaseId == caseId && v.AnalysisBidVersionId == versionId)
+            .Select(v => new { Items = v.Items.Select(i => new {
+                i.ItemName, i.Spec, i.Unit, i.Quantity, i.MajorCategory,
+                i.SourceCategory1, i.SourceCategory2, i.SourceCategory3
+            }).ToList() }).SingleOrDefaultAsync(ct);
+        if (version == null) return null;
+
+        var lookup = await mapping.GetReadOnlyLookupAsync();
+        var activeMaterials = await context.MaterialMasters.AsNoTracking()
+            .Where(m => m.IsActive && m.UnitMaster.IsActive)
+            .Select(m => m.MaterialId).ToListAsync(ct);
+        var activeIds = activeMaterials.ToHashSet();
+        var matches = version.Items
+            .Where(i => !BulkMaterialRangeCalculator.IsServiceOnly(i.ItemName))
+            .Select(i => (Item: i, Material: mapping.FindBestMatch(lookup, i.ItemName, i.Spec)))
+            .Where(x => x.Material != null && activeIds.Contains(x.Material.MaterialId))
+            .GroupBy(x => x.Material!.MaterialId);
+        var results = new List<BulkMaterialObservedQuantity>();
+        foreach (var group in matches)
+        {
+            var material = group.First().Material!;
+            var option = new BulkMaterialOption(material.MaterialId, material.MaterialName, material.UnitName, material.Category ?? "");
+            foreach (var profile in BulkMaterialRangeCalculator.Profiles.Where(p => BulkMaterialRangeCalculator.MatchesMaterial(p, option)))
+            {
+                var rows = group.Select(x => x.Item).Where(i => BulkMaterialRangeCalculator.IsAllowedMajor(profile.Key,
+                    TwoAScopePolicy.ResolveEffectiveMajorCategory(i.MajorCategory, i.SourceCategory1, i.SourceCategory2, i.SourceCategory3))).ToList();
+                if (rows.Count == 0) continue;
+                decimal total = 0;
+                bool complete = true;
+                foreach (var row in rows)
+                {
+                    if (row.Quantity is not >= 0 || !BulkMaterialRangeCalculator.TryNormalizeQuantity(row.Quantity.Value, row.Unit, profile.Unit, out var quantity))
+                    {
+                        complete = false;
+                        break;
+                    }
+                    total += quantity;
+                }
+                results.Add(new(profile.Key, material.MaterialId, material.MaterialName, profile.Unit,
+                    complete ? total : null, rows.Count));
+            }
+        }
+        return results;
+    }
+
     // Exposed as IQueryable so the regression harness can validate Npgsql SQL
     // translation without opening a production or synthetic DB connection.
     public IQueryable<BulkMaterialHistoricalRow> BuildHistoryQuery(int materialId, int[] projectIds) =>

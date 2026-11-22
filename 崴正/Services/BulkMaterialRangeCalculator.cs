@@ -64,7 +64,7 @@ public static class BulkMaterialRangeCalculator
         return named && !IsServiceOnly(name) && TryNormalizeQuantity(1, material.UnitName, profile.Unit, out _);
     }
 
-    private static bool IsServiceOnly(string name) =>
+    internal static bool IsServiceOnly(string name) =>
         new[] { "費", "補貼", "租賃", "試驗", "檢測", "吊車", "鷹架", "圍籬", "欄杆", "輕鋼架", "鋼筋", "臨時支撐" }.Any(name.Contains);
 
     public static BulkMaterialEstimateResult Calculate(BulkMaterialEstimateRequest request, BulkMaterialOption material,
@@ -172,7 +172,7 @@ public static class BulkMaterialRangeCalculator
         return result;
     }
 
-    private static bool IsAllowedMajor(string key, string? major) => key switch
+    internal static bool IsAllowedMajor(string key, string? major) => key switch
     {
         "structural-steel" => major is "結構體工程" or "鋼骨鋼構工程",
         "formwork" => major == "結構體工程",

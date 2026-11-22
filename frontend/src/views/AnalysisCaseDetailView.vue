@@ -252,12 +252,19 @@ interface ExtraResult {
   name: string
   summary: string
   estimate?: BulkRange
+  observed?: { quantity: number; unit: string }
   majorCategory?: string
 }
 interface BulkOption {
   key: string
   structures: string[]
-  materials: { materialId: number; materialName: string }[]
+}
+interface MappedBulkQuantity {
+  profileKey: string
+  materialId: number
+  materialName: string
+  unit: string
+  observedQuantity: number | null
 }
 interface BulkRange {
   unit: string
@@ -459,13 +466,18 @@ async function addVersion() {
 async function estimateAdditionalQuantities(version: VersionDetail, requestedTopCount: number | null) {
   const specifications = specificationItems.map(name => ({ name, summary: '需確認指定產品及實際施工面積，標單版本未提供試算所需資料。' }))
   let profiles: BulkOption[]
+  let mapped: MappedBulkQuantity[]
   try {
-    profiles = (await api<{ profiles: BulkOption[] }>('/bulk-material-estimates/options')).profiles
+    const [options, quantities] = await Promise.all([
+      api<{ profiles: BulkOption[] }>('/bulk-material-estimates/options'),
+      api<MappedBulkQuantity[]>(`/bulk-material-estimates/cases/${caseId}/versions/${version.version.analysisBidVersionId}/quantities`),
+    ])
+    profiles = options.profiles
+    mapped = quantities
   } catch {
     return [...quantityGroups.map(({ name, majorCategory }) => ({ name, majorCategory, summary: '無法讀取歷史估算工項。' })), ...specifications]
   }
   const results: ExtraResult[] = []
-  const itemNames = new Set(version.items.map(item => item.itemName.trim()))
   for (const { key, name, majorCategory } of quantityGroups) {
     const profile = profiles.find(option => option.key === key)
     if (!profile?.structures.includes(version.case.structureType)) {
@@ -476,20 +488,25 @@ async function estimateAdditionalQuantities(version: VersionDetail, requestedTop
       results.push({ name, majorCategory, summary: '缺少可比較的地下開挖條件。' })
       continue
     }
-    const materials = profile.materials.filter(material => itemNames.has(material.materialName.trim()))
+    const materials = mapped.filter(material => material.profileKey === key)
     if (!materials.length) {
-      results.push({ name, majorCategory, summary: '本版沒有可按標準材料名稱確認的工項。' })
+      results.push({ name, majorCategory, summary: '本版沒有符合工程範圍與工項字典的標準材料。' })
       continue
     }
     for (const material of materials) {
+      if (material.observedQuantity == null) {
+        results.push({ name: material.materialName, majorCategory, summary: '對應工項有缺少數量或單位不相容，無法合計。' })
+        continue
+      }
+      const observed = { quantity: material.observedQuantity, unit: material.unit }
       try {
         const response = await api<BulkRange>('/bulk-material-estimates/range', {
           method: 'POST',
-          body: JSON.stringify({ profileKey: key, materialId: material.materialId, target: version.case, topCount: requestedTopCount }),
+          body: JSON.stringify({ profileKey: key, materialId: material.materialId, target: version.case, topCount: requestedTopCount, observedQuantity: observed.quantity }),
         })
-        results.push({ name: material.materialName, majorCategory, summary: response.message, estimate: response })
+        results.push({ name: material.materialName, majorCategory, summary: response.message, estimate: response, observed })
       } catch (caught) {
-        results.push({ name: material.materialName, majorCategory, summary: caught instanceof Error ? caught.message : '數量估算失敗' })
+        results.push({ name: material.materialName, majorCategory, observed, summary: caught instanceof Error ? caught.message : '數量估算失敗' })
       }
     }
   }
@@ -796,7 +813,7 @@ onMounted(loadCase)
                 <tr v-for="(item, index) in extraResults" :key="'extra-' + index">
                   <td>{{ item.majorCategory ?? '—' }}</td>
                   <td><strong>{{ item.name }}</strong></td>
-                  <td class="number">—</td>
+                  <td class="number">{{ item.observed ? formatNumber(item.observed.quantity, 4) + ' ' + item.observed.unit : '—' }}</td>
                   <td class="number">—</td>
                   <td class="number">{{ formatNumber(item.estimate?.lowerQuantity, 2) }} {{ item.estimate?.lowerQuantity != null ? item.estimate.unit : '' }}</td>
                   <td class="number">{{ formatNumber(item.estimate?.medianQuantity, 2) }} {{ item.estimate?.medianQuantity != null ? item.estimate.unit : '' }}</td>

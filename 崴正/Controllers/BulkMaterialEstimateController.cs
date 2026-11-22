@@ -11,6 +11,14 @@ public class BulkMaterialEstimateController(BulkMaterialEstimateService service)
     [HttpGet("options")]
     public async Task<IActionResult> Options(CancellationToken ct) => Ok(await service.GetOptionsAsync(ct));
 
+    [HttpGet("cases/{caseId:int}/versions/{versionId:long}/quantities")]
+    public async Task<IActionResult> VersionQuantities(int caseId, long versionId,
+        [FromServices] MaterialMappingService mapping, CancellationToken ct)
+    {
+        var quantities = await service.GetVersionQuantitiesAsync(caseId, versionId, mapping, ct);
+        return quantities == null ? NotFound() : Ok(quantities);
+    }
+
     [HttpPost("range")]
     public async Task<IActionResult> Estimate([FromBody] BulkMaterialEstimateRequest request, CancellationToken ct)
     {
