@@ -1,0 +1,4 @@
+factory_a0_b1_pairs.csv 159 1272 699
+factory_b1_pairs.csv 424 9264 4528
+past_only_factory_a0_a1_pairs.csv 60 480 0
+past_only_factory_a0_a1_90pct_pairs.csv 60 480 0
