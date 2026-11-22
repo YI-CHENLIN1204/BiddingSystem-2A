@@ -10,7 +10,7 @@ import type { ProjectForm, ProjectSummary } from '../types'
 const projects = ref<ProjectSummary[]>([])
 const filters = ref(emptyProjectSearch())
 const stages = [
-  { value: 'approved', label: '已納入 2A 模型' },
+  { value: 'approved', label: '已納入歷史基準' },
   { value: 'draft', label: '待歷史基準審核' },
   { value: 'no-bid', label: '尚無決標資料' },
 ]
@@ -136,7 +136,7 @@ onMounted(load)
               class="badge"
               :class="project.historyStatus === 'Approved' ? 'bg-success' : 'bg-warning text-dark'"
             >
-              {{ project.historyStatus === 'Approved' ? '已納入 2A 模型' : '待歷史基準審核' }}
+              {{ project.historyStatus === 'Approved' ? '已納入歷史基準' : '待歷史基準審核' }}
             </span>
           </div>
           <div class="text-muted small">

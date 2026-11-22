@@ -461,7 +461,7 @@ watch([status, majorCategoryFilter, issueCode, category, unit], resetAndLoad)
               >
                 {{ publishingHistory ? '發布中...' : '確認並納入 2A 歷史基準' }}
               </button>
-              <span v-else class="badge bg-success align-self-center">已納入 2A 模型</span>
+              <span v-else class="badge bg-success align-self-center">已納入歷史基準</span>
             </div>
           </div>
           <div class="row g-2">

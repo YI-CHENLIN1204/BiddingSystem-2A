@@ -496,7 +496,7 @@ onMounted(async () => {
               class="badge"
               :class="project.historyStatus === 'Approved' ? 'bg-success' : 'bg-warning text-dark'"
             >
-              {{ project.historyStatus === 'Approved' ? '已納入 2A 模型' : '待歷史基準審核' }}
+              {{ project.historyStatus === 'Approved' ? '已納入歷史基準' : '待歷史基準審核' }}
             </span>
           </div>
           <div class="text-muted">{{ project.projectType }} ・ {{ project.structureType }} ・ {{ project.city }} ・ {{ formatMonth(project.startDate) }}</div>
