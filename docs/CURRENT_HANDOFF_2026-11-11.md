@@ -1,3 +1,7 @@
+## 2026-11-23 研究 Actions 執行查核
+
+已在研究分支讀回 `b3bceb90` 的 workflow；push 分支及路徑符合 YAML。GitHub 的 PR runs 查詢及 commit statuses 均無回傳紀錄，這兩個查詢無法證實 push run 不存在。尚缺 Run ID、jobs、logs 及 artifacts，T04 EF、T07 回寫、T09 匿名權限及 Word 逐頁各自保留未驗證。詳見[執行查核與分項狀態](RESEARCH_ACTIONS_RUN_VERIFICATION_2026_11_23.md)。
+
 ## 2026-11-23 GitHub runner 研究驗收
 
 新增獨立研究 workflow，包含一次性 PostgreSQL fixture、EF 換算、HTTP 歷史基準流程與 Word 渲染。實驗成果依 Actions 實際紀錄及人工頁面覆核判定。既有 T04 研究版、Parser 和離線 K5 不重跑。外部資料需求及作業界線見[研究驗收 CI](../research/acceptance-ci/README.md)。
