@@ -1,0 +1,9 @@
+level,scope,both_hit,a1_only,a0_only,both_miss
+70,all,43,7,2,26
+70,SYN-CONCRETE,14,2,1,9
+70,SYN-REBAR,17,1,0,8
+70,structure_price,12,4,1,9
+90,all,65,3,1,9
+90,SYN-CONCRETE,23,0,0,3
+90,SYN-REBAR,22,2,0,2
+90,structure_price,20,1,1,4
