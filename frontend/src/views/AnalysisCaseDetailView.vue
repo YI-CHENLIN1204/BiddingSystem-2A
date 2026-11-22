@@ -3,7 +3,6 @@ import { computed, onMounted, ref } from 'vue'
 import { useRoute } from 'vue-router'
 import { api, apiForm } from '../services/api'
 import WorkbookSheetPicker from '../components/WorkbookSheetPicker.vue'
-import MaterialCapabilityPanel from '../components/MaterialCapabilityPanel.vue'
 
 interface CaseSummary {
   analysisCaseId: number
@@ -282,8 +281,6 @@ const quantityGroups = [
   { key: 'formwork', name: '模板', majorCategory: '結構體工程' },
   { key: 'earthwork', name: '土方開挖', majorCategory: '土方及基礎工程' },
 ]
-const specificationItems = ['養護劑', '脫模劑']
-const unsupportedPriceItems = ['鋼筋', '混凝土', ...quantityGroups.map(x => x.name), ...specificationItems]
 
 const currentVersion = computed(() =>
   detail.value?.versions.find(x => x.isCurrent) ?? null,
@@ -464,7 +461,6 @@ async function addVersion() {
 }
 
 async function estimateAdditionalQuantities(version: VersionDetail) {
-  const specifications = specificationItems.map(name => ({ name, summary: '請在表下方選擇指定產品並輸入實際施工面積，即可依規格試算。' }))
   let profiles: BulkOption[]
   let mapped: MappedBulkQuantity[]
   try {
@@ -475,27 +471,21 @@ async function estimateAdditionalQuantities(version: VersionDetail) {
     profiles = options.profiles
     mapped = quantities
   } catch {
-    return [...quantityGroups.map(({ name, majorCategory }) => ({ name, majorCategory, summary: '無法讀取歷史估算工項。' })), ...specifications]
+    error.value = '無法讀取歷史估算工項。'
+    return []
   }
   const results: ExtraResult[] = []
-  for (const { key, name, majorCategory } of quantityGroups) {
+  for (const { key, majorCategory } of quantityGroups) {
     const profile = profiles.find(option => option.key === key)
     if (!profile?.structures.includes(version.case.structureType)) {
-      results.push({ name, majorCategory, summary: '目前結構類型不適用此估算。' })
       continue
     }
     if (key === 'earthwork' && !version.case.basementFloorCount) {
-      results.push({ name, majorCategory, summary: '缺少可比較的地下開挖條件。' })
       continue
     }
     const materials = mapped.filter(material => material.profileKey === key)
-    if (!materials.length) {
-      results.push({ name, majorCategory, summary: '本版沒有符合工程範圍與工項字典的標準材料。' })
-      continue
-    }
     for (const material of materials) {
       if (material.observedQuantity == null) {
-        results.push({ name: material.materialName, majorCategory, summary: '對應工項有缺少數量或單位不相容，無法合計。' })
         continue
       }
       const observed = { quantity: material.observedQuantity, unit: material.unit }
@@ -504,13 +494,15 @@ async function estimateAdditionalQuantities(version: VersionDetail) {
           method: 'POST',
           body: JSON.stringify({ profileKey: key, materialId: material.materialId, target: version.case, observedQuantity: observed.quantity }),
         })
-        results.push({ name: material.materialName, majorCategory, summary: response.message, estimate: response, observed })
+        if (response.lowerQuantity != null && response.medianQuantity != null && response.upperQuantity != null) {
+          results.push({ name: material.materialName, majorCategory, summary: response.message, estimate: response, observed })
+        }
       } catch (caught) {
-        results.push({ name: material.materialName, majorCategory, observed, summary: caught instanceof Error ? caught.message : '數量估算失敗' })
+        error.value = caught instanceof Error ? caught.message : '數量估算失敗'
       }
     }
   }
-  return [...results, ...specifications]
+  return results
 }
 
 async function runQuantity() {
@@ -530,11 +522,7 @@ async function runQuantity() {
         body: JSON.stringify({}),
       },
     )
-    const baseItems = quantityResult.value.result.items
-    const missing = ['鋼筋', '混凝土']
-      .filter(name => !baseItems.some(item => item.detectionCategoryName.includes(name)))
-      .map(name => ({ name, summary: '此版本沒有符合數量偵錯納入條件的工項。' }))
-    extraResults.value = [...missing, ...await estimateAdditionalQuantities(version)]
+    extraResults.value = await estimateAdditionalQuantities(version)
     tab.value = 'analysis'
     message.value = `數量異常分析完成，已保存 Run #${quantityResult.value.analysisRunId}。`
     runs.value = await api<RunSummary[]>(`/analysis-cases/${caseId}/runs`)
@@ -606,8 +594,7 @@ async function runPrice() {
   priceResult.value = null
   additionalPrices.value = []
   const categories = majorCategories.value
-  const unavailable = unsupportedPriceItems.map(name => ({ name, summary: '缺少一致計價口徑的材料歷史單價基準。' }))
-  if (!categories.length) unavailable.unshift({ name: '結構體工程', summary: '此版本沒有可執行價格分析的工程大項。' })
+  extraResults.value = []
   try {
     for (const majorCategory of categories) {
       try {
@@ -616,10 +603,9 @@ async function runPrice() {
           { method: 'POST', body: JSON.stringify({ majorCategory }) },
         ))
       } catch (caught) {
-        unavailable.unshift({ name: majorCategory, summary: caught instanceof Error ? caught.message : '價格分析失敗' })
+        error.value = caught instanceof Error ? caught.message : '價格分析失敗'
       }
     }
-    extraResults.value = unavailable
     tab.value = 'analysis'
     runs.value = await api<RunSummary[]>(`/analysis-cases/${caseId}/runs`)
   } catch (caught) {
@@ -628,6 +614,11 @@ async function runPrice() {
     analyzing.value = false
   }
 }
+
+const visibleQuantityItems = computed(() => (quantityResult.value?.result.items ?? [])
+  .filter(item => item.range?.lowerQuantity != null && item.range.medianQuantity != null && item.range.upperQuantity != null))
+const visiblePrices = computed(() => (priceResult.value ? [priceResult.value] : additionalPrices.value)
+  .filter(({ result }) => result.lowerPricePerPing != null && result.medianPricePerPing != null && result.upperPricePerPing != null))
 
 onMounted(loadCase)
 </script>
@@ -759,11 +750,11 @@ onMounted(loadCase)
       </section>
 
       <section v-else-if="tab === 'analysis'" class="card">
-        <div v-if="!quantityResult && !priceResult && !additionalPrices.length && !extraResults.length" class="empty-state">
-          尚未對目前選取的版本執行分析。
+        <div v-if="!visibleQuantityItems.length && !visiblePrices.length && !extraResults.length" class="empty-state">
+          {{ quantityResult || priceResult || additionalPrices.length ? '這次分析沒有可顯示的估算結果。' : '目前沒有可顯示的分析結果。' }}
         </div>
 
-        <template v-if="quantityResult">
+        <template v-if="quantityResult && (visibleQuantityItems.length || extraResults.length)">
           <div class="card-header">
             <div>
               <h3>數量估算</h3>
@@ -791,7 +782,7 @@ onMounted(loadCase)
                 </tr>
               </thead>
               <tbody>
-                <tr v-for="item in quantityResult.result.items" :key="`${item.majorCategoryName}-${item.detectionCategoryName}`">
+                <tr v-for="item in visibleQuantityItems" :key="`${item.majorCategoryName}-${item.detectionCategoryName}`">
                   <td>{{ item.majorCategoryName }}</td>
                   <td><strong>{{ item.detectionCategoryName }}</strong></td>
                   <td class="number">{{ formatNumber(item.observedQuantity, 4) }} {{ item.unitName ?? '' }}</td>
@@ -819,7 +810,7 @@ onMounted(loadCase)
               </tbody>
             </table>
           </div>
-          <div v-for="item in quantityResult.result.items" :key="'reference-' + item.detectionCategoryName" style="margin: 12px 20px;">
+          <div v-for="item in visibleQuantityItems" :key="'reference-' + item.detectionCategoryName" style="margin: 12px 20px;">
             <details v-if="item.range?.references?.length">
               <summary style="cursor: pointer; font-weight: 600;">
                 查看 {{ item.detectionCategoryName }} 歷史參考案件明細（{{ item.range.references.length }} 案）
@@ -853,12 +844,7 @@ onMounted(loadCase)
           </div>
         </template>
 
-        <details v-if="quantityResult" class="px-3 py-2 border-top">
-          <summary>養護劑與脫模劑｜依產品規格試算</summary>
-          <MaterialCapabilityPanel />
-        </details>
-
-        <template v-for="priceResult in (priceResult ? [priceResult] : additionalPrices)" :key="priceResult.analysisRunId">
+        <template v-for="priceResult in visiblePrices" :key="priceResult.analysisRunId">
           <div class="card-header">
             <div>
               <h3>價格異常：{{ priceResult.result.majorCategory }}</h3>
@@ -880,17 +866,6 @@ onMounted(loadCase)
             <div><span>最大案例權重占比</span><strong>{{ formatNumber(priceResult.result.largestWeightSharePercent, 2) }}%</strong></div>
           </div>
         </template>
-        <div v-if="!quantityResult && extraResults.length" class="table-wrap">
-          <table>
-            <thead><tr><th>工項</th><th>結果或原因</th></tr></thead>
-            <tbody>
-              <tr v-for="(item, index) in extraResults" :key="index">
-                <td>{{ item.name }}</td>
-                <td>{{ item.summary }}</td>
-              </tr>
-            </tbody>
-          </table>
-        </div>
       </section>
 
       <section v-else class="card">
