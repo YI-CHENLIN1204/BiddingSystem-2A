@@ -15,3 +15,9 @@ A0 是依正式程式與參數快照獨立重播的近似基線，尚待正式 A
 1. 使用 [廠房來源與重建說明](FACTORY_EVENING_RESULTS_ZH.md) 執行 B1 並取得逐案 CSV。
 2. 執行 `python replay_factory_a1.py <廠房來源目錄> <B1輸出目錄> .3`，同時產出 A0／B1 與 70% A0／A1 逐案檔。
 3. 將最後參數改為 `.1` 產出 90% 逐案檔。
+
+## T05 上下界漏覆蓋
+
+固定 26 案 × 3 工項。依序列出低於下界、區間內、高於上界的案項數。70% A0 為 9／45／24，A1 為 6／50／22。90% A0 為 2／66／10，A1 為 0／68／10。計數逐筆與原命中欄位一致。此為合成資料逐案項描述，三工項可能同案相依。90% 涵蓋增加全部來自低於下界的案例減少，高於上界仍有 10 筆。
+
+重跑 `python factory_interval_tails.py evening_results/factory_a0_a1_pairs.csv evening_results/factory_a0_a1_90pct_pairs.csv`。
