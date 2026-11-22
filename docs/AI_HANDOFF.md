@@ -1,3 +1,7 @@
+## 2026-11-22 T05 指標與原計畫覆核
+
+補分層 P50 MAPE、有效樣本數與棄答。正式 API 等價驗證待完成。[原計畫進度](../research/2a_synthetic/kde_comparison/FACTORY_TEST_STATUS_ZH.md)
+
 ## 2026-11-22 量價區間壓力測試
 
 固定 70% 區間完成 780 筆擾動結果。隔離 API 測試仍受 Docker 存取權限及本機無 PostgreSQL 工具阻擋。[驗證紀錄](../research/2a_synthetic/kde_comparison/FACTORY_INTERVAL_STRESS_ZH.md)
