@@ -1,0 +1,4 @@
+PASS: 78 paired targets, fixed reference inputs, nested intervals, 312 score and coverage checks
+SYN-CONCRETE 9 / 26 B1 available
+SYN-REBAR 9 / 26 B1 available
+structure_price 26 / 26 B1 available
