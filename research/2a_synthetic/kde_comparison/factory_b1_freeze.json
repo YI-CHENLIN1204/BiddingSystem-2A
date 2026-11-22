@@ -1,0 +1,23 @@
+{
+  "name": "factory-b1-v1",
+  "parent": "38f316012f1ec982bad3cb47f4a10ec8d3210d99",
+  "source_manifest_sha256": "e04d7fa10e012825561031befff1f9d7f63b6e88272c9e528eb523fdcab6bfd0",
+  "type": "RECONSTRUCTION_ASSUMPTION",
+  "groups": 4,
+  "min_projects": 5,
+  "reason": "Fixed four groups for a descriptive sensitivity run with 126 train projects. Neither parameter is attributed to the author. No selection by validation or test accuracy.",
+  "tie": "lexicographically smallest sorted stable IDs",
+  "year_scale": 10,
+  "missing": "Require all eight fields in this particular complete snapshot; fail on missing.",
+  "price_scope": "exact major_category 結構體工程, synthetic amount sum; B1 site_area, B2 total_floor_area. Same groups and estimation procedure; recompute bandwidth after changing units.",
+  "quantity_scope": "SYN-CONCRETE and SYN-REBAR, MaterialOnly, exact tuple of material_code, spec, unit and price_scope; floor area. Synthetic spec identifies scenario, not engineering grade.",
+  "split": "Fit only train. Report validation and test separately. Exclude FAC-20261122-SC-0052 from primary test. Retrospective selection may use newer historical projects.",
+  "levels": [
+    0.7,
+    0.9
+  ],
+  "bandwidth": "same scalar probe 4096 grid, bisect [1e-4,1], tol 1e-8; cache per cluster/scope",
+  "threshold": "No review threshold evaluated; coverage and relative interval score descriptive only.",
+  "extremes": "Keep positive finite observations, fail on nonpositive target or nonfinite, zero span abstains.",
+  "summary": "Report per split, scope and level; no model selection or cross-method adoption decision."
+}
