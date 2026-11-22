@@ -999,3 +999,10 @@ npm run build
 - 遠端 `feature/1d-api-integration` `崴正/Program.cs` 使用 `ConnectionStrings__DefaultConnection` 讀取 DB 連線，現階段暫用 `Pooling=false`；`compose.yaml` 透過 `DB_CONNECTION_STRING` 注入。前端 Vue 不應存資料庫密碼，後端 API 才能連 Supabase。**切換 Windows 5263 API 之前**需確認既有啟動程序仍是本機 55433，停止舊程序，從正確工作樹以 session env 注入 Session Pooler 5432 的雲端連線，啟動後用 `GET /api/projects`／個案／估算唯讀驗證。沒有本機 API 重啟證據就不可聲稱已切換。
 - 系統設計仍為上傳最終標單→Draft→字典預對應/人工審查、單位及數據品質→PublishHistory Approved→寫入歷史與稽核；已 Approved 不得直接改對應，需 Reopen。**尚未進行實際瀏覽器的決標回寫/UI E2E，也未以雲端後端重跑驗證**。建議回寫 UI 驗收、標準材料/單位資料品質盤點、字典可重用性測試，隔離回歸後再正式提交/新增建案；防止真實資料混入合成 Approved training pool。雲端17張 public 2A表先前 RLS Disabled 的權限問題仍未修，使用者需在對外部署前處理。
 - 本輪只做 Supabase `SELECT`、GitHub 源碼與手動交接文件更新；**沒有修改雲端任一筆資料、程式碼或 Migration**，沒有重新 seed 或重傳合成資料。
+
+
+### 2026-11-22 — Windows 5264 API 實際連上 Supabase 的讀取驗證
+- 使用者提供 Windows PowerShell 實測截圖：以 `ConnectionStrings__DefaultConnection` 連線現有 Supabase Session Pooler，`ASPNETCORE_URLS=http://127.0.0.1:5264`，`dotnet run --project .\\崴正\\崴正.csproj --no-launch-profile` 成功啟動，console 顯示 `Now listening on: http://127.0.0.1:5264` 且 EF Core Database Command SELECT project_master/final_bid_item/historical_transaction 成功；另一個 PowerShell 以 `(Invoke-RestMethod "http://127.0.0.1:5264/api/projects").items.Count` 實際收到 **210**。這是**後端讀取驗證 PASS**，與 Supabase 上已透過直接 SELECT 確認210個合成Approved專案相符。
+- 前端 Vite 預設 `5174`、`frontend/vite.config.ts` 可用 `VITE_API_PROXY_TARGET=http://127.0.0.1:5264` 開發期代理新API；**尚未實際重啟前端、確認瀏覽器操作、執行正式決標回寫／材料字典／單位 E2E、核對估算結果或跑完6/6 quantity-scope checker**。新5264目前只是暫時工作階段連線，非持久部署；不表示舊5263已關閉或切換。
+- 此驗證使用現有 Windows 版本，啟動可能仍顯示 `TenderImportInspectionService.cs` 的 CS8604 警告；此前 GitHub feature 已有警告修正，但不能因為遠端CI通過就宣稱桌面版已同步。
+- 本輪僅記錄已驗證事實，無Schema/Migration/資料或API原始碼變更。繼續保留現有 Supabase 資料的合成來源標記、回寫與使用者正式資料隔離、密碼不得進前端與版控，及17張 public 業務表 RLS未啟用的安全待辦。
