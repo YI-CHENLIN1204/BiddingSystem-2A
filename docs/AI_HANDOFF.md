@@ -225,3 +225,9 @@ T08 已補三份完整測試標單的 C# 解析量測，163–167 列，每份 2
 ## T05 逐案留一敏感度
 
 固定 70% 主分析預測，輪流移除 26 件測試案各一件並重算九層等權分數。KDE 的相對改善落在 2.20%–6.94%，26 次均為正，16 次達 5% 點估計門檻。這是已檢視資料的影響度診斷，仍以原定 bootstrap 與採用門檻判斷，維持 A0。研究目錄執行 `python factory_leave_one_out.py evening_results/factory_a0_a1_pairs.csv`。輸出封存於 `evening_results/factory_leave_one_out.csv`。
+
+## A0／B1 成對區間分數重抽樣
+
+名義 70%，按結構分層，以共同可估建案重抽 2,000 次。B1 減 A0 的區間分數差在混凝土、鋼筋、結構金額各為 +0.228、+0.697、+1.337，95% 區間各為 [0.121,0.320]、[0.592,0.832]、[0.833,2.004]。共同可估案數為 9、9、26；兩個數量結果僅適用於共同可估子集。分數越低越好。這是已檢視合成資料的探索性補充，B1 依報告重建。金額涵蓋 B1 17/26、A0 13/26，採用判斷仍保留 A0。
+
+重跑 `python factory_a0_b1_uncertainty.py evening_results/factory_a0_b1_pairs.csv`。結果存於 `evening_results/factory_a0_b1_uncertainty.csv`。
