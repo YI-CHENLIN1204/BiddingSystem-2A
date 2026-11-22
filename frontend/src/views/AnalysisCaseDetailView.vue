@@ -3,6 +3,7 @@ import { computed, onMounted, ref } from 'vue'
 import { useRoute } from 'vue-router'
 import { api, apiForm } from '../services/api'
 import WorkbookSheetPicker from '../components/WorkbookSheetPicker.vue'
+import MaterialCapabilityPanel from '../components/MaterialCapabilityPanel.vue'
 
 interface CaseSummary {
   analysisCaseId: number
@@ -463,7 +464,7 @@ async function addVersion() {
 }
 
 async function estimateAdditionalQuantities(version: VersionDetail) {
-  const specifications = specificationItems.map(name => ({ name, summary: '需確認指定產品及實際施工面積，標單版本未提供試算所需資料。' }))
+  const specifications = specificationItems.map(name => ({ name, summary: '請在表下方選擇指定產品並輸入實際施工面積，即可依規格試算。' }))
   let profiles: BulkOption[]
   let mapped: MappedBulkQuantity[]
   try {
@@ -852,6 +853,11 @@ onMounted(loadCase)
           </div>
         </template>
 
+        <details v-if="quantityResult" class="px-3 py-2 border-top">
+          <summary>養護劑與脫模劑｜依產品規格試算</summary>
+          <MaterialCapabilityPanel />
+        </details>
+
         <template v-for="priceResult in (priceResult ? [priceResult] : additionalPrices)" :key="priceResult.analysisRunId">
           <div class="card-header">
             <div>
@@ -912,8 +918,8 @@ onMounted(loadCase)
       <section v-if="versionDetail" class="card quantity-scope-panel">
         <div class="card-header scope-heading">
           <div>
-            <h3>數量偵錯工項納入範圍</h3>
-            <p class="text-muted small mt-1 mb-0">每筆工項是否計入鋼筋／混凝土數量分析，由後端正式前處理規則判斷；與大項價格總額的納入規則不同。</p>
+            <h3>鋼筋與混凝土｜正式數量偵錯納入範圍</h3>
+            <p class="text-muted small mt-1 mb-0">下方統計只涵蓋鋼筋與混凝土。鋼骨、模板及土方的歷史估算結果請查看上方數量估算表。</p>
           </div>
         </div>
         <div v-if="quantityScope" class="scope-body">
