@@ -1,0 +1,834 @@
+[
+  {
+    "material_code": "SYN-CONCRETE",
+    "material_name": "混凝土",
+    "unit": "m3",
+    "major_category": "結構體工程",
+    "existing_material_id_hint": 1,
+    "origin": "EXISTING_SYNTHETIC_CATALOG"
+  },
+  {
+    "material_code": "SYN-REBAR",
+    "material_name": "鋼筋",
+    "unit": "kg",
+    "major_category": "結構體工程",
+    "existing_material_id_hint": 2,
+    "origin": "EXISTING_SYNTHETIC_CATALOG"
+  },
+  {
+    "material_code": "SYN-STEEL",
+    "material_name": "結構鋼骨",
+    "unit": "kg",
+    "major_category": "結構體工程",
+    "existing_material_id_hint": 3,
+    "origin": "EXISTING_SYNTHETIC_CATALOG"
+  },
+  {
+    "material_code": "SYN-WORK-001",
+    "material_name": "臨時圍籬組立及拆除（含安全設施）",
+    "unit": "m",
+    "major_category": "假設工程",
+    "existing_material_id_hint": 4,
+    "origin": "EXISTING_SYNTHETIC_CATALOG"
+  },
+  {
+    "material_code": "SYN-WORK-002",
+    "material_name": "基坑土方開挖與運棄（含機具）",
+    "unit": "m3",
+    "major_category": "土方工程",
+    "existing_material_id_hint": 5,
+    "origin": "EXISTING_SYNTHETIC_CATALOG"
+  },
+  {
+    "material_code": "SYN-WORK-003",
+    "material_name": "地下室擋土支撐構件組立",
+    "unit": "式",
+    "major_category": "基礎工程",
+    "existing_material_id_hint": 6,
+    "origin": "EXISTING_SYNTHETIC_CATALOG"
+  },
+  {
+    "material_code": "SYN-WORK-004",
+    "material_name": "地坪級配料回填夯實",
+    "unit": "m3",
+    "major_category": "土方工程",
+    "existing_material_id_hint": 7,
+    "origin": "EXISTING_SYNTHETIC_CATALOG"
+  },
+  {
+    "material_code": "SYN-WORK-005",
+    "material_name": "普通模板組立及拆除（柱梁）",
+    "unit": "m2",
+    "major_category": "結構體工程",
+    "existing_material_id_hint": 8,
+    "origin": "EXISTING_SYNTHETIC_CATALOG"
+  },
+  {
+    "material_code": "SYN-WORK-006",
+    "material_name": "樓版支撐及鋁模租賃",
+    "unit": "m2",
+    "major_category": "結構體工程",
+    "existing_material_id_hint": 9,
+    "origin": "EXISTING_SYNTHETIC_CATALOG"
+  },
+  {
+    "material_code": "SYN-WORK-007",
+    "material_name": "外牆防水底塗與 PU 彈性塗膜",
+    "unit": "m2",
+    "major_category": "防水工程",
+    "existing_material_id_hint": 10,
+    "origin": "EXISTING_SYNTHETIC_CATALOG"
+  },
+  {
+    "material_code": "SYN-WORK-008",
+    "material_name": "地下室連續壁止水處理",
+    "unit": "m",
+    "major_category": "防水工程",
+    "existing_material_id_hint": 11,
+    "origin": "EXISTING_SYNTHETIC_CATALOG"
+  },
+  {
+    "material_code": "SYN-WORK-009",
+    "material_name": "AL 鋁窗框含玻璃安裝",
+    "unit": "樘",
+    "major_category": "門窗工程",
+    "existing_material_id_hint": 12,
+    "origin": "EXISTING_SYNTHETIC_CATALOG"
+  },
+  {
+    "material_code": "SYN-WORK-010",
+    "material_name": "不鏽鋼欄杆製作及固定",
+    "unit": "m",
+    "major_category": "金屬工程",
+    "existing_material_id_hint": 13,
+    "origin": "EXISTING_SYNTHETIC_CATALOG"
+  },
+  {
+    "material_code": "SYN-WORK-011",
+    "material_name": "電氣配管 EMT 25mm 及管件",
+    "unit": "m",
+    "major_category": "水電工程",
+    "existing_material_id_hint": 14,
+    "origin": "EXISTING_SYNTHETIC_CATALOG"
+  },
+  {
+    "material_code": "SYN-WORK-012",
+    "material_name": "弱電線槽與機櫃設備安裝",
+    "unit": "組",
+    "major_category": "弱電工程",
+    "existing_material_id_hint": 15,
+    "origin": "EXISTING_SYNTHETIC_CATALOG"
+  },
+  {
+    "material_code": "SYN-WORK-013",
+    "material_name": "給排水管路 PVC 4吋 配設",
+    "unit": "m",
+    "major_category": "水電工程",
+    "existing_material_id_hint": 16,
+    "origin": "EXISTING_SYNTHETIC_CATALOG"
+  },
+  {
+    "material_code": "SYN-WORK-014",
+    "material_name": "室內 60×60 磁磚鋪貼含打底",
+    "unit": "m2",
+    "major_category": "裝修工程",
+    "existing_material_id_hint": 17,
+    "origin": "EXISTING_SYNTHETIC_CATALOG"
+  },
+  {
+    "material_code": "SYN-WORK-015",
+    "material_name": "防火門框扇製作含五金",
+    "unit": "樘",
+    "major_category": "門窗工程",
+    "existing_material_id_hint": 18,
+    "origin": "EXISTING_SYNTHETIC_CATALOG"
+  },
+  {
+    "material_code": "SYN-WORK-016",
+    "material_name": "屋頂排水與泛水收邊",
+    "unit": "m",
+    "major_category": "屋頂工程",
+    "existing_material_id_hint": 19,
+    "origin": "EXISTING_SYNTHETIC_CATALOG"
+  },
+  {
+    "material_code": "SYN-WORK-017",
+    "material_name": "施工安全監測沉陷觀測點",
+    "unit": "點",
+    "major_category": "安全觀測工程",
+    "existing_material_id_hint": 20,
+    "origin": "EXISTING_SYNTHETIC_CATALOG"
+  },
+  {
+    "material_code": "SYN-WORK-018",
+    "material_name": "工區臨時供水配管系統",
+    "unit": "式",
+    "major_category": "假設工程",
+    "existing_material_id_hint": 21,
+    "origin": "EXISTING_SYNTHETIC_CATALOG"
+  },
+  {
+    "material_code": "SYN-WORK-019",
+    "material_name": "連續壁導溝開挖及回填",
+    "unit": "m",
+    "major_category": "基礎工程",
+    "existing_material_id_hint": 22,
+    "origin": "EXISTING_SYNTHETIC_CATALOG"
+  },
+  {
+    "material_code": "SYN-WORK-020",
+    "material_name": "基礎筏式底版止水帶施工",
+    "unit": "m",
+    "major_category": "防水工程",
+    "existing_material_id_hint": 23,
+    "origin": "EXISTING_SYNTHETIC_CATALOG"
+  },
+  {
+    "material_code": "SYN-WORK-021",
+    "material_name": "接地銅排及接地極施作",
+    "unit": "組",
+    "major_category": "電氣工程",
+    "existing_material_id_hint": 24,
+    "origin": "EXISTING_SYNTHETIC_CATALOG"
+  },
+  {
+    "material_code": "SYN-WORK-022",
+    "material_name": "PVC-U 排水管及管件安裝",
+    "unit": "m",
+    "major_category": "給排水工程",
+    "existing_material_id_hint": 25,
+    "origin": "EXISTING_SYNTHETIC_CATALOG"
+  },
+  {
+    "material_code": "SYN-WORK-023",
+    "material_name": "樓梯間油漆批土及面漆",
+    "unit": "m2",
+    "major_category": "裝修工程",
+    "existing_material_id_hint": 26,
+    "origin": "EXISTING_SYNTHETIC_CATALOG"
+  },
+  {
+    "material_code": "SYN-WORK-024",
+    "material_name": "屋頂防水保護層及隔熱材",
+    "unit": "m2",
+    "major_category": "防水工程",
+    "existing_material_id_hint": 27,
+    "origin": "EXISTING_SYNTHETIC_CATALOG"
+  },
+  {
+    "material_code": "SYN-WORK-025",
+    "material_name": "外牆石材乾掛骨架系統",
+    "unit": "m2",
+    "major_category": "外牆工程",
+    "existing_material_id_hint": 28,
+    "origin": "EXISTING_SYNTHETIC_CATALOG"
+  },
+  {
+    "material_code": "SYN-WORK-026",
+    "material_name": "輕隔間 C 型骨架與雙面封板",
+    "unit": "m2",
+    "major_category": "裝修工程",
+    "existing_material_id_hint": 29,
+    "origin": "EXISTING_SYNTHETIC_CATALOG"
+  },
+  {
+    "material_code": "SYN-WORK-027",
+    "material_name": "公共區域天花板輕鋼架",
+    "unit": "m2",
+    "major_category": "裝修工程",
+    "existing_material_id_hint": 30,
+    "origin": "EXISTING_SYNTHETIC_CATALOG"
+  },
+  {
+    "material_code": "SYN-WORK-028",
+    "material_name": "機房消防灑水配管與測試",
+    "unit": "m",
+    "major_category": "消防工程",
+    "existing_material_id_hint": 31,
+    "origin": "EXISTING_SYNTHETIC_CATALOG"
+  },
+  {
+    "material_code": "SYN-WORK-029",
+    "material_name": "照明迴路配管配線施工",
+    "unit": "m",
+    "major_category": "電氣工程",
+    "existing_material_id_hint": 32,
+    "origin": "EXISTING_SYNTHETIC_CATALOG"
+  },
+  {
+    "material_code": "SYN-WORK-030",
+    "material_name": "地下停車場標線及標誌",
+    "unit": "m2",
+    "major_category": "雜項工程",
+    "existing_material_id_hint": 33,
+    "origin": "EXISTING_SYNTHETIC_CATALOG"
+  },
+  {
+    "material_code": "SYN-WORK-031",
+    "material_name": "戶外人行步道透水鋪面",
+    "unit": "m2",
+    "major_category": "景觀工程",
+    "existing_material_id_hint": 34,
+    "origin": "EXISTING_SYNTHETIC_CATALOG"
+  },
+  {
+    "material_code": "SYN-WORK-032",
+    "material_name": "混凝土表面修補及粉光",
+    "unit": "m2",
+    "major_category": "泥作工程",
+    "existing_material_id_hint": 35,
+    "origin": "EXISTING_SYNTHETIC_CATALOG"
+  },
+  {
+    "material_code": "SYN-WORK-033",
+    "material_name": "防火區劃貫穿部填塞",
+    "unit": "處",
+    "major_category": "消防工程",
+    "existing_material_id_hint": 36,
+    "origin": "EXISTING_SYNTHETIC_CATALOG"
+  },
+  {
+    "material_code": "SYN-WORK-034",
+    "material_name": "空調冷媒銅管保溫及安裝",
+    "unit": "m",
+    "major_category": "空調工程",
+    "existing_material_id_hint": 37,
+    "origin": "EXISTING_SYNTHETIC_CATALOG"
+  },
+  {
+    "material_code": "SYN-WORK-035",
+    "material_name": "電梯門框收邊及修飾",
+    "unit": "處",
+    "major_category": "電梯工程",
+    "existing_material_id_hint": 38,
+    "origin": "EXISTING_SYNTHETIC_CATALOG"
+  },
+  {
+    "material_code": "SYN-WORK-036",
+    "material_name": "衛浴設備給水配管及測試",
+    "unit": "組",
+    "major_category": "給排水工程",
+    "existing_material_id_hint": 39,
+    "origin": "EXISTING_SYNTHETIC_CATALOG"
+  },
+  {
+    "material_code": "SYN-WORK-037",
+    "material_name": "陽台滴水線及收邊施作",
+    "unit": "m",
+    "major_category": "外牆工程",
+    "existing_material_id_hint": 40,
+    "origin": "EXISTING_SYNTHETIC_CATALOG"
+  },
+  {
+    "material_code": "SYN-WORK-038",
+    "material_name": "地下室地坪耐磨塗裝",
+    "unit": "m2",
+    "major_category": "裝修工程",
+    "existing_material_id_hint": 41,
+    "origin": "EXISTING_SYNTHETIC_CATALOG"
+  },
+  {
+    "material_code": "SYN-WORK-039",
+    "material_name": "弱電資訊插座與面板配設",
+    "unit": "只",
+    "major_category": "弱電工程",
+    "existing_material_id_hint": 42,
+    "origin": "EXISTING_SYNTHETIC_CATALOG"
+  },
+  {
+    "material_code": "SYN-WORK-040",
+    "material_name": "工區臨時電力分盤設置",
+    "unit": "組",
+    "major_category": "假設工程",
+    "existing_material_id_hint": 43,
+    "origin": "EXISTING_SYNTHETIC_CATALOG"
+  },
+  {
+    "material_code": "SYN-WORK-041",
+    "material_name": "屋頂設備基座澆置及固定",
+    "unit": "座",
+    "major_category": "屋頂工程",
+    "existing_material_id_hint": 44,
+    "origin": "EXISTING_SYNTHETIC_CATALOG"
+  },
+  {
+    "material_code": "SYN-WORK-042",
+    "material_name": "工地出入口警示與告示牌",
+    "unit": "組",
+    "major_category": "假設工程",
+    "existing_material_id_hint": 45,
+    "origin": "EXISTING_SYNTHETIC_CATALOG"
+  },
+  {
+    "material_code": "SYN-WORK-043",
+    "material_name": "施工臨時排水及沉砂設施",
+    "unit": "式",
+    "major_category": "假設工程",
+    "existing_material_id_hint": 46,
+    "origin": "EXISTING_SYNTHETIC_CATALOG"
+  },
+  {
+    "material_code": "SYN-WORK-044",
+    "material_name": "工地臨時照明與配電管線",
+    "unit": "m",
+    "major_category": "假設工程",
+    "existing_material_id_hint": 47,
+    "origin": "EXISTING_SYNTHETIC_CATALOG"
+  },
+  {
+    "material_code": "SYN-WORK-045",
+    "material_name": "地下室抽排水及集水井施作",
+    "unit": "座",
+    "major_category": "基礎工程",
+    "existing_material_id_hint": 48,
+    "origin": "EXISTING_SYNTHETIC_CATALOG"
+  },
+  {
+    "material_code": "SYN-WORK-046",
+    "material_name": "基礎開挖土方外運含處理",
+    "unit": "m3",
+    "major_category": "土方工程",
+    "existing_material_id_hint": 49,
+    "origin": "EXISTING_SYNTHETIC_CATALOG"
+  },
+  {
+    "material_code": "SYN-WORK-047",
+    "material_name": "基礎回填級配及分層夯實",
+    "unit": "m3",
+    "major_category": "土方工程",
+    "existing_material_id_hint": 50,
+    "origin": "EXISTING_SYNTHETIC_CATALOG"
+  },
+  {
+    "material_code": "SYN-WORK-048",
+    "material_name": "地下室止水鋼板與施工縫處理",
+    "unit": "m",
+    "major_category": "防水工程",
+    "existing_material_id_hint": 51,
+    "origin": "EXISTING_SYNTHETIC_CATALOG"
+  },
+  {
+    "material_code": "SYN-WORK-049",
+    "material_name": "柱梁版普通模板組立拆除",
+    "unit": "m2",
+    "major_category": "結構體工程",
+    "existing_material_id_hint": 52,
+    "origin": "EXISTING_SYNTHETIC_CATALOG"
+  },
+  {
+    "material_code": "SYN-WORK-050",
+    "material_name": "構造物植筋固定及接著材料",
+    "unit": "處",
+    "major_category": "結構體工程",
+    "existing_material_id_hint": 53,
+    "origin": "EXISTING_SYNTHETIC_CATALOG"
+  },
+  {
+    "material_code": "SYN-WORK-051",
+    "material_name": "輕質隔間磚砌築含勾縫",
+    "unit": "m2",
+    "major_category": "泥作工程",
+    "existing_material_id_hint": 54,
+    "origin": "EXISTING_SYNTHETIC_CATALOG"
+  },
+  {
+    "material_code": "SYN-WORK-052",
+    "material_name": "外牆粉刷底層打底整平",
+    "unit": "m2",
+    "major_category": "泥作工程",
+    "existing_material_id_hint": 55,
+    "origin": "EXISTING_SYNTHETIC_CATALOG"
+  },
+  {
+    "material_code": "SYN-WORK-053",
+    "material_name": "室內地坪水泥砂漿找平",
+    "unit": "m2",
+    "major_category": "泥作工程",
+    "existing_material_id_hint": 56,
+    "origin": "EXISTING_SYNTHETIC_CATALOG"
+  },
+  {
+    "material_code": "SYN-WORK-054",
+    "material_name": "陽台地坪洩水坡度處理",
+    "unit": "m2",
+    "major_category": "泥作工程",
+    "existing_material_id_hint": 57,
+    "origin": "EXISTING_SYNTHETIC_CATALOG"
+  },
+  {
+    "material_code": "SYN-WORK-055",
+    "material_name": "外牆防水塗膜兩道施工",
+    "unit": "m2",
+    "major_category": "防水工程",
+    "existing_material_id_hint": 58,
+    "origin": "EXISTING_SYNTHETIC_CATALOG"
+  },
+  {
+    "material_code": "SYN-WORK-056",
+    "material_name": "窗框四周填縫與防水封膠",
+    "unit": "m",
+    "major_category": "防水工程",
+    "existing_material_id_hint": 59,
+    "origin": "EXISTING_SYNTHETIC_CATALOG"
+  },
+  {
+    "material_code": "SYN-WORK-057",
+    "material_name": "浴廁牆地防水及試水",
+    "unit": "m2",
+    "major_category": "防水工程",
+    "existing_material_id_hint": 60,
+    "origin": "EXISTING_SYNTHETIC_CATALOG"
+  },
+  {
+    "material_code": "SYN-WORK-058",
+    "material_name": "屋頂女兒牆泛水與伸縮縫",
+    "unit": "m",
+    "major_category": "防水工程",
+    "existing_material_id_hint": 61,
+    "origin": "EXISTING_SYNTHETIC_CATALOG"
+  },
+  {
+    "material_code": "SYN-WORK-059",
+    "material_name": "鋁合金推射窗含五金",
+    "unit": "樘",
+    "major_category": "門窗工程",
+    "existing_material_id_hint": 62,
+    "origin": "EXISTING_SYNTHETIC_CATALOG"
+  },
+  {
+    "material_code": "SYN-WORK-060",
+    "material_name": "氣密固定玻璃窗組裝",
+    "unit": "樘",
+    "major_category": "門窗工程",
+    "existing_material_id_hint": 63,
+    "origin": "EXISTING_SYNTHETIC_CATALOG"
+  },
+  {
+    "material_code": "SYN-WORK-061",
+    "material_name": "雙扇防火門含閉門器",
+    "unit": "樘",
+    "major_category": "門窗工程",
+    "existing_material_id_hint": 64,
+    "origin": "EXISTING_SYNTHETIC_CATALOG"
+  },
+  {
+    "material_code": "SYN-WORK-062",
+    "material_name": "梯廳不鏽鋼門框及包邊",
+    "unit": "樘",
+    "major_category": "金屬工程",
+    "existing_material_id_hint": 65,
+    "origin": "EXISTING_SYNTHETIC_CATALOG"
+  },
+  {
+    "material_code": "SYN-WORK-063",
+    "material_name": "外牆鋁板包覆及骨架",
+    "unit": "m2",
+    "major_category": "外牆工程",
+    "existing_material_id_hint": 66,
+    "origin": "EXISTING_SYNTHETIC_CATALOG"
+  },
+  {
+    "material_code": "SYN-WORK-064",
+    "material_name": "牆面乳膠漆二底二度",
+    "unit": "m2",
+    "major_category": "裝修工程",
+    "existing_material_id_hint": 67,
+    "origin": "EXISTING_SYNTHETIC_CATALOG"
+  },
+  {
+    "material_code": "SYN-WORK-065",
+    "material_name": "公共區域石膏板輕鋼架天花",
+    "unit": "m2",
+    "major_category": "裝修工程",
+    "existing_material_id_hint": 68,
+    "origin": "EXISTING_SYNTHETIC_CATALOG"
+  },
+  {
+    "material_code": "SYN-WORK-066",
+    "material_name": "樓梯止滑條及踏面收邊",
+    "unit": "m",
+    "major_category": "裝修工程",
+    "existing_material_id_hint": 69,
+    "origin": "EXISTING_SYNTHETIC_CATALOG"
+  },
+  {
+    "material_code": "SYN-WORK-067",
+    "material_name": "室內木作踢腳板及收口",
+    "unit": "m",
+    "major_category": "裝修工程",
+    "existing_material_id_hint": 70,
+    "origin": "EXISTING_SYNTHETIC_CATALOG"
+  },
+  {
+    "material_code": "SYN-WORK-068",
+    "material_name": "大廳石材地坪及勾縫",
+    "unit": "m2",
+    "major_category": "裝修工程",
+    "existing_material_id_hint": 71,
+    "origin": "EXISTING_SYNTHETIC_CATALOG"
+  },
+  {
+    "material_code": "SYN-WORK-069",
+    "material_name": "廚房檯面與櫥櫃系統",
+    "unit": "組",
+    "major_category": "裝修工程",
+    "existing_material_id_hint": 72,
+    "origin": "EXISTING_SYNTHETIC_CATALOG"
+  },
+  {
+    "material_code": "SYN-WORK-070",
+    "material_name": "衛浴洗面盆龍頭及給水接頭",
+    "unit": "組",
+    "major_category": "給排水工程",
+    "existing_material_id_hint": 73,
+    "origin": "EXISTING_SYNTHETIC_CATALOG"
+  },
+  {
+    "material_code": "SYN-WORK-071",
+    "material_name": "廁所馬桶設備及安裝",
+    "unit": "組",
+    "major_category": "給排水工程",
+    "existing_material_id_hint": 74,
+    "origin": "EXISTING_SYNTHETIC_CATALOG"
+  },
+  {
+    "material_code": "SYN-WORK-072",
+    "material_name": "雨水立管與落水頭系統",
+    "unit": "m",
+    "major_category": "給排水工程",
+    "existing_material_id_hint": 75,
+    "origin": "EXISTING_SYNTHETIC_CATALOG"
+  },
+  {
+    "material_code": "SYN-WORK-073",
+    "material_name": "給水加壓泵浦及控制盤",
+    "unit": "組",
+    "major_category": "給排水工程",
+    "existing_material_id_hint": 76,
+    "origin": "EXISTING_SYNTHETIC_CATALOG"
+  },
+  {
+    "material_code": "SYN-WORK-074",
+    "material_name": "污水提升泵浦及閥件",
+    "unit": "組",
+    "major_category": "給排水工程",
+    "existing_material_id_hint": 77,
+    "origin": "EXISTING_SYNTHETIC_CATALOG"
+  },
+  {
+    "material_code": "SYN-WORK-075",
+    "material_name": "受電盤母線與主開關系統",
+    "unit": "組",
+    "major_category": "電氣工程",
+    "existing_material_id_hint": 78,
+    "origin": "EXISTING_SYNTHETIC_CATALOG"
+  },
+  {
+    "material_code": "SYN-WORK-076",
+    "material_name": "低壓電纜橋架與支撐",
+    "unit": "m",
+    "major_category": "電氣工程",
+    "existing_material_id_hint": 79,
+    "origin": "EXISTING_SYNTHETIC_CATALOG"
+  },
+  {
+    "material_code": "SYN-WORK-077",
+    "material_name": "接地網路及接地測試點",
+    "unit": "點",
+    "major_category": "電氣工程",
+    "existing_material_id_hint": 80,
+    "origin": "EXISTING_SYNTHETIC_CATALOG"
+  },
+  {
+    "material_code": "SYN-WORK-078",
+    "material_name": "樓梯間緊急照明燈具",
+    "unit": "只",
+    "major_category": "電氣工程",
+    "existing_material_id_hint": 81,
+    "origin": "EXISTING_SYNTHETIC_CATALOG"
+  },
+  {
+    "material_code": "SYN-WORK-079",
+    "material_name": "火警受信總機與控制盤",
+    "unit": "組",
+    "major_category": "消防工程",
+    "existing_material_id_hint": 82,
+    "origin": "EXISTING_SYNTHETIC_CATALOG"
+  },
+  {
+    "material_code": "SYN-WORK-080",
+    "material_name": "消防警報探測器及底座",
+    "unit": "只",
+    "major_category": "消防工程",
+    "existing_material_id_hint": 83,
+    "origin": "EXISTING_SYNTHETIC_CATALOG"
+  },
+  {
+    "material_code": "SYN-WORK-081",
+    "material_name": "消防水帶箱與消防栓",
+    "unit": "組",
+    "major_category": "消防工程",
+    "existing_material_id_hint": 84,
+    "origin": "EXISTING_SYNTHETIC_CATALOG"
+  },
+  {
+    "material_code": "SYN-WORK-082",
+    "material_name": "自動灑水頭與支管配設",
+    "unit": "只",
+    "major_category": "消防工程",
+    "existing_material_id_hint": 85,
+    "origin": "EXISTING_SYNTHETIC_CATALOG"
+  },
+  {
+    "material_code": "SYN-WORK-083",
+    "material_name": "排煙風機與排煙閘門",
+    "unit": "組",
+    "major_category": "消防工程",
+    "existing_material_id_hint": 86,
+    "origin": "EXISTING_SYNTHETIC_CATALOG"
+  },
+  {
+    "material_code": "SYN-WORK-084",
+    "material_name": "空調風管製作保溫與安裝",
+    "unit": "m2",
+    "major_category": "空調工程",
+    "existing_material_id_hint": 87,
+    "origin": "EXISTING_SYNTHETIC_CATALOG"
+  },
+  {
+    "material_code": "SYN-WORK-085",
+    "material_name": "室外空調冷凝機組",
+    "unit": "組",
+    "major_category": "空調工程",
+    "existing_material_id_hint": 88,
+    "origin": "EXISTING_SYNTHETIC_CATALOG"
+  },
+  {
+    "material_code": "SYN-WORK-086",
+    "material_name": "新風機與風量控制設備",
+    "unit": "組",
+    "major_category": "空調工程",
+    "existing_material_id_hint": 89,
+    "origin": "EXISTING_SYNTHETIC_CATALOG"
+  },
+  {
+    "material_code": "SYN-WORK-087",
+    "material_name": "網路資訊配線及端接",
+    "unit": "m",
+    "major_category": "弱電工程",
+    "existing_material_id_hint": 90,
+    "origin": "EXISTING_SYNTHETIC_CATALOG"
+  },
+  {
+    "material_code": "SYN-WORK-088",
+    "material_name": "門禁讀卡機及控制器",
+    "unit": "組",
+    "major_category": "弱電工程",
+    "existing_material_id_hint": 91,
+    "origin": "EXISTING_SYNTHETIC_CATALOG"
+  },
+  {
+    "material_code": "SYN-WORK-089",
+    "material_name": "監視攝影機及網路設備",
+    "unit": "組",
+    "major_category": "弱電工程",
+    "existing_material_id_hint": 92,
+    "origin": "EXISTING_SYNTHETIC_CATALOG"
+  },
+  {
+    "material_code": "SYN-WORK-090",
+    "material_name": "公共廣播擴大機與揚聲器",
+    "unit": "組",
+    "major_category": "弱電工程",
+    "existing_material_id_hint": 93,
+    "origin": "EXISTING_SYNTHETIC_CATALOG"
+  },
+  {
+    "material_code": "SYN-WORK-091",
+    "material_name": "電梯機坑與導軌設備安裝",
+    "unit": "組",
+    "major_category": "電梯工程",
+    "existing_material_id_hint": 94,
+    "origin": "EXISTING_SYNTHETIC_CATALOG"
+  },
+  {
+    "material_code": "SYN-WORK-092",
+    "material_name": "電梯車廂裝修與控制面板",
+    "unit": "組",
+    "major_category": "電梯工程",
+    "existing_material_id_hint": 95,
+    "origin": "EXISTING_SYNTHETIC_CATALOG"
+  },
+  {
+    "material_code": "SYN-WORK-093",
+    "material_name": "基地庭園植栽客土及支架",
+    "unit": "m2",
+    "major_category": "景觀工程",
+    "existing_material_id_hint": 96,
+    "origin": "EXISTING_SYNTHETIC_CATALOG"
+  },
+  {
+    "material_code": "SYN-WORK-094",
+    "material_name": "戶外排水側溝與鑄鐵蓋",
+    "unit": "m",
+    "major_category": "景觀工程",
+    "existing_material_id_hint": 97,
+    "origin": "EXISTING_SYNTHETIC_CATALOG"
+  },
+  {
+    "material_code": "SYN-WORK-095",
+    "material_name": "室外道路鋪面與路緣石",
+    "unit": "m2",
+    "major_category": "景觀工程",
+    "existing_material_id_hint": 98,
+    "origin": "EXISTING_SYNTHETIC_CATALOG"
+  },
+  {
+    "material_code": "SYN-WORK-096",
+    "material_name": "垃圾暫存室通風與排水",
+    "unit": "組",
+    "major_category": "雜項工程",
+    "existing_material_id_hint": 99,
+    "origin": "EXISTING_SYNTHETIC_CATALOG"
+  },
+  {
+    "material_code": "SYN-WORK-097",
+    "material_name": "地下停車場車道反光標示",
+    "unit": "m",
+    "major_category": "雜項工程",
+    "existing_material_id_hint": 100,
+    "origin": "EXISTING_SYNTHETIC_CATALOG"
+  },
+  {
+    "material_code": "FAC-METAL-ROOF",
+    "material_name": "廠房金屬鋼板屋面系統",
+    "unit": "m2",
+    "major_category": "外部裝修工程",
+    "existing_material_id_hint": "",
+    "origin": "NEW_SYNTHETIC_FACTORY_TEMPLATE"
+  },
+  {
+    "material_code": "FAC-METAL-WALL",
+    "material_name": "廠房金屬外牆板系統",
+    "unit": "m2",
+    "major_category": "外部裝修工程",
+    "existing_material_id_hint": "",
+    "origin": "NEW_SYNTHETIC_FACTORY_TEMPLATE"
+  },
+  {
+    "material_code": "FAC-ROLLING-DOOR",
+    "material_name": "廠房工業捲門系統",
+    "unit": "樘",
+    "major_category": "門窗工程",
+    "existing_material_id_hint": "",
+    "origin": "NEW_SYNTHETIC_FACTORY_TEMPLATE"
+  },
+  {
+    "material_code": "FAC-HARDENER-FLOOR",
+    "material_name": "廠房耐磨地坪系統",
+    "unit": "m2",
+    "major_category": "地坪裝修工程",
+    "existing_material_id_hint": "",
+    "origin": "NEW_SYNTHETIC_FACTORY_TEMPLATE"
+  }
+]

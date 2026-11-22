@@ -249,4 +249,5 @@ Check(!TwoAScopePolicy.IsQuantityDetectionCategory("混凝土養護劑") &&
 
 BulkMaterialTests.Run();
 if (args.Length == 2 && args[0] == "--bulk-snapshot") BulkMaterialTests.ReplaySnapshot(args[1]);
+if (args.Length == 3 && args[0] == "--factory-workbook") FactoryWorkbookTests.Run(args[1], args[2]);
 Console.WriteLine("WorkbookParserTests: all checks passed.");

@@ -18,6 +18,9 @@ from generate_irregular_excel import LAYOUTS, SHEETS, make_xlsx
 # Preserve the original finer trade in source CSV/truth, but the workbook
 # includes a 1D-level classification required by AnalysisCase/from-upload.
 APPROVED_MAJOR_CATEGORY = {
+    "鋼骨鋼構工程": "鋼骨鋼構工程",
+    "地坪裝修工程": "地坪裝修工程",
+    "外部裝修工程": "外部裝修工程",
     "結構體工程": "結構體工程",
     "泥作工程": "內外牆裝修工程",
     "假設工程": "假設工程",
@@ -42,6 +45,7 @@ APPROVED_MAJOR_CATEGORY = {
 }
 
 SHEET_BY_CATEGORY = {
+    "鋼骨鋼構工程": 0, "地坪裝修工程": 2, "外部裝修工程": 3,
     "結構體工程": 0, "泥作工程": 2,
     "假設工程": 1, "基礎工程": 1, "土方工程": 1, "安全觀測工程": 1,
     "防水工程": 3, "門窗工程": 3, "金屬工程": 3,
@@ -53,7 +57,7 @@ SHEET_BY_CATEGORY = {
 
 def read_source(source):
     manifest = json.loads((source / "manifest.json").read_text(encoding="utf-8"))
-    if manifest.get("generator_version") != "2.0.0" or manifest.get("data_origin") != "SYNTHETIC":
+    if manifest.get("dataset_schema_version", manifest.get("generator_version")) != "2.0.0" or manifest.get("data_origin") != "SYNTHETIC":
         raise ValueError("requires SYNTHETIC v2 source")
     for filename in ("projects.csv", "historical_transactions.csv", "project_boq_rows.csv"):
         actual = hashlib.sha256((source / filename).read_bytes()).hexdigest()
@@ -140,7 +144,7 @@ def inject_test_scenario(source_rows, selected, anomaly_scenario):
     return changed, audit
 
 
-def export(source, output, truth, project_id=None, seed=147, anomaly_scenario=None):
+def export(source, output, truth, project_id=None, seed=147, anomaly_scenario=None, include_defects=True):
     if output.exists() or truth.exists() or output.resolve() == truth.resolve():
         raise ValueError("refusing to overwrite output")
     projects, boq = read_source(source)
@@ -186,7 +190,7 @@ def export(source, output, truth, project_id=None, seed=147, anomaly_scenario=No
         for n, raw in enumerate(categorized[idx], start=1):
             # A few deliberately defective rows are represented as defects
             # in the Excel only. Source history remains complete and separate.
-            scenario = ("complete" if raw["synthetic_line_id"] in injected_ids else
+            scenario = ("complete" if not include_defects or raw["synthetic_line_id"] in injected_ids else
                         "missing_quantity" if n % 47 == 0 else
                         "missing_unit_price" if n % 29 == 0 else
                         "missing_unit" if n % 37 == 0 else "complete")
@@ -236,6 +240,7 @@ def export(source, output, truth, project_id=None, seed=147, anomaly_scenario=No
     layouts = {name: [*LAYOUTS[idx], "工程大項"] for idx, name in enumerate(SHEETS)}
     blob = make_xlsx(sheets, headers_by_sheet=layouts)
     out = {"generator_version": "2.0.0", "data_origin": "SYNTHETIC",
+           "source_generator_version": manifest_version(source), "intentional_defects_enabled": include_defects,
            "project": selected, "xlsx_sha256": hashlib.sha256(blob).hexdigest(),
            "total_detail_rows": len(truth_rows), "detail_rows_per_sheet": dict(Counter(x["sheet"] for x in truth_rows)),
            "cases": truth_rows,
@@ -244,7 +249,8 @@ def export(source, output, truth, project_id=None, seed=147, anomaly_scenario=No
                          "is_label_not_model_prediction": bool(anomaly_scenario),
                          "changed_line_count": len(injected_rows),
                          "changed_lines": injected_rows} if anomaly_scenario else None,
-           "limitations": ["Excel defects are intentional; source history stays complete.",
+           "limitations": [("Excel defects are intentional; source history stays complete." if include_defects else
+                            "Complete synthetic BOQ: every exported row retains source quantity, unit and price."),
                            "Synthetic history rows are NOT real transactions.",
                            "The project attributes and quantities are not calibrated to construction specifications."]}
     output.parent.mkdir(parents=True, exist_ok=True)
@@ -257,6 +263,8 @@ def export(source, output, truth, project_id=None, seed=147, anomaly_scenario=No
             "injection": anomaly_scenario, "changed_line_count": len(injected_rows),
             "sha256": out["xlsx_sha256"]}
 
+def manifest_version(source):
+    return json.loads((source / "manifest.json").read_text(encoding="utf-8"))["generator_version"]
 
 def main():
     parser = argparse.ArgumentParser(description=__doc__)
@@ -264,11 +272,12 @@ def main():
     parser.add_argument("--output", type=Path, required=True)
     parser.add_argument("--truth", type=Path, required=True)
     parser.add_argument("--project-id")
+    parser.add_argument("--complete", action="store_true", help="retain every source unit, quantity and price; no deliberate missing-field defects")
     parser.add_argument("--anomaly-scenario", choices=sorted(ANOMALY_SCENARIOS))
     args = parser.parse_args()
     try:
         print(json.dumps(export(args.source, args.output, args.truth, args.project_id,
-                                anomaly_scenario=args.anomaly_scenario), ensure_ascii=False, indent=2))
+                                anomaly_scenario=args.anomaly_scenario, include_defects=not args.complete), ensure_ascii=False, indent=2))
     except (ValueError, KeyError, OSError, json.JSONDecodeError) as error:
         parser.error(str(error))
 

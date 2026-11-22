@@ -1,0 +1,257 @@
+{
+  "factory_generation": "PASS",
+  "python_tests": 21,
+  "factory_python_tests": 10,
+  "parser_workbooks": [
+    {
+      "split": "test",
+      "file": "factory-RC-complete.xlsx",
+      "status": "PASS",
+      "message": "PASS: factory XLSX parser source roundtrip, 167 rows, 6 detail sheets, all quantity/price/amount/category values matched."
+    },
+    {
+      "split": "test",
+      "file": "factory-SC-complete.xlsx",
+      "status": "PASS",
+      "message": "PASS: factory XLSX parser source roundtrip, 164 rows, 6 detail sheets, all quantity/price/amount/category values matched."
+    },
+    {
+      "split": "test",
+      "file": "factory-SRC-complete.xlsx",
+      "status": "PASS",
+      "message": "PASS: factory XLSX parser source roundtrip, 163 rows, 6 detail sheets, all quantity/price/amount/category values matched."
+    },
+    {
+      "split": "train",
+      "file": "factory-RC-complete.xlsx",
+      "status": "PASS",
+      "message": "PASS: factory XLSX parser source roundtrip, 160 rows, 6 detail sheets, all quantity/price/amount/category values matched."
+    },
+    {
+      "split": "train",
+      "file": "factory-SC-complete.xlsx",
+      "status": "PASS",
+      "message": "PASS: factory XLSX parser source roundtrip, 164 rows, 6 detail sheets, all quantity/price/amount/category values matched."
+    },
+    {
+      "split": "train",
+      "file": "factory-SRC-complete.xlsx",
+      "status": "PASS",
+      "message": "PASS: factory XLSX parser source roundtrip, 170 rows, 6 detail sheets, all quantity/price/amount/category values matched."
+    }
+  ],
+  "archive_sha256": "b6d4d69188d7713ab8d86624e3f4eaa015ec4d1b51910ddf558d4ba7f53f4e4e",
+  "archive_bytes": 2110357,
+  "database_imported": false,
+  "cloud_project_counts_verified": {
+    "住宅": 210,
+    "廠房": 0
+  },
+  "residential_source_hashes_verified": true,
+  "generator_manifest": {
+    "generator_version": "factory-1.0.0",
+    "dataset_schema_version": "2.0.0",
+    "data_origin": "SYNTHETIC",
+    "seed": 20261122,
+    "project_type": "廠房",
+    "batch_id": "FACTORY_20261122_V1",
+    "project_count": 180,
+    "boq_line_count": 23980,
+    "transaction_count": 23980,
+    "applicability_rows": 18720,
+    "status_counts": {
+      "NotApplicableAssumed": 3320,
+      "ApplicablePresent": 8740,
+      "OutOfScope": 6660
+    },
+    "materials_per_project": {
+      "min": 39,
+      "max": 59
+    },
+    "split_counts": {
+      "train": 126,
+      "validation": 27,
+      "test": 27
+    },
+    "structure_type_counts": {
+      "RC": 60,
+      "SC": 60,
+      "SRC": 60
+    },
+    "catalog_material_count": 104,
+    "distinct_material_codes": 67,
+    "files_sha256": {
+      "assumptions.json": "6fb502ec8ee41b0b72bf5ba0503927b91a9481db523cb44518e842ce7336c673",
+      "diagnostic_boq_rows.csv": "5125b9eec045753bf0fcc871e5a1c97c27b5621c275896e25b7d620923382bcb",
+      "diagnostic_projects.csv": "6e8e684c1cdf7aa9de26b68e1fe94f64407b6c8362dc9c014aa559bb9b63df36",
+      "diagnostic_truth.csv": "a180b8ac0f8844de6622b5da1a18d5b592e42cf9e80f62ba1851f91dd9266ed3",
+      "historical_transactions.csv": "01f7d7a034d6f9fd744cea99c54cd83c172ff85ed32728d2177080a23a7116ec",
+      "material_catalog.csv": "dc08356d51276033f741de14ae37cbec836309ddb65e49d45a2e22f30e50ab7a",
+      "project_boq_rows.csv": "a54541dc9a5bb98ebf76a20d5b126a0be7f15dc96ceb719f3ede4cd0c918c345",
+      "project_material_applicability.csv": "d4f7e7eb261eb5fbc16d98e91638a8b20e2c4180bb44f6405db15a1f74b678c7",
+      "projects.csv": "641b7ce02343bded6aa188e9a34dfe8b10d9d90416f4fbcf23cfae18658dab83"
+    },
+    "diagnostic_cases": 6,
+    "generator_sha256": "70816072a6a15bf69299b6d3b8b7d1a90a66af4f0b606165b27c708b15070722",
+    "catalog_sha256": "bb9fa948847738dffd0812594a336efd23c545847a655f520a200712d919754b",
+    "schema_changed": false,
+    "database_imported": false,
+    "automatic_approval_allowed": false,
+    "scope": "ILLUSTRATIVE_SELECTED_FACTORY_TRADES_NOT_COMPLETE_CONTRACT",
+    "limitations": [
+      "All quantities, prices and applicability are synthetic assumptions, not engineering observations.",
+      "Train/validation/test are grouped by independent project; diagnostics are paired variants, not new independent cases.",
+      "Only train may be considered for isolated demo references after scope/mapping review; never import validation/test/diagnostics.",
+      "Four new factory catalog entries require explicit mapping; ID hints are not portable database foreign keys.",
+      "No residential files or database data are changed.",
+      "No real engineering accuracy or normal/abnormal labels are established."
+    ]
+  },
+  "delivery_manifest": {
+    "data_origin": "SYNTHETIC",
+    "database_imported": false,
+    "residential_modified": false,
+    "files_sha256": {
+      "assumptions.json": "6fb502ec8ee41b0b72bf5ba0503927b91a9481db523cb44518e842ce7336c673",
+      "delivery/import_candidate/preflight.json": "ac2da7bc4d44553237f0372b181cb2a76821ca974a739bb69d638b01475a4033",
+      "delivery/import_candidate/train_historical_transactions.csv": "c317a1214b884b76ebce09a1e629004c3cf383681e648491a966501dba3dc1a2",
+      "delivery/import_candidate/train_project_boq_rows.csv": "4ae4bae3f0b1561d0e5570a96d2db7fec510d54c029d339f1dff50ea08fa479a",
+      "delivery/import_candidate/train_projects.csv": "bccea09ca30bfc1f8bdd782fac03fe176cdd2214bf29a2b4b2715310869ae609",
+      "delivery/README.md": "ab4bf6f158b4357c4bfafce680645a05f0297374b5265726ae47b2409c8d120d",
+      "delivery/workbooks/test/factory-RC-complete.truth.json": "de640ef0efd389d4199f2b53523339a3b6b49f9d81345d2d66ae4dc7d829f3d5",
+      "delivery/workbooks/test/factory-RC-complete.xlsx": "96cba53dd7d8add84b72e1b433ddd44a8fa9299b69940a0a843ebe4b30414693",
+      "delivery/workbooks/test/factory-SC-complete.truth.json": "6ca15d4298bec995300bf3ab1756ced6b0726d93244cfbaa160dd1a6a57c1a01",
+      "delivery/workbooks/test/factory-SC-complete.xlsx": "de13a10fd08a91bad03ff6331b8f1b3822c75615803864cf27e5823a926723ae",
+      "delivery/workbooks/test/factory-SRC-complete.truth.json": "b272bd3437a583a8e5c61b6ad05e15446cc5dbdda53ced5b28f63a1b683353bc",
+      "delivery/workbooks/test/factory-SRC-complete.xlsx": "b33a444160d464cab992e6e383bc1f89fe13afdfd556136f07d5ab0f38652c13",
+      "delivery/workbooks/train/factory-RC-complete.truth.json": "2de4fd85e27e596ca2c8302ed4e74da93ca46e080f844b70a2664d430d95ecbb",
+      "delivery/workbooks/train/factory-RC-complete.xlsx": "37f83a576a6cebc6755774d0405dc6ee30da3c0b82cde16486c4c697b397ee90",
+      "delivery/workbooks/train/factory-SC-complete.truth.json": "0ffe20094345918228181dbfb994193c65c23fd9c43da35083235e0afa3c4b1f",
+      "delivery/workbooks/train/factory-SC-complete.xlsx": "4acd6ed3cbdea933497773a001bfb69c0ca0ef7f3d381876b34e4d59aafabdf3",
+      "delivery/workbooks/train/factory-SRC-complete.truth.json": "69f030b7523017d7c73359a4502ad1e6da06d35d75800148ae4199954e29351e",
+      "delivery/workbooks/train/factory-SRC-complete.xlsx": "0767fb9bc38bacfc264e8cbe90bb458a054d21a27fc953973773601cfe44bb5c",
+      "diagnostic_boq_rows.csv": "5125b9eec045753bf0fcc871e5a1c97c27b5621c275896e25b7d620923382bcb",
+      "diagnostic_projects.csv": "6e8e684c1cdf7aa9de26b68e1fe94f64407b6c8362dc9c014aa559bb9b63df36",
+      "diagnostic_truth.csv": "a180b8ac0f8844de6622b5da1a18d5b592e42cf9e80f62ba1851f91dd9266ed3",
+      "historical_transactions.csv": "01f7d7a034d6f9fd744cea99c54cd83c172ff85ed32728d2177080a23a7116ec",
+      "manifest.json": "e04d7fa10e012825561031befff1f9d7f63b6e88272c9e528eb523fdcab6bfd0",
+      "material_catalog.csv": "dc08356d51276033f741de14ae37cbec836309ddb65e49d45a2e22f30e50ab7a",
+      "project_boq_rows.csv": "a54541dc9a5bb98ebf76a20d5b126a0be7f15dc96ceb719f3ede4cd0c918c345",
+      "project_material_applicability.csv": "d4f7e7eb261eb5fbc16d98e91638a8b20e2c4180bb44f6405db15a1f74b678c7",
+      "projects.csv": "641b7ce02343bded6aa188e9a34dfe8b10d9d90416f4fbcf23cfae18658dab83"
+    },
+    "workbooks": [
+      {
+        "split": "train",
+        "structure": "RC",
+        "project_id": "FAC-20261122-RC-0004",
+        "detail_rows": 160,
+        "worksheets": 7,
+        "detail_rows_per_sheet": {
+          "結構體明細": 6,
+          "基礎及地下工程": 27,
+          "樓層材料明細": 12,
+          "防水門窗及外裝": 27,
+          "機電消防及弱電": 73,
+          "室內裝修與雜項": 15
+        },
+        "injection": null,
+        "changed_line_count": 0,
+        "sha256": "37f83a576a6cebc6755774d0405dc6ee30da3c0b82cde16486c4c697b397ee90"
+      },
+      {
+        "split": "train",
+        "structure": "SC",
+        "project_id": "FAC-20261122-SC-0004",
+        "detail_rows": 164,
+        "worksheets": 7,
+        "detail_rows_per_sheet": {
+          "結構體明細": 9,
+          "基礎及地下工程": 28,
+          "樓層材料明細": 6,
+          "防水門窗及外裝": 27,
+          "機電消防及弱電": 79,
+          "室內裝修與雜項": 15
+        },
+        "injection": null,
+        "changed_line_count": 0,
+        "sha256": "4acd6ed3cbdea933497773a001bfb69c0ca0ef7f3d381876b34e4d59aafabdf3"
+      },
+      {
+        "split": "train",
+        "structure": "SRC",
+        "project_id": "FAC-20261122-SRC-0004",
+        "detail_rows": 170,
+        "worksheets": 7,
+        "detail_rows_per_sheet": {
+          "結構體明細": 9,
+          "基礎及地下工程": 28,
+          "樓層材料明細": 12,
+          "防水門窗及外裝": 27,
+          "機電消防及弱電": 79,
+          "室內裝修與雜項": 15
+        },
+        "injection": null,
+        "changed_line_count": 0,
+        "sha256": "0767fb9bc38bacfc264e8cbe90bb458a054d21a27fc953973773601cfe44bb5c"
+      },
+      {
+        "split": "test",
+        "structure": "RC",
+        "project_id": "FAC-20261122-RC-0052",
+        "detail_rows": 167,
+        "worksheets": 7,
+        "detail_rows_per_sheet": {
+          "結構體明細": 6,
+          "基礎及地下工程": 28,
+          "樓層材料明細": 12,
+          "防水門窗及外裝": 27,
+          "機電消防及弱電": 79,
+          "室內裝修與雜項": 15
+        },
+        "injection": null,
+        "changed_line_count": 0,
+        "sha256": "96cba53dd7d8add84b72e1b433ddd44a8fa9299b69940a0a843ebe4b30414693"
+      },
+      {
+        "split": "test",
+        "structure": "SC",
+        "project_id": "FAC-20261122-SC-0052",
+        "detail_rows": 164,
+        "worksheets": 7,
+        "detail_rows_per_sheet": {
+          "結構體明細": 9,
+          "基礎及地下工程": 28,
+          "樓層材料明細": 6,
+          "防水門窗及外裝": 27,
+          "機電消防及弱電": 79,
+          "室內裝修與雜項": 15
+        },
+        "injection": null,
+        "changed_line_count": 0,
+        "sha256": "de13a10fd08a91bad03ff6331b8f1b3822c75615803864cf27e5823a926723ae"
+      },
+      {
+        "split": "test",
+        "structure": "SRC",
+        "project_id": "FAC-20261122-SRC-0052",
+        "detail_rows": 163,
+        "worksheets": 7,
+        "detail_rows_per_sheet": {
+          "結構體明細": 9,
+          "基礎及地下工程": 27,
+          "樓層材料明細": 12,
+          "防水門窗及外裝": 27,
+          "機電消防及弱電": 73,
+          "室內裝修與雜項": 15
+        },
+        "injection": null,
+        "changed_line_count": 0,
+        "sha256": "b33a444160d464cab992e6e383bc1f89fe13afdfd556136f07d5ab0f38652c13"
+      }
+    ],
+    "train_projects": 126,
+    "train_boq_rows": 16786,
+    "new_catalog_templates": 4
+  }
+}
