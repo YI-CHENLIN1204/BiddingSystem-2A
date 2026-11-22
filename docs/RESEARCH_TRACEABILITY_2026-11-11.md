@@ -1,3 +1,7 @@
+## 2026-11-23 T00～T11全完成推進：正式合成TRAIN／字典／單位唯讀實測（不等於全完成）
+
+使用者要求**完整做完原計畫全部T00～T11**，不是只完成V2報告。研究branch基線 `b38ea147ecd5d7209608e6f344385a99e6cec5ed`。本輪經連接Supabase實際**只讀 SELECT**驗證：合成廠房126案**全部Approved**（早期main文件說Draft已過時）、16,786筆Auto決標列全有material且對應現況字典，matched_keyword不在字典0、material衝突0、量價非正0、金額與qty×unit_price相差>0.02為0。現行67個字典詞**全為合成廠房TRAIN詞**；11個unit_category中允許換算0個、unit_master 11，沒有錯誤係數、重複或缺基準單位。這些是 TRAIN資料完整性PASS，**不是**實務工項字典辨識率或端到端換算。已依T00～T11分開列未驗證、需要獨立DB／住宅CSV／盲測材料／工程師／真人時間。詳見 [`docs/T00_T11_COMPLETION_GATE_2026_11_23.md`](T00_T11_COMPLETION_GATE_2026_11_23.md)、[`research/2a_synthetic/kde_comparison/LIVE_TRAIN_AUDIT_2026_11_23_ZH.md`](../research/2a_synthetic/kde_comparison/LIVE_TRAIN_AUDIT_2026_11_23_ZH.md)、[`docs/CODEX_T00_T11_FINISH_RUNBOOK_2026_11_23.md`](CODEX_T00_T11_FINISH_RUNBOOK_2026_11_23.md)。本輪僅研究檔案與交接更新，**無正式DB寫入、無正式程式/演算法變更**，全計畫**尚未完成**。
+
 ## 2026-11-23 Factory Fairness V2 報告及證據包交付
 
 研究基準 `ce0c90d97bd731bc00aff13c048aa8a1bd763995`。本輪沿用 E1、E2、E3 封存結果。Word 補入 8 張核心圖，附圖號、繁體中文圖說及樣本數。完整證據包含 Word、Markdown、14 組 300 dpi PNG／SVG、封存逐案與彙總資料、重現說明及逐檔 SHA256。

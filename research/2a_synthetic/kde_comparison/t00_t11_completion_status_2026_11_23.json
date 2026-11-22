@@ -1,0 +1,123 @@
+{
+  "schema": "2a-experiment-completion-v1",
+  "as_of": "2026-11-23 Asia/Taipei",
+  "research_base": "b38ea147ecd5d7209608e6f344385a99e6cec5ed",
+  "complete": false,
+  "basis": "GitHub fairness-v2 sealed synthetic experiment plus read-only current Supabase training-data audit",
+  "items": [
+    {
+      "id": "T00",
+      "status": "PARTIAL",
+      "outstanding": [
+        "residential original independent replay",
+        "API SQL candidate equivalence",
+        "as-of independent project"
+      ]
+    },
+    {
+      "id": "T01",
+      "status": "PARTIAL",
+      "outstanding": [
+        "unseen real supplier BOQ with independent material truth",
+        "production-67 blinded precision"
+      ]
+    },
+    {
+      "id": "T02",
+      "status": "PARTIAL",
+      "outstanding": [
+        "independent cross-project new nomenclature learning curve"
+      ]
+    },
+    {
+      "id": "T03",
+      "status": "SCENARIO_ONLY",
+      "outstanding": [
+        "human AB/BA timed experiment and verified accuracy"
+      ]
+    },
+    {
+      "id": "T04",
+      "status": "PARTIAL",
+      "outstanding": [
+        "isolated DB unit compatibility and scope workflow",
+        "conversion configured legal fixtures"
+      ]
+    },
+    {
+      "id": "T05",
+      "status": "SYNTHETIC_PASS",
+      "outstanding": [
+        "residential original replay",
+        "independent unseen project confirmation"
+      ]
+    },
+    {
+      "id": "T06",
+      "status": "PARTIAL",
+      "outstanding": [
+        "engineer ground-truth anomaly tags",
+        "real recall/fpr validation"
+      ]
+    },
+    {
+      "id": "T07",
+      "status": "PARTIAL",
+      "outstanding": [
+        "isolated Postgres write E2E with audit",
+        "API sequence"
+      ]
+    },
+    {
+      "id": "T08",
+      "status": "PARTIAL",
+      "outstanding": [
+        "equal-work runtime A0/B1",
+        "full API throughput/latency/RSS"
+      ]
+    },
+    {
+      "id": "T09",
+      "status": "PARTIAL",
+      "outstanding": [
+        "isolated API RBAC E2E",
+        "new run and handoff gate verification"
+      ]
+    },
+    {
+      "id": "T10",
+      "status": "SYNTHETIC_PASS",
+      "outstanding": [
+        "human-reviewed independent unseen terminology"
+      ]
+    },
+    {
+      "id": "T11",
+      "status": "SYNTHETIC_PASS",
+      "outstanding": [
+        "independent actual engineering holdout",
+        "original author implementation exactness not claimed"
+      ]
+    }
+  ],
+  "real_database_readonly": {
+    "project_id_public_ref": "sbykuwypriudrgurmssb",
+    "synthetic_factory_train_projects": 126,
+    "synthetic_factory_approved": 126,
+    "synthetic_factory_auto_bid_rows": 16786,
+    "material_mismatches": 0,
+    "arithmetic_mismatches": 0,
+    "live_dictionary_count": 67,
+    "live_dictionary_factory_terms": 67,
+    "unit_categories": 11,
+    "convertible_categories": 0,
+    "unit_masters": 11,
+    "interpretation": "integrity-only; not independent accuracy"
+  },
+  "delivery_visual_qa": "NOT_RUN",
+  "evidence": [
+    "research/2a_synthetic/kde_comparison/LIVE_TRAIN_AUDIT_2026_11_23_ZH.md",
+    "docs/T00_T11_COMPLETION_GATE_2026_11_23.md"
+  ],
+  "production_mutated_by_this_audit": false
+}

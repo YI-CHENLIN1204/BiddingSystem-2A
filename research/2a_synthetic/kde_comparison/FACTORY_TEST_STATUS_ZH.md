@@ -1,3 +1,5 @@
+> **2026-11-23最新T00～T11總關門門檻：** [`docs/T00_T11_COMPLETION_GATE_2026_11_23.md`](../../../docs/T00_T11_COMPLETION_GATE_2026_11_23.md)。此文件下方2026-11-22初版表是歷史進度快照，T06/T08/T10的補測詳見下方增補；**T00 live TRAIN一致性新增PASS，T01實務字典準確率和T07隔離API仍NOT RUN**。勿將合成資料的PASS解讀為原計畫全驗收。
+
 **公平比較重要更正：A0對B1的舊報告使用不同有效歷史筆數，不能宣稱完整方法的等N勝負。請先讀 docs/EQUAL_SAMPLE_ALGORITHM_FAIRNESS_PROTOCOL_2026-11-22.md，並實際完成K5/K8等有效歷史樣本控制研究。原A0/A1同8筆參考ID結果屬KDE-only消融。**
 
 # 廠房實驗完成狀態
