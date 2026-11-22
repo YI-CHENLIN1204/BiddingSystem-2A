@@ -1,3 +1,9 @@
+## 2026-11-23 Research Run #2 實測與 Word 八頁目視
+
+[研究 Run #45055170040](https://github.com/YI-CHENLIN1204/BiddingSystem-2A/actions/runs/45055170040) 已核實，對應 `89faf4f6ad1ff5eccb71ecad15c2c00f8ad23b44`（Push、Completed、Failure）。`isolated-api` 在 `research/acceptance-ci/ResearchAuditAuthentication.cs(10,5)` 遇到 `CS0246 ILoggerFactory` 編譯錯誤，因此 **T09 修正後隔離 API+DB E2E NOT RUN**。檔案缺 `using Microsoft.Extensions.Logging;`，需修正後取得新 Runner 證據，不得降低匿名 401/403、Reader 403、Supervisor 200 的驗收標準。原 Run #45049455364 的 T04 EF PASS、T07 Draft／人工映射／Publish／Reopen／Audit PASS、T08 30 次 HTTP 讀取 p50=19.04ms、p95=26.33ms 均保留已執行證據。
+
+同 Run `word` Job SUCCESS，Artifact [`14767261344`](https://github.com/YI-CHENLIN1204/BiddingSystem-2A/actions/runs/45055170040/artifacts/14767261344) 已取得 8 頁 PDF + PNG，全部 ZIP SHA256SUMS 通過。PDF 原始 SHA-256 `7fe896141e88d08d915f5397ea45edd3ea9855b5b1f6f95a1485a4c47a7e98cf`。真正逐頁目視：8 圖及繁體中文完整、無明顯裁切或亂碼；第 2→3 頁跨頁表格未重複表頭、第 3→4 頁首孤行、全篇無頁碼、圖表頁留白過大。因此 **Word 渲染 PASS、目視已執行、最終排版 PARTIAL**。詳細見 [Word 八頁覆核](WORD_VISUAL_REVIEW_2026_11_23.md)。T00～T11 全項尚未完成，正式 2A/A0/Supabase 均未修改。
+
 ## 2026-11-23 GitHub Actions 實測與隔離權限修正
 
 [Run 45049455364](https://github.com/YI-CHENLIN1204/BiddingSystem-2A/actions/runs/45049455364) 已核實，測試提交為 `b3bceb90b2d8775ba7006ac146bed3d0ecffbc27`。本次修改從 `e0109ade56e34f225efd001022ba3745bcbde838` 接續，提交訊息為 `research: enforce isolated audit roles and reconcile acceptance evidence`。
