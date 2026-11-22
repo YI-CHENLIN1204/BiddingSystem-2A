@@ -66,6 +66,8 @@ rows = [row for row in audit["items"] if row.get("projectId") == fixture["projec
 actions = [row["actionType"] for row in rows]
 assert sum("publish" in action.lower() for action in actions) == 1, actions
 assert sum("reopen" in action.lower() for action in actions) == 1, actions
+print(json.dumps(dict(test="supervisor-audit-events", passed=True,
+                      project_id=fixture["project"], actions=actions)), flush=True)
 elapsed = [request("benchmark-read", project)[2] for _ in range(30)]
 print(json.dumps(dict(test="read-http-summary", n=len(elapsed), p50_ms=statistics.median(elapsed),
                       p95_ms=sorted(elapsed)[math.ceil(.95*len(elapsed))-1],
