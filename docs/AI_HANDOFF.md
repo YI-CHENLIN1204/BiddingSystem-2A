@@ -1006,3 +1006,10 @@ npm run build
 - 前端 Vite 預設 `5174`、`frontend/vite.config.ts` 可用 `VITE_API_PROXY_TARGET=http://127.0.0.1:5264` 開發期代理新API；**尚未實際重啟前端、確認瀏覽器操作、執行正式決標回寫／材料字典／單位 E2E、核對估算結果或跑完6/6 quantity-scope checker**。新5264目前只是暫時工作階段連線，非持久部署；不表示舊5263已關閉或切換。
 - 此驗證使用現有 Windows 版本，啟動可能仍顯示 `TenderImportInspectionService.cs` 的 CS8604 警告；此前 GitHub feature 已有警告修正，但不能因為遠端CI通過就宣稱桌面版已同步。
 - 本輪僅記錄已驗證事實，無Schema/Migration/資料或API原始碼變更。繼續保留現有 Supabase 資料的合成來源標記、回寫與使用者正式資料隔離、密碼不得進前端與版控，及17張 public 業務表 RLS未啟用的安全待辦。
+
+
+### 2026-11-22 — 前端 Vite 5184 → 後端 5264 → Supabase 210 筆讀取路徑 PASS
+- 使用者在 Windows `C:\\Users\\User` 的 PowerShell 實際執行 `(Invoke-RestMethod "http://127.0.0.1:5184/api/projects").items.Count`，回傳 **210** 且無錯誤。此證據與前一輪 `5264/api/projects=210`、透過 Supabase 直接 SELECT `project_master=210` 互相核對，確定**開發期 Vite 代理讀取路徑** 5184 → 5264 → Supabase PASS；Vite 在 5174 衝突後以 5184 啟動。未修改任何雲端資料或 210 個合成 Approved 專案。
+- 驗證界線：這僅證明代理 GET／API 連線；**尚不等於瀏覽器 UI 畫面全部通過，也未測試估算、異常、決標上傳、字典、單位、Draft/Publish/Reopen、稽核權限或完整 E2E**。下步先在 `http://127.0.0.1:5184` 唯讀驗收建案管理、待偵錯案件、估算頁面、決標回寫頁面與操作紀錄；避免在共有的 Supabase 對既有 Approved 合成訓練資料直接做破壞性寫入，寫入 E2E 須建立可回復、明確隔離測試案件並核對前後資料數量。
+- 遠端 `feature/1d-api-integration` 的 `frontend/vite.config.ts` 支援 `VITE_API_PROXY_TARGET`，測試時設定為 `http://127.0.0.1:5264`；目前是 Windows 當前終端暫時設定，**並非持久部署或固定前端 API 連線**。不要將含密碼的 DB connection string 寫入前端、公開 GitHub 或示例。
+- 本輪僅更新交接文件，沒有程式碼、資料庫、Migration 或回寫模型更動。Supabase 17 張公開 schema 表 RLS disabled 的安全待辦仍未處理。
