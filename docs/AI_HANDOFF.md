@@ -235,3 +235,7 @@ T08 已補三份完整測試標單的 C# 解析量測，163–167 列，每份 2
 ## A0／B1 的 90% 敏感度分析
 
 以相同測試案項與真值配對。B1 減 A0 的相對區間分數差，混凝土 +0.460（95% 區間 +0.200 至 +0.834）、鋼筋 +0.979（+0.624 至 +1.480）、結構體金額 +1.878（+1.231 至 +2.623）。共同可估案數為 9、9、26。方向與 70% 主分析一致。此補測使用已檢視的合成案。重跑 `python factory_a0_b1_uncertainty.py <factory_b1_pairs.csv> evening_results/factory_a0_a1_90pct_pairs.csv`。結果見研究目錄的 `evening_results/factory_a0_b1_90pct_uncertainty.csv`。
+
+## A0／B2 同面積分母金額比較
+
+26 合成廠房以相同真值配對，兩法均用總樓地板面積。70% 區間相對區間分數 A0 0.460、B2 1.551，差 +1.091（結構分層 2,000 次重抽樣 95% 區間 +0.880 至 +1.312），涵蓋 13/26 與 14/26。90% 差 +0.817（+0.573 至 +1.041），涵蓋 21/26 與 24/26。A0 分數較低的方向在消除分母差異後維持，但兩法仍有選案、權重和區間算法等差異。結果限於已檢視的合成資料。重跑 `python factory_a0_b2_price.py <factory_b1_pairs.csv> evening_results/factory_a0_a1_pairs.csv evening_results/factory_a0_a1_90pct_pairs.csv`。
