@@ -1,3 +1,7 @@
+## 2026-11-22 廠房時間順序敏感度
+
+只採日期早於目標的訓練案，三項各可估 20/26，70% 主區間改善 3.1%，未達採用門檻。[驗證紀錄](../research/2a_synthetic/kde_comparison/FACTORY_TEMPORAL_SENSITIVITY_ZH.md)
+
 ## 2026-11-22 合成廠房第一版結案
 
 三份 CSV 重跑 SHA256 相符，維持探索性結論。第二版先核對正式 A0，再以獨立資料做時間切分。[結案紀錄](../research/2a_synthetic/kde_comparison/FACTORY_EXPERIMENT_V1_CLOSEOUT_ZH.md)

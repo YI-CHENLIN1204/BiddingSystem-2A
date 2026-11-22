@@ -60,11 +60,21 @@ def groups_for(rs):
     return groups
 
 
+past_only = baseline["past_only"]
 valid = groups_for(r for r in rows if r["split"]=="validation")
-factor = min(grid,key=lambda f:macro(valid,lambda r: metrics(interval(r,f,.3),r["truth"],.3)[0]))
+factor = .125 if past_only else min(grid,key=lambda f:macro(valid,lambda r: metrics(interval(r,f,.3),r["truth"],.3)[0]))
 print("Validation bandwidth factor",factor)
 alpha = float(sys.argv[3]) if len(sys.argv) > 3 else .3
 test = [r for r in rows if r["split"]=="test"]
+if past_only:
+    for scope in sorted({r["scope"] for r in test}):
+        cohort = [r for r in test if r["scope"] == scope]
+        eligible = [r for r in cohort if r["a_score"] is not None]
+        for r in eligible:
+            assert all(baseline["day"](projects[i]) < baseline["day"](projects[r["project"]])
+                       for i in r["a_refs"].split("|"))
+        print("Past-only eligible", scope, len(eligible), "/", len(cohort))
+    test = [r for r in test if r["a_score"] is not None]
 results = []
 for r in test:
     bounds = interval(r,factor,alpha)
@@ -100,6 +110,8 @@ for _ in range(2000):
 draws.sort()
 print("Bootstrap 95%",draws[49],draws[1949])
 filename = "factory_a0_a1_pairs.csv" if alpha == .3 else f"factory_a0_a1_{1-alpha:.0%}_pairs.csv".replace("%","pct")
+if past_only:
+    filename = "past_only_" + filename
 with (Path(sys.argv[2])/filename).open("w",encoding="utf8",newline="") as f:
     writer=csv.DictWriter(f,fieldnames=results[0])
     writer.writeheader()

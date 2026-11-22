@@ -33,6 +33,7 @@ def quant(ref,q):
   if cum>=target:return r[3]
  raise ValueError('empty quantile')
 rows=[]
+past_only = "--past-only" in sys.argv[3:]
 for b in read(out/'factory_b1_pairs.csv'):
  if b['method']!='B1' or b['level']!='0.7':continue
  i,k=b['project'],b['scope']
@@ -43,6 +44,7 @@ for b in read(out/'factory_b1_pairs.csv'):
  ref=[]
  for j in train:
   c=p[j]
+  if past_only and day(c)>=day(a):continue
   if a['project_type']!=c['project_type'] or (a['structure_type']=='SRC' and c['structure_type']!='SRC') or tot[j,k]<=0:continue
   sim=score(a,c)
   w=sim/100*0.5**(abs((day(a)-day(c)).days)/365.2425/3)
@@ -53,9 +55,9 @@ for b in read(out/'factory_b1_pairs.csv'):
   lo,med,hi=[round(quant(ref,q)*area(a),2) for q in (.15,.5,.85)]
   row.update(a_low=lo,a_median=med,a_high=hi,a_score=(hi-lo+2/.3*max(lo-y,y-hi,0))/y,a_hit=int(lo<=y<=hi))
  rows.append(row)
-with (out/'factory_a0_b1_pairs.csv').open('w',encoding='utf8',newline='') as f:
+with (out/('factory_a0_past_baseline.csv' if past_only else 'factory_a0_b1_pairs.csv')).open('w',encoding='utf8',newline='') as f:
  w=csv.DictWriter(f,fieldnames=rows[0]);w.writeheader();w.writerows(rows)
-for k in sorted(set(r['scope'] for r in rows)):
+for k in sorted(set(r['scope'] for r in rows)) if not past_only else ():
  r=[r for r in rows if r['scope']==k and r['split']=='test']
  both=[x for x in r if x['status']=='ok' and x['a_score'] is not None]
  print(k,len(r),sum(x['a_score'] is not None for x in r),sum(x['status']=='ok' for x in r),len(both),sum(x['a_hit'] for x in both),sum(int(x['covered']) for x in both),mean(x['a_score'] for x in both),mean(float(x['relative_score']) for x in both))
