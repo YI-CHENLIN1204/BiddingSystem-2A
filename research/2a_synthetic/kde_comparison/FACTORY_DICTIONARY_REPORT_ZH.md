@@ -28,3 +28,7 @@ python research/2a_synthetic/kde_comparison/replay_factory_dictionary.py <factor
 ```
 
 程式核對來源雜湊和分割後輸出逐列 CSV、彙總 CSV 與 run manifest。可用 `dictionary_growth.csv` 的 `correct / total` 繪製曲線，圖名可用「廠房合成標單之訓練字典規模與材料碼正確對應率」。橫軸為詞數，縱軸為正確／全部（%），分驗證集（27 案）與測試集（26 案），從逐列 CSV 回查圖表數字。展示頁尚未建立。
+
+## T02 訓練字典 67 詞對照
+
+同一組凍結測試案，沿用訓練案出現次數排序及名稱精確比對。50／67／100 詞分別正確對應 1300／1742／2384 列（分母 3386），各組錯配 0。67 詞待審 1644 列，驗證集命中 1809／3644。測試名稱都曾出現在完整訓練集。正式 67 詞的實際內容與來源仍未核實，保留 NOT RUN。重跑原字典程式，指向新輸出目錄。[完整曲線](evening_results/dictionary_growth_67.csv)

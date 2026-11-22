@@ -45,7 +45,7 @@ def main():
     with (args.output / "mapping_per_item.csv").open("w", encoding="utf-8-sig", newline="") as file:
         writer = csv.writer(file)
         writer.writerow(["k", "split", "project", "line_id", "item_name", "matched_key", "truth", "prediction", "status"])
-        for k in sorted({0, 10, 30, 50, 100, len(ranked)}):
+        for k in sorted({0, 10, 30, 50, 67, 100, len(ranked)}):
             if k > len(ranked):
                 continue
             dictionary = {name: code for _, name, code in ranked[:k]}
@@ -82,3 +82,4 @@ def main():
 
 if __name__ == "__main__":
     main()
+
