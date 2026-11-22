@@ -1,3 +1,7 @@
+## 2026-11-22 Fairness V2 交付檔案結構驗收（研究數字未改）
+
+識別 `factory-fairness-v2-deliverable-qa-20261122`。使用者帶回Codex  `d2a71c9` E2/K5/K8等樣本結果及教授版報告。本輪GitHub核對：`fairness-v2` 直接有14張SVG、沒有獨立PNG，雖manifest列出PNG SHA；`Factory-Fairness-V2-Raw.zip` 僅含 `equal_sample_per_case.csv`、`e3_per_case.csv`、`dictionary_material_per_case.csv` 三份原始CSV；GitHub Word DOCX 只有主XML等3個OOXML檔、沒有`word/media/`或嵌圖。使用者提到的 Evidence.zip 在該GitHub資料夾未找到（可能另在Codex本機）。報告實際版面未render目視，正式API/DB未驗證，原E2試驗未由本輪重跑。具體補圖、PNG/證據包、逐頁QA與結論引用要求見 [`docs/FACTORY_FAIRNESS_V2_DELIVERABLE_QA_2026-11-22.md`](FACTORY_FAIRNESS_V2_DELIVERABLE_QA_2026-11-22.md)。E2結構金額K5/K8結果可引用為合成探索性研究，但K8鋼筋混凝土各只有1個共同可估；正式A0保持不變，不是實務勝負已驗證。
+
 ## 2026-11-22 第二版等樣本實驗與報告
 
 研究基準 ce925c63a602885fad55f95cb261926931267c03，正式分支 2d574e866aa27d18ec58a0196d5fbda9a7fe600a。E2 凍結共同口徑與日期規則，K5 共同可估 6／6／18，K8 為 1／1／15。70% 分數點估計偏向 A0-K，K8 數量僅單案。E3 獨立呈現共同可估的品質及全體可估率。新增材料 ID 候選及安全面板，同名且可觀察欄位相同的異材合成負例會突破保守規則。工時仍是情境推估。報告、重跑程式、原始資料包與圖表位於研究目錄 fairness-v2。正式 API／回寫、真正可用日期、獨立工程、正式字典及真人計時仍待驗證。維持 A0。
