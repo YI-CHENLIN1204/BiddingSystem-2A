@@ -9,6 +9,8 @@
 - 本批範圍是 `research/acceptance-ci/` 與研究交接文件。隔離 runner 使用一次性 PostgreSQL，無 Migration。下一步核實新 Run 角色矩陣並完成八頁視覺判讀。研究算法與 A0 維持既有版本。
 
 
+本機以 .NET 10 合成端點載入相同隔離授權程式，建置 0 警告／0 錯誤。匿名 401、無效憑證 401、Reader 403、Supervisor 200，以及未列入政策的建案 GET 200，五項通過。Python 探測程式與啟動時的覆蓋程式通過語法檢查。實際研究 API 加 PostgreSQL 的修正後 E2E 待新 Run。
+
 | 產物 | GitHub SHA-256 |
 |---|---|
 | [隔離 API](https://github.com/YI-CHENLIN1204/BiddingSystem-2A/actions/runs/45049455364/artifacts/14764044670) | `f377309bc77ed310d2a19ffe4f61db8973f33661462dce790b418d769f82c078` |
