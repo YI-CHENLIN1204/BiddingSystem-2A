@@ -74,11 +74,7 @@ function number(value: number | null, digits = 4) { return value == null ? '—'
 </script>
 
 <template>
-  <section class="card bulk-estimate" data-testid="bulk-material-estimate">
-    <div class="card-header">
-      <h3>大宗工項歷史估算與用量比對</h3>
-      <p class="text-muted small mb-0">沿用上方建案條件；選定標準材料後，以同用途、同結構的已核准歷史做概算。不會建立案件、分析紀錄或歷史資料。</p>
-    </div>
+  <div data-testid="bulk-material-estimate">
     <div class="bulk-body">
       <div v-if="optionsError" class="notice info">大宗工項目前無法載入：{{ optionsError }}。請確認已啟動新版後端。</div>
       <form v-else @submit.prevent="estimate">
@@ -133,7 +129,7 @@ function number(value: number | null, digits = 4) { return value == null ? '—'
         </details>
       </div>
     </div>
-  </section>
+  </div>
 </template>
 
 <style scoped>

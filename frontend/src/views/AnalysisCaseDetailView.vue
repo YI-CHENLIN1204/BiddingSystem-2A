@@ -536,6 +536,7 @@ async function runPrice() {
 }
 
 onMounted(loadCase)
+const analysisMode = ref('standard')
 </script>
 
 <template>
@@ -605,11 +606,20 @@ onMounted(loadCase)
             <strong>對這個版本執行偵錯</strong>
             <div class="text-muted small mt-1">
               分析只讀取此版本快照，不會重新呼叫 1D，也不會寫入歷史基準。
-              目前暫定：鋼筋、混凝土做細項數量偵錯；結構體工程做大項估算與價格異常。
             </div>
           </div>
 
           <div class="action-controls">
+            <label class="field">
+              <span>分析項目</span>
+              <select v-model="analysisMode" class="form-select">
+                <option value="standard">鋼筋／混凝土數量偵錯與價格異常</option>
+                <option value="bulk">數量估算（鋼骨、模板、土方）</option>
+                <option value="spec">數量估算（養護劑、脫模劑）</option>
+              </select>
+            </label>
+          </div>
+          <div v-if="analysisMode === 'standard'" class="action-controls">
             <label>
               <span>Top K（選填）</span>
               <input v-model.number="topCount" type="number" min="1" class="form-control" placeholder="系統預設" />
@@ -626,6 +636,8 @@ onMounted(loadCase)
             </button>
           </div>
         </div>
+        <BulkMaterialEstimatePanel v-if="analysisMode === 'bulk'" :key="versionDetail.version.analysisCaseVersionId" :target="detail.case" />
+        <MaterialCapabilityPanel v-else-if="analysisMode === 'spec'" :key="versionDetail.version.analysisCaseVersionId" />
       </section>
 
       <section v-if="versionDetail" class="card quantity-scope-panel">
@@ -682,8 +694,6 @@ onMounted(loadCase)
         <div v-else class="scope-body text-muted small">讀取工項分類中...</div>
       </section>
 
-      <MaterialCapabilityPanel :structure-type="detail.case.structureType" />
-      <BulkMaterialEstimatePanel :target="detail.case" />
 
       <div class="tabs">
         <button class="tab" :class="{ active: tab === 'items' }" @click="tab = 'items'">版本工項</button>

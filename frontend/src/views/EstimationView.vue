@@ -125,18 +125,12 @@ function formatNumber(value: number | null | undefined, digits = 2) {
 function formatMonth(value?: string | null) {
   return value ? value.slice(0, 7) : '—'
 }
+const analysisMode = ref('price')
 </script>
 
 <template>
   <div class="page-stack structural-estimation">
     <div v-if="optionsError || error" class="notice error">{{ optionsError || error }}</div>
-
-    <MaterialCapabilityPanel :structure-type="form.structureType" allow-specification-estimate />
-
-    <section class="notice info">
-      <strong>整體價格與材料數量分開估算。</strong>
-      下方提供結構體工程整體價格，以及鋼骨、模板、土方的歷史用量概算。鋼筋與混凝土仍使用案件內既有數量偵錯流程。
-    </section>
 
     <section class="card">
       <div class="card-header">
@@ -154,7 +148,17 @@ function formatMonth(value?: string | null) {
           basement-floor-label="地下樓層"
         />
 
-        <div class="estimate-options mt-4">
+        <div class="mt-4">
+          <label class="field">
+              <span>分析項目</span>
+              <select v-model="analysisMode" class="form-select">
+                <option value="price">結構體工程價格估算</option>
+                <option value="bulk">數量估算（鋼骨、模板、土方）</option>
+                <option value="spec">數量估算（養護劑、脫模劑）</option>
+              </select>
+            </label>
+        </div>
+        <div v-if="analysisMode === 'price'" class="estimate-options mt-4">
           <label class="field">
             <span>參考 Top K（選填）</span>
             <input v-model.number="topCount" type="number" min="1" placeholder="留空使用系統預設" />
@@ -167,11 +171,11 @@ function formatMonth(value?: string | null) {
           </div>
         </div>
       </div>
+      <BulkMaterialEstimatePanel v-if="analysisMode === 'bulk'" :target="bulkTarget" />
+      <MaterialCapabilityPanel v-else-if="analysisMode === 'spec'" />
     </section>
 
-    <BulkMaterialEstimatePanel :target="bulkTarget" />
-
-    <section v-if="result" class="card result-card">
+    <section v-if="analysisMode === 'price' && result" class="card result-card">
       <div class="card-header result-head">
         <div>
           <h3>{{ result.majorCategory }}估算結果</h3>
