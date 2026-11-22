@@ -1,0 +1,101 @@
+{
+  "date": "2026-11-22",
+  "changeId": "dataset-applicability-audit-20261122",
+  "codeBaseline": "19a4c5086958d0f9aae0890a6d0bcb1aa6bc1c4c",
+  "origin": "SUPABASE_READ_ONLY_SELECT_AND_EXISTING_SYNTHETIC_CSV",
+  "read_only": true,
+  "factory_count": 0,
+  "project_types": [
+    {
+      "project_type": "住宅",
+      "project_count": 78,
+      "history_status": "Approved",
+      "structure_type": "RC"
+    },
+    {
+      "project_type": "住宅",
+      "project_count": 55,
+      "history_status": "Approved",
+      "structure_type": "SC"
+    },
+    {
+      "project_type": "住宅",
+      "project_count": 77,
+      "history_status": "Approved",
+      "structure_type": "SRC"
+    }
+  ],
+  "total_materials": 100,
+  "material_coverage": [
+    {
+      "unit_name": "m3",
+      "material_id": 1,
+      "material_name": "混凝土",
+      "final_bid_rows": 1339,
+      "projects_with_item": 210
+    },
+    {
+      "unit_name": "kg",
+      "material_id": 2,
+      "material_name": "鋼筋",
+      "final_bid_rows": 992,
+      "projects_with_item": 155
+    },
+    {
+      "unit_name": "kg",
+      "material_id": 3,
+      "material_name": "結構鋼骨",
+      "final_bid_rows": 814,
+      "projects_with_item": 132
+    },
+    {
+      "unit_name": "m3",
+      "material_id": 5,
+      "material_name": "基坑土方開挖與運棄（含機具）",
+      "final_bid_rows": 869,
+      "projects_with_item": 130
+    },
+    {
+      "unit_name": "m2",
+      "material_id": 8,
+      "material_name": "普通模板組立及拆除（柱梁）",
+      "final_bid_rows": 834,
+      "projects_with_item": 127
+    },
+    {
+      "unit_name": "m3",
+      "material_id": 49,
+      "material_name": "基礎開挖土方外運含處理",
+      "final_bid_rows": 1157,
+      "projects_with_item": 179
+    },
+    {
+      "unit_name": "m2",
+      "material_id": 52,
+      "material_name": "柱梁版普通模板組立拆除",
+      "final_bid_rows": 878,
+      "projects_with_item": 132
+    }
+  ],
+  "per_project_material_counts": {
+    "max": 92,
+    "min": 63,
+    "projects": 210
+  },
+  "new_material_name_matches": 0,
+  "existing_csv": {
+    "total": 300,
+    "project_type": "住宅",
+    "train": 210,
+    "validation": 45,
+    "test": 45
+  },
+  "limitations": [
+    "Material existence counts are not eligible estimation samples.",
+    "No complete per-project/material applicability or missingness truth is encoded.",
+    "Absence must not automatically become zero, not-applicable or an anomaly.",
+    "No factory data generated or imported in this audit."
+  ],
+  "databaseWrites": false,
+  "codeChanged": false
+}
