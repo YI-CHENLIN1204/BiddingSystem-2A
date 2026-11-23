@@ -13,7 +13,7 @@ interface BidItem {
   contributesStructuralPrice?: boolean; contributesQuantityHistory?: boolean; quantityHistoryCategory?: string | null
   itemName: string; spec?: string | null; unit?: string | null
   qty?: number | null; unitPrice?: number | null; materialId?: number | null
-  materialName?: string | null; materialCategory?: string | null; mappingStatus: string
+  materialName?: string | null; materialCategory?: string | null; mappingStatus: string; mappingIssueMessage?: string | null
   isIgnored: boolean; invalidQuantity?: boolean; invalidUnitPrice?: boolean; unitMismatch?: boolean
 }
 interface MaterialOption { materialId: number; materialName: string; category?: string; unitName: string }
@@ -300,8 +300,8 @@ async function updateMapping(item: BidItem) {
     const form = new FormData()
     form.append('finalBidItemId', String(item.finalBidItemId))
     form.append('materialId', String(materialId))
-    await apiForm('/Estimation/update-material-mapping', form)
-    await refreshMappings('材料對應已更新。')
+    const result = await apiForm<{ dictionaryWarning?: string }>('/Estimation/update-material-mapping', form)
+    await refreshMappings(result.dictionaryWarning ?? '材料對應已更新。')
   } catch (caught) {
     error.value = caught instanceof Error ? caught.message : '材料對應失敗'
   } finally { busyId.value = null }
@@ -527,6 +527,7 @@ watch([status, majorCategoryFilter, issueCode, category, unit], resetAndLoad)
           <div class="text-muted small mb-3">原始分類：{{ [item.category1, item.category2, item.category3].filter(Boolean).join(' → ') || '未辨識' }}</div>
           <div v-if="!item.isIgnored" class="row g-2 mb-3"><div class="col-md-6"><label class="form-label small fw-bold">工程大項</label><select class="form-select" :value="item.majorCategoryOverride ?? ''" :disabled="busyId === item.finalBidItemId" @change="updateMajorCategory(item, $event)"><option value="">使用原始分類（{{ item.effectiveMajorCategory || '未辨識' }}）</option><option v-for="entry in majorCategories" :key="entry" :value="entry">{{ entry }}</option></select></div><div class="col-md-6 d-flex align-items-end"><div class="small text-muted">人工指定只影響 2A 判定，原始 Category1 / 2 / 3 不會被覆蓋。</div></div></div>
           <div class="d-flex justify-content-between align-items-center gap-2 mb-2 flex-wrap"><div class="small"><strong>目前標準材料：</strong><span v-if="item.materialName">{{ item.materialName }}</span><span v-else class="text-warning">尚未對應</span></div><div class="d-flex gap-2"><button class="btn btn-sm btn-outline-secondary" type="button" @click="openEdit(item)">修正標單資料</button><button class="btn btn-sm btn-outline-primary" type="button" :disabled="busyId === item.finalBidItemId" @click="excludeQuantityHistory(item)">{{ item.isIgnored ? "恢復價格／排除數量歷史" : "僅排除數量歷史" }}</button><button v-if="!item.isIgnored" class="btn btn-sm btn-outline-danger" type="button" @click="ignore(item)">忽略</button></div></div>
+          <p v-if="!item.isIgnored && item.mappingIssueMessage" class="small text-warning-emphasis mb-2">{{ item.mappingIssueMessage }}</p>
           <div v-if="!item.isIgnored" class="row g-2"><div class="col-md-4"><label class="form-label small fw-bold">材料分類</label><select v-model="selectedCategory[item.finalBidItemId]" class="form-select" @change="changeCategory(item)"><option value="">請選擇材料分類</option><option v-for="entry in filters.categories" :key="entry" :value="entry">{{ entry }}</option></select></div><div class="col-md-5"><label class="form-label small fw-bold">標準材料</label><select v-model="selectedMaterial[item.finalBidItemId]" class="form-select" :disabled="!selectedCategory[item.finalBidItemId]"><option :value="null">請選擇標準材料</option><option v-for="material in materialsFor(item)" :key="material.materialId" :value="material.materialId">{{ material.materialName }} ({{ material.unitName }})</option><option value="__NEW__">＋ 新增標準材料</option></select></div><div class="col-md-3"><label class="form-label small fw-bold">&nbsp;</label><button class="btn btn-outline-primary w-100" type="button" :disabled="busyId === item.finalBidItemId" @click="updateMapping(item)">{{ selectedMaterial[item.finalBidItemId] === '__NEW__' ? '新增標準材料' : item.mappingStatus === 'Pending' ? '人工對應' : '修改對應' }}</button></div></div>
         </div></article>
         <div class="d-flex justify-content-between align-items-center mt-3"><button class="btn btn-outline-secondary btn-sm" :disabled="page <= 1" @click="loadItems(page - 1)">上一頁</button><div class="text-muted small">第 {{ page }} / {{ totalPages }} 頁</div><button class="btn btn-outline-secondary btn-sm" :disabled="page >= totalPages" @click="loadItems(page + 1)">下一頁</button></div>

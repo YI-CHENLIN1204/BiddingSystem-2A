@@ -7,6 +7,20 @@ static void Check(bool condition, string message)
     Console.WriteLine("PASS: " + message);
 }
 
+if (args is ["--material-replay", var input, var output])
+{
+    MaterialDictionaryChecks.Replay(input, output);
+    return;
+}
+
+if (args is ["--material-postgres"])
+{
+    await MaterialDictionaryPostgres.RunAsync();
+    return;
+}
+
+MaterialDictionaryChecks.Run();
+
 using var wb = new XLWorkbook();
 var work = wb.Worksheets.Add("建築工程-預算單");
 string[] headers = { "項次", "工作項目", "單位", "自估數量", "自估單價", "自估複價", "廠商單價", "詢價單價", "比價單價" };

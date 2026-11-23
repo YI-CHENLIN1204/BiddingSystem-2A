@@ -1,3 +1,9 @@
+## 2026-11-23 材料字典安全匹配
+
+提交識別 `material-dictionary-safe-match-20261123`，工作分支 `fix/material-dictionary-safe-match-20261123`，基線 `2d574e8`。決標匯入改以核定的工項與規格精確別名、唯一有效材料與可換算單位確認 Auto；淘汰決標匯入最長 Contains 直接放行。人工對應保留衝突候選並提示，發布重查 Draft Auto 的材料數量資格。沒有資料庫 Migration。
+
+合成凍結 test 3,386 列中，僅舊詞的新規則 Auto 為 0；加入 train-only 模擬核定別名後為 207／3,386，錯誤 Auto 0，3,179 筆原正確 Auto 轉待審。後端建置、90 個測試檢查及前端替代設定載入建置通過。下個驗證點為隔離 PostgreSQL PR CI 與外部獨立標註。見[實測、限制和回滾](MATERIAL_DICTIONARY_SAFE_MATCH_2026-11-23.md)。
+
 ## 2026-11-22 廠房實驗審查
 
 識別 `factory-experiment-audit-20261122`。#16 完成 12 次 Top K API 比較，42 個參考案核對為已核准 SC 廠房 train。Python 21/21 通過。見 [實驗紀錄](FACTORY_EXPERIMENT_AUDIT_2026-11-22.md)。多案評估與瀏覽器仍待驗證。

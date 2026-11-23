@@ -26,6 +26,29 @@ jobs:
       - name: Verify sheet selection and price column safety
         run: dotnet run --project "./tests/WorkbookParserTests/WorkbookParserTests.csproj" -c Release
 
+  material-dictionary-postgres:
+    if: github.event_name == 'pull_request'
+    runs-on: ubuntu-latest
+    timeout-minutes: 12
+    services:
+      postgres:
+        image: postgres:16
+        env:
+          POSTGRES_USER: issue3_fixture
+          POSTGRES_PASSWORD: issue3_fixture
+          POSTGRES_DB: issue3_fixture
+        ports: ['5432:5432']
+        options: >-
+          --health-cmd "pg_isready -U issue3_fixture -d issue3_fixture"
+          --health-interval 5s --health-timeout 5s --health-retries 10
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-dotnet@v4
+        with:
+          dotnet-version: '10.0.x'
+      - name: Verify material review and historical quantity on isolated PostgreSQL
+        run: dotnet run --project ./tests/WorkbookParserTests/WorkbookParserTests.csproj -c Release -- --material-postgres
+
   frontend-build:
     runs-on: ubuntu-latest
     timeout-minutes: 15

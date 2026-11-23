@@ -155,8 +155,8 @@ namespace 崴正.Services
             }
 
 
-            if (!sourceDefinition.ToBaseFactor.HasValue ||
-                !targetDefinition.ToBaseFactor.HasValue)
+            if (sourceDefinition.ToBaseFactor is null or <= 0 ||
+                targetDefinition.ToBaseFactor is null or <= 0)
             {
                 return false;
             }
@@ -167,7 +167,7 @@ namespace 崴正.Services
                 targetDefinition.ToBaseFactor.Value;
 
 
-            return true;
+            return factor > 0;
         }
 
 

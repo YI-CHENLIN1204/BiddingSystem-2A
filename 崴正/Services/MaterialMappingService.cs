@@ -99,24 +99,18 @@ namespace 崴正.Services
                 string oldStatus =
                     bidItem.MappingStatus;
 
-                string keyword =
-                    SelectDictionaryKeyword(
-                        bidItem.ItemName,
-                        bidItem.Spec
-                    );
+                string? keyword = SafeMaterialDictionary.QualifiedKeyword(bidItem.ItemName, bidItem.Spec);
+                string? dictionaryWarning = null;
 
-                if (string.IsNullOrWhiteSpace(
-                        keyword))
+                if (keyword is not null && bidItem.Qty > 0 &&
+                    _finalBidService.CanUseMaterialUnit(bidItem.Unit, material.UnitId))
                 {
-                    return ServiceResult.Validation(
-                        "工項名稱與規格皆為空，無法建立字典"
-                    );
+                    dictionaryWarning = UpdateDictionary(keyword, bidItem, material);
                 }
-
-                UpdateDictionary(
-                    keyword,
-                    material.MaterialId
-                );
+                else
+                {
+                    dictionaryWarning = "已儲存本筆人工對應。規格、數量或單位不足，未學習字典。";
+                }
 
                 bidItem.MaterialId =
                     material.MaterialId;
@@ -200,7 +194,8 @@ namespace 崴正.Services
                                 material.MaterialName,
 
                             mappingStatus =
-                                "Manual"
+                                "Manual",
+                            dictionaryWarning
                         }
                 );
 
@@ -210,7 +205,9 @@ namespace 崴正.Services
                 return ServiceResult.Ok(new
                 {
                     message =
-                        $"「{bidItem.ItemName}」已人工對應至「{material.MaterialName}」",
+                        $"「{bidItem.ItemName}」已人工對應至「{material.MaterialName}」。{dictionaryWarning}",
+
+                    dictionaryWarning,
 
                     finalBidItemId =
                         bidItem.FinalBidItemId,
@@ -378,97 +375,23 @@ namespace 崴正.Services
             return matched;
         }
 
-        private void UpdateDictionary(
-            string keyword,
-            int materialId)
+        private string? UpdateDictionary(string keyword, FinalBidItem item, MaterialMaster material)
         {
-            var existingRows =
-                _context.ItemDictionaries
-                    .Where(x =>
-                        x.Keyword == keyword)
-                    .ToList();
-
-            if (existingRows.Count == 0)
+            // Conflicting confirmations preserve both candidates; they never overwrite an approval.
+            var entries = SafeMaterialDictionary.Read(_context).ToList();
+            if (!entries.Any(x => SafeMaterialDictionary.Normalize(x.Keyword) == keyword &&
+                                  x.MaterialId == material.MaterialId))
             {
-                _context.ItemDictionaries.Add(
-                    new ItemDictionary
-                    {
-                        Keyword =
-                            keyword,
-
-                        Material_Id =
-                            materialId
-                    }
-                );
-
-                return;
+                entries.Add(new DictionaryMaterial(keyword, material.MaterialId, material.UnitId, material.IsActive));
+                _context.ItemDictionaries.Add(new ItemDictionary { Keyword = keyword, Material_Id = material.MaterialId });
             }
 
-            foreach (
-                var dictionaryRow
-                in existingRows)
-            {
-                dictionaryRow.Material_Id =
-                    materialId;
-            }
+            var decision = new SafeMaterialDictionary(entries).Decide(item.ItemName, item.Spec, item.Unit, item.Qty,
+                _finalBidService.CanUseMaterialUnit);
+            return decision.Code == "DICTIONARY_CONFLICT"
+                ? "本筆人工對應已儲存。字典保留不同材料候選，後續匯入會待審。"
+                : null;
         }
-
-        private static string
-            SelectDictionaryKeyword(
-                string? itemName,
-                string? spec)
-        {
-            string normalizedItemName =
-                NormalizeText(itemName);
-
-            string normalizedSpec =
-                NormalizeText(spec);
-
-            if (!string.IsNullOrWhiteSpace(
-                    normalizedSpec) &&
-                (
-                    string.IsNullOrWhiteSpace(
-                        normalizedItemName)
-                    ||
-                    LooksLikeItemCode(
-                        normalizedItemName)
-                    ||
-                    normalizedItemName is
-                        "增" or "追加"
-                ))
-            {
-                return normalizedSpec;
-            }
-
-            return !string.IsNullOrWhiteSpace(
-                    normalizedItemName)
-                ? normalizedItemName
-                : normalizedSpec;
-        }
-
-
-        private static bool LooksLikeItemCode(
-            string value)
-        {
-            if (string.IsNullOrWhiteSpace(
-                    value))
-            {
-                return true;
-            }
-
-            bool containsCjk =
-                value.Any(c =>
-                    c >= '\u4e00' &&
-                    c <= '\u9fff');
-
-            if (containsCjk)
-            {
-                return false;
-            }
-
-            return value.Length <= 20;
-        }
-
 
         private static string NormalizeText(
             string? value)
