@@ -31,7 +31,7 @@ var steel = new MaterialMaster { MaterialName = "鋼筋", MaterialCategory = cat
 var volume = new UnitCategory { CategoryName = "Volume fixture", AllowConversion = false };
 var cubicMetre = new UnitMaster { UnitName = "m3", IsBaseUnit = true, ToBaseFactor = 1, UnitCategory = volume };
 var concreteCategory = new MaterialCategory { CategoryName = "混凝土" };
-var concrete = new MaterialMaster { MaterialName = "預拌混凝土", MaterialCategory = concreteCategory, UnitMaster = cubicMetre };
+var concrete = new MaterialMaster { MaterialName = "混凝土", MaterialCategory = concreteCategory, UnitMaster = cubicMetre };
 var project = new ProjectMaster { ProjectName = "CI synthetic draft", TotalFloorArea = 100,
     SiteArea = 100, StartDate = new DateTime(2026, 1, 1), HistoryStatus = "Draft" };
 var other = new ProjectMaster { ProjectName = "CI second draft", HistoryStatus = "Draft" };

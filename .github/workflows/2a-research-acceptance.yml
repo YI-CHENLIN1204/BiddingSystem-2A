@@ -90,7 +90,9 @@ jobs:
           libreoffice "-env:UserInstallation=file://$RUNNER_TEMP/lo-profile" --headless --convert-to pdf --outdir evidence/report evidence/report/T00-T11-Research-Acceptance.docx
           test -s evidence/report/T00-T11-Research-Acceptance.pdf
           pdfinfo evidence/report/T00-T11-Research-Acceptance.pdf > evidence/report/pdfinfo.txt
-          (cd evidence/report && sha256sum *.docx *.pdf *.txt > SHA256SUMS)
+          pdftoppm -r 130 -png evidence/report/T00-T11-Research-Acceptance.pdf evidence/report/page
+          pdftotext -layout evidence/report/T00-T11-Research-Acceptance.pdf evidence/report/extracted.txt
+          (cd evidence/report && sha256sum *.docx *.pdf *.txt *.png > SHA256SUMS)
           (cd evidence/word && sha256sum *.pdf *.png source.sha256 *.json *.txt > SHA256SUMS)
       - uses: actions/upload-artifact@v4
         if: always()
