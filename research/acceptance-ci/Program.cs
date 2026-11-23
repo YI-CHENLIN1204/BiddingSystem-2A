@@ -108,7 +108,7 @@ if (Environment.GetEnvironmentVariable("RESEARCH_ESTIMATE_BENCHMARK") == "1")
             db.Add(detail);
             await db.SaveChangesAsync();
             db.Add(new HistoricalTransaction { ProjectMaster = reference, MaterialId = materialId,
-                FinalBidItemId = detail.FinalBidItemId, ActualQuantity = quantity, TransactionDate = reference.StartDate });
+                FinalBidItemId = detail.FinalBidItemId, ActualQuantity = quantity, TransactionDate = reference.StartDate ?? throw new InvalidOperationException("Fixture start date is required") });
             await db.SaveChangesAsync();
         }
     }

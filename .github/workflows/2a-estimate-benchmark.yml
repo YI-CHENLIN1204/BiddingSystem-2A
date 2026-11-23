@@ -5,6 +5,7 @@ on:
     paths:
       - '.github/workflows/2a-estimate-benchmark.yml'
       - 'research/acceptance-ci/benchmark-estimate-api.py'
+      - 'research/acceptance-ci/Program.cs'
   workflow_dispatch:
 permissions:
   contents: read
