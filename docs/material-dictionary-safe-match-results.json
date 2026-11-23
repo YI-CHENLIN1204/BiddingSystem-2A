@@ -1,0 +1,973 @@
+{
+  "manifest_sha256": "e04d7fa10e012825561031befff1f9d7f63b6e88272c9e528eb523fdcab6bfd0",
+  "legacy_terms": 193,
+  "qualified_train_aliases": 54,
+  "frozen_legacy": {
+    "before": {
+      "n": 3386,
+      "auto": 3386,
+      "correct": 3386,
+      "wrong_auto": 0,
+      "pending": 0,
+      "precision": 1.0,
+      "coverage": 1.0,
+      "review_rate": 0.0
+    },
+    "after": {
+      "n": 3386,
+      "auto": 0,
+      "correct": 0,
+      "wrong_auto": 0,
+      "pending": 3386,
+      "precision": null,
+      "coverage": 0.0,
+      "review_rate": 1.0
+    },
+    "legal_auto_to_pending": 3386
+  },
+  "frozen_reviewed": {
+    "before": {
+      "n": 3386,
+      "auto": 3386,
+      "correct": 3386,
+      "wrong_auto": 0,
+      "pending": 0,
+      "precision": 1.0,
+      "coverage": 1.0,
+      "review_rate": 0.0
+    },
+    "after": {
+      "n": 3386,
+      "auto": 207,
+      "correct": 207,
+      "wrong_auto": 0,
+      "pending": 3179,
+      "precision": 1.0,
+      "coverage": 0.06113408151210868,
+      "review_rate": 0.9388659184878914
+    },
+    "legal_auto_to_pending": 3179
+  },
+  "coverage_delta_project_bootstrap_95": [
+    -0.9451219512195121,
+    -0.9324106855487608
+  ],
+  "projects": 26,
+  "strata": [
+    {
+      "field": "spec",
+      "value": "合成情境/basement_production/MaterialOnly",
+      "before": {
+        "n": 39,
+        "auto": 39,
+        "correct": 39,
+        "wrong_auto": 0,
+        "pending": 0,
+        "precision": 1.0,
+        "coverage": 1.0,
+        "review_rate": 0.0
+      },
+      "after": {
+        "n": 39,
+        "auto": 39,
+        "correct": 39,
+        "wrong_auto": 0,
+        "pending": 0,
+        "precision": 1.0,
+        "coverage": 1.0,
+        "review_rate": 0.0
+      },
+      "legal_auto_to_pending": 0
+    },
+    {
+      "field": "spec",
+      "value": "合成情境/basement_production/SupplyAndInstall",
+      "before": {
+        "n": 771,
+        "auto": 771,
+        "correct": 771,
+        "wrong_auto": 0,
+        "pending": 0,
+        "precision": 1.0,
+        "coverage": 1.0,
+        "review_rate": 0.0
+      },
+      "after": {
+        "n": 771,
+        "auto": 0,
+        "correct": 0,
+        "wrong_auto": 0,
+        "pending": 771,
+        "precision": null,
+        "coverage": 0.0,
+        "review_rate": 1.0
+      },
+      "legal_auto_to_pending": 771
+    },
+    {
+      "field": "spec",
+      "value": "合成情境/coated_floor_workshop/MaterialOnly",
+      "before": {
+        "n": 48,
+        "auto": 48,
+        "correct": 48,
+        "wrong_auto": 0,
+        "pending": 0,
+        "precision": 1.0,
+        "coverage": 1.0,
+        "review_rate": 0.0
+      },
+      "after": {
+        "n": 48,
+        "auto": 48,
+        "correct": 48,
+        "wrong_auto": 0,
+        "pending": 0,
+        "precision": 1.0,
+        "coverage": 1.0,
+        "review_rate": 0.0
+      },
+      "legal_auto_to_pending": 0
+    },
+    {
+      "field": "spec",
+      "value": "合成情境/coated_floor_workshop/SupplyAndInstall",
+      "before": {
+        "n": 678,
+        "auto": 678,
+        "correct": 678,
+        "wrong_auto": 0,
+        "pending": 0,
+        "precision": 1.0,
+        "coverage": 1.0,
+        "review_rate": 0.0
+      },
+      "after": {
+        "n": 678,
+        "auto": 0,
+        "correct": 0,
+        "wrong_auto": 0,
+        "pending": 678,
+        "precision": null,
+        "coverage": 0.0,
+        "review_rate": 1.0
+      },
+      "legal_auto_to_pending": 678
+    },
+    {
+      "field": "spec",
+      "value": "合成情境/loading_yard_facility/MaterialOnly",
+      "before": {
+        "n": 48,
+        "auto": 48,
+        "correct": 48,
+        "wrong_auto": 0,
+        "pending": 0,
+        "precision": 1.0,
+        "coverage": 1.0,
+        "review_rate": 0.0
+      },
+      "after": {
+        "n": 48,
+        "auto": 48,
+        "correct": 48,
+        "wrong_auto": 0,
+        "pending": 0,
+        "precision": 1.0,
+        "coverage": 1.0,
+        "review_rate": 0.0
+      },
+      "legal_auto_to_pending": 0
+    },
+    {
+      "field": "spec",
+      "value": "合成情境/loading_yard_facility/SupplyAndInstall",
+      "before": {
+        "n": 570,
+        "auto": 570,
+        "correct": 570,
+        "wrong_auto": 0,
+        "pending": 0,
+        "precision": 1.0,
+        "coverage": 1.0,
+        "review_rate": 0.0
+      },
+      "after": {
+        "n": 570,
+        "auto": 0,
+        "correct": 0,
+        "wrong_auto": 0,
+        "pending": 570,
+        "precision": null,
+        "coverage": 0.0,
+        "review_rate": 1.0
+      },
+      "legal_auto_to_pending": 570
+    },
+    {
+      "field": "spec",
+      "value": "合成情境/multistorey_production/MaterialOnly",
+      "before": {
+        "n": 24,
+        "auto": 24,
+        "correct": 24,
+        "wrong_auto": 0,
+        "pending": 0,
+        "precision": 1.0,
+        "coverage": 1.0,
+        "review_rate": 0.0
+      },
+      "after": {
+        "n": 24,
+        "auto": 24,
+        "correct": 24,
+        "wrong_auto": 0,
+        "pending": 0,
+        "precision": 1.0,
+        "coverage": 1.0,
+        "review_rate": 0.0
+      },
+      "legal_auto_to_pending": 0
+    },
+    {
+      "field": "spec",
+      "value": "合成情境/multistorey_production/SupplyAndInstall",
+      "before": {
+        "n": 470,
+        "auto": 470,
+        "correct": 470,
+        "wrong_auto": 0,
+        "pending": 0,
+        "precision": 1.0,
+        "coverage": 1.0,
+        "review_rate": 0.0
+      },
+      "after": {
+        "n": 470,
+        "auto": 0,
+        "correct": 0,
+        "wrong_auto": 0,
+        "pending": 470,
+        "precision": null,
+        "coverage": 0.0,
+        "review_rate": 1.0
+      },
+      "legal_auto_to_pending": 470
+    },
+    {
+      "field": "spec",
+      "value": "合成情境/single_storey_workshop/MaterialOnly",
+      "before": {
+        "n": 24,
+        "auto": 24,
+        "correct": 24,
+        "wrong_auto": 0,
+        "pending": 0,
+        "precision": 1.0,
+        "coverage": 1.0,
+        "review_rate": 0.0
+      },
+      "after": {
+        "n": 24,
+        "auto": 24,
+        "correct": 24,
+        "wrong_auto": 0,
+        "pending": 0,
+        "precision": 1.0,
+        "coverage": 1.0,
+        "review_rate": 0.0
+      },
+      "legal_auto_to_pending": 0
+    },
+    {
+      "field": "spec",
+      "value": "合成情境/single_storey_workshop/SupplyAndInstall",
+      "before": {
+        "n": 282,
+        "auto": 282,
+        "correct": 282,
+        "wrong_auto": 0,
+        "pending": 0,
+        "precision": 1.0,
+        "coverage": 1.0,
+        "review_rate": 0.0
+      },
+      "after": {
+        "n": 282,
+        "auto": 0,
+        "correct": 0,
+        "wrong_auto": 0,
+        "pending": 282,
+        "precision": null,
+        "coverage": 0.0,
+        "review_rate": 1.0
+      },
+      "legal_auto_to_pending": 282
+    },
+    {
+      "field": "spec",
+      "value": "合成情境/warehouse_with_office/MaterialOnly",
+      "before": {
+        "n": 24,
+        "auto": 24,
+        "correct": 24,
+        "wrong_auto": 0,
+        "pending": 0,
+        "precision": 1.0,
+        "coverage": 1.0,
+        "review_rate": 0.0
+      },
+      "after": {
+        "n": 24,
+        "auto": 24,
+        "correct": 24,
+        "wrong_auto": 0,
+        "pending": 0,
+        "precision": 1.0,
+        "coverage": 1.0,
+        "review_rate": 0.0
+      },
+      "legal_auto_to_pending": 0
+    },
+    {
+      "field": "spec",
+      "value": "合成情境/warehouse_with_office/SupplyAndInstall",
+      "before": {
+        "n": 408,
+        "auto": 408,
+        "correct": 408,
+        "wrong_auto": 0,
+        "pending": 0,
+        "precision": 1.0,
+        "coverage": 1.0,
+        "review_rate": 0.0
+      },
+      "after": {
+        "n": 408,
+        "auto": 0,
+        "correct": 0,
+        "wrong_auto": 0,
+        "pending": 408,
+        "precision": null,
+        "coverage": 0.0,
+        "review_rate": 1.0
+      },
+      "legal_auto_to_pending": 408
+    },
+    {
+      "field": "unit",
+      "value": "kg",
+      "before": {
+        "n": 129,
+        "auto": 129,
+        "correct": 129,
+        "wrong_auto": 0,
+        "pending": 0,
+        "precision": 1.0,
+        "coverage": 1.0,
+        "review_rate": 0.0
+      },
+      "after": {
+        "n": 129,
+        "auto": 129,
+        "correct": 129,
+        "wrong_auto": 0,
+        "pending": 0,
+        "precision": 1.0,
+        "coverage": 1.0,
+        "review_rate": 0.0
+      },
+      "legal_auto_to_pending": 0
+    },
+    {
+      "field": "unit",
+      "value": "m",
+      "before": {
+        "n": 1104,
+        "auto": 1104,
+        "correct": 1104,
+        "wrong_auto": 0,
+        "pending": 0,
+        "precision": 1.0,
+        "coverage": 1.0,
+        "review_rate": 0.0
+      },
+      "after": {
+        "n": 1104,
+        "auto": 0,
+        "correct": 0,
+        "wrong_auto": 0,
+        "pending": 1104,
+        "precision": null,
+        "coverage": 0.0,
+        "review_rate": 1.0
+      },
+      "legal_auto_to_pending": 1104
+    },
+    {
+      "field": "unit",
+      "value": "m2",
+      "before": {
+        "n": 528,
+        "auto": 528,
+        "correct": 528,
+        "wrong_auto": 0,
+        "pending": 0,
+        "precision": 1.0,
+        "coverage": 1.0,
+        "review_rate": 0.0
+      },
+      "after": {
+        "n": 528,
+        "auto": 0,
+        "correct": 0,
+        "wrong_auto": 0,
+        "pending": 528,
+        "precision": null,
+        "coverage": 0.0,
+        "review_rate": 1.0
+      },
+      "legal_auto_to_pending": 528
+    },
+    {
+      "field": "unit",
+      "value": "m3",
+      "before": {
+        "n": 234,
+        "auto": 234,
+        "correct": 234,
+        "wrong_auto": 0,
+        "pending": 0,
+        "precision": 1.0,
+        "coverage": 1.0,
+        "review_rate": 0.0
+      },
+      "after": {
+        "n": 234,
+        "auto": 78,
+        "correct": 78,
+        "wrong_auto": 0,
+        "pending": 156,
+        "precision": 1.0,
+        "coverage": 0.3333333333333333,
+        "review_rate": 0.6666666666666666
+      },
+      "legal_auto_to_pending": 156
+    },
+    {
+      "field": "unit",
+      "value": "只",
+      "before": {
+        "n": 240,
+        "auto": 240,
+        "correct": 240,
+        "wrong_auto": 0,
+        "pending": 0,
+        "precision": 1.0,
+        "coverage": 1.0,
+        "review_rate": 0.0
+      },
+      "after": {
+        "n": 240,
+        "auto": 0,
+        "correct": 0,
+        "wrong_auto": 0,
+        "pending": 240,
+        "precision": null,
+        "coverage": 0.0,
+        "review_rate": 1.0
+      },
+      "legal_auto_to_pending": 240
+    },
+    {
+      "field": "unit",
+      "value": "座",
+      "before": {
+        "n": 16,
+        "auto": 16,
+        "correct": 16,
+        "wrong_auto": 0,
+        "pending": 0,
+        "precision": 1.0,
+        "coverage": 1.0,
+        "review_rate": 0.0
+      },
+      "after": {
+        "n": 16,
+        "auto": 0,
+        "correct": 0,
+        "wrong_auto": 0,
+        "pending": 16,
+        "precision": null,
+        "coverage": 0.0,
+        "review_rate": 1.0
+      },
+      "legal_auto_to_pending": 16
+    },
+    {
+      "field": "unit",
+      "value": "式",
+      "before": {
+        "n": 34,
+        "auto": 34,
+        "correct": 34,
+        "wrong_auto": 0,
+        "pending": 0,
+        "precision": 1.0,
+        "coverage": 1.0,
+        "review_rate": 0.0
+      },
+      "after": {
+        "n": 34,
+        "auto": 0,
+        "correct": 0,
+        "wrong_auto": 0,
+        "pending": 34,
+        "precision": null,
+        "coverage": 0.0,
+        "review_rate": 1.0
+      },
+      "legal_auto_to_pending": 34
+    },
+    {
+      "field": "unit",
+      "value": "樘",
+      "before": {
+        "n": 126,
+        "auto": 126,
+        "correct": 126,
+        "wrong_auto": 0,
+        "pending": 0,
+        "precision": 1.0,
+        "coverage": 1.0,
+        "review_rate": 0.0
+      },
+      "after": {
+        "n": 126,
+        "auto": 0,
+        "correct": 0,
+        "wrong_auto": 0,
+        "pending": 126,
+        "precision": null,
+        "coverage": 0.0,
+        "review_rate": 1.0
+      },
+      "legal_auto_to_pending": 126
+    },
+    {
+      "field": "unit",
+      "value": "組",
+      "before": {
+        "n": 795,
+        "auto": 795,
+        "correct": 795,
+        "wrong_auto": 0,
+        "pending": 0,
+        "precision": 1.0,
+        "coverage": 1.0,
+        "review_rate": 0.0
+      },
+      "after": {
+        "n": 795,
+        "auto": 0,
+        "correct": 0,
+        "wrong_auto": 0,
+        "pending": 795,
+        "precision": null,
+        "coverage": 0.0,
+        "review_rate": 1.0
+      },
+      "legal_auto_to_pending": 795
+    },
+    {
+      "field": "unit",
+      "value": "處",
+      "before": {
+        "n": 78,
+        "auto": 78,
+        "correct": 78,
+        "wrong_auto": 0,
+        "pending": 0,
+        "precision": 1.0,
+        "coverage": 1.0,
+        "review_rate": 0.0
+      },
+      "after": {
+        "n": 78,
+        "auto": 0,
+        "correct": 0,
+        "wrong_auto": 0,
+        "pending": 78,
+        "precision": null,
+        "coverage": 0.0,
+        "review_rate": 1.0
+      },
+      "legal_auto_to_pending": 78
+    },
+    {
+      "field": "unit",
+      "value": "點",
+      "before": {
+        "n": 102,
+        "auto": 102,
+        "correct": 102,
+        "wrong_auto": 0,
+        "pending": 0,
+        "precision": 1.0,
+        "coverage": 1.0,
+        "review_rate": 0.0
+      },
+      "after": {
+        "n": 102,
+        "auto": 0,
+        "correct": 0,
+        "wrong_auto": 0,
+        "pending": 102,
+        "precision": null,
+        "coverage": 0.0,
+        "review_rate": 1.0
+      },
+      "legal_auto_to_pending": 102
+    },
+    {
+      "field": "scope",
+      "value": "MaterialOnly",
+      "before": {
+        "n": 207,
+        "auto": 207,
+        "correct": 207,
+        "wrong_auto": 0,
+        "pending": 0,
+        "precision": 1.0,
+        "coverage": 1.0,
+        "review_rate": 0.0
+      },
+      "after": {
+        "n": 207,
+        "auto": 207,
+        "correct": 207,
+        "wrong_auto": 0,
+        "pending": 0,
+        "precision": 1.0,
+        "coverage": 1.0,
+        "review_rate": 0.0
+      },
+      "legal_auto_to_pending": 0
+    },
+    {
+      "field": "scope",
+      "value": "SupplyAndInstall",
+      "before": {
+        "n": 3179,
+        "auto": 3179,
+        "correct": 3179,
+        "wrong_auto": 0,
+        "pending": 0,
+        "precision": 1.0,
+        "coverage": 1.0,
+        "review_rate": 0.0
+      },
+      "after": {
+        "n": 3179,
+        "auto": 0,
+        "correct": 0,
+        "wrong_auto": 0,
+        "pending": 3179,
+        "precision": null,
+        "coverage": 0.0,
+        "review_rate": 1.0
+      },
+      "legal_auto_to_pending": 3179
+    },
+    {
+      "field": "structure",
+      "value": "RC",
+      "before": {
+        "n": 1192,
+        "auto": 1192,
+        "correct": 1192,
+        "wrong_auto": 0,
+        "pending": 0,
+        "precision": 1.0,
+        "coverage": 1.0,
+        "review_rate": 0.0
+      },
+      "after": {
+        "n": 1192,
+        "auto": 54,
+        "correct": 54,
+        "wrong_auto": 0,
+        "pending": 1138,
+        "precision": 1.0,
+        "coverage": 0.04530201342281879,
+        "review_rate": 0.9546979865771812
+      },
+      "legal_auto_to_pending": 1138
+    },
+    {
+      "field": "structure",
+      "value": "SC",
+      "before": {
+        "n": 994,
+        "auto": 994,
+        "correct": 994,
+        "wrong_auto": 0,
+        "pending": 0,
+        "precision": 1.0,
+        "coverage": 1.0,
+        "review_rate": 0.0
+      },
+      "after": {
+        "n": 994,
+        "auto": 72,
+        "correct": 72,
+        "wrong_auto": 0,
+        "pending": 922,
+        "precision": 1.0,
+        "coverage": 0.07243460764587525,
+        "review_rate": 0.9275653923541247
+      },
+      "legal_auto_to_pending": 922
+    },
+    {
+      "field": "structure",
+      "value": "SRC",
+      "before": {
+        "n": 1200,
+        "auto": 1200,
+        "correct": 1200,
+        "wrong_auto": 0,
+        "pending": 0,
+        "precision": 1.0,
+        "coverage": 1.0,
+        "review_rate": 0.0
+      },
+      "after": {
+        "n": 1200,
+        "auto": 81,
+        "correct": 81,
+        "wrong_auto": 0,
+        "pending": 1119,
+        "precision": 1.0,
+        "coverage": 0.0675,
+        "review_rate": 0.9325
+      },
+      "legal_auto_to_pending": 1119
+    },
+    {
+      "field": "name_seen",
+      "value": true,
+      "before": {
+        "n": 3386,
+        "auto": 3386,
+        "correct": 3386,
+        "wrong_auto": 0,
+        "pending": 0,
+        "precision": 1.0,
+        "coverage": 1.0,
+        "review_rate": 0.0
+      },
+      "after": {
+        "n": 3386,
+        "auto": 207,
+        "correct": 207,
+        "wrong_auto": 0,
+        "pending": 3179,
+        "precision": 1.0,
+        "coverage": 0.06113408151210868,
+        "review_rate": 0.9388659184878914
+      },
+      "legal_auto_to_pending": 3179
+    },
+    {
+      "field": "Code",
+      "value": null,
+      "before": {
+        "n": 207,
+        "auto": 207,
+        "correct": 207,
+        "wrong_auto": 0,
+        "pending": 0,
+        "precision": 1.0,
+        "coverage": 1.0,
+        "review_rate": 0.0
+      },
+      "after": {
+        "n": 207,
+        "auto": 207,
+        "correct": 207,
+        "wrong_auto": 0,
+        "pending": 0,
+        "precision": 1.0,
+        "coverage": 1.0,
+        "review_rate": 0.0
+      },
+      "legal_auto_to_pending": 0
+    },
+    {
+      "field": "Code",
+      "value": "UNVERIFIED_SPEC",
+      "before": {
+        "n": 3179,
+        "auto": 3179,
+        "correct": 3179,
+        "wrong_auto": 0,
+        "pending": 0,
+        "precision": 1.0,
+        "coverage": 1.0,
+        "review_rate": 0.0
+      },
+      "after": {
+        "n": 3179,
+        "auto": 0,
+        "correct": 0,
+        "wrong_auto": 0,
+        "pending": 3179,
+        "precision": null,
+        "coverage": 0.0,
+        "review_rate": 1.0
+      },
+      "legal_auto_to_pending": 3179
+    }
+  ],
+  "pressure": {
+    "control": {
+      "before": {
+        "n": 156,
+        "auto": 156,
+        "correct": 156,
+        "wrong_auto": 0,
+        "pending": 0,
+        "precision": 1.0,
+        "coverage": 1.0,
+        "review_rate": 0.0
+      },
+      "after": {
+        "n": 156,
+        "auto": 156,
+        "correct": 156,
+        "wrong_auto": 0,
+        "pending": 0,
+        "precision": 1.0,
+        "coverage": 1.0,
+        "review_rate": 0.0
+      },
+      "legal_auto_to_pending": 0
+    },
+    "different_spec": {
+      "before": {
+        "n": 156,
+        "auto": 156,
+        "correct": 156,
+        "wrong_auto": 0,
+        "pending": 0,
+        "precision": 1.0,
+        "coverage": 1.0,
+        "review_rate": 0.0
+      },
+      "after": {
+        "n": 156,
+        "auto": 0,
+        "correct": 0,
+        "wrong_auto": 0,
+        "pending": 156,
+        "precision": null,
+        "coverage": 0.0,
+        "review_rate": 1.0
+      },
+      "legal_auto_to_pending": 156
+    },
+    "identical_visible_other_material": {
+      "before": {
+        "n": 156,
+        "auto": 156,
+        "correct": 0,
+        "wrong_auto": 156,
+        "pending": 0,
+        "precision": 0.0,
+        "coverage": 1.0,
+        "review_rate": 0.0
+      },
+      "after": {
+        "n": 156,
+        "auto": 0,
+        "correct": 0,
+        "wrong_auto": 0,
+        "pending": 156,
+        "precision": null,
+        "coverage": 0.0,
+        "review_rate": 1.0
+      },
+      "legal_auto_to_pending": 0
+    },
+    "unknown_alias": {
+      "before": {
+        "n": 156,
+        "auto": 0,
+        "correct": 0,
+        "wrong_auto": 0,
+        "pending": 156,
+        "precision": null,
+        "coverage": 0.0,
+        "review_rate": 1.0
+      },
+      "after": {
+        "n": 156,
+        "auto": 0,
+        "correct": 0,
+        "wrong_auto": 0,
+        "pending": 156,
+        "precision": null,
+        "coverage": 0.0,
+        "review_rate": 1.0
+      },
+      "legal_auto_to_pending": 0
+    },
+    "unqualified_control": {
+      "before": {
+        "n": 156,
+        "auto": 156,
+        "correct": 156,
+        "wrong_auto": 0,
+        "pending": 0,
+        "precision": 1.0,
+        "coverage": 1.0,
+        "review_rate": 0.0
+      },
+      "after": {
+        "n": 156,
+        "auto": 0,
+        "correct": 0,
+        "wrong_auto": 0,
+        "pending": 156,
+        "precision": null,
+        "coverage": 0.0,
+        "review_rate": 1.0
+      },
+      "legal_auto_to_pending": 156
+    },
+    "wrong_unit": {
+      "before": {
+        "n": 156,
+        "auto": 156,
+        "correct": 156,
+        "wrong_auto": 0,
+        "pending": 0,
+        "precision": 1.0,
+        "coverage": 1.0,
+        "review_rate": 0.0
+      },
+      "after": {
+        "n": 156,
+        "auto": 0,
+        "correct": 0,
+        "wrong_auto": 0,
+        "pending": 156,
+        "precision": null,
+        "coverage": 0.0,
+        "review_rate": 1.0
+      },
+      "legal_auto_to_pending": 156
+    }
+  }
+}

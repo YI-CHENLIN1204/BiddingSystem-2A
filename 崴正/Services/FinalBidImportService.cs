@@ -293,9 +293,7 @@ namespace 崴正.Services
 
        
 
-                var dictionaryList =
-                    _context.ItemDictionaries
-                        .ToList();
+                var dictionary = new SafeMaterialDictionary(SafeMaterialDictionary.Read(_context));
 
                 var materials =
                     _context.MaterialMasters
@@ -323,90 +321,16 @@ namespace 崴正.Services
 
                 foreach (var row in rows)
                 {
-                    var matchedDictionary =
-                        dictionaryList
-                            .Where(x =>
-                                !string.IsNullOrWhiteSpace(
-                                    x.Keyword
-                                ) &&
-                                (
-                                    (row.ItemName ?? "")
-                                        .Contains(
-                                            x.Keyword,
-                                            StringComparison.OrdinalIgnoreCase
-                                        )
-                                    ||
-                                    (row.Spec ?? "")
-                                        .Contains(
-                                            x.Keyword,
-                                            StringComparison.OrdinalIgnoreCase
-                                        )
-                                ))
-                            .OrderByDescending(
-                                x => x.Keyword.Length
-                            )
-                            .FirstOrDefault();
-
-                    MaterialMaster? material =
-                        null;
-
-                    int? materialId =
-                        null;
-
-                    string? matchedKeyword =
-                        null;
-
-                    string mappingStatus;
-                    string? mappingIssueCode =
-                        null;
-
-                    string? mappingIssueMessage =
-                        null;
-
-                    if (matchedDictionary == null)
-                    {
-                        mappingStatus =
-                            "Pending";
-
-                        mappingIssueCode =
-                            "NO_DICTIONARY_MATCH";
-
-                        mappingIssueMessage =
-                            "找不到可對應的字典關鍵字";
-
-                        pendingCount++;
-                    }
-                    else
-                    {
-                        matchedKeyword =
-                            matchedDictionary.Keyword;
-
-                        if (!materialDictionary.TryGetValue(
-                                matchedDictionary.Material_Id,
-                                out material))
-                        {
-                            mappingStatus =
-                                "Pending";
-
-                            mappingIssueCode =
-                                "MATERIAL_NOT_FOUND";
-
-                            mappingIssueMessage =
-                                $"字典指向不存在的材料 ID：{matchedDictionary.Material_Id}";
-
-                            pendingCount++;
-                        }
-                        else
-                        {
-                            mappingStatus =
-                                "Auto";
-
-                            materialId =
-                                material.MaterialId;
-
-                            autoMappedCount++;
-                        }
-                    }
+                    var decision = dictionary.Decide(row.ItemName, row.Spec, row.Unit, row.Qty,
+                        _finalBidService.CanUseMaterialUnit);
+                    int? materialId = decision.Match?.MaterialId;
+                    MaterialMaster? material = materialId.HasValue ? materialDictionary[materialId.Value] : null;
+                    string? matchedKeyword = decision.Match?.Keyword;
+                    string mappingStatus = material is null ? "Pending" : "Auto";
+                    string? mappingIssueCode = decision.Code;
+                    string? mappingIssueMessage = decision.Message;
+                    if (material is null) pendingCount++;
+                    else autoMappedCount++;
 
                     var dataIssue =
                         _finalBidService
@@ -429,13 +353,7 @@ namespace 崴正.Services
                         invalidUnitPriceCount++;
                     }
 
-                    if (
-                        material != null &&
-                        dataIssue.Message != null &&
-                        dataIssue.Message.Contains(
-                            "標準材料單位"
-                        )
-                    )
+                    if (mappingIssueCode == "MAPPING_UNIT_MISMATCH")
                     {
                         unitMismatchCount++;
                     }

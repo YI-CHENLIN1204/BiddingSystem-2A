@@ -9,6 +9,7 @@ namespace 崴正.Services
         private readonly ApplicationDbContext _context;
         private readonly UnitConversionService _unitConversionService;
         private readonly AuditLogService _auditLogService;
+        private SafeMaterialDictionary? _historyDictionary;
 
         public FinalBidService(
             ApplicationDbContext context,
@@ -135,6 +136,16 @@ namespace 崴正.Services
                 bidItem.DataIssueMessage =
                     dataIssue.Message;
 
+
+                if (bidItem.MappingStatus == "Pending" &&
+                    bidItem.MappingIssueCode == "MAPPING_UNIT_MISMATCH")
+                {
+                    _historyDictionary ??= new SafeMaterialDictionary(SafeMaterialDictionary.Read(_context));
+                    var decision = _historyDictionary.Decide(bidItem.ItemName, bidItem.Spec, bidItem.Unit,
+                        bidItem.Qty, CanUseMaterialUnit);
+                    bidItem.MappingIssueCode = decision.Code ?? "MAPPING_REVIEW_REQUIRED";
+                    bidItem.MappingIssueMessage = decision.Message ?? "單位已修正，請核定材料對應。";
+                }
 
                 // ==============================
                 // 同步模型歷史交易
@@ -543,6 +554,9 @@ namespace 崴正.Services
             }
         }
 
+        internal bool CanUseMaterialUnit(string? sourceUnit, int targetUnitId) =>
+            _unitConversionService.CanConvert(sourceUnit, targetUnitId);
+
         public (
             string? Code,
             string? Message
@@ -668,7 +682,7 @@ namespace 崴正.Services
                             bidItem.MaterialId.Value);
             }
 
-            if (material == null)
+            if (material == null || !material.IsActive)
             {
                 if (history != null)
                 {
@@ -778,7 +792,7 @@ namespace 崴正.Services
                             bidItem.MaterialId.Value);
             }
 
-            if (material == null)
+            if (material == null || !material.IsActive)
             {
                 return false;
             }
@@ -827,10 +841,17 @@ namespace 崴正.Services
                     bidItem.MappingStatus == "Manual"
                 );
 
-            return
-                mappingCompleted &&
-                bidItem.Qty.HasValue &&
-                bidItem.Qty.Value > 0;
+            if (!mappingCompleted || !bidItem.Qty.HasValue || bidItem.Qty.Value <= 0)
+                return false;
+
+            if (bidItem.MappingStatus == "Manual")
+                return true;
+
+            // Recheck legacy Draft Auto rows and aliases that became ambiguous since import.
+            _historyDictionary ??= new SafeMaterialDictionary(SafeMaterialDictionary.Read(_context));
+            var decision = _historyDictionary.Decide(bidItem.ItemName, bidItem.Spec, bidItem.Unit,
+                bidItem.Qty, CanUseMaterialUnit);
+            return decision.Match?.MaterialId == bidItem.MaterialId;
         }
 
         private bool IsProjectHistoryApproved(
@@ -865,7 +886,7 @@ namespace 崴正.Services
             IsInTwoAHistoryScope(
                 FinalBidItem bidItem)
         {
-            if (TwoAScopePolicy.IsExplicitNonMaterialCharge(bidItem.ItemName))
+            if (TwoAScopePolicy.ExcludesMaterialQuantity(bidItem.ItemName, bidItem.Spec))
                 return false;
 
             string? majorCategory =

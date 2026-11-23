@@ -6,6 +6,7 @@
     <ImplicitUsings>enable</ImplicitUsings>
   </PropertyGroup>
   <ItemGroup>
+    <None Update="material-alias-panel.json" CopyToOutputDirectory="PreserveNewest" />
     <ProjectReference Include="../../崴正/崴正.csproj" />
   </ItemGroup>
 </Project>

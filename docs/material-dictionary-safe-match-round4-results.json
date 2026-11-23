@@ -1,0 +1,414 @@
+{
+  "manifest_sha256": "e04d7fa10e012825561031befff1f9d7f63b6e88272c9e528eb523fdcab6bfd0",
+  "recorded_round2": {
+    "n": 3386,
+    "safe_auto": 207,
+    "material_only_n": 207,
+    "composite_n": 3179
+  },
+  "label_masked_strict": {
+    "MaterialOnly": {
+      "n": 207,
+      "auto": 0,
+      "pending": 207,
+      "auto_coverage": 0.0,
+      "review_rate": 1.0,
+      "material_id": {
+        "correct_auto": 0,
+        "wrong_auto": 0,
+        "precision": null
+      },
+      "pure_material_quantity_safety": {
+        "safe_auto": 0,
+        "unsafe_auto": 0,
+        "precision": null
+      },
+      "price_eligible": 156,
+      "price_eligible_rate": 0.7536231884057971,
+      "explicit_composite": 0
+    },
+    "SupplyAndInstall": {
+      "n": 3179,
+      "auto": 0,
+      "pending": 3179,
+      "auto_coverage": 0.0,
+      "review_rate": 1.0,
+      "material_id": {
+        "correct_auto": 0,
+        "wrong_auto": 0,
+        "precision": null
+      },
+      "pure_material_quantity_safety": {
+        "safe_auto": 0,
+        "unsafe_auto": 0,
+        "precision": null
+      },
+      "price_eligible": 78,
+      "price_eligible_rate": 0.024536017615602392,
+      "explicit_composite": 0,
+      "quantity_exclusion_rate": 1.0
+    }
+  },
+  "label_masked_scenario_sensitivity": {
+    "MaterialOnly": {
+      "n": 207,
+      "auto": 207,
+      "pending": 0,
+      "auto_coverage": 1.0,
+      "review_rate": 0.0,
+      "material_id": {
+        "correct_auto": 207,
+        "wrong_auto": 0,
+        "precision": 1.0
+      },
+      "pure_material_quantity_safety": {
+        "safe_auto": 207,
+        "unsafe_auto": 0,
+        "precision": 1.0
+      },
+      "price_eligible": 156,
+      "price_eligible_rate": 0.7536231884057971,
+      "explicit_composite": 0
+    },
+    "SupplyAndInstall": {
+      "n": 3179,
+      "auto": 0,
+      "pending": 3179,
+      "auto_coverage": 0.0,
+      "review_rate": 1.0,
+      "material_id": {
+        "correct_auto": 0,
+        "wrong_auto": 0,
+        "precision": null
+      },
+      "pure_material_quantity_safety": {
+        "safe_auto": 0,
+        "unsafe_auto": 0,
+        "precision": null
+      },
+      "price_eligible": 78,
+      "price_eligible_rate": 0.024536017615602392,
+      "explicit_composite": 0,
+      "quantity_exclusion_rate": 1.0
+    }
+  },
+  "simulated_draft": {
+    "projects": 126,
+    "rows": 16786,
+    "legacy_auto_blocked": 16786,
+    "estimated_quantity_scope_before": 756,
+    "estimated_quantity_scope_after": 0
+  },
+  "workflow_estimate": {
+    "pending_rows": 3179,
+    "possible_candidate_rows": 3179,
+    "minimum_same_project_prefills": 3179,
+    "maximum_prefill_savings": 0,
+    "required_confirmation_per_row": true
+  },
+  "legacy_terms": 193,
+  "qualified_train_aliases": 54,
+  "frozen_legacy": {
+    "before": {
+      "n": 3386,
+      "auto": 3386,
+      "pending": 0,
+      "auto_coverage": 1.0,
+      "review_rate": 0.0,
+      "material_id": {
+        "correct_auto": 3386,
+        "wrong_auto": 0,
+        "precision": 1.0
+      },
+      "pure_material_quantity_safety": {
+        "safe_auto": 207,
+        "unsafe_auto": 3179,
+        "precision": 0.06113408151210868
+      }
+    },
+    "after": {
+      "n": 3386,
+      "auto": 0,
+      "pending": 3386,
+      "auto_coverage": 0.0,
+      "review_rate": 1.0,
+      "material_id": {
+        "correct_auto": 0,
+        "wrong_auto": 0,
+        "precision": null
+      },
+      "pure_material_quantity_safety": {
+        "safe_auto": 0,
+        "unsafe_auto": 0,
+        "precision": null
+      }
+    },
+    "correct_material_id_auto_to_pending": 3386
+  },
+  "frozen_reviewed": {
+    "before": {
+      "n": 3386,
+      "auto": 3386,
+      "pending": 0,
+      "auto_coverage": 1.0,
+      "review_rate": 0.0,
+      "material_id": {
+        "correct_auto": 3386,
+        "wrong_auto": 0,
+        "precision": 1.0
+      },
+      "pure_material_quantity_safety": {
+        "safe_auto": 207,
+        "unsafe_auto": 3179,
+        "precision": 0.06113408151210868
+      }
+    },
+    "after": {
+      "n": 3386,
+      "auto": 207,
+      "pending": 3179,
+      "auto_coverage": 0.06113408151210868,
+      "review_rate": 0.9388659184878914,
+      "material_id": {
+        "correct_auto": 207,
+        "wrong_auto": 0,
+        "precision": 1.0
+      },
+      "pure_material_quantity_safety": {
+        "safe_auto": 207,
+        "unsafe_auto": 0,
+        "precision": 1.0
+      }
+    },
+    "correct_material_id_auto_to_pending": 3179
+  },
+  "coverage_delta_project_bootstrap_95": [
+    -0.9451219512195121,
+    -0.9324106855487608
+  ],
+  "projects": 26,
+  "pressure": {
+    "control": {
+      "before": {
+        "n": 156,
+        "auto": 156,
+        "pending": 0,
+        "auto_coverage": 1.0,
+        "review_rate": 0.0,
+        "material_id": {
+          "correct_auto": 156,
+          "wrong_auto": 0,
+          "precision": 1.0
+        },
+        "pure_material_quantity_safety": {
+          "safe_auto": 156,
+          "unsafe_auto": 0,
+          "precision": 1.0
+        }
+      },
+      "after": {
+        "n": 156,
+        "auto": 156,
+        "pending": 0,
+        "auto_coverage": 1.0,
+        "review_rate": 0.0,
+        "material_id": {
+          "correct_auto": 156,
+          "wrong_auto": 0,
+          "precision": 1.0
+        },
+        "pure_material_quantity_safety": {
+          "safe_auto": 156,
+          "unsafe_auto": 0,
+          "precision": 1.0
+        }
+      },
+      "correct_material_id_auto_to_pending": 0
+    },
+    "different_spec": {
+      "before": {
+        "n": 156,
+        "auto": 156,
+        "pending": 0,
+        "auto_coverage": 1.0,
+        "review_rate": 0.0,
+        "material_id": {
+          "correct_auto": 156,
+          "wrong_auto": 0,
+          "precision": 1.0
+        },
+        "pure_material_quantity_safety": {
+          "safe_auto": 156,
+          "unsafe_auto": 0,
+          "precision": 1.0
+        }
+      },
+      "after": {
+        "n": 156,
+        "auto": 0,
+        "pending": 156,
+        "auto_coverage": 0.0,
+        "review_rate": 1.0,
+        "material_id": {
+          "correct_auto": 0,
+          "wrong_auto": 0,
+          "precision": null
+        },
+        "pure_material_quantity_safety": {
+          "safe_auto": 0,
+          "unsafe_auto": 0,
+          "precision": null
+        }
+      },
+      "correct_material_id_auto_to_pending": 156
+    },
+    "identical_visible_other_material": {
+      "before": {
+        "n": 156,
+        "auto": 156,
+        "pending": 0,
+        "auto_coverage": 1.0,
+        "review_rate": 0.0,
+        "material_id": {
+          "correct_auto": 0,
+          "wrong_auto": 156,
+          "precision": 0.0
+        },
+        "pure_material_quantity_safety": {
+          "safe_auto": 0,
+          "unsafe_auto": 156,
+          "precision": 0.0
+        }
+      },
+      "after": {
+        "n": 156,
+        "auto": 0,
+        "pending": 156,
+        "auto_coverage": 0.0,
+        "review_rate": 1.0,
+        "material_id": {
+          "correct_auto": 0,
+          "wrong_auto": 0,
+          "precision": null
+        },
+        "pure_material_quantity_safety": {
+          "safe_auto": 0,
+          "unsafe_auto": 0,
+          "precision": null
+        }
+      },
+      "correct_material_id_auto_to_pending": 0
+    },
+    "unknown_alias": {
+      "before": {
+        "n": 156,
+        "auto": 0,
+        "pending": 156,
+        "auto_coverage": 0.0,
+        "review_rate": 1.0,
+        "material_id": {
+          "correct_auto": 0,
+          "wrong_auto": 0,
+          "precision": null
+        },
+        "pure_material_quantity_safety": {
+          "safe_auto": 0,
+          "unsafe_auto": 0,
+          "precision": null
+        }
+      },
+      "after": {
+        "n": 156,
+        "auto": 0,
+        "pending": 156,
+        "auto_coverage": 0.0,
+        "review_rate": 1.0,
+        "material_id": {
+          "correct_auto": 0,
+          "wrong_auto": 0,
+          "precision": null
+        },
+        "pure_material_quantity_safety": {
+          "safe_auto": 0,
+          "unsafe_auto": 0,
+          "precision": null
+        }
+      },
+      "correct_material_id_auto_to_pending": 0
+    },
+    "unqualified_control": {
+      "before": {
+        "n": 156,
+        "auto": 156,
+        "pending": 0,
+        "auto_coverage": 1.0,
+        "review_rate": 0.0,
+        "material_id": {
+          "correct_auto": 156,
+          "wrong_auto": 0,
+          "precision": 1.0
+        },
+        "pure_material_quantity_safety": {
+          "safe_auto": 156,
+          "unsafe_auto": 0,
+          "precision": 1.0
+        }
+      },
+      "after": {
+        "n": 156,
+        "auto": 0,
+        "pending": 156,
+        "auto_coverage": 0.0,
+        "review_rate": 1.0,
+        "material_id": {
+          "correct_auto": 0,
+          "wrong_auto": 0,
+          "precision": null
+        },
+        "pure_material_quantity_safety": {
+          "safe_auto": 0,
+          "unsafe_auto": 0,
+          "precision": null
+        }
+      },
+      "correct_material_id_auto_to_pending": 156
+    },
+    "wrong_unit": {
+      "before": {
+        "n": 156,
+        "auto": 156,
+        "pending": 0,
+        "auto_coverage": 1.0,
+        "review_rate": 0.0,
+        "material_id": {
+          "correct_auto": 156,
+          "wrong_auto": 0,
+          "precision": 1.0
+        },
+        "pure_material_quantity_safety": {
+          "safe_auto": 156,
+          "unsafe_auto": 0,
+          "precision": 1.0
+        }
+      },
+      "after": {
+        "n": 156,
+        "auto": 0,
+        "pending": 156,
+        "auto_coverage": 0.0,
+        "review_rate": 1.0,
+        "material_id": {
+          "correct_auto": 0,
+          "wrong_auto": 0,
+          "precision": null
+        },
+        "pure_material_quantity_safety": {
+          "safe_auto": 0,
+          "unsafe_auto": 0,
+          "precision": null
+        }
+      },
+      "correct_material_id_auto_to_pending": 156
+    }
+  }
+}
