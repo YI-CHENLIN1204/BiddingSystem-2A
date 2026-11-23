@@ -1,3 +1,7 @@
+## 2026-11-23 T08 大型匯入與真實資料工具
+
+研究量測增加 500／1000 列 matrix，每規模獨立程序與資料庫。附下載前既有 Evidence ZIP 的 SHA `bab494ecead36bac0b089aff9509df43f4712be7ab0898fe93375e7c5df391a5`，已再核對 205/205。新測試只在隔離 runner 以暫時覆蓋量測匯入的三次 EF 儲存及交易提交；正式程式碼未變。工具見 [真實資料與盲測](../research/external-intake/README.md)。A0 原生 HTTP 與 A1/B1 離線目前 PARTIAL，沒有從異質結果推斷同條件勝負。真實及真人驗收仍待資料。
+
 ## 2026-11-23 完成證據封存與隔離估算測速
 
 [證據 ZIP](https://chatgpt.com/library?file_id=libfile_83649d0002948191a74ddcf17e255d69&account_id=personal) 205 筆清冊逐檔 SHA-256 通過，ZIP SHA-256 `bab494ecead36bac0b089aff9509df43f4712be7ab0898fe93375e7c5df391a5`。`EVIDENCE-INDEX.json` 對應 T00～T11 逐案、摘要、圖表、測試版本及原生 Actions 證據。`summary-reconciliation.json` 為凍結逐案重算。
