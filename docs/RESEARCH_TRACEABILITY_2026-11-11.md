@@ -1,3 +1,17 @@
+## 2026-11-23 完成證據封存與隔離估算測速
+
+[證據 ZIP](https://chatgpt.com/library?file_id=libfile_83649d0002948191a74ddcf17e255d69&account_id=personal) 205 筆清冊逐檔 SHA-256 通過，ZIP SHA-256 `bab494ecead36bac0b089aff9509df43f4712be7ab0898fe93375e7c5df391a5`。`EVIDENCE-INDEX.json` 對應 T00～T11 逐案、摘要、圖表、測試版本及原生 Actions 證據。`summary-reconciliation.json` 為凍結逐案重算。
+
+[T08 Run 45121107120](https://github.com/YI-CHENLIN1204/BiddingSystem-2A/actions/runs/45121107120) 的 `run-link`、`estimate-benchmark` 及交接守門通過，測試提交 `26990ada410ea12621886290bd0ecc687fe9500b`。[Artifact 14793503144](https://github.com/YI-CHENLIN1204/BiddingSystem-2A/actions/runs/45121107120/artifacts/14793503144) 已下載，11/11 成員 SHA 通過。198 次原始請求包含 18 暖機；正式量測 180 次、0 失敗。132 個估算 Run ID 互異，數量各有兩種材料實際分析，價格各具足額樣本與下限。首次失敗 Artifact 14794050408 也封存。
+
+| 工項列數 | 版本 GET p50/p95 ms | 數量 POST p50/p95 ms | 價格 POST p50/p95 ms | 該階段結束的累計峰值 KiB |
+|---:|---:|---:|---:|---:|
+| 2 | 20.27/29.32 | 113.95/142.75 | 44.85/52.02 | 234,276 |
+| 20 | 21.73/33.54 | 117.90/127.97 | 48.65/59.21 | 256,524 |
+| 100 | 24.76/28.96 | 120.57/151.59 | 54.63/70.25 | 268,684 |
+
+同一隔離 runner、32 個合成 Approved 參考案、順序固定而交錯端點、每格 20 次。RSS 為單一服務程序的累計峰值，涵蓋暖機與先前規模；不可視作各端點獨立測量。既有 O/S 與 Python 的離線流程 RSS 記錄保留。A1／B1 尚無對等正式 HTTP 路徑，大規模壓力與外部工程證據仍待。已通過的 T07／T09 測試沿用，既有 workflow 的共享 fixture 異動亦自動回歸。T05 採用門檻未過，維持 A0，未重選樣本或調參。正式 2A、Supabase 及《專題書面報告_林.docx》未變動。
+
 ## 2026-11-23 證據 ZIP 與估算環境修正
 
 凍結證據封存已交付，197 筆 SHA-256 全數通過，外層 SHA-256 `0e0c9213e686480f6497ff0e2373b4c0d0500801c6e0dfdbce7fb8388f870b58`。表格已從逐案重算 14 組學習曲線、252 格分層、64 組候選摘要與 18 格群數比較，合成資料品質標籤 6 筆。
