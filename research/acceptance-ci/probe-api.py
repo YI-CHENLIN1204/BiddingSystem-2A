@@ -101,6 +101,24 @@ print(json.dumps({"test": "import-upload-draft-safety", "passed": True,
                   "project_id": imported_id, "rows": len(imported_rows),
                   "history_insert_count": uploaded["historyInsertCount"]}), flush=True)
 
+imported_project = f"/api/projects/{imported_id}"
+material_ids = {"SD420W 鋼筋材料": fixture["steel"], "預拌混凝土": fixture["concrete"]}
+for row in imported_rows:
+    request("map-imported-item", "/api/Estimation/update-material-mapping", post=True,
+            form=dict(finalBidItemId=row["finalBidItemId"], materialId=material_ids[row["itemName"]]))
+mapped = request("imported-mapped-roundtrip", imported_project + "/final-bid-items")[1]["items"]
+assert len(mapped) == 2 and all(row["mappingStatus"] == "Manual" for row in mapped), mapped
+published_import = request("publish-imported-project", imported_project + "/publish-history",
+                           post=True, key=str(uuid4()))[1]
+assert published_import["historyStatus"] == "Approved"
+approved_import = request("read-imported-approved", imported_project)[1]
+assert approved_import["historyStatus"] == "Approved" and approved_import["historicalTransactionCount"] == 2, approved_import
+reopened_import = request("reopen-imported-project", imported_project + "/reopen-history-review",
+                          post=True, key=str(uuid4()))[1]
+assert reopened_import["historyStatus"] == "Draft" and reopened_import["disabledHistoricalTransactionCount"] == 2
+draft_import = request("read-imported-reopened-draft", imported_project)[1]
+assert draft_import["historyStatus"] == "Draft" and draft_import["historicalTransactionCount"] == 0, draft_import
+
 reader = request("reader-audit-policy", "/api/audit-logs", expected=403,
                  required=False, token=os.environ["RESEARCH_AUDIT_READER_TOKEN"])[0]
 invalid = request("invalid-audit-credential", "/api/audit-logs", expected=401,
@@ -113,6 +131,10 @@ assert sum("publish" in action.lower() for action in actions) == 1, actions
 assert sum("reopen" in action.lower() for action in actions) == 1, actions
 print(json.dumps(dict(test="supervisor-audit-events", passed=True,
                       project_id=fixture["project"], actions=actions)), flush=True)
+import_actions = [row["actionType"] for row in audit["items"] if row.get("projectId") == imported_id]
+assert import_actions.count("PublishHistoryBaseline") == import_actions.count("ReopenHistoryReview") == 1, import_actions
+print(json.dumps(dict(test="import-to-reopen-full-chain", passed=True, project_id=imported_id,
+                      approved_history=2, reopened_active_history=0, actions=import_actions)), flush=True)
 elapsed = [request("benchmark-read", project)[2] for _ in range(30)]
 print(json.dumps(dict(test="read-http-summary", n=len(elapsed), p50_ms=statistics.median(elapsed),
                       p95_ms=sorted(elapsed)[math.ceil(.95*len(elapsed))-1],

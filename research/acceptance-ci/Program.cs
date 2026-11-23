@@ -28,13 +28,17 @@ var tonne = new UnitMaster { UnitName = "t", ToBaseFactor = 1000, UnitCategory =
 var malformed = new UnitMaster { UnitName = "invalid-factor", ToBaseFactor = 0, UnitCategory = weight };
 var category = new MaterialCategory { CategoryName = "鋼筋" };
 var steel = new MaterialMaster { MaterialName = "鋼筋", MaterialCategory = category, UnitMaster = kg };
+var volume = new UnitCategory { CategoryName = "Volume fixture", AllowConversion = false };
+var cubicMetre = new UnitMaster { UnitName = "m3", IsBaseUnit = true, ToBaseFactor = 1, UnitCategory = volume };
+var concreteCategory = new MaterialCategory { CategoryName = "混凝土" };
+var concrete = new MaterialMaster { MaterialName = "預拌混凝土", MaterialCategory = concreteCategory, UnitMaster = cubicMetre };
 var project = new ProjectMaster { ProjectName = "CI synthetic draft", TotalFloorArea = 100,
     SiteArea = 100, StartDate = new DateTime(2026, 1, 1), HistoryStatus = "Draft" };
 var other = new ProjectMaster { ProjectName = "CI second draft", HistoryStatus = "Draft" };
 var item = new FinalBidItem { ProjectMaster = project, SourceFileName = "synthetic.xlsx",
     ItemName = "鋼筋", Category1 = "結構體工程", Unit = "t", Qty = 2, UnitPrice = 5000,
     Amount = 10000, MappingStatus = "Unmapped", CreatedAt = DateTime.UtcNow, UpdatedAt = DateTime.UtcNow };
-db.AddRange(kg, tonne, malformed, steel, project, other, item);
+db.AddRange(kg, tonne, malformed, steel, concrete, project, other, item);
 await db.SaveChangesAsync();
 db.ChangeTracker.Clear();
 var conversion = new UnitConversionService(db);
@@ -45,7 +49,7 @@ if (!valid.Success || valid.Quantity != 2000m || valid.UnitPrice != 5m || invali
 Console.WriteLine("PASS EF-backed conversion and invalid-factor rejection");
 await File.WriteAllTextAsync("evidence/api/fixture.json",
     System.Text.Json.JsonSerializer.Serialize(new { project = project.ProjectId, other = other.ProjectId,
-        item = item.FinalBidItemId, steel = steel.MaterialId }));
+        item = item.FinalBidItemId, steel = steel.MaterialId, concrete = concrete.MaterialId }));
 
 // Synthetic-only workbook: no independent or partner data is ever committed to the repository.
 using (var workbook = new XLWorkbook())

@@ -66,12 +66,15 @@ jobs:
       - uses: actions/checkout@v4
         with:
           persist-credentials: false
+          fetch-depth: 0
+      - name: Verify handoff review
+        run: python scripts/check_handoff_review.py --base 078f173df2f99e54e36e14aaf95ad2f4733423c2
       - name: Render approved research document
         shell: bash
         run: |
           mkdir -p evidence/word
           sudo apt-get update
-          sudo apt-get install -y libreoffice-writer fonts-noto-cjk poppler-utils
+          sudo apt-get install -y libreoffice-writer fonts-noto-cjk poppler-utils pandoc
           source=research/2a_synthetic/output/fairness-v2/final-delivery/Factory-Fairness-Report-ZH.docx
           test -s "$source"
           sha256sum "$source" > evidence/word/source.sha256
@@ -82,9 +85,20 @@ jobs:
           pdftoppm -r 130 -png "$pdf" evidence/word/page
           pdftotext -layout "$pdf" evidence/word/extracted.txt
           python research/acceptance-ci/inspect-pages.py
+          mkdir -p evidence/report
+          pandoc docs/T00_T11_RESEARCH_CLOSEOUT_2026_11_23.md --resource-path=docs:. -o evidence/report/T00-T11-Research-Acceptance.docx
+          libreoffice "-env:UserInstallation=file://$RUNNER_TEMP/lo-profile" --headless --convert-to pdf --outdir evidence/report evidence/report/T00-T11-Research-Acceptance.docx
+          test -s evidence/report/T00-T11-Research-Acceptance.pdf
+          pdfinfo evidence/report/T00-T11-Research-Acceptance.pdf > evidence/report/pdfinfo.txt
+          (cd evidence/report && sha256sum *.docx *.pdf *.txt > SHA256SUMS)
           (cd evidence/word && sha256sum *.pdf *.png source.sha256 *.json *.txt > SHA256SUMS)
       - uses: actions/upload-artifact@v4
         if: always()
         with:
           name: word-rendered-pages
           path: evidence/word/
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: t00-t11-research-report
+          path: evidence/report/
