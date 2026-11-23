@@ -1,3 +1,19 @@
+## 2026-11-23 正式資料庫只讀來源查核（可重現的分類結果）
+
+從唯一已連接 Supabase 專案以 SELECT 聚合 `public.project_master`（不含 deleted）並依 `project_type, history_status, source_file_name` 分組：
+- 住宅：210 筆 Approved；來源欄 `SYNTHETIC_V2_PROJECTS.csv`。
+- 廠房：126 筆 Approved；來源欄 `FACTORY_20261122_V1_TRAIN`。
+- 全部 336 筆是**合成來源**。不能因 `Approved` 就宣稱存在真實最終決標、工程師真值或獨立住宅盲測。沒有更動正式 DB。
+- 這是本輪活資料庫來源標記的唯讀查核，不等同來源 CSV 與 manifest 的原始位元組凍結，更不能替代合法獨立工程資料。
+
+## 2026-11-23 T00～T11 補測 Run #4 完成（研究隔離，原計畫仍未結案）
+
+新 [GitHub Actions Run #45115813539](https://github.com/YI-CHENLIN1204/BiddingSystem-2A/actions/runs/45115813539)，測試提交 `cf6465ef21e65456765b182ee1d7d902715f10ac`，三個 Job 全部 SUCCESS。原始 `isolated-api` Artifact [#14791179321](https://github.com/YI-CHENLIN1204/BiddingSystem-2A/actions/runs/45115813539/artifacts/14791179321) 的 **5/5 SHA256SUMS PASS**、87 筆 HTTP JSONL（85 筆 `passed=true`、0 `passed=false`、2 統計摘要）已實際下載核對。T07 **真實 multipart 合成 Excel 上傳路徑** PASS：雙工作表錯選 400、正確選表上傳 200、兩筆量價工項、比價工作表排除、Draft 不產生歷史交易、重複檔案 SHA 409。T08 新增匯入建案 `/2a-summary` HTTP n=30，p50 **28.33ms**、p95 **34.28ms**；舊 `/api/projects/{id}` 讀取 n=30，p50 **15.69ms**、p95 **19.21ms**。不是完整 KDE 估算 API 和獨立工作負載評估。T04/T09 及 Word 維持前 Run #45057125296 的 PASS。
+
+另經 Supabase 唯讀來源分組，正式資料庫現有 **210 筆住宅 Approved** 皆標記 `SYNTHETIC_V2_PROJECTS.csv`、**126 筆廠房 Approved** 皆標記 `FACTORY_20261122_V1_TRAIN`。Approved 是狀態欄而非真實性證據；這 336 案 **全部是合成來源，不得作為外部真實住宅／廠房盲測**。本輪 Google Drive/Libraries 也沒有取得具獨立最終決標量價、合法授權與人工核定真值的可用原始包，詳見 [資料適格性](T00_T11_SOURCE_ELIGIBILITY_2026_11_23.md) 及 [Run #4 原始驗證](T07_T08_RESEARCH_RUN4_2026_11_23.md)。
+
+**原 T00～T11 仍非全部 PASS**：真實跨來源標單、住宅 frozen manifest、工程師真值、真人 AB/BA、作者 B1 源碼或明確重建聲明、完整版效能驗證仍是阻擋條件；不能把已成功 CI 變造為獨立外部研究驗收。所有修改僅研究程式/交接；**正式 2A、A0、Supabase 未修改**。下一輪請集中取得這些確實缺少的外部輸入，避免重跑已成功的合成 CI。
+
 # T00～T11 獨立資料來源適格性檢查｜2026-11-23
 
 ## 目的與保密
