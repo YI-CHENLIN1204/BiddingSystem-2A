@@ -100,3 +100,12 @@ python analyze_human_crossover.py input_templates/human_time_trials_TEMPLATE.csv
 ## 結案所需外部輸入
 
 提供住宅 frozen CSV 和 manifest、具授權的去識別住宅及廠房完整決標檔（含可用時點），以及盲態工程師核定的材料、規格與異常真值。真人 AB/BA 需配對標單及不同操作人員的場次紀錄。若要聲稱忠實重現原作者，需取得其原始碼和未公開參數。正式權限或效能若列作驗收，需核准的獨立部署副本。
+
+## 最新執行證據和群數敏感度補錄
+
+[研究 Run 45118159832](https://github.com/YI-CHENLIN1204/BiddingSystem-2A/actions/runs/45118159832)，測試提交 `1ae2f6b2bb695762a738ad4af9249274f32289f5`，三 Job SUCCESS，交接守門 PASS。實際下載 API Artifact 14791959532（ZIP `d7258b9c4909ef9a02feeb1923233f63046e00a09d59a43e3aa0a3809b847771`），成員 5/5 SHA 通過。95 筆 HTTP JSONL，93 通過、0 失敗、2 統計摘要。T07 完整隔離上傳案歷史 0→2→0 與主管稽核讀回通過；T09 四種角色 401／401／403／200，隔離通過。T08 建案與兩列 Summary 各 n=30，p50／p95 為 14.78／17.99 ms 和 24.48／37.39 ms。教授版 Word/PDF Artifact 14792507357 的 11/11 成員雜湊通過，7 頁與 8 圖已檢視。驗證結果與較晚完成的群數敏感度見報告文字補錄。
+
+群數 3／4／5 的較早開工 B1 重建已輸出 468 筆逐案與 18 格摘要。70% 結構金額共同 n=17，分數 1.675／2.090／2.343，可估 19／18／18（母體各 26）。同一批合成測試的探索性分析維持預先凍結的 4 群，任何變更須用獨立資料驗證。T03 分析器正反軟體案例通過，人體實測 0。正式 2A、A0、Supabase 未修改。
+
+
+在比較程式目錄執行 `python b1_cluster_sensitivity.py <source> <earlier>/factory_b1_pairs.csv <new-group-output>` 可重現。已渲染的七頁 Word/PDF 使用 Run 45118159832 當下的本文版本，本節為其後完成的補錄。

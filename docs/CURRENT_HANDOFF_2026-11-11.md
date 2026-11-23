@@ -1,3 +1,9 @@
+## 2026-11-23 十二項研究最新驗收與群數敏感度
+
+[研究 Run 45118159832](https://github.com/YI-CHENLIN1204/BiddingSystem-2A/actions/runs/45118159832)，測試提交 `1ae2f6b2bb695762a738ad4af9249274f32289f5`，三 Job SUCCESS，交接守門 PASS。實際下載 API Artifact 14791959532（ZIP `d7258b9c4909ef9a02feeb1923233f63046e00a09d59a43e3aa0a3809b847771`），成員 5/5 SHA 通過。95 筆 HTTP JSONL，93 通過、0 失敗、2 統計摘要。T07 完整隔離上傳案歷史 0→2→0 與主管稽核讀回通過；T09 四種角色 401／401／403／200，隔離通過。T08 建案與兩列 Summary 各 n=30，p50／p95 為 14.78／17.99 ms 和 24.48／37.39 ms。教授版 Word/PDF Artifact 14792507357 的 11/11 成員雜湊通過，7 頁與 8 圖已檢視。驗證結果與較晚完成的群數敏感度見報告文字補錄。
+
+群數 3／4／5 的較早開工 B1 重建已輸出 468 筆逐案與 18 格摘要。70% 結構金額共同 n=17，分數 1.675／2.090／2.343，可估 19／18／18（母體各 26）。同一批合成測試的探索性分析維持預先凍結的 4 群，任何變更須用獨立資料驗證。T03 分析器正反軟體案例通過，人體實測 0。正式 2A、A0、Supabase 未修改。
+
 ## 2026-11-23 T07 完整隔離流程與證據封存
 
 [Run 45117875966](https://github.com/YI-CHENLIN1204/BiddingSystem-2A/actions/runs/45117875966) 三 Job SUCCESS，測試提交 `bfd8fd18e772f63100459939279880a294ec93e9`。同一上傳案兩筆人工映射，發布後兩筆有效歷史，重開歸零，主管讀回 ImportFinalBid、兩次 UpdateMapping、PublishHistoryBaseline 與 ReopenHistoryReview。T09 隔離角色矩陣仍通過。下載確認 API ZIP SHA 相符，但內部 server.log 成員雜湊因關機寫入競態不符，修正為等待程序停止再制雜湊。重跑驗證封存。Word/PDF 報告 Artifact 14792546630，11 個成員雜湊通過。T02 補 49,210 筆七種字典規模觀測的 252 組合成結構／場景分層；跨真實來源仍待。
