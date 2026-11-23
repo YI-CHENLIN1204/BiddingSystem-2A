@@ -137,6 +137,16 @@ namespace 崴正.Services
                     dataIssue.Message;
 
 
+                if (bidItem.MappingStatus == "Pending" &&
+                    bidItem.MappingIssueCode == "MAPPING_UNIT_MISMATCH")
+                {
+                    _historyDictionary ??= new SafeMaterialDictionary(SafeMaterialDictionary.Read(_context));
+                    var decision = _historyDictionary.Decide(bidItem.ItemName, bidItem.Spec, bidItem.Unit,
+                        bidItem.Qty, CanUseMaterialUnit);
+                    bidItem.MappingIssueCode = decision.Code ?? "MAPPING_REVIEW_REQUIRED";
+                    bidItem.MappingIssueMessage = decision.Message ?? "單位已修正，請核定材料對應。";
+                }
+
                 // ==============================
                 // 同步模型歷史交易
                 // ==============================

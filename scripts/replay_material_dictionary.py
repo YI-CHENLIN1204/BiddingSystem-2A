@@ -126,7 +126,28 @@ def main(source, out):
         for value in sorted({r[field] for r in qualification}, key=str):
             strata.append(dict(field=field, value=value, **compare([r for r in qualification if r[field] == value])))
     boundary = unqualified + guarded
-    result = dict(manifest_sha256=MANIFEST, legacy_terms=len(legacy), qualified_train_aliases=len(reviewed),
+    train = [r for r in all_rows if r["split"] == "train"]
+    assert len(train) == 16786 and len({r["synthetic_project_id"] for r in train}) == 126
+    draft = evaluate("train-draft-legacy-only", train, legacy)
+    quantity_candidate_ids = {materials["SYN-REBAR"], materials["SYN-CONCRETE"]}
+    scope = [r for r, source_row in zip(draft, train, strict=True)
+             if r["Before"] in quantity_candidate_ids and source_row["major_category"] == "結構體工程"
+             and source_row["unit"] == catalog[source_row["material_code"]]
+             and float(source_row["quantity"]) > 0]
+    groups_pending = Counter((r["project"], source_row["item_name"], r["spec"], r["unit"], r["Candidate"])
+                             for r, source_row in zip(qualification, targets, strict=True)
+                             if r["After"] is None and r["Code"] == "UNVERIFIED_SPEC"
+                             and r["Candidate"] is not None)
+    result = dict(manifest_sha256=MANIFEST,
+                  simulated_draft=dict(projects=126, rows=len(draft),
+                                       legacy_auto_blocked=sum(r["Before"] is not None and r["After"] is None for r in draft),
+                                       estimated_quantity_scope_before=len(scope),
+                                       estimated_quantity_scope_after=sum(r["After"] is not None for r in scope)),
+                  workflow_estimate=dict(pending_rows=sum(r["After"] is None for r in qualification),
+                                         possible_candidate_rows=sum(groups_pending.values()),
+                                         minimum_same_project_prefills=len(groups_pending),
+                                         maximum_prefill_savings=sum(groups_pending.values())-len(groups_pending),
+                                         required_confirmation_per_row=True), legacy_terms=len(legacy), qualified_train_aliases=len(reviewed),
                   frozen_legacy=compare(frozen), frozen_reviewed=compare(qualification),
                   coverage_delta_project_bootstrap_95=[samples[49], samples[1949]],
                   projects=len(groups), strata=strata, pressure={

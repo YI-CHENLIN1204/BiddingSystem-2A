@@ -1,0 +1,112 @@
+{
+  "Dictionary": [
+    {
+      "Keyword": "耐候鋼板",
+      "MaterialId": 1,
+      "UnitId": 1,
+      "IsActive": true
+    },
+    {
+      "Keyword": "耐候鋼板 | ASTM A588",
+      "MaterialId": 1,
+      "UnitId": 1,
+      "IsActive": true
+    },
+    {
+      "Keyword": "型鋼支架",
+      "MaterialId": 2,
+      "UnitId": 1,
+      "IsActive": true
+    },
+    {
+      "Keyword": "型鋼支架",
+      "MaterialId": 3,
+      "UnitId": 1,
+      "IsActive": true
+    },
+    {
+      "Keyword": "透水混凝土",
+      "MaterialId": 4,
+      "UnitId": 2,
+      "IsActive": true
+    }
+  ],
+  "Units": {
+    "kg": 1,
+    "m3": 2
+  },
+  "Rows": [
+    {
+      "Id": "supported",
+      "Name": "耐候鋼板",
+      "Spec": "ASTM A588",
+      "Unit": "kg",
+      "Quantity": 1,
+      "ExpectedAuto": 1,
+      "ExpectedCandidate": 1
+    },
+    {
+      "Id": "equivalent-width",
+      "Name": "耐候鋼板",
+      "Spec": "ＡＳＴＭ　Ａ５８８",
+      "Unit": "kg",
+      "Quantity": 1,
+      "ExpectedAuto": 1,
+      "ExpectedCandidate": 1
+    },
+    {
+      "Id": "new-grade",
+      "Name": "耐候鋼板",
+      "Spec": "ASTM A709",
+      "Unit": "kg",
+      "Quantity": 1,
+      "ExpectedAuto": null,
+      "ExpectedCandidate": 1
+    },
+    {
+      "Id": "incompatible-unit",
+      "Name": "耐候鋼板",
+      "Spec": "ASTM A588",
+      "Unit": "m3",
+      "Quantity": 1,
+      "ExpectedAuto": null,
+      "ExpectedCandidate": null
+    },
+    {
+      "Id": "ambiguous",
+      "Name": "型鋼支架",
+      "Spec": "SS400",
+      "Unit": "kg",
+      "Quantity": 1,
+      "ExpectedAuto": null,
+      "ExpectedCandidate": null
+    },
+    {
+      "Id": "legacy-repeat-a",
+      "Name": "透水混凝土",
+      "Spec": "20 MPa",
+      "Unit": "m3",
+      "Quantity": 1,
+      "ExpectedAuto": null,
+      "ExpectedCandidate": 4
+    },
+    {
+      "Id": "legacy-repeat-b",
+      "Name": "透水混凝土",
+      "Spec": "20 MPa",
+      "Unit": "m3",
+      "Quantity": 1,
+      "ExpectedAuto": null,
+      "ExpectedCandidate": 4
+    },
+    {
+      "Id": "unknown",
+      "Name": "陶瓷護角",
+      "Spec": "30 mm",
+      "Unit": "kg",
+      "Quantity": 1,
+      "ExpectedAuto": null,
+      "ExpectedCandidate": null
+    }
+  ]
+}

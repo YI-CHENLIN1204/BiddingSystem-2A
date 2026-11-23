@@ -5,6 +5,7 @@ internal static class MaterialDictionaryChecks
 {
     public static void Run()
     {
+        VerifyIndependentPanel();
         const string title = "竹節鋼筋";
         const string spec = "SD420";
         var legacy = new DictionaryMaterial(title, 1, 10, true);
@@ -38,6 +39,26 @@ internal static class MaterialDictionaryChecks
         Check(new SafeMaterialDictionary([legacy]).Decide(title, spec, "kg", 1, Compatible).Match is null, "legacy alias is only a candidate");
     }
 
+    private static void VerifyIndependentPanel()
+    {
+        byte[] contents = System.Text.Encoding.UTF8.GetBytes(File.ReadAllText(Path.Combine(AppContext.BaseDirectory, "material-alias-panel.json")).Replace("\r\n", "\n"));
+        const string expected = "9258d7c12dd9232f6b8adc404dcb2215e9b655dd66b1d29b9feecc0d430a084e";
+        if (!Convert.ToHexString(System.Security.Cryptography.SHA256.HashData(contents))
+                .Equals(expected, StringComparison.OrdinalIgnoreCase))
+            throw new InvalidOperationException("independent alias panel digest mismatch");
+        var panel = JsonSerializer.Deserialize<ReplayInput>(contents)!;
+        var matcher = new SafeMaterialDictionary(panel.Dictionary);
+        bool Compatible(string? unit, int id) => panel.Units.GetValueOrDefault(unit ?? "") == id;
+        foreach (var row in panel.Rows)
+        {
+            var actual = matcher.Decide(row.Name, row.Spec, row.Unit, row.Quantity, Compatible);
+            var candidate = matcher.SuggestForReview(row.Name, row.Spec, row.Unit, row.Quantity, Compatible);
+            if (actual.Match?.MaterialId != row.ExpectedAuto || candidate != row.ExpectedCandidate)
+                throw new InvalidOperationException("independent alias panel: " + row.Id);
+            Console.WriteLine("PASS: independent alias panel: " + row.Id);
+        }
+    }
+
     public static void Replay(string inputPath, string outputPath)
     {
         var input = JsonSerializer.Deserialize<ReplayInput>(File.ReadAllText(inputPath))!;
@@ -49,11 +70,16 @@ internal static class MaterialDictionaryChecks
                 || row.Spec.Contains(x.Keyword, StringComparison.OrdinalIgnoreCase));
             var next = dictionary.Decide(row.Name, row.Spec, row.Unit, row.Quantity,
                 (unit, id) => input.Units.GetValueOrDefault(unit ?? "") == id);
-            return new { row.Id, Before = old?.MaterialId, After = next.Match?.MaterialId, next.Code };
+            int? candidate = next.Code == "UNVERIFIED_SPEC"
+                ? dictionary.SuggestForReview(row.Name, row.Spec, row.Unit, row.Quantity,
+                    (unit, id) => input.Units.GetValueOrDefault(unit ?? "") == id)
+                : null;
+            return new { row.Id, Before = old?.MaterialId, After = next.Match?.MaterialId, next.Code, Candidate = candidate };
         }).ToArray();
         File.WriteAllText(outputPath, JsonSerializer.Serialize(records));
     }
 
     private sealed record ReplayInput(DictionaryMaterial[] Dictionary, ReplayRow[] Rows, Dictionary<string, int> Units);
-    private sealed record ReplayRow(string Id, string Name, string Spec, string Unit, decimal? Quantity);
+    private sealed record ReplayRow(string Id, string Name, string Spec, string Unit, decimal? Quantity,
+        int? ExpectedAuto = null, int? ExpectedCandidate = null);
 }

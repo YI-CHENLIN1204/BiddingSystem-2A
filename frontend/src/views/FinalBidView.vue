@@ -11,6 +11,8 @@ interface BidItem {
   finalBidItemId: number; category1?: string | null; category2?: string | null; category3?: string | null
   majorCategoryOverride?: string | null; effectiveMajorCategory?: string | null
   contributesStructuralPrice?: boolean; contributesQuantityHistory?: boolean; quantityHistoryCategory?: string | null
+  projectId: number; sourceFileName?: string | null; sheetName?: string | null
+  draftAutoNeedsReview?: boolean; reviewCandidateMaterialId?: number | null
   itemName: string; spec?: string | null; unit?: string | null
   qty?: number | null; unitPrice?: number | null; materialId?: number | null
   materialName?: string | null; materialCategory?: string | null; mappingStatus: string; mappingIssueMessage?: string | null
@@ -288,6 +290,28 @@ async function updateMajorCategory(item: BidItem, event: Event) {
   }
 }
 
+function reviewCandidate(item: BidItem) {
+  return materialOptions.value.find(option => option.materialId === item.reviewCandidateMaterialId)
+}
+
+function reviewGroup(item: BidItem) {
+  if (!item.reviewCandidateMaterialId || !item.sourceFileName || !item.sheetName ||
+      !item.spec || !item.unit || !projectId.value) return [item]
+  return items.value.filter(row => !row.isIgnored && row.projectId === item.projectId &&
+    row.sourceFileName === item.sourceFileName && row.sheetName === item.sheetName &&
+    row.itemName === item.itemName && row.spec === item.spec && row.unit === item.unit &&
+    row.reviewCandidateMaterialId === item.reviewCandidateMaterialId)
+}
+
+function stageReviewGroup(item: BidItem) {
+  const candidate = reviewCandidate(item)
+  if (!candidate || !candidate.category) return
+  for (const row of reviewGroup(item)) {
+    selectedCategory.value[row.finalBidItemId] = candidate.category
+    selectedMaterial.value[row.finalBidItemId] = candidate.materialId
+  }
+}
+
 async function updateMapping(item: BidItem) {
   const materialId = selectedMaterial.value[item.finalBidItemId]
   if (materialId === '__NEW__') {
@@ -514,7 +538,7 @@ watch([status, majorCategoryFilter, issueCode, category, unit], resetAndLoad)
         <div class="d-flex justify-content-between align-items-center mb-3"><div><h4 class="mb-1">標單審查與材料對應</h4><div class="text-muted small">先確認工程大項，再檢查鋼筋／混凝土材料與單位；原始分類永遠保留。</div></div><div class="d-flex align-items-center gap-3"><RouterLink v-if="projectId" :to="`/projects/${projectId}`" class="btn btn-sm btn-outline-primary">查看 2A 歷史基準摘要</RouterLink><div class="text-muted small">共 {{ totalCount }} 筆</div></div></div>
         <div class="card mb-3"><div class="card-body"><div class="mb-3"><input v-model="search" class="form-control" placeholder="搜尋工項名稱、規格、標準材料或建案名稱" /></div><div class="row g-2">
           <div class="col-md-3"><label class="form-label small fw-bold">對應狀態</label><select v-model="status" class="form-select"><option value="Pending">未對應</option><option value="Auto">自動對應</option><option value="Manual">手動對應</option><option value="Ignored">已忽略</option><option value="All">全部</option></select></div>
-          <div class="col-md-3"><label class="form-label small fw-bold">待處理原因</label><select v-model="issueCode" class="form-select"><option value="All">全部</option><option value="INVALID_QUANTITY">數量無效</option><option value="INVALID_UNIT_PRICE">單價無效</option><option value="UNIT_MISMATCH">單位不符</option></select></div>
+          <div class="col-md-3"><label class="form-label small fw-bold">待處理原因</label><select v-model="issueCode" class="form-select" @change="issueCode === 'DRAFT_AUTO_REVIEW' && (status = 'Auto')"><option value="All">全部</option><option value="INVALID_QUANTITY">數量無效</option><option value="INVALID_UNIT_PRICE">單價無效</option><option value="UNIT_MISMATCH">單位不符</option><option value="DRAFT_AUTO_REVIEW">草稿舊 Auto 待覆核（搭配全部或 Auto）</option></select></div>
           <div class="col-md-3"><label class="form-label small fw-bold">材料分類</label><select v-model="category" class="form-select"><option value="All">全部</option><option v-for="entry in filters.categories" :key="entry" :value="entry">{{ entry }}</option></select></div>
           <div class="col-md-3"><label class="form-label small fw-bold">單位</label><select v-model="unit" class="form-select"><option value="All">全部</option><option v-for="entry in filters.units" :key="entry" :value="entry">{{ entry }}</option></select></div>
         </div></div></div>
@@ -528,6 +552,13 @@ watch([status, majorCategoryFilter, issueCode, category, unit], resetAndLoad)
           <div v-if="!item.isIgnored" class="row g-2 mb-3"><div class="col-md-6"><label class="form-label small fw-bold">工程大項</label><select class="form-select" :value="item.majorCategoryOverride ?? ''" :disabled="busyId === item.finalBidItemId" @change="updateMajorCategory(item, $event)"><option value="">使用原始分類（{{ item.effectiveMajorCategory || '未辨識' }}）</option><option v-for="entry in majorCategories" :key="entry" :value="entry">{{ entry }}</option></select></div><div class="col-md-6 d-flex align-items-end"><div class="small text-muted">人工指定只影響 2A 判定，原始 Category1 / 2 / 3 不會被覆蓋。</div></div></div>
           <div class="d-flex justify-content-between align-items-center gap-2 mb-2 flex-wrap"><div class="small"><strong>目前標準材料：</strong><span v-if="item.materialName">{{ item.materialName }}</span><span v-else class="text-warning">尚未對應</span></div><div class="d-flex gap-2"><button class="btn btn-sm btn-outline-secondary" type="button" @click="openEdit(item)">修正標單資料</button><button class="btn btn-sm btn-outline-primary" type="button" :disabled="busyId === item.finalBidItemId" @click="excludeQuantityHistory(item)">{{ item.isIgnored ? "恢復價格／排除數量歷史" : "僅排除數量歷史" }}</button><button v-if="!item.isIgnored" class="btn btn-sm btn-outline-danger" type="button" @click="ignore(item)">忽略</button></div></div>
           <p v-if="!item.isIgnored && item.mappingIssueMessage" class="small text-warning-emphasis mb-2">{{ item.mappingIssueMessage }}</p>
+          <p v-if="item.draftAutoNeedsReview" class="small text-warning-emphasis mb-2">此草稿需重新覆核材料數量資格。</p>
+          <div v-if="reviewCandidate(item)" class="small mb-2">
+            <span>未核定候選：{{ reviewCandidate(item)?.materialName }}</span>
+            <button type="button" class="btn btn-sm btn-outline-secondary ms-2" @click="stageReviewGroup(item)">
+              帶入本頁同來源候選（{{ reviewGroup(item).length }} 筆，逐筆核定）
+            </button>
+          </div>
           <div v-if="!item.isIgnored" class="row g-2"><div class="col-md-4"><label class="form-label small fw-bold">材料分類</label><select v-model="selectedCategory[item.finalBidItemId]" class="form-select" @change="changeCategory(item)"><option value="">請選擇材料分類</option><option v-for="entry in filters.categories" :key="entry" :value="entry">{{ entry }}</option></select></div><div class="col-md-5"><label class="form-label small fw-bold">標準材料</label><select v-model="selectedMaterial[item.finalBidItemId]" class="form-select" :disabled="!selectedCategory[item.finalBidItemId]"><option :value="null">請選擇標準材料</option><option v-for="material in materialsFor(item)" :key="material.materialId" :value="material.materialId">{{ material.materialName }} ({{ material.unitName }})</option><option value="__NEW__">＋ 新增標準材料</option></select></div><div class="col-md-3"><label class="form-label small fw-bold">&nbsp;</label><button class="btn btn-outline-primary w-100" type="button" :disabled="busyId === item.finalBidItemId" @click="updateMapping(item)">{{ selectedMaterial[item.finalBidItemId] === '__NEW__' ? '新增標準材料' : item.mappingStatus === 'Pending' ? '人工對應' : '修改對應' }}</button></div></div>
         </div></article>
         <div class="d-flex justify-content-between align-items-center mt-3"><button class="btn btn-outline-secondary btn-sm" :disabled="page <= 1" @click="loadItems(page - 1)">上一頁</button><div class="text-muted small">第 {{ page }} / {{ totalPages }} 頁</div><button class="btn btn-outline-secondary btn-sm" :disabled="page >= totalPages" @click="loadItems(page + 1)">下一頁</button></div>

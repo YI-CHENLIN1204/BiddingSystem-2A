@@ -1,3 +1,4 @@
+using System.Text.Json;
 using ClosedXML.Excel;
 using Microsoft.EntityFrameworkCore;
 using 崴正.Data;
@@ -34,9 +35,13 @@ internal static class MaterialDictionaryPostgres
         var first = Request("first", 2, "t");
         var result = importer.Import(first, actor);
         Check(result.Success, $"first import: {result.ErrorMessage}");
+        var query = new FinalBidQueryService(db, new UnitConversionService(db));
         var firstRow = await db.FinalBidItems.SingleAsync();
         int projectId = firstRow.ProjectMasterId;
         Check(firstRow.MappingStatus == "Pending" && firstRow.Amount == 4000, "legacy alias pending; original price retained");
+        Check(Items(query, firstRow.ProjectMasterId, "Pending", null)[0]
+            .GetProperty("reviewCandidateMaterialId").GetInt32() == steel.MaterialId,
+            "unverified legacy alias appears as a read-only candidate");
         Check(!importer.Import(first, actor).Success, "duplicate file is rejected");
         Check(mapping.UpdateMaterialMapping(firstRow.FinalBidItemId, steel.MaterialId, actor).Success, "manual review and alias learning");
 
@@ -60,10 +65,19 @@ internal static class MaterialDictionaryPostgres
         Check(history.UpdateMajorCategoryOverride(secondRow.FinalBidItemId, "結構體工程", actor).Success &&
               history.CanBecomeHistoricalTransaction(secondRow),
             "classified Draft Auto is eligible before a conflicting confirmation");
-        Check(importer.Import(Request("wrong-unit", 4, "m3"), actor).Success, "incompatible unit import retained");
+        var badImport = importer.Import(Request("wrong-unit", 4, "m3"), actor);
+        Check(badImport.Success && JsonSerializer.SerializeToElement(badImport.Data)
+            .GetProperty("unitMismatchCount").GetInt32() == 1, "import reports one incompatible unit");
         var badRow = await db.FinalBidItems.OrderBy(x => x.FinalBidItemId).LastAsync();
         Check(badRow.MappingIssueCode == "MAPPING_UNIT_MISMATCH" && badRow.Amount == 8000 &&
             !history.CanBecomeHistoricalTransaction(badRow), "unit mismatch blocks quantity history and retains amount");
+        var mismatches = Items(query, badRow.ProjectMasterId, "Pending", "UNIT_MISMATCH");
+        Check(mismatches.GetArrayLength() == 1 &&
+              mismatches[0].GetProperty("materialId").ValueKind == JsonValueKind.Null &&
+              mismatches[0].GetProperty("unitMismatch").GetBoolean() &&
+              JsonSerializer.SerializeToElement(query.GetMappingSummary(badRow.ProjectMasterId).Data)
+                  .GetProperty("unitMismatchCount").GetInt32() == 1,
+              "unit mismatch totals and filtered Pending list agree");
         Check(history.UpdateMajorCategoryOverride(badRow.FinalBidItemId, "結構體工程", actor).Success,
             "reviewer confirms the price category without confirming quantity");
         Check((await projects.PublishHistoryAsync(badRow.ProjectMasterId, actor)).Success &&
@@ -72,6 +86,11 @@ internal static class MaterialDictionaryPostgres
         Check(mapping.UpdateMaterialMapping(firstRow.FinalBidItemId, alternate.MaterialId, actor).Success, "record conflicting manual review");
         Check(await db.ItemDictionaries.CountAsync(x => x.Keyword.Contains("|")) == 2,
             "conflict keeps both material IDs");
+        var review = Items(query, secondRow.ProjectMasterId, "Auto", "DRAFT_AUTO_REVIEW");
+        Check(review.GetArrayLength() == 1 && review[0].GetProperty("draftAutoNeedsReview").GetBoolean() &&
+              !review[0].GetProperty("contributesQuantityHistory").GetBoolean() &&
+              review[0].GetProperty("reviewCandidateMaterialId").ValueKind == JsonValueKind.Null,
+            "stale Draft Auto appears in review with no ambiguous candidate");
         var freshHistory = new FinalBidService(db, new UnitConversionService(db), audit);
         Check(!freshHistory.CanBecomeHistoricalTransaction(secondRow), "existing Draft Auto becomes ineligible after conflict");
         Check(importer.Import(Request("conflict", 5, "kg"), actor).Success, "import after conflicting review");
@@ -83,6 +102,10 @@ internal static class MaterialDictionaryPostgres
               actions.Count(x => x == "ReopenHistoryReview") == 1 &&
               actions.Count(x => x == "UpdateMapping") == 2, "audit records each distinct review, publish and reopen");
     }
+
+    private static JsonElement Items(FinalBidQueryService query, int project, string status, string? issue) =>
+        JsonSerializer.SerializeToElement(query.GetMappingItems(project, status, null, issue,
+            null, null, null, 1, 50).Data).GetProperty("items");
 
     private static FinalBidImportRequest Request(string name, int qty, string unit)
     {

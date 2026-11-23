@@ -53,15 +53,8 @@ public sealed class SafeMaterialDictionary
         if (key is null)
             return new(null, "MAPPING_CONTEXT_REQUIRED", "工項名稱或規格不足，請人工對應。");
 
-        string name = Normalize(itemName);
-        string specification = Normalize(spec);
         var exact = _terms[key].ToList();
-        var candidateIds = _terms
-            .Where(term => !term.Key.Contains('|') && Informative(term.Key) &&
-                (name.Contains(term.Key, StringComparison.Ordinal) ||
-                 specification.Contains(term.Key, StringComparison.Ordinal)))
-            .SelectMany(term => term)
-            .Concat(exact)
+        var candidateIds = Candidates(itemName, spec, key)
             .Select(entry => entry.MaterialId).Distinct().Take(2).Count();
 
         if (candidateIds > 1)
@@ -82,5 +75,25 @@ public sealed class SafeMaterialDictionary
             return new(null, "MAPPING_UNIT_MISMATCH", "標單單位空白、未定義或無法換算至標準材料單位。");
 
         return new(material, null, null);
+    }
+
+    public int? SuggestForReview(string? name, string? spec, string? unit, decimal? quantity,
+        Func<string?, int, bool> canConvert)
+    {
+        string? key = QualifiedKeyword(name, spec);
+        if (key is null || quantity is null or <= 0) return null;
+        var candidates = Candidates(name, spec, key).DistinctBy(x => x.MaterialId).Take(2).ToArray();
+        return candidates is [var candidate] && candidate.IsActive && canConvert(unit, candidate.UnitId)
+            ? candidate.MaterialId : null;
+    }
+
+    private IEnumerable<DictionaryMaterial> Candidates(string? itemName, string? spec, string key)
+    {
+        string name = Normalize(itemName);
+        string specification = Normalize(spec);
+        return _terms.Where(term => !term.Key.Contains('|') && Informative(term.Key) &&
+                (name.Contains(term.Key, StringComparison.Ordinal) ||
+                 specification.Contains(term.Key, StringComparison.Ordinal)))
+            .SelectMany(term => term).Concat(_terms[key]);
     }
 }

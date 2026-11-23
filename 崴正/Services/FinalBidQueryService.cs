@@ -88,6 +88,9 @@ namespace 崴正.Services
                     x.MappingStatus == status);
             }
 
+            SafeMaterialDictionary? dictionary = null;
+            SafeMaterialDictionary Dictionary() => dictionary ??= new SafeMaterialDictionary(SafeMaterialDictionary.Read(_context));
+
             if (!string.IsNullOrWhiteSpace(issueCode) &&
                 !string.Equals(
                     issueCode,
@@ -110,39 +113,21 @@ namespace 崴正.Services
 
                     case "UNIT_MISMATCH":
                     {
-                        var candidates = query
-                            .Where(x => x.MaterialId.HasValue)
-                            .Select(x => new
-                            {
-                                x.FinalBidItemId,
-                                x.Unit,
-
-                                MaterialUnitId =
-                                    x.Material != null
-                                        ? (int?)x.Material.UnitId
-                                        : null
-                            })
-                            .ToList();
-
-                        var unitMismatchIds = candidates
-                            .Where(x =>
-                                x.MaterialUnitId.HasValue &&
-                                !_unitConversionService.CanConvert(
-                                    x.Unit,
-                                    x.MaterialUnitId.Value
-                                )
-                            )
-                            .Select(x =>
-                                x.FinalBidItemId
-                            )
-                            .ToList();
-
-                        query = query.Where(x =>
-                            unitMismatchIds.Contains(
-                                x.FinalBidItemId
-                            )
-                        );
-
+                        var ids = UnitMismatches(query);
+                        query = query.Where(x => ids.Contains(x.FinalBidItemId));
+                        break;
+                    }
+                    case "DRAFT_AUTO_REVIEW":
+                    {
+                        var matcher = Dictionary();
+                        var ids = query.Where(x => !x.IsIgnored && x.MappingStatus == "Auto" &&
+                                x.ProjectMaster.HistoryStatus == "Draft")
+                            .Select(x => new { x.FinalBidItemId, x.ItemName, x.Spec, x.Unit, x.Qty, x.MaterialId })
+                            .ToList()
+                            .Where(x => matcher.Decide(x.ItemName, x.Spec, x.Unit, x.Qty,
+                                _unitConversionService.CanConvert).Match?.MaterialId != x.MaterialId)
+                            .Select(x => x.FinalBidItemId).ToArray();
+                        query = query.Where(x => ids.Contains(x.FinalBidItemId));
                         break;
                     }
 
@@ -321,6 +306,8 @@ namespace 崴正.Services
                     projectName =
                         x.ProjectMaster.ProjectName,
 
+                    isDraft = x.ProjectMaster.HistoryStatus == "Draft",
+
                     sourceFileName =
                         x.SourceFileName,
 
@@ -413,8 +400,14 @@ namespace 崴正.Services
                 .ToList();
 
             var items = rawItems
-                .Select(x => new
+                .Select(x =>
                 {
+                    var decision = x.isDraft && !x.isIgnored && x.mappingStatus == "Auto"
+                        ? Dictionary().Decide(x.itemName, x.spec, x.unit, x.qty, _unitConversionService.CanConvert)
+                        : null;
+                    bool needsReview = decision is not null && decision.Match?.MaterialId != x.materialId;
+                    return new
+                    {
                     x.finalBidItemId,
                     x.projectId,
                     x.projectName,
@@ -463,7 +456,7 @@ namespace 崴正.Services
                         ),
 
                     contributesQuantityHistory =
-                        !x.isIgnored &&
+                        !needsReview && !x.isIgnored &&
                         string.Equals(
                             TwoAScopePolicy
                                 .ResolveEffectiveMajorCategory(
@@ -496,7 +489,7 @@ namespace 崴正.Services
                         ),
 
                     quantityHistoryCategory =
-                        !x.isIgnored &&
+                        !needsReview && !x.isIgnored &&
                         string.Equals(
                             TwoAScopePolicy
                                 .ResolveEffectiveMajorCategory(
@@ -544,7 +537,15 @@ namespace 崴正.Services
                     x.materialUnit,
                     x.mappingStatus,
                     x.mappingIssueCode,
-                    x.mappingIssueMessage,
+                    mappingIssueMessage = needsReview
+                        ? decision!.Message ?? "目前核定材料與舊自動對應不同，請逐筆覆核。"
+                        : x.mappingIssueMessage,
+                    draftAutoNeedsReview = needsReview,
+                    reviewCandidateMaterialId = x.isDraft && !x.isIgnored &&
+                        (needsReview || (x.mappingStatus == "Pending" &&
+                            x.mappingIssueCode is "UNVERIFIED_SPEC" or "NO_DICTIONARY_MATCH" or "MAPPING_REVIEW_REQUIRED"))
+                        ? Dictionary().SuggestForReview(x.itemName, x.spec, x.unit, x.qty,
+                            _unitConversionService.CanConvert) : null,
                     x.dataIssueCode,
                     x.dataIssueMessage,
                     x.matchedKeyword,
@@ -558,13 +559,8 @@ namespace 崴正.Services
                         !x.unitPrice.HasValue ||
                         x.unitPrice.Value <= 0,
 
-                    unitMismatch =
-                        x.materialId.HasValue &&
-                        x.materialUnitId.HasValue &&
-                        !_unitConversionService.CanConvert(
-                            x.unit,
-                            x.materialUnitId.Value
-                        )
+                    unitMismatch = HasUnitMismatch(x.mappingIssueCode, x.unit, x.materialUnitId)
+                    };
                 })
                 .ToList();
 
@@ -636,29 +632,7 @@ namespace 崴正.Services
                     !x.UnitPrice.HasValue ||
                     x.UnitPrice.Value <= 0);
 
-            var unitCandidates =
-                activeQuery
-                    .Where(x =>
-                        x.MaterialId.HasValue)
-                    .Select(x => new
-                    {
-                        x.Unit,
-
-                        MaterialUnitId =
-                            x.Material != null
-                                ? (int?)x.Material.UnitId
-                                : null
-                    })
-                    .ToList();
-
-                    int unitMismatchCount =
-                        unitCandidates.Count(x =>
-                            x.MaterialUnitId.HasValue &&
-                            !_unitConversionService.CanConvert(
-                                x.Unit,
-                                x.MaterialUnitId.Value
-                            )
-                        );
+            int unitMismatchCount = UnitMismatches(activeQuery).Length;
 
             return ServiceResult.Ok(new
             {
@@ -672,6 +646,18 @@ namespace 崴正.Services
                 ignoredCount
             });
         }
+
+        private bool HasUnitMismatch(string? mappingIssueCode, string? unit, int? materialUnitId) =>
+            mappingIssueCode == "MAPPING_UNIT_MISMATCH" ||
+            (materialUnitId.HasValue && !_unitConversionService.CanConvert(unit, materialUnitId.Value));
+
+        private long[] UnitMismatches(IQueryable<崴正.Models.FinalBidItem> query) =>
+            query.Where(x => x.MappingIssueCode == "MAPPING_UNIT_MISMATCH" || x.MaterialId.HasValue)
+                .Select(x => new { x.FinalBidItemId, x.MappingIssueCode, x.Unit,
+                    MaterialUnitId = x.Material != null ? (int?)x.Material.UnitId : null })
+                .ToList()
+                .Where(x => HasUnitMismatch(x.MappingIssueCode, x.Unit, x.MaterialUnitId))
+                .Select(x => x.FinalBidItemId).ToArray();
 
         public ServiceResult GetMappingFilterOptions(
             int? projectId)
