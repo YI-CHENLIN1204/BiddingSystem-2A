@@ -12,6 +12,7 @@ interface BidItem {
   majorCategoryOverride?: string | null; effectiveMajorCategory?: string | null
   contributesStructuralPrice?: boolean; contributesQuantityHistory?: boolean; quantityHistoryCategory?: string | null
   projectId: number; sourceFileName?: string | null; sheetName?: string | null
+  explicitSupplyAndInstall?: boolean
   draftAutoNeedsReview?: boolean; reviewCandidateMaterialId?: number | null
   itemName: string; spec?: string | null; unit?: string | null
   qty?: number | null; unitPrice?: number | null; materialId?: number | null
@@ -552,6 +553,9 @@ watch([status, majorCategoryFilter, issueCode, category, unit], resetAndLoad)
           <div v-if="!item.isIgnored" class="row g-2 mb-3"><div class="col-md-6"><label class="form-label small fw-bold">工程大項</label><select class="form-select" :value="item.majorCategoryOverride ?? ''" :disabled="busyId === item.finalBidItemId" @change="updateMajorCategory(item, $event)"><option value="">使用原始分類（{{ item.effectiveMajorCategory || '未辨識' }}）</option><option v-for="entry in majorCategories" :key="entry" :value="entry">{{ entry }}</option></select></div><div class="col-md-6 d-flex align-items-end"><div class="small text-muted">人工指定只影響 2A 判定，原始 Category1 / 2 / 3 不會被覆蓋。</div></div></div>
           <div class="d-flex justify-content-between align-items-center gap-2 mb-2 flex-wrap"><div class="small"><strong>目前標準材料：</strong><span v-if="item.materialName">{{ item.materialName }}</span><span v-else class="text-warning">尚未對應</span></div><div class="d-flex gap-2"><button class="btn btn-sm btn-outline-secondary" type="button" @click="openEdit(item)">修正標單資料</button><button class="btn btn-sm btn-outline-primary" type="button" :disabled="busyId === item.finalBidItemId" @click="excludeQuantityHistory(item)">{{ item.isIgnored ? "恢復價格／排除數量歷史" : "僅排除數量歷史" }}</button><button v-if="!item.isIgnored" class="btn btn-sm btn-outline-danger" type="button" @click="ignore(item)">忽略</button></div></div>
           <p v-if="!item.isIgnored && item.mappingIssueMessage" class="small text-warning-emphasis mb-2">{{ item.mappingIssueMessage }}</p>
+          <p v-if="item.explicitSupplyAndInstall && !item.isIgnored" class="small text-warning-emphasis mb-2">
+            供料施工工項不納入純材料數量。工程金額依原分類及價款條件處理。
+          </p>
           <p v-if="item.draftAutoNeedsReview" class="small text-warning-emphasis mb-2">此草稿需重新覆核材料數量資格。</p>
           <div v-if="reviewCandidate(item)" class="small mb-2">
             <span>未核定候選：{{ reviewCandidate(item)?.materialName }}</span>

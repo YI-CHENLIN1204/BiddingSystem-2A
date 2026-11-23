@@ -24,6 +24,13 @@ def main(source, out):
         assert hashlib.sha256((source / name).read_bytes()).hexdigest() == digest, name
 
     all_rows = read(source, "project_boq_rows.csv")
+    # Frozen specs embed generated scenario AND the truth token. Remove both from
+    # the strict experiment. The proxy sensitivity retains only the scenario.
+    def masked_spec(row, keep_scenario=False):
+        parts = row["spec"].split("/")
+        if len(parts) == 3 and parts[0] == "合成情境":
+            return parts[1] if keep_scenario else ""
+        return row["spec"]
     catalog = {r["material_code"]: r["unit"] for r in read(source, "material_catalog.csv")}
     materials = {code: i for i, code in enumerate(sorted(catalog), 1)}
     units = {unit: i for i, unit in enumerate(sorted(set(catalog.values())), 1)}
@@ -34,11 +41,13 @@ def main(source, out):
             continue
         name, spec, code = (row[k].strip() for k in ("item_name", "spec", "material_code"))
         legacy.add((name, code))
-        qualified[name + " | " + spec].add((code, row["price_scope"]))
+        qualified[name + " | " + masked_spec(row, True)].add((code, row["price_scope"], row["synthetic_project_id"]))
     # Simulate confirmed exact aliases with unambiguous material-only train records.
     # The generated specification strings are synthetic, with no external approval implied.
-    reviewed = {(key, code) for key, labels in qualified.items()
-                if len(labels) == 1 for code, scope in labels if scope == "MaterialOnly"}
+    reviewed = {(key, next(iter(labels))[0]) for key, labels in qualified.items()
+                if len({(code, scope) for code, scope, _ in labels}) == 1
+                and next(iter(labels))[1] == "MaterialOnly"
+                and len({source_id for _, _, source_id in labels}) >= 2}
     targets = [r for r in all_rows if r["split"] == "test" and r["synthetic_project_id"] != EXCLUDED]
     assert len(targets) == 3386
     out.mkdir(parents=True, exist_ok=False)
@@ -51,7 +60,8 @@ def main(source, out):
                             "UnitId": units[catalog[code]], "IsActive": True}
                            for key, code in sorted(terms)],
             "Rows": [{"Id": str(i), "Name": r["item_name"], "Spec": r["spec"], "Unit": r["unit"],
-                      "Quantity": float(r["quantity"])} for i, r in enumerate(examples)],
+                      "Quantity": float(r["quantity"]), "Category": r["major_category"],
+                      "Amount": float(r["amount"]), "UnitPrice": float(r["unit_price"])} for i, r in enumerate(examples)],
             "Units": units,
         }
         request_path, result_path = (out / f"{label}-{suffix}.json" for suffix in ("input", "result"))
@@ -78,7 +88,7 @@ def main(source, out):
     def summarize(rows, key):
         n = len(rows)
         auto = sum(r[key] is not None for r in rows)
-        correct = sum(r[key] == r["truth"] for r in rows)
+        correct = sum(r[key] == r["truth"] and r["scope"] == "MaterialOnly" for r in rows)
         return dict(n=n, auto=auto, correct=correct, wrong_auto=auto-correct,
                     pending=n-auto, precision=correct/auto if auto else None,
                     coverage=auto/n, review_rate=(n-auto)/n)
@@ -88,10 +98,12 @@ def main(source, out):
                     legal_auto_to_pending=sum(r["Before"] == r["truth"] and r["After"] is None for r in rows))
 
     legacy_names = {name for name, _ in legacy}
-    frozen = evaluate("frozen-legacy", targets, legacy)
-    qualification = evaluate("frozen-reviewed", targets, legacy | reviewed)
+    strict_targets = [dict(r, spec=masked_spec(r)) for r in targets]
+    proxy_targets = [dict(r, spec=masked_spec(r, True)) for r in targets]
+    frozen = evaluate("frozen-strict", strict_targets, legacy | reviewed)
+    qualification = evaluate("frozen-scenario-proxy", proxy_targets, legacy | reviewed)
     # Start from held-out material-only rows with train-confirmed qualifiers.
-    controls = [r for r in targets if r["material_code"] in {"SYN-REBAR", "SYN-CONCRETE"}
+    controls = [r for r in proxy_targets if r["material_code"] in {"SYN-REBAR", "SYN-CONCRETE"}
                 and (r["item_name"] + " | " + r["spec"], r["material_code"]) in reviewed][:156]
     assert len(controls) == 156
     def alternate_material(row):
@@ -128,7 +140,7 @@ def main(source, out):
     boundary = unqualified + guarded
     train = [r for r in all_rows if r["split"] == "train"]
     assert len(train) == 16786 and len({r["synthetic_project_id"] for r in train}) == 126
-    draft = evaluate("train-draft-legacy-only", train, legacy)
+    draft = evaluate("train-draft-legacy-only", [dict(r, spec=masked_spec(r)) for r in train], legacy)
     quantity_candidate_ids = {materials["SYN-REBAR"], materials["SYN-CONCRETE"]}
     scope = [r for r, source_row in zip(draft, train, strict=True)
              if r["Before"] in quantity_candidate_ids and source_row["major_category"] == "結構體工程"
@@ -138,7 +150,23 @@ def main(source, out):
                              for r, source_row in zip(qualification, targets, strict=True)
                              if r["After"] is None and r["Code"] == "UNVERIFIED_SPEC"
                              and r["Candidate"] is not None)
+    def by_scope(rows):
+        result = {}
+        for scope_name in ("MaterialOnly", "SupplyAndInstall"):
+            subset = [r for r in rows if r["scope"] == scope_name]
+            after = summarize(subset, "After")
+            after.update(price_eligible=sum(r["PriceEligible"] for r in subset),
+                         price_eligible_rate=sum(r["PriceEligible"] for r in subset)/len(subset),
+                         explicit_composite=sum(r["ExplicitComposite"] for r in subset))
+            if scope_name == "SupplyAndInstall":
+                after["quantity_exclusion_rate"] = after["pending"]/len(subset)
+                after["wrong_auto"] = after["auto"]
+            result[scope_name] = after
+        return result
     result = dict(manifest_sha256=MANIFEST,
+                  recorded_round2=dict(n=3386, safe_auto=207, material_only_n=207, composite_n=3179),
+                  label_masked_strict=by_scope(frozen),
+                  label_masked_scenario_sensitivity=by_scope(qualification),
                   simulated_draft=dict(projects=126, rows=len(draft),
                                        legacy_auto_blocked=sum(r["Before"] is not None and r["After"] is None for r in draft),
                                        estimated_quantity_scope_before=len(scope),

@@ -101,25 +101,67 @@ internal static class MaterialDictionaryPostgres
         Check(actions.Count(x => x == "PublishHistoryBaseline") == 2 &&
               actions.Count(x => x == "ReopenHistoryReview") == 1 &&
               actions.Count(x => x == "UpdateMapping") == 2, "audit records each distinct review, publish and reopen");
+
+        var supplyImport = importer.Import(Request("composite", 6, "kg", "竹節鋼筋供料及施工"), actor);
+        Check(supplyImport.Success, "import explicit structural supply and install");
+        var supply = await db.FinalBidItems.OrderBy(x => x.FinalBidItemId).LastAsync();
+        Check(supply.MappingStatus == "Pending" && supply.MappingIssueCode == "COMPOSITE_QUANTITY_EXCLUDED",
+            "visible composite cannot become Auto");
+        Check(history.UpdateMajorCategoryOverride(supply.FinalBidItemId, "結構體工程", actor).Success &&
+              mapping.UpdateMaterialMapping(supply.FinalBidItemId, steel.MaterialId, actor).Success,
+            "manual mapping of composite leaves quantity scope excluded");
+        var priceRow = Items(query, supply.ProjectMasterId, "Manual", null)[0];
+        Check(priceRow.GetProperty("explicitSupplyAndInstall").GetBoolean() &&
+              priceRow.GetProperty("contributesStructuralPrice").GetBoolean() &&
+              !priceRow.GetProperty("contributesQuantityHistory").GetBoolean(),
+            "read-only list distinguishes composite price from quantity");
+        Check((await projects.PublishHistoryAsync(supply.ProjectMasterId, actor)).Success &&
+              !await db.HistoricalTransactions.AnyAsync(x => x.FinalBidItemId == supply.FinalBidItemId && !x.IsDeleted),
+            "composite publishes structural price without material quantity");
+
+        db.ItemDictionaries.Add(new ItemDictionary { Keyword = "盤元鋼筋", Material_Id = steel.MaterialId });
+        await db.SaveChangesAsync();
+        Check(importer.Import(Request("review-group", 7, "kg", "盤元鋼筋", ["SD420", "SD420", "SD490"]), actor).Success,
+            "import repeated complete keys and one different specification");
+        var groupedProject = await db.ProjectMasters.SingleAsync(x => x.ProjectName == "review-group");
+        var group = Items(query, groupedProject.ProjectId, "Pending", null).EnumerateArray().ToArray();
+        var same = group.Where(x => x.GetProperty("spec").GetString() == "SD420").ToArray();
+        Check(group.Length == 3 && same.Length == 2 && same.All(x =>
+              x.GetProperty("reviewCandidateMaterialId").GetInt32() == steel.MaterialId),
+            "API supplies candidates with two exact source/specification peers");
+        foreach (var peer in same)
+            Check(mapping.UpdateMaterialMapping(peer.GetProperty("finalBidItemId").GetInt64(), steel.MaterialId, actor).Success,
+                "confirm candidate per row");
+        var left = Items(query, groupedProject.ProjectId, "Pending", null);
+        Check(left.GetArrayLength() == 1 && left[0].GetProperty("spec").GetString() == "SD490" &&
+              await db.AuditLogs.CountAsync(x => x.ActionType == "UpdateMapping") == 5,
+            "different specification remains Pending and confirmations have separate audits");
+
     }
 
     private static JsonElement Items(FinalBidQueryService query, int project, string status, string? issue) =>
         JsonSerializer.SerializeToElement(query.GetMappingItems(project, status, null, issue,
             null, null, null, 1, 50).Data).GetProperty("items");
 
-    private static FinalBidImportRequest Request(string name, int qty, string unit)
+    private static FinalBidImportRequest Request(string name, int qty, string unit,
+        string itemName = "竹節鋼筋", string[]? specs = null)
     {
         using var book = new XLWorkbook();
         var sheet = book.Worksheets.Add("結構體工程");
         string[] headers = ["項次", "工項名稱", "規格", "單位", "數量", "單價", "複價"];
         for (int i = 0; i < headers.Length; i++) sheet.Cell(1, i + 1).Value = headers[i];
-        sheet.Cell(2, 1).Value = "1";
-        sheet.Cell(2, 2).Value = "竹節鋼筋";
-        sheet.Cell(2, 3).Value = "SD420";
-        sheet.Cell(2, 4).Value = unit;
-        sheet.Cell(2, 5).Value = qty;
-        sheet.Cell(2, 6).Value = 2000;
-        sheet.Cell(2, 7).Value = qty * 2000;
+        specs ??= ["SD420"];
+        for (int i = 0; i < specs.Length; i++)
+        {
+            int row = i + 2;
+            sheet.Cell(row, 1).Value = (i + 1).ToString();
+            sheet.Cell(row, 2).Value = itemName;
+            sheet.Cell(row, 3).Value = specs[i];
+            sheet.Cell(row, 4).Value = unit;
+            sheet.Cell(row, 5).Value = qty;
+            sheet.Cell(row, 6).Value = 2000;
+            sheet.Cell(row, 7).Value = qty * 2000;
+        }
         using var bytes = new MemoryStream();
         book.SaveAs(bytes);
         return new FinalBidImportRequest

@@ -201,7 +201,7 @@ namespace 崴正.Services
                 .ToListAsync();
 
             var eligible = items
-                .Where(x => !TwoAScopePolicy.IsExplicitNonMaterialCharge(x.ItemName))
+                .Where(x => !TwoAScopePolicy.ExcludesMaterialQuantity(x.ItemName, x.Spec))
                 .Where(x => string.Equals(
                     TwoAScopePolicy.ResolveEffectiveMajorCategory(
                         x.MajorCategoryOverride, x.Category1, x.Category2, x.Category3),
@@ -247,7 +247,7 @@ namespace 崴正.Services
                 .ToListAsync();
 
             var blocked = items
-                .Where(x => !TwoAScopePolicy.IsExplicitNonMaterialCharge(x.ItemName))
+                .Where(x => !TwoAScopePolicy.ExcludesMaterialQuantity(x.ItemName, x.Spec))
                 .Where(x => string.Equals(
                     TwoAScopePolicy.ResolveEffectiveMajorCategory(
                         x.MajorCategoryOverride, x.Category1, x.Category2, x.Category3),
@@ -663,7 +663,7 @@ namespace 崴正.Services
                 // but missing their standalone price cannot block material baselines.
                 int structuralUnpricedItemCount =
                     structuralReviewItems.Count(x =>
-                        !TwoAScopePolicy.IsExplicitNonMaterialCharge(x.ItemName) &&
+                        !TwoAScopePolicy.ExcludesMaterialQuantity(x.ItemName, x.Spec) &&
                         TwoAScopePolicy.IsQuantityHistoryMaterial(x.Material?.MaterialName) &&
                         !(
                             x.Amount.HasValue &&
@@ -678,7 +678,7 @@ namespace 崴正.Services
 
                 int invalidQuantityBaselineCount =
                     structuralReviewItems.Count(x =>
-                        !TwoAScopePolicy.IsExplicitNonMaterialCharge(x.ItemName) &&
+                        !TwoAScopePolicy.ExcludesMaterialQuantity(x.ItemName, x.Spec) &&
                         TwoAScopePolicy
                             .IsQuantityHistoryMaterial(
                                 x.Material?.MaterialName
@@ -1520,7 +1520,7 @@ namespace 崴正.Services
             // even if a previous material match still points at rebar.
             var quantityMaterialItems = reviewEntities
                 .Where(x =>
-                    !TwoAScopePolicy.IsExplicitNonMaterialCharge(x.ItemName) &&
+                    !TwoAScopePolicy.ExcludesMaterialQuantity(x.ItemName, x.Spec) &&
                     string.Equals(
                         TwoAScopePolicy.ResolveEffectiveMajorCategory(
                             x.MajorCategoryOverride, x.Category1, x.Category2, x.Category3),
@@ -1601,7 +1601,7 @@ namespace 崴正.Services
             int materialUnpricedItemCount =
                 reviewEntities.Count(x =>
                     !x.IsIgnored &&
-                    !TwoAScopePolicy.IsExplicitNonMaterialCharge(x.ItemName) &&
+                    !TwoAScopePolicy.ExcludesMaterialQuantity(x.ItemName, x.Spec) &&
                     string.Equals(
                         TwoAScopePolicy.ResolveEffectiveMajorCategory(
                             x.MajorCategoryOverride, x.Category1, x.Category2, x.Category3),

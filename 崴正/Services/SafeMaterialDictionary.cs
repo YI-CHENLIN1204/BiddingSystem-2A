@@ -40,7 +40,7 @@ public sealed class SafeMaterialDictionary
         string specification = Normalize(spec);
         // Disallow free-form row identifiers and prevent ambiguous field boundaries.
         return Informative(name) && Informative(specification) &&
-               !TwoAScopePolicy.IsExplicitNonMaterialCharge(itemName) &&
+               !TwoAScopePolicy.ExcludesMaterialQuantity(itemName, spec) &&
                !Regex.IsMatch(name, @"^[A-Z]*[-_. ]*\d[\dA-Z_. -]*$") &&
                !name.Contains('|') && !specification.Contains('|') && name != specification
             ? $"{name} | {specification}" : null;
@@ -49,6 +49,9 @@ public sealed class SafeMaterialDictionary
     public SafeMappingDecision Decide(string? itemName, string? spec, string? unit, decimal? quantity,
         Func<string?, int, bool> canConvert)
     {
+        if (TwoAScopePolicy.IsExplicitSupplyAndInstall(itemName, spec))
+            return new(null, "COMPOSITE_QUANTITY_EXCLUDED", "明示供料施工，排除純材料數量；依原工程大項規則核對金額。");
+
         string? key = QualifiedKeyword(itemName, spec);
         if (key is null)
             return new(null, "MAPPING_CONTEXT_REQUIRED", "工項名稱或規格不足，請人工對應。");

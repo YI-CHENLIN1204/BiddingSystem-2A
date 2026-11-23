@@ -115,6 +115,19 @@ namespace 崴正.Services
 
         // Explicit non-material charge: an accidentally matched rebar material
         // must never turn this transportation subsidy into a quantity baseline.
+        public static bool IsExplicitSupplyAndInstall(string? itemName, string? spec) =>
+            HasSupplyAndInstallWording(itemName) || HasSupplyAndInstallWording(spec);
+
+        private static bool HasSupplyAndInstallWording(string? text) =>
+            text is not null && (text.Contains("供料及施工", StringComparison.Ordinal) ||
+                text.Contains("供料與施工", StringComparison.Ordinal) ||
+                text.Contains("供料及安裝", StringComparison.Ordinal) ||
+                text.Contains("供料與安裝", StringComparison.Ordinal) ||
+                text.Contains("連工帶料", StringComparison.Ordinal));
+
+        public static bool ExcludesMaterialQuantity(string? itemName, string? spec) =>
+            IsExplicitNonMaterialCharge(itemName) || IsExplicitSupplyAndInstall(itemName, spec);
+
         public static bool IsExplicitNonMaterialCharge(string? itemName)
         {
             return !string.IsNullOrWhiteSpace(itemName) &&

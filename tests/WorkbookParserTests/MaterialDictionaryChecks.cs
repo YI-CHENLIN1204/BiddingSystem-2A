@@ -6,6 +6,17 @@ internal static class MaterialDictionaryChecks
     public static void Run()
     {
         VerifyIndependentPanel();
+        var crossSource = new SafeMaterialDictionary([
+            new DictionaryMaterial("耐蝕管 | ASTM A312", 42, 10, true),
+            new DictionaryMaterial("耐蝕管 | ASTM A312 供料及安裝", 42, 10, true)
+        ]);
+        bool CompatiblePipe(string? unit, int id) => unit == "m" && id == 10;
+        if (crossSource.Decide("耐蝕管", "ＡＳＴＭ　Ａ３１２", "m", 1, CompatiblePipe).Match?.MaterialId != 42 ||
+            crossSource.Decide("耐蝕管異名", "ASTM A312", "m", 1, CompatiblePipe).Match is not null ||
+            crossSource.Decide("耐蝕管", "ASTM A312 供料及安裝", "m", 1, CompatiblePipe).Code != "COMPOSITE_QUANTITY_EXCLUDED" ||
+            crossSource.SuggestForReview("耐蝕管", "ASTM A312 供料及安裝", "m", 1, CompatiblePipe) is not null)
+            throw new InvalidOperationException("cross-source alias and visible composite guard");
+        Console.WriteLine("PASS: cross-source formatted exact alias, unknown alias and composite guard");
         const string title = "竹節鋼筋";
         const string spec = "SD420";
         var legacy = new DictionaryMaterial(title, 1, 10, true);
@@ -74,12 +85,16 @@ internal static class MaterialDictionaryChecks
                 ? dictionary.SuggestForReview(row.Name, row.Spec, row.Unit, row.Quantity,
                     (unit, id) => input.Units.GetValueOrDefault(unit ?? "") == id)
                 : null;
-            return new { row.Id, Before = old?.MaterialId, After = next.Match?.MaterialId, next.Code, Candidate = candidate };
+            bool priceEligible = TwoAScopePolicy.ResolveEffectiveMajorCategory(null, row.Category, null, null) == "結構體工程" &&
+                (row.Amount > 0 || (row.Quantity > 0 && row.UnitPrice > 0));
+            return new { row.Id, Before = old?.MaterialId, After = next.Match?.MaterialId, next.Code, Candidate = candidate,
+                PriceEligible = priceEligible, ExplicitComposite = TwoAScopePolicy.IsExplicitSupplyAndInstall(row.Name, row.Spec) };
         }).ToArray();
         File.WriteAllText(outputPath, JsonSerializer.Serialize(records));
     }
 
     private sealed record ReplayInput(DictionaryMaterial[] Dictionary, ReplayRow[] Rows, Dictionary<string, int> Units);
     private sealed record ReplayRow(string Id, string Name, string Spec, string Unit, decimal? Quantity,
-        int? ExpectedAuto = null, int? ExpectedCandidate = null);
+        int? ExpectedAuto = null, int? ExpectedCandidate = null, string? Category = null,
+        decimal? Amount = null, decimal? UnitPrice = null);
 }

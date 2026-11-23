@@ -886,7 +886,7 @@ namespace 崴正.Services
             IsInTwoAHistoryScope(
                 FinalBidItem bidItem)
         {
-            if (TwoAScopePolicy.IsExplicitNonMaterialCharge(bidItem.ItemName))
+            if (TwoAScopePolicy.ExcludesMaterialQuantity(bidItem.ItemName, bidItem.Spec))
                 return false;
 
             string? majorCategory =

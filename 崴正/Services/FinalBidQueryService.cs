@@ -405,6 +405,8 @@ namespace 崴正.Services
                     var decision = x.isDraft && !x.isIgnored && x.mappingStatus == "Auto"
                         ? Dictionary().Decide(x.itemName, x.spec, x.unit, x.qty, _unitConversionService.CanConvert)
                         : null;
+                    bool composite = TwoAScopePolicy.IsExplicitSupplyAndInstall(x.itemName, x.spec);
+                    bool excludesMaterialQuantity = TwoAScopePolicy.ExcludesMaterialQuantity(x.itemName, x.spec);
                     bool needsReview = decision is not null && decision.Match?.MaterialId != x.materialId;
                     return new
                     {
@@ -455,8 +457,10 @@ namespace 崴正.Services
                             )
                         ),
 
+                    explicitSupplyAndInstall = composite,
+
                     contributesQuantityHistory =
-                        !needsReview && !x.isIgnored &&
+                        !excludesMaterialQuantity && !needsReview && !x.isIgnored &&
                         string.Equals(
                             TwoAScopePolicy
                                 .ResolveEffectiveMajorCategory(
@@ -489,7 +493,7 @@ namespace 崴正.Services
                         ),
 
                     quantityHistoryCategory =
-                        !needsReview && !x.isIgnored &&
+                        !excludesMaterialQuantity && !needsReview && !x.isIgnored &&
                         string.Equals(
                             TwoAScopePolicy
                                 .ResolveEffectiveMajorCategory(
