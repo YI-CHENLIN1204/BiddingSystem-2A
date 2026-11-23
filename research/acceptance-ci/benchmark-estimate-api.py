@@ -52,6 +52,11 @@ for n in (2,20,100):
             data = json.dumps(payload,ensure_ascii=False).encode() if payload is not None else None
             status, obj, ms = request(base+endpoint,data)
             ok = status==200 and (payload is None or (isinstance(obj.get("analysisRunId"),int) and "result" in obj))
+            result = obj.get("result") or {}
+            if name == "estimate-quantity":
+                ok = ok and result.get("analyzedGroupCount", 0) == 2
+            elif name == "estimate-major-price":
+                ok = ok and result.get("hasEnoughSamples") is True and result.get("lowerAmount") is not None
             samples.append(dict(rows=n,route=name,iteration=run,warmup=run<2,status=status,passed=ok,
                                 elapsed_ms=ms,rss_kib=rss("VmRSS"),process_peak_so_far_kib=rss("VmHWM"),
                                 response=obj))

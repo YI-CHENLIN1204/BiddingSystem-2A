@@ -88,6 +88,26 @@ Console.WriteLine("PASS generated fully synthetic multi-sheet upload fixture");
 
 if (Environment.GetEnvironmentVariable("RESEARCH_ESTIMATE_BENCHMARK") == "1")
 {
+    db.Add(new EstimationSetting {
+        SettingsId = 1, TopK = 8, MinimumSampleCount = 5,
+        LowerQuantile = .15m, MedianQuantile = .50m, UpperQuantile = .85m,
+        SimilarityExponent = 1m, TimeHalfLifeYears = 3m, MinimumSimilarityScore = 0m,
+        StructureWeight = 25m, AreaWeight = 30m, SiteAreaWeight = 10m, FloorWeight = 15m,
+        YearWeight = 10m, CityWeight = 10m, AreaDifferenceCutoffRatio = 1m,
+        SiteAreaDifferenceCutoffRatio = 1m, GroundFloorPenaltyRatio = .10m,
+        BasementFloorPenaltyRatio = .15m, YearDifferenceCutoffYears = 20, UpdatedAt = DateTime.UtcNow
+    });
+    foreach (var (materialId, name, unitId) in new[] {
+        (steel.MaterialId, "鋼筋", kg.UnitId), (concrete.MaterialId, "混凝土", cubicMetre.UnitId)
+    })
+    {
+        db.Add(new DetectionCategoryMaterialMap {
+            DetectionCategory = new DetectionCategory { MajorCategoryName = "結構體工程",
+                DetectionCategoryName = name, UnitId = unitId, IsActive = true },
+            MaterialId = materialId, CreatedAt = DateTime.UtcNow, UpdatedAt = DateTime.UtcNow
+        });
+    }
+    await db.SaveChangesAsync();
     for (var i = 0; i < 32; i++)
     {
         var reference = new ProjectMaster { ProjectName = $"T08 synthetic history {i}", ProjectType = "住宅",
