@@ -21,7 +21,10 @@ internal static class MaterialDictionaryPostgres
         var category = new MaterialCategory {CategoryName = "結構體工程"};
         var steel = new MaterialMaster {MaterialName = "鋼筋", UnitMaster = kg, MaterialCategory = category};
         var alternate = new MaterialMaster {MaterialName = "鋼筋 其他", UnitMaster = kg, MaterialCategory = category};
-        db.AddRange(t, steel, alternate);
+        var volume = new UnitCategory {CategoryName = "體積", AllowConversion = true};
+        var cubicMetre = new UnitMaster {UnitName = "m3", UnitCategory = volume, ToBaseFactor = 1, IsBaseUnit = true};
+        var concrete = new MaterialMaster {MaterialName = "混凝土", UnitMaster = cubicMetre, MaterialCategory = category};
+        db.AddRange(t, steel, alternate, concrete);
         await db.SaveChangesAsync();
         db.ItemDictionaries.Add(new ItemDictionary {Keyword = "竹節鋼筋", Material_Id = steel.MaterialId});
         await db.SaveChangesAsync();
@@ -119,6 +122,29 @@ internal static class MaterialDictionaryPostgres
               !await db.HistoricalTransactions.AnyAsync(x => x.FinalBidItemId == supply.FinalBidItemId && !x.IsDeleted),
             "composite publishes structural price without material quantity");
 
+        foreach (var (id, name, spec, excluded) in new[]
+        {
+            ("rebar-bundled", "鋼筋材料及加工綁紮", "SD420", true),
+            ("concrete-bundled", "預拌混凝土", "含泵送與澆置", true),
+            ("rebar-separated", "鋼筋供料及施工分開計價", "SD420", false),
+            ("concrete-negated", "預拌混凝土", "不含泵送與澆置", false),
+        })
+        {
+            var isConcrete = id.StartsWith("concrete", StringComparison.Ordinal);
+            var material = isConcrete ? concrete : steel;
+            Check(importer.Import(Request(id, 9, isConcrete ? "m3" : "kg", name, [spec]), actor).Success, id + " imported");
+            var row = await db.FinalBidItems.OrderBy(x => x.FinalBidItemId).LastAsync();
+            Check(history.UpdateMajorCategoryOverride(row.FinalBidItemId, "結構體工程", actor).Success &&
+                  mapping.UpdateMaterialMapping(row.FinalBidItemId, material.MaterialId, actor).Success, id + " manually mapped");
+            var listed = Items(query, row.ProjectMasterId, "Manual", null)[0];
+            Check(listed.GetProperty("contributesStructuralPrice").GetBoolean() &&
+                  listed.GetProperty("contributesQuantityHistory").GetBoolean() == !excluded &&
+                  history.CanBecomeHistoricalTransaction(row) == !excluded, id + " review and eligibility agree");
+            Check((await projects.PublishHistoryAsync(row.ProjectMasterId, actor)).Success &&
+                  await db.HistoricalTransactions.AnyAsync(x => x.FinalBidItemId == row.FinalBidItemId && !x.IsDeleted) == !excluded,
+                  id + " published with expected material history");
+        }
+
         db.ItemDictionaries.Add(new ItemDictionary { Keyword = "盤元鋼筋", Material_Id = steel.MaterialId });
         await db.SaveChangesAsync();
         Check(importer.Import(Request("review-group", 7, "kg", "盤元鋼筋", ["SD420", "SD420", "SD490"]), actor).Success,
@@ -134,7 +160,7 @@ internal static class MaterialDictionaryPostgres
                 "confirm candidate per row");
         var left = Items(query, groupedProject.ProjectId, "Pending", null);
         Check(left.GetArrayLength() == 1 && left[0].GetProperty("spec").GetString() == "SD490" &&
-              await db.AuditLogs.CountAsync(x => x.ActionType == "UpdateMapping") == 5,
+              await db.AuditLogs.CountAsync(x => x.ActionType == "UpdateMapping") == 9,
             "different specification remains Pending and confirmations have separate audits");
 
     }

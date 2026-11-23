@@ -88,14 +88,18 @@ def main(source, out):
     def summarize(rows, key):
         n = len(rows)
         auto = sum(r[key] is not None for r in rows)
-        correct = sum(r[key] == r["truth"] and r["scope"] == "MaterialOnly" for r in rows)
-        return dict(n=n, auto=auto, correct=correct, wrong_auto=auto-correct,
-                    pending=n-auto, precision=correct/auto if auto else None,
-                    coverage=auto/n, review_rate=(n-auto)/n)
+        id_correct = sum(r[key] == r["truth"] for r in rows)
+        quantity_safe = sum(r[key] == r["truth"] and r["scope"] == "MaterialOnly" for r in rows)
+        return dict(n=n, auto=auto, pending=n-auto, auto_coverage=auto/n,
+                    review_rate=(n-auto)/n,
+                    material_id=dict(correct_auto=id_correct, wrong_auto=auto-id_correct,
+                                     precision=id_correct/auto if auto else None),
+                    pure_material_quantity_safety=dict(safe_auto=quantity_safe, unsafe_auto=auto-quantity_safe,
+                                                       precision=quantity_safe/auto if auto else None))
 
     def compare(rows):
         return dict(before=summarize(rows, "Before"), after=summarize(rows, "After"),
-                    legal_auto_to_pending=sum(r["Before"] == r["truth"] and r["After"] is None for r in rows))
+                    correct_material_id_auto_to_pending=sum(r["Before"] == r["truth"] and r["After"] is None for r in rows))
 
     legacy_names = {name for name, _ in legacy}
     strict_targets = [dict(r, spec=masked_spec(r)) for r in targets]
@@ -160,7 +164,6 @@ def main(source, out):
                          explicit_composite=sum(r["ExplicitComposite"] for r in subset))
             if scope_name == "SupplyAndInstall":
                 after["quantity_exclusion_rate"] = after["pending"]/len(subset)
-                after["wrong_auto"] = after["auto"]
             result[scope_name] = after
         return result
     result = dict(manifest_sha256=MANIFEST,

@@ -118,12 +118,27 @@ namespace 崴正.Services
         public static bool IsExplicitSupplyAndInstall(string? itemName, string? spec) =>
             HasSupplyAndInstallWording(itemName) || HasSupplyAndInstallWording(spec);
 
-        private static bool HasSupplyAndInstallWording(string? text) =>
-            text is not null && (text.Contains("供料及施工", StringComparison.Ordinal) ||
-                text.Contains("供料與施工", StringComparison.Ordinal) ||
-                text.Contains("供料及安裝", StringComparison.Ordinal) ||
-                text.Contains("供料與安裝", StringComparison.Ordinal) ||
-                text.Contains("連工帶料", StringComparison.Ordinal));
+        // Match bundled services explicitly. Bare terms such as 泵送 or 加工
+        // do not imply that the listed quantity includes both services.
+        private static readonly System.Text.RegularExpressions.Regex BundledServices = new(
+            @"供料[及與](?:施工|安裝)|連工帶料|材料[及與](?:加工(?:及|與)?綁紮|綁紮)|含(?:泵送|泵浦輸送)[及與](?:澆置|澆灌)");
+        private static readonly System.Text.RegularExpressions.Regex NegatedBundlePrefix = new(
+            @"(?:不含|未含|不包含|不包括|不計|不|非|另列|另計)[\s：:]*$");
+        private static readonly System.Text.RegularExpressions.Regex SeparateBundleSuffix = new(
+            @"^[\s（(：:、]*(?:分開|分別|分項|各自|另行|另)(?:計價|列計|列項|列計價)");
+
+        private static bool HasSupplyAndInstallWording(string? text)
+        {
+            if (string.IsNullOrWhiteSpace(text)) return false;
+            foreach (System.Text.RegularExpressions.Match match in BundledServices.Matches(text))
+            {
+                // An exception applies only to its own wording, not another affirmative bundle.
+                if (!NegatedBundlePrefix.IsMatch(text[..match.Index]) &&
+                    !SeparateBundleSuffix.IsMatch(text[(match.Index + match.Length)..]))
+                    return true;
+            }
+            return false;
+        }
 
         public static bool ExcludesMaterialQuantity(string? itemName, string? spec) =>
             IsExplicitNonMaterialCharge(itemName) || IsExplicitSupplyAndInstall(itemName, spec);

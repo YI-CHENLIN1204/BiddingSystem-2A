@@ -16,6 +16,22 @@ internal static class MaterialDictionaryChecks
             crossSource.Decide("耐蝕管", "ASTM A312 供料及安裝", "m", 1, CompatiblePipe).Code != "COMPOSITE_QUANTITY_EXCLUDED" ||
             crossSource.SuggestForReview("耐蝕管", "ASTM A312 供料及安裝", "m", 1, CompatiblePipe) is not null)
             throw new InvalidOperationException("cross-source alias and visible composite guard");
+        foreach (var (name, wordingSpec, excluded) in new (string Name, string? Spec, bool Excluded)[]
+        {
+            ("鋼筋材料及加工綁紮", "SD420", true),
+            ("預拌混凝土", "含泵送與澆置", true),
+            ("鋼筋供料及施工分開計價", "SD420", false),
+            ("鋼筋材料", "供料與安裝分別計價", false),
+            ("預拌混凝土", "不含泵送與澆置", false),
+            ("預拌混凝土", "泵送規格 3000 PSI", false),
+            ("鋼筋材料", "加工設備", false),
+            ("鋼筋供料及施工分開計價", "連工帶料", true),
+        })
+        {
+            if (TwoAScopePolicy.IsExplicitSupplyAndInstall(name, wordingSpec) != excluded)
+                throw new InvalidOperationException($"composite wording: {name} {wordingSpec}");
+            Console.WriteLine($"PASS: composite wording: {name} {wordingSpec}");
+        }
         Console.WriteLine("PASS: cross-source formatted exact alias, unknown alias and composite guard");
         const string title = "竹節鋼筋";
         const string spec = "SD420";
