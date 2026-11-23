@@ -40,6 +40,8 @@ internal static class MaterialDictionaryPostgres
         Check(!importer.Import(first, actor).Success, "duplicate file is rejected");
         Check(mapping.UpdateMaterialMapping(firstRow.FinalBidItemId, steel.MaterialId, actor).Success, "manual review and alias learning");
 
+        Check(history.UpdateMajorCategoryOverride(firstRow.FinalBidItemId, "結構體工程", actor).Success,
+            "reviewer confirms the major category before publish");
         var idempotency = Guid.NewGuid();
         result = await projects.PublishHistoryAsync(projectId, actor, idempotency);
         Check(result.Success, $"publish: {result.ErrorMessage}");
