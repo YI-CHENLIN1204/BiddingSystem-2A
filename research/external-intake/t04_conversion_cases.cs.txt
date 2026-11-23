@@ -1,0 +1,15 @@
+var reject = new[]
+{
+    (Name: "cross-dimension", Value: conversion.Convert(1m, 1m, "kg", cubicMetre.UnitId)),
+    (Name: "empty-unit", Value: conversion.Convert(1m, 1m, null, kg.UnitId)),
+    (Name: "unknown-unit", Value: conversion.Convert(1m, 1m, "unknown_unit_code", kg.UnitId)),
+    (Name: "unknown-target", Value: conversion.Convert(1m, 1m, "kg", int.MaxValue)),
+    (Name: "decimal-overflow", Value: conversion.Convert(decimal.MaxValue, 1m, "t", kg.UnitId)),
+    (Name: "conversion-factor-zero", Value: conversion.Convert(1m, 1m, "invalid-factor", kg.UnitId))
+};
+foreach (var test in reject)
+{
+    if (test.Value.Success)
+        throw new InvalidOperationException($"Expected T04 conversion failure: {test.Name}");
+    Console.WriteLine($"PASS T04 rejected {test.Name}");
+}

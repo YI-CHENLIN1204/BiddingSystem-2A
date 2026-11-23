@@ -43,3 +43,47 @@ jobs:
         with:
           name: external-operations-fixture-evidence
           path: operations-evidence/
+  t04-conversion:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    services:
+      postgres:
+        image: postgres:17
+        env:
+          POSTGRES_DB: research_acceptance
+          POSTGRES_USER: research_fixture
+          POSTGRES_PASSWORD: disposable-ci-only
+        ports:
+          - 5432/tcp
+        options: --health-cmd "pg_isready -U research_fixture -d research_acceptance" --health-interval 2s --health-timeout 5s --health-retries 20
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          persist-credentials: false
+      - uses: actions/setup-dotnet@v4
+        with:
+          dotnet-version: '10.0.x'
+      - name: Check isolated EF conversion
+        shell: bash
+        env:
+          RESEARCH_PORT: ${{ job.services.postgres.ports[5432] }}
+        run: |
+          set -euo pipefail
+          mkdir -p evidence/api t04-evidence
+          trap '(cd t04-evidence && sha256sum conversion.log > SHA256SUMS)' EXIT
+          export ConnectionStrings__DefaultConnection="Host=127.0.0.1;Port=$RESEARCH_PORT;Database=research_acceptance;Username=research_fixture;Password=disposable-ci-only;SSL Mode=Disable;Pooling=false"
+          cp research/2a_synthetic/kde_comparison/t00t11-followup-20261123/UnitConversionService.cs 崴正/Services/UnitConversionService.cs
+          python - <<'PY'
+          from pathlib import Path
+          p=Path("research/acceptance-ci/Program.cs")
+          source=p.read_text(encoding="utf-8-sig")
+          anchor='Console.WriteLine("PASS EF-backed conversion and invalid-factor rejection");'
+          assert source.count(anchor)==1
+          p.write_text(source.replace(anchor,anchor+"\n"+Path("research/external-intake/t04_conversion_cases.cs.txt").read_text()),encoding="utf-8")
+          PY
+          dotnet run --project research/acceptance-ci/Fixture.csproj -c Release 2>&1 | tee t04-evidence/conversion.log
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: t04-isolated-conversion-evidence
+          path: t04-evidence/
