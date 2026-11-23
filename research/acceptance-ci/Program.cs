@@ -85,3 +85,48 @@ using (var workbook = new XLWorkbook())
     workbook.SaveAs("evidence/api/synthetic-final-bid.xlsx");
 }
 Console.WriteLine("PASS generated fully synthetic multi-sheet upload fixture");
+
+if (Environment.GetEnvironmentVariable("RESEARCH_ESTIMATE_BENCHMARK") == "1")
+{
+    for (var i = 0; i < 32; i++)
+    {
+        var reference = new ProjectMaster { ProjectName = $"T08 synthetic history {i}", ProjectType = "住宅",
+            StructureType = "RC", City = "測試縣市", TotalFloorArea = 900 + i * 11, SiteArea = 250,
+            FloorCount = 5, BasementFloorCount = 1, StartDate = new DateTime(2023, 1, 1).AddDays(14 * i),
+            HistoryStatus = "Approved" };
+        db.Add(reference);
+        foreach (var (materialId, name, unit, quantity, price) in new[]
+        {
+            (steel.MaterialId, "鋼筋", "kg", 46000m+i*78, 40m+i),
+            (concrete.MaterialId, "混凝土", "m3", 460m+i*8, 2600m+i*11)
+        })
+        {
+            var detail = new FinalBidItem { ProjectMaster = reference, MaterialId = materialId, ItemName = name,
+                Unit = unit, Qty = quantity, UnitPrice = price, Amount = quantity * price, Category1 = "結構體工程",
+                MappingStatus = "Manual", SourceFileName = $"t08-reference-{i}.xlsx",
+                CreatedAt = DateTime.UtcNow, UpdatedAt = DateTime.UtcNow };
+            db.Add(detail);
+            await db.SaveChangesAsync();
+            db.Add(new HistoricalTransaction { ProjectMaster = reference, MaterialId = materialId,
+                FinalBidItemId = detail.FinalBidItemId, ActualQuantity = quantity, TransactionDate = reference.StartDate });
+            await db.SaveChangesAsync();
+        }
+    }
+    foreach (var n in new[] { 2, 20, 100 })
+    {
+        using var fixture = new XLWorkbook("evidence/api/synthetic-final-bid.xlsx");
+        fixture.Worksheet("比價表").Delete();
+        var page = fixture.Worksheet("結構體明細");
+        for (var i = 4; i <= n + 1; i++)
+        {
+            page.Row(i % 2 == 0 ? 2 : 3).CopyTo(page.Row(i));
+        }
+        for (var i = 2; i <= n + 1; i++)
+        {
+            page.Cell(i, 1).Value = i-1;
+            page.Cell(i, 2).Value = (i % 2 == 0 ? "SD420W 鋼筋材料" : "預拌混凝土") + $" {i-1}";
+        }
+        fixture.SaveAs($"evidence/api/t08-{n}.xlsx");
+    }
+    Console.WriteLine("T08 seeded 32 synthetic Approved projects and 2/20/100-row inputs");
+}

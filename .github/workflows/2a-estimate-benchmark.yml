@@ -1,0 +1,62 @@
+name: 2A Research Estimation Benchmark
+on:
+  push:
+    branches: [research/kde-comparison-20261122]
+    paths:
+      - '.github/workflows/2a-estimate-benchmark.yml'
+      - 'research/acceptance-ci/benchmark-estimate-api.py'
+  workflow_dispatch:
+permissions:
+  contents: read
+jobs:
+  run-link:
+    if: github.ref == 'refs/heads/research/kde-comparison-20261122'
+    runs-on: ubuntu-latest
+    timeout-minutes: 2
+    permissions:
+      statuses: write
+    steps:
+      - name: Publish research run link
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          gh api --method POST "repos/$GITHUB_REPOSITORY/statuses/$GITHUB_SHA" \
+            -f state=success -f context=research/estimate-benchmark-link \
+            -f description='Research Actions run link is available' \
+            -f target_url="$GITHUB_SERVER_URL/$GITHUB_REPOSITORY/actions/runs/$GITHUB_RUN_ID"
+  estimate-benchmark:
+    if: github.ref == 'refs/heads/research/kde-comparison-20261122'
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    services:
+      postgres:
+        image: postgres:17
+        env:
+          POSTGRES_DB: research_acceptance
+          POSTGRES_USER: research_fixture
+          POSTGRES_PASSWORD: disposable-ci-only
+        ports:
+          - 5432/tcp
+        options: >-
+          --health-cmd "pg_isready -U research_fixture -d research_acceptance"
+          --health-interval 2s --health-timeout 5s --health-retries 20
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          persist-credentials: false
+          fetch-depth: 0
+      - run: python scripts/check_handoff_review.py --base 60d442f629f428712ae34d4430d9c0f072564dba
+      - uses: actions/setup-dotnet@v4
+        with:
+          dotnet-version: '10.0.x'
+      - name: Benchmark isolated estimation endpoints
+        shell: bash
+        env:
+          RESEARCH_ESTIMATE_BENCHMARK: "1"
+          RESEARCH_PORT: ${{ job.services.postgres.ports[5432] }}
+        run: bash research/acceptance-ci/run-api.sh
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: estimate-benchmark
+          path: evidence/api/

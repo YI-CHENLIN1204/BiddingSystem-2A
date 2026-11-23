@@ -48,7 +48,7 @@ path.write_text("using Microsoft.AspNetCore.Authentication;\n"
                 "using Microsoft.AspNetCore.Authorization;\n" + source, encoding="utf-8")
 PY
 dotnet run --project research/acceptance-ci/Fixture.csproj -c Release 2>&1 | tee evidence/api/fixture.log
-dotnet run --project 崴正/崴正.csproj -c Release --no-build --no-launch-profile --urls http://127.0.0.1:18081 > evidence/api/server.log 2>&1 &
+dotnet 崴正/bin/Release/net10.0/崴正.dll --urls http://127.0.0.1:18081 > evidence/api/server.log 2>&1 &
 server=$!
 trap 'kill "$server" 2>/dev/null || true; wait "$server" 2>/dev/null || true; find evidence/api -type f ! -name SHA256SUMS -print0 | sort -z | xargs -0 -r sha256sum > evidence/api/SHA256SUMS' EXIT
 for attempt in {1..40}; do
@@ -56,4 +56,8 @@ for attempt in {1..40}; do
   kill -0 "$server"
   sleep 1
 done
-python research/acceptance-ci/probe-api.py | tee evidence/api/http.jsonl
+if [[ "${RESEARCH_ESTIMATE_BENCHMARK:-}" == 1 ]]; then
+  RESEARCH_SERVER_PID="$server" python research/acceptance-ci/benchmark-estimate-api.py | tee evidence/api/estimate.log
+else
+  python research/acceptance-ci/probe-api.py | tee evidence/api/http.jsonl
+fi
