@@ -16,12 +16,12 @@ A0 按現行相似案選擇與加權分位規格重播。E1 的 A0/A1 使用完�
 |---|---|---|
 | T00 來源與切分 | PARTIAL | 9 個原始檔雜湊、180 案及 23,980 列配對通過。較早開工池 480 筆引用皆來自 train 且早於目標，回溯有 378／624 筆非較早。缺住宅快照與實際可用時點。 |
 | T01 字典安全 | PARTIAL | 留出集 3,386 列，Contains 材料碼 3,386 正確，安全放行只有 207。156 筆同名異材即使有既有安全門檻仍錯放，需保留人工。缺跨廠商真值。 |
-| T02 學習曲線 | PARTIAL | 同一切分重播 0／10／30／50／67／100／193 詞，67 詞為合成來源。原始測試集未見詞分母為零。需獨立住宅與廠房來源組。 |
+| T02 學習曲線 | PARTIAL | 同一切分重播 0／10／30／50／67／100／193 詞，67 詞為合成來源。67 詞在 test 正確 1,742／3,386，100 詞 2,384／3,386。新輸出 252 個依結構與合成場景分層的統計格。原始測試集未見詞分母為零。需獨立住宅與廠房來源組。 |
 | T03 工時與品質 | NOT RUN | 完成 167 列 × 2 合成配對練習、AB/BA 程序與分析器，0 名真人。100／500／1,000 列保守至樂觀結果屬假設情境。 |
 | T04 單位及工料 | PARTIAL | EF 合法換算與無效係數拒絕通過。合成測試中有 156 筆異規格、156 筆錯單位，保守判定全部待人工。正式工料與核定規格待驗。 |
 | T05 KDE 採用 | FAIL | 合成主比較完成。原預設採用門檻未通過，獨立住宅與真實工程外驗仍待。 |
 | T06 異常邊界 | PARTIAL | 固定區間 720 筆合成觀察值擾動，480 筆端點／相鄰浮點判定符合規則。仍缺工程師核定正常與異常，Precision／Recall／FPR 留空。 |
-| T07 Excel 回寫 | PARTIAL | Run #4 選表、入庫、Draft 及重複檔拒絕通過。Run #3 的 fixture 發布／重開／稽核通過。Run 45117656645 匯入後兩筆手動映射成功，其中一筆因合成主檔名稱不符白名單而未進歷史。修正 fixture 後重新驗證。 |
+| T07 Excel 回寫 | PARTIAL | Run #4 選表、入庫、Draft 及重複檔拒絕通過。Run #3 的 fixture 發布／重開／稽核通過。Run 45117656645 匯入後兩筆手動映射成功，其中一筆因合成主檔名稱不符白名單而未進歷史。修正 fixture 後 Run 45117875966 完整通過，同一匯入案 Approved 有效歷史 2 筆、Reopen 後為 0，主管可讀回匯入、映射、發布與重開。 |
 | T08 效能與穩定 | PARTIAL | 同一設備離線重播及 Run #4 兩種 HTTP 讀取有量測。建案 GET p50／p95 為 15.69／19.21 ms，兩列 2A Summary 為 28.33／34.28 ms，各 n=30。正式推論 HTTP 與大型匯入全流程仍待。 |
 | T09 權限與證據 | PARTIAL | 隔離匿名 401、無效憑證 401、Reader 403、Supervisor 200，且有稽核讀回。正式部署的角色與權限仍待授權測試。 |
 | T10 TF-IDF | PARTIAL | 材料候選僅給人工使用。合成未見別名 Top-1、Top-3 皆 78／156。同名異材 Top-1 0／156、Top-3 78／156。缺獨立真值與人工負擔。 |
@@ -74,6 +74,7 @@ n=3 時 nearest-rank p95 即觀測最大值。這些是實作流程成本，等 
 
 ~~~
 python replay_factory_dictionary.py <source> <new-dictionary>
+python summarize_dictionary_strata.py <source> <dictionary>/mapping_per_item.csv <new-strata.csv>
 python replay_factory_safety.py <source> <new-safety>
 python factory_alias_stress.py <source> <safety>/aliases.csv
 python factory_material_tfidf.py <source> <safety>
@@ -92,7 +93,9 @@ python prepare_human_practice.py <source> <new-practice>
 python analyze_human_crossover.py input_templates/human_time_trials_TEMPLATE.csv <new-human-output>
 ~~~
 
-原始隔離證據為 [Run 45115813539](https://github.com/YI-CHENLIN1204/BiddingSystem-2A/actions/runs/45115813539)（`cf6465ef21e65456765b182ee1d7d902715f10ac`），API 產物 14791179321 與 Word 產物 14791089656。研究分支起點為 `078f173df2f99e54e36e14aaf95ad2f4733423c2`，最新執行證據由同分支交接記錄連結。
+原始隔離證據為 [Run 45115813539](https://github.com/YI-CHENLIN1204/BiddingSystem-2A/actions/runs/45115813539)（`cf6465ef21e65456765b182ee1d7d902715f10ac`），API 產物 14791179321 與 Word 產物 14791089656。新證據：[Run 45117875966](https://github.com/YI-CHENLIN1204/BiddingSystem-2A/actions/runs/45117875966)，提交 `bfd8fd18e772f63100459939279880a294ec93e9`，三個 Job 通過，並取得實際同案 T07 連續歷史寫入及 T09。95 筆 HTTP 紀錄（93 個通過，2 個效能摘要）。下載確認 API ZIP 外層雜湊相符，其中 server.log 成員雜湊有關機寫入競態。可用原始 Job 日誌交叉查核，研究腳本已加入等待程序停止後才產生雜湊。
+
+研究分支起點為 `078f173df2f99e54e36e14aaf95ad2f4733423c2`，最新執行證據由同分支交接記錄連結。
 
 ## 結案所需外部輸入
 

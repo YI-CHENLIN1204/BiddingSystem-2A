@@ -1,3 +1,7 @@
+## 2026-11-23 T07 完整隔離流程與證據封存
+
+[Run 45117875966](https://github.com/YI-CHENLIN1204/BiddingSystem-2A/actions/runs/45117875966) 三 Job SUCCESS，測試提交 `bfd8fd18e772f63100459939279880a294ec93e9`。同一上傳案兩筆人工映射，發布後兩筆有效歷史，重開歸零，主管讀回 ImportFinalBid、兩次 UpdateMapping、PublishHistoryBaseline 與 ReopenHistoryReview。T09 隔離角色矩陣仍通過。下載確認 API ZIP SHA 相符，但內部 server.log 成員雜湊因關機寫入競態不符，修正為等待程序停止再制雜湊。重跑驗證封存。Word/PDF 報告 Artifact 14792546630，11 個成員雜湊通過。T02 補 49,210 筆七種字典規模觀測的 252 組合成結構／場景分層；跨真實來源仍待。
+
 ## 2026-11-23 廠房重播與隔離匯入補測
 
 取得實際重播與三輪 RSS。離線 A0 p50／p95 0.298／0.301 秒，峰值 58,932 KiB。A1 含 A0 與 validation 為 0.793／0.821 秒，59,212 KiB。B1/B2 含兩級區間及消融為 11.914／11.999 秒，25,964 KiB。各 n=3，p95 是 nearest rank 最大值，工作量不同。T03 已產出兩張同結構、各 167 列和 58 材料的去重合成練習標單，真人仍 NOT RUN。
