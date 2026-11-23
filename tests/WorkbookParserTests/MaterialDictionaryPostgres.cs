@@ -18,7 +18,7 @@ internal static class MaterialDictionaryPostgres
         var kg = new UnitMaster {UnitName = "kg", UnitCategory = mass, ToBaseFactor = 1, IsBaseUnit = true};
         var t = new UnitMaster {UnitName = "t", UnitCategory = mass, ToBaseFactor = 1000};
         var category = new MaterialCategory {CategoryName = "結構體工程"};
-        var steel = new MaterialMaster {MaterialName = "鋼筋 SD420", UnitMaster = kg, MaterialCategory = category};
+        var steel = new MaterialMaster {MaterialName = "鋼筋", UnitMaster = kg, MaterialCategory = category};
         var alternate = new MaterialMaster {MaterialName = "鋼筋 其他", UnitMaster = kg, MaterialCategory = category};
         db.AddRange(t, steel, alternate);
         await db.SaveChangesAsync();
@@ -61,6 +61,11 @@ internal static class MaterialDictionaryPostgres
         var badRow = await db.FinalBidItems.OrderBy(x => x.FinalBidItemId).LastAsync();
         Check(badRow.MappingIssueCode == "MAPPING_UNIT_MISMATCH" && badRow.Amount == 8000 &&
             !history.CanBecomeHistoricalTransaction(badRow), "unit mismatch blocks quantity history and retains amount");
+        Check(history.UpdateMajorCategoryOverride(badRow.FinalBidItemId, "結構體工程", actor).Success,
+            "reviewer confirms the price category without confirming quantity");
+        Check((await projects.PublishHistoryAsync(badRow.ProjectMasterId, actor)).Success &&
+              !await db.HistoricalTransactions.AnyAsync(x => x.FinalBidItemId == badRow.FinalBidItemId && !x.IsDeleted),
+            "classified price can publish without an invalid material quantity");
         Check(mapping.UpdateMaterialMapping(firstRow.FinalBidItemId, alternate.MaterialId, actor).Success, "record conflicting manual review");
         Check(await db.ItemDictionaries.CountAsync(x => x.Keyword.Contains("|")) == 2,
             "conflict keeps both material IDs");
@@ -71,9 +76,9 @@ internal static class MaterialDictionaryPostgres
         Check(conflict.MappingStatus == "Pending" && conflict.MappingIssueCode == "DICTIONARY_CONFLICT",
             "conflicting same alias requests review");
         var actions = await db.AuditLogs.Select(x => x.ActionType).ToListAsync();
-        Check(actions.Count(x => x == "PublishHistoryBaseline") == 1 &&
+        Check(actions.Count(x => x == "PublishHistoryBaseline") == 2 &&
               actions.Count(x => x == "ReopenHistoryReview") == 1 &&
-              actions.Count(x => x == "UpdateMapping") == 2, "audit records review, publish and reopen exactly once");
+              actions.Count(x => x == "UpdateMapping") == 2, "audit records each distinct review, publish and reopen");
     }
 
     private static FinalBidImportRequest Request(string name, int qty, string unit)
