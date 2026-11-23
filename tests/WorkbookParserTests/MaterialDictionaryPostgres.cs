@@ -57,6 +57,9 @@ internal static class MaterialDictionaryPostgres
         var secondRow = await db.FinalBidItems.OrderBy(x => x.FinalBidItemId).LastAsync();
         Check(secondRow.MappingStatus == "Auto" && secondRow.MaterialId == steel.MaterialId,
             "learned exact alias is reused");
+        Check(history.UpdateMajorCategoryOverride(secondRow.FinalBidItemId, "結構體工程", actor).Success &&
+              history.CanBecomeHistoricalTransaction(secondRow),
+            "classified Draft Auto is eligible before a conflicting confirmation");
         Check(importer.Import(Request("wrong-unit", 4, "m3"), actor).Success, "incompatible unit import retained");
         var badRow = await db.FinalBidItems.OrderBy(x => x.FinalBidItemId).LastAsync();
         Check(badRow.MappingIssueCode == "MAPPING_UNIT_MISMATCH" && badRow.Amount == 8000 &&
