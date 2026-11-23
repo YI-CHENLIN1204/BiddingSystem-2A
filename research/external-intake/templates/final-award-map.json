@@ -1,0 +1,16 @@
+{
+  "columns": {
+    "line_id": "項次",
+    "item": "工項",
+    "spec": "規格",
+    "unit": "單位",
+    "quantity": "數量",
+    "unit_price": "決標單價",
+    "amount": "複價",
+    "price_state": "價格狀態"
+  },
+  "final_price_state": "已決標",
+  "units": {},
+  "item_specs": {},
+  "awards": []
+}

@@ -1,3 +1,5 @@
+[給資料保管員、工程師及研究助理的完整作業包](STAFF_GUIDE.md)
+
 # 真實資料與真人研究驗收
 
 1. 保管員在私有工作目錄執行 `python intake.py verify-source ORIGINAL ORIGINAL/manifest.json`。manifest 需有相對路徑對 SHA-256 的 `file_sha256` 或 `files` 字典。若原報表的 manifest 版型不同，先核對原規格，再將檔名與既有雜湊轉列，保留原件。

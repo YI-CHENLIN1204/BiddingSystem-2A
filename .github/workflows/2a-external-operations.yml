@@ -1,0 +1,45 @@
+name: 2A External Operations Tooling
+on:
+  push:
+    branches: [research/kde-comparison-20261122]
+    paths:
+      - 'research/external-intake/**'
+      - '.github/workflows/2a-external-operations.yml'
+permissions:
+  contents: read
+jobs:
+  external-operations:
+    runs-on: ubuntu-latest
+    timeout-minutes: 8
+    permissions:
+      contents: read
+      statuses: write
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+          persist-credentials: false
+      - name: Publish run link
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          gh api --method POST "repos/$GITHUB_REPOSITORY/statuses/$GITHUB_SHA" \
+            -f state=success -f context=research/external-operations-link \
+            -f target_url="$GITHUB_SERVER_URL/$GITHUB_REPOSITORY/actions/runs/$GITHUB_RUN_ID"
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - name: Verify handoff and test synthetic tooling fixtures
+        shell: bash
+        run: |
+          set -euo pipefail
+          mkdir operations-evidence
+          trap '(cd operations-evidence && sha256sum ./*.log > SHA256SUMS)' EXIT
+          python scripts/check_handoff_review.py --base a391d7ac1f17340b55c84b1e1d119a2ccf7fdc36 | tee operations-evidence/handoff.log
+          python -m pip install -r research/external-intake/requirements.txt | tee operations-evidence/dependencies.log
+          python research/external-intake/test_operations.py -v 2>&1 | tee operations-evidence/operations.log
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: external-operations-fixture-evidence
+          path: operations-evidence/

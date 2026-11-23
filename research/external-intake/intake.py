@@ -167,28 +167,29 @@ def reconcile(left,right,output,decision=None):
         write(output/"adjudicated.csv",LABELS,[adjudicated.get(k,row) for k,row in a.items()])
     print(json.dumps(dict(cases=len(a),disputes=len(disputed),pending=len(pending))))
 
-parser=argparse.ArgumentParser(description=__doc__)
-sub=parser.add_subparsers(dest="action",required=True)
-for action,fields in (("freeze",("source","output")),("verify",("directory",)),("verify-source",("directory","manifest")),("reconcile",("left","right","output"))):
-    p=sub.add_parser(action)
-    for field in fields:
-        p.add_argument(field,type=Path)
-    if action=="reconcile":
-        p.add_argument("--decisions",type=Path)
-p=sub.add_parser("assign")
-p.add_argument("source",type=Path)
-p.add_argument("output",type=Path)
-p.add_argument("validation_start",type=date.fromisoformat)
-p.add_argument("blind_start",type=date.fromisoformat)
-args=parser.parse_args()
-if args.action=="freeze":
-    freeze(args.source,args.output)
-    verify(args.output)
-elif args.action=="verify":
-    verify(args.directory)
-elif args.action=="assign":
-    assign(args.source,args.output,args.validation_start,args.blind_start)
-elif args.action=="verify-source":
-    verify_source(args.directory,args.manifest)
-else:
-    reconcile(args.left,args.right,args.output,args.decisions)
+if __name__=="__main__":
+    parser=argparse.ArgumentParser(description=__doc__)
+    sub=parser.add_subparsers(dest="action",required=True)
+    for action,fields in (("freeze",("source","output")),("verify",("directory",)),("verify-source",("directory","manifest")),("reconcile",("left","right","output"))):
+        p=sub.add_parser(action)
+        for field in fields:
+            p.add_argument(field,type=Path)
+        if action=="reconcile":
+            p.add_argument("--decisions",type=Path)
+    p=sub.add_parser("assign")
+    p.add_argument("source",type=Path)
+    p.add_argument("output",type=Path)
+    p.add_argument("validation_start",type=date.fromisoformat)
+    p.add_argument("blind_start",type=date.fromisoformat)
+    args=parser.parse_args()
+    if args.action=="freeze":
+        freeze(args.source,args.output)
+        verify(args.output)
+    elif args.action=="verify":
+        verify(args.directory)
+    elif args.action=="assign":
+        assign(args.source,args.output,args.validation_start,args.blind_start)
+    elif args.action=="verify-source":
+        verify_source(args.directory,args.manifest)
+    else:
+        reconcile(args.left,args.right,args.output,args.decisions)
