@@ -1,1 +1,1 @@
-case_id,source_id,family_id,kind,structure,available_date,estimate_date,split
+case_id,source_id,family_id,kind,structure,area_m2,footprint_m2,floor_count,basement_count,location_code,available_date,estimate_date,split

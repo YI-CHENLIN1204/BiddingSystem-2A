@@ -7,3 +7,5 @@
 5. T03 由真人於不同匹配工料表操作，填入 crossover.csv。執行 `python analyze_human_crossover.py observations.csv NEW_OUT`。分析器檢查 AB／BA 順序、時間、輸出品質和配對；零筆回 NOT RUN。
 
 本工具是凍結、分割驗證與盲測交付入口。真實表格欄位轉碼、試驗預先登記及實際推論需以取得的資料及核准規範進行。合成 replay 的 SHA 鎖定條件保留。
+
+若要依預先登記日期自動分割，先將 split 填 auto，執行 `python intake.py assign PRIVATE_INPUT NEW_ASSIGNED YYYY-MM-DD YYYY-MM-DD`，最後兩日期依序為 validation、blind 起日。跨來源、同家族跨組及資料晚於估算日會被拒絕。拒絕後不要沿用該次輸出。模型輸入保留面積、樓層及同鍵位置的 HMAC；行資料須補規格碼。

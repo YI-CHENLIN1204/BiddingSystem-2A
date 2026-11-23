@@ -124,3 +124,8 @@ python analyze_human_crossover.py input_templates/human_time_trials_TEMPLATE.csv
 
 同一隔離 runner、32 個合成 Approved 參考案、順序固定而交錯端點、每格 20 次。RSS 為單一服務程序的累計峰值，涵蓋暖機與先前規模；不可視作各端點獨立測量。既有 O/S 與 Python 的離線流程 RSS 記錄保留。A1／B1 尚無對等正式 HTTP 路徑，大規模壓力與外部工程證據仍待。已通過的 T07／T09 測試沿用，既有 workflow 的共享 fixture 異動亦自動回歸。T05 採用門檻未過，維持 A0，未重選樣本或調參。正式 2A、Supabase 及《專題書面報告_林.docx》未變動。
 
+
+## 2026-11-23 T08 500／1000 列驗收及外部入口
+
+[本輪驗收矩陣](T00_T11_NEXT_ACCEPTANCE_2026_11_23.md) 記錄 Run 45122237323。兩規模量價與匯入均 PASS，84 筆原始、72 筆正式、0 失敗／棄答，兩份 Artifact 各 10/10 SHA 核對。舊證據 205/205 保留，三法同條件效能 PARTIAL，A0 結論維持。外部資料凍結、匿名隔離、雙人裁決及 AB/BA 工具已提供，受控真實包及真人資料待取得。
+

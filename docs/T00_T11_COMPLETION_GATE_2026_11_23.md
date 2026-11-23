@@ -1,3 +1,7 @@
+## 2026-11-23 T08 500／1000 列驗收及外部入口
+
+[本輪驗收矩陣](T00_T11_NEXT_ACCEPTANCE_2026_11_23.md) 記錄 Run 45122237323。兩規模量價與匯入均 PASS，84 筆原始、72 筆正式、0 失敗／棄答，兩份 Artifact 各 10/10 SHA 核對。舊證據 205/205 保留，三法同條件效能 PARTIAL，A0 結論維持。外部資料凍結、匿名隔離、雙人裁決及 AB/BA 工具已提供，受控真實包及真人資料待取得。
+
 ## 2026-11-23 T00～T11 補測 Run #4 完成（研究隔離，原計畫仍未結案）
 
 新 [GitHub Actions Run #45115813539](https://github.com/YI-CHENLIN1204/BiddingSystem-2A/actions/runs/45115813539)，測試提交 `cf6465ef21e65456765b182ee1d7d902715f10ac`，三個 Job 全部 SUCCESS。原始 `isolated-api` Artifact [#14791179321](https://github.com/YI-CHENLIN1204/BiddingSystem-2A/actions/runs/45115813539/artifacts/14791179321) 的 **5/5 SHA256SUMS PASS**、87 筆 HTTP JSONL（85 筆 `passed=true`、0 `passed=false`、2 統計摘要）已實際下載核對。T07 **真實 multipart 合成 Excel 上傳路徑** PASS：雙工作表錯選 400、正確選表上傳 200、兩筆量價工項、比價工作表排除、Draft 不產生歷史交易、重複檔案 SHA 409。T08 新增匯入建案 `/2a-summary` HTTP n=30，p50 **28.33ms**、p95 **34.28ms**；舊 `/api/projects/{id}` 讀取 n=30，p50 **15.69ms**、p95 **19.21ms**。不是完整 KDE 估算 API 和獨立工作負載評估。T04/T09 及 Word 維持前 Run #45057125296 的 PASS。

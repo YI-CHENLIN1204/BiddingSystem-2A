@@ -9,8 +9,8 @@ import json
 import os
 from pathlib import Path, PurePosixPath
 
-CASES=("case_id","source_id","family_id","kind","structure","available_date","estimate_date","split")
-LINES=("case_id","line_id","item_code","unit_code","quantity","unit_price","currency")
+CASES=("case_id","source_id","family_id","kind","structure","area_m2","footprint_m2","floor_count","basement_count","location_code","available_date","estimate_date","split")
+LINES=("case_id","line_id","item_code","spec_code","unit_code","quantity","unit_price","currency")
 LABELS=("case_id","line_id","material_code","spec_code","classification","reason_code")
 TABLES={"cases.csv":CASES,"lines.csv":LINES}
 def require(condition, message):
@@ -56,6 +56,11 @@ def validate(directory):
         split=row["split"]
         require(split in by_split and row["kind"] in {"residential","factory"},"Unknown split or case kind")
         require(row["structure"] in {"RC","SC","SRC"},"Unknown structure")
+        require(opaque(row["location_code"]),"Supply reviewed location code")
+        for field in ("area_m2","footprint_m2"):
+            value=Decimal(row[field])
+            require(value.is_finite() and value>0,f"Invalid {field}")
+        require(int(row["floor_count"])>0 and int(row["basement_count"])>=0,"Invalid floor counts")
         available, estimate=(date.fromisoformat(row[k]) for k in ("available_date","estimate_date"))
         require(estimate<=available,"Outcome date precedes stated estimate date")
         for field,seen in (("source_id",sources),("family_id",families)):
@@ -81,6 +86,20 @@ def validate(directory):
     require(len(with_lines)==len(cases),"A project has no final bid rows")
     return cases,lines
 
+def assign(directory, output, validation_start, blind_start):
+    require(validation_start<blind_start,"Cutoff dates must increase")
+    cases=read(directory/"cases.csv",CASES)
+    require(all(r["split"]=="auto" for r in cases),"Use auto in the input split column")
+    lines=read(directory/"lines.csv",LINES)
+    for row in cases:
+        stamp=date.fromisoformat(row["estimate_date"])
+        row["split"]="blind" if stamp>=blind_start else "validation" if stamp>=validation_start else "train"
+    output.mkdir()
+    write(output/"cases.csv",CASES,cases)
+    write(output/"lines.csv",LINES,lines)
+    validate(output)
+    print("PASS date split without crossed sources, families or availability")
+
 def freeze(directory, output):
     require(not output.exists(),"Freeze destination exists")
     originals={name:digest(directory/name) for name in TABLES}
@@ -90,7 +109,7 @@ def freeze(directory, output):
     require(len(secret)>=32,"Use an authorized private key of at least 32 characters")
     def token(name,value):
         return hmac.new(secret.encode(),(name+"\0"+value).encode(),hashlib.sha256).hexdigest()
-    clean_cases=[{k:(token(k,v) if k in ("case_id","source_id","family_id") else v)
+    clean_cases=[{k:(token(k,v) if k in ("case_id","source_id","family_id","location_code") else v)
                   for k,v in row.items()} for row in cases]
     clean_lines=[{k:(token(k,v) if k=="case_id" else token(k,row["case_id"]+"\0"+v) if k=="line_id" else v)
                   for k,v in row.items()} for row in lines]
@@ -156,12 +175,19 @@ for action,fields in (("freeze",("source","output")),("verify",("directory",)),(
         p.add_argument(field,type=Path)
     if action=="reconcile":
         p.add_argument("--decisions",type=Path)
+p=sub.add_parser("assign")
+p.add_argument("source",type=Path)
+p.add_argument("output",type=Path)
+p.add_argument("validation_start",type=date.fromisoformat)
+p.add_argument("blind_start",type=date.fromisoformat)
 args=parser.parse_args()
 if args.action=="freeze":
     freeze(args.source,args.output)
     verify(args.output)
 elif args.action=="verify":
     verify(args.directory)
+elif args.action=="assign":
+    assign(args.source,args.output,args.validation_start,args.blind_start)
 elif args.action=="verify-source":
     verify_source(args.directory,args.manifest)
 else:
