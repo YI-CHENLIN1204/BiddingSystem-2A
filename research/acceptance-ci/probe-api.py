@@ -14,11 +14,26 @@ fixture = json.loads(Path("evidence/api/fixture.json").read_text())
 project = f"/api/projects/{fixture['project']}"
 other = f"/api/projects/{fixture['other']}"
 
-def request(label, path, *, post=False, key=None, form=None, expected=200, required=True, token=None):
+def request(label, path, *, post=False, key=None, form=None, expected=200, required=True, token=None, multipart_file=None, multipart_fields=None):
     headers = {"Idempotency-Key": key} if key else {}
     if token:
         headers['Authorization'] = f'Bearer {token}'
     data = urllib.parse.urlencode(form).encode() if form is not None else None
+    if multipart_file is not None:
+        assert form is None and multipart_fields is not None
+        boundary = "research2a" + uuid4().hex
+        chunks = []
+        for field, value in multipart_fields.items():
+            chunks.extend([
+                f'--{boundary}\r\nContent-Disposition: form-data; name="{field}"\r\n\r\n'.encode(),
+                str(value).encode("utf-8"), b"\r\n"
+            ])
+        chunks.extend([
+            f'--{boundary}\r\nContent-Disposition: form-data; name="excelFile"; filename="synthetic-final-bid.xlsx"\r\nContent-Type: application/vnd.openxmlformats-officedocument.spreadsheetml.sheet\r\n\r\n'.encode(),
+            Path(multipart_file).read_bytes(), b"\r\n", f'--{boundary}--\r\n'.encode()
+        ])
+        data = b"".join(chunks)
+        headers["Content-Type"] = f"multipart/form-data; boundary={boundary}"
     call = urllib.request.Request("http://127.0.0.1:18081" + path, data,
                                   headers, method="POST" if post else "GET")
     start = perf_counter()
@@ -56,6 +71,36 @@ reopened = request("reopen", project + "/reopen-history-review", post=True, key=
 assert request("read-reopened", project)[1]["historyStatus"] == "Draft"
 assert request("repeat-reopen", project + "/reopen-history-review", post=True, key=key)[1] == reopened
 assert request("other-project-still-draft", other)[1]["historyStatus"] == "Draft"
+
+# T07: actual HTTP multipart -> parser -> isolated PostgreSQL -> Draft, with explicit sheet selection.
+upload_form = {
+    "projectName": "CI imported synthetic final bid", "projectType": "住宅",
+    "structureType": "RC", "city": "測試縣市", "totalFloorArea": "1000",
+    "siteArea": "250", "floorCount": "5", "basementFloorCount": "1",
+    "projectMonth": "2026-01", "includedSheetNames": json.dumps(["結構體明細"], ensure_ascii=False)
+}
+file_path = "evidence/api/synthetic-final-bid.xlsx"
+bad_sheets = dict(upload_form, includedSheetNames=json.dumps(["不存在的工作表"], ensure_ascii=False))
+request("upload-invalid-sheet-rejected", "/api/Estimation/upload-final-bid",
+        post=True, multipart_file=file_path, multipart_fields=bad_sheets, expected=400)
+uploaded = request("upload-final-bid-multipart", "/api/Estimation/upload-final-bid",
+                   post=True, multipart_file=file_path, multipart_fields=upload_form)[1]
+assert uploaded["historyStatus"] == "Draft" and uploaded["totalCount"] == 2, uploaded
+assert uploaded["historyInsertCount"] == 0 and uploaded["structuralPricedItemCount"] == 2, uploaded
+imported_id = uploaded["projectId"]
+assert request("imported-project-draft", f"/api/projects/{imported_id}")[1]["historyStatus"] == "Draft"
+assert request("imported-project-draft-no-history", f"/api/projects/{imported_id}")[1]["historicalTransactionCount"] == 0
+imported_rows = request("imported-items-selected-sheet-only", f"/api/projects/{imported_id}/final-bid-items")[1]["items"]
+assert len(imported_rows) == 2, imported_rows
+assert all(x["itemName"] != "不得匯入比價表" for x in imported_rows), imported_rows
+request("duplicate-upload-hash-rejected", "/api/Estimation/upload-final-bid",
+        post=True, multipart_file=file_path,
+        multipart_fields=dict(upload_form, projectName="CI different name same file"), expected=409)
+summary = request("imported-2a-summary", f"/api/projects/{imported_id}/2a-summary")[1]
+print(json.dumps({"test": "import-upload-draft-safety", "passed": True,
+                  "project_id": imported_id, "rows": len(imported_rows),
+                  "history_insert_count": uploaded["historyInsertCount"]}), flush=True)
+
 reader = request("reader-audit-policy", "/api/audit-logs", expected=403,
                  required=False, token=os.environ["RESEARCH_AUDIT_READER_TOKEN"])[0]
 invalid = request("invalid-audit-credential", "/api/audit-logs", expected=401,
@@ -72,5 +117,11 @@ elapsed = [request("benchmark-read", project)[2] for _ in range(30)]
 print(json.dumps(dict(test="read-http-summary", n=len(elapsed), p50_ms=statistics.median(elapsed),
                       p95_ms=sorted(elapsed)[math.ceil(.95*len(elapsed))-1],
                       anonymous_audit_status=anonymous)), flush=True)
+# Supplemental API-only benchmark for real imported project 2A summary.
+summary_elapsed = [request("benchmark-2a-summary", f"/api/projects/{imported_id}/2a-summary")[2]
+                   for _ in range(30)]
+print(json.dumps(dict(test="summary-http-summary", n=len(summary_elapsed),
+                      p50_ms=statistics.median(summary_elapsed),
+                      p95_ms=sorted(summary_elapsed)[math.ceil(.95*len(summary_elapsed))-1])), flush=True)
 if anonymous not in (401, 403) or reader != 403 or invalid != 401:
     raise SystemExit("Audit access did not meet the role policy.")

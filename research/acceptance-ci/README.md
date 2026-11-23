@@ -1,3 +1,7 @@
+## 2026-11-23 新增待執行的完整 HTTP 匯入驗收
+
+在隔離 PostgreSQL 中以 ClosedXML 生成**完全合成**的 `synthetic-final-bid.xlsx`（兩個工作表，鋼筋與混凝土正量價，附有假比價列），以 multipart 上傳到實際 `/api/Estimation/upload-final-bid`。新增驗收包含：錯誤工作表被拒 400、選對工作表匯入 200、兩筆保留且比價列不進來、回讀 Draft 且 HistoryTransaction=0、同一檔案 SHA 重複上傳回 409、讀取 2A 摘要及 30 次 p50/p95。只有取得新 Run 原始日誌與 Artifact 後可判定 PASS，不能以程式已提交當作驗收完成；此測試不使用任何連接 Drive 原始標單。既有 T04/T07/T09 及 Word 結果沿用原 Run 證據。相關資料來源審查見 [來源適格性](../../docs/T00_T11_SOURCE_ELIGIBILITY_2026_11_23.md)。
+
 # 2A 研究驗收 CI
 以研究分支 push 自動觸發。隔離作業使用 GitHub Ubuntu runner 的 PostgreSQL 17 service 與合成資料。流程中的 Draft 由 EF fixture 建立。後續流程呼叫實際 API。換算副本只覆蓋 runner 的編譯工作樹。Workflow 不載入 GitHub Secrets。
 

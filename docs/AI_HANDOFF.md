@@ -1,3 +1,7 @@
+## 2026-11-23 T07 真實匯入路徑與 T08 2A 摘要效能待驗
+
+為推進原始 T00～T11 全完成、而非重跑現有 PASS，研究分支新增純合成雙工作表 Excel 的隔離 API 回歸：`research/acceptance-ci/Program.cs` 生成測試活頁簿；`research/acceptance-ci/probe-api.py` 以實際 multipart HTTP 測選錯工作表 400、明確選表匯入、兩筆量價有效工項、Draft 不進歷史、隔離回讀、同檔 SHA 重複 409、`/2a-summary` 及 30 次 API 計時。**本次程式變更尚待新的 GitHub Actions Run 執行，不能標 PASS；**既有 Run #45057125296 的 T04/T07 核心/T09/Word PASS 保持不變。只動研究驗收腳本和文件，正式 2A、A0、Supabase 無改動。原始住宅快照、授權獨立最終標單與真值、工程師標註、真人 AB/BA 仍是全項結案必要輸入；現有雲端檔案的唯讀資格盤點詳見 [來源適格性](T00_T11_SOURCE_ELIGIBILITY_2026_11_23.md)，沒有把私人檔案加入公開 GitHub。
+
 ## 2026-11-23 Run #3：研究隔離 E2E 與 Word 八頁人工目視最終核對
 
 GitHub Actions [Run #45057125296](https://github.com/YI-CHENLIN1204/BiddingSystem-2A/actions/runs/45057125296) 實際三 Job SUCCESS；head `da4324596707969ee805a37f68e284a0c0f955d0`。下載原始 [isolated-api Artifact #14767619273](https://github.com/YI-CHENLIN1204/BiddingSystem-2A/actions/runs/45057125296/artifacts/14767619273)，核對 ZIP 內 4 份 SHA256SUMS、48 筆 JSONL（47 筆 `passed=true`、30 筆 benchmark、0 筆 `passed=false`）。隔離 PostgreSQL EF T04 PASS；T07 Draft→人工映射→Publish→Reopen、狀態回讀、重複操作與跨案金鑰 409 PASS（上傳建檔未測）；T09 匿名 401、錯誤 token 401、Reader 403、Supervisor 200，實際讀回 UpdateMapping／PublishHistoryBaseline／ReopenHistoryReview，**研究隔離 API+DB 權限 E2E PASS**；T08 30 次建案讀取 HTTP p50=19.7865 ms、p95=35.7117 ms，非完整估算 API 效能。

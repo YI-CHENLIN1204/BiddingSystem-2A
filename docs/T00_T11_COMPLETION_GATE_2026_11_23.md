@@ -1,3 +1,7 @@
+## 2026-11-23 T07 真實匯入路徑與 T08 2A 摘要效能待驗
+
+為推進原始 T00～T11 全完成、而非重跑現有 PASS，研究分支新增純合成雙工作表 Excel 的隔離 API 回歸：`research/acceptance-ci/Program.cs` 生成測試活頁簿；`research/acceptance-ci/probe-api.py` 以實際 multipart HTTP 測選錯工作表 400、明確選表匯入、兩筆量價有效工項、Draft 不進歷史、隔離回讀、同檔 SHA 重複 409、`/2a-summary` 及 30 次 API 計時。**本次程式變更尚待新的 GitHub Actions Run 執行，不能標 PASS；**既有 Run #45057125296 的 T04/T07 核心/T09/Word PASS 保持不變。只動研究驗收腳本和文件，正式 2A、A0、Supabase 無改動。原始住宅快照、授權獨立最終標單與真值、工程師標註、真人 AB/BA 仍是全項結案必要輸入；現有雲端檔案的唯讀資格盤點詳見 [來源適格性](T00_T11_SOURCE_ELIGIBILITY_2026_11_23.md)，沒有把私人檔案加入公開 GitHub。
+
 ## 2026-11-23 Run #3 實測及 Word 八頁目視已核實
 
 [GitHub Actions Run #45057125296](https://github.com/YI-CHENLIN1204/BiddingSystem-2A/actions/runs/45057125296) 對應 `da4324596707969ee805a37f68e284a0c0f955d0`，三 Job 均 SUCCESS。隔離 API Artifact `14767619273` SHA256SUMS 4/4、48 JSONL（47 passed=true，30 HTTP 讀取）核對通過：T04 EF PASS、T07 Draft／人工映射／Publish／Reopen／Audit PASS、T09 匿名 401／無效憑證 401／Reader 403／Supervisor 200，主管可讀回三類實際稽核事件，研究隔離 API+DB E2E PASS；T08 讀取 n=30，p50 19.79ms、p95 35.71ms。**實測範圍是隔離 Fixture 與研究授權 Overlay，不等於正式 2A 已部署相同權限**，T07 仍缺上傳建檔，T08 仍缺完整估算效能。

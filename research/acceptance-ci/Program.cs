@@ -1,5 +1,6 @@
 using Microsoft.EntityFrameworkCore;
 using Npgsql;
+using ClosedXML.Excel;
 using 崴正.Data;
 using 崴正.Models;
 using 崴正.Services;
@@ -45,3 +46,38 @@ Console.WriteLine("PASS EF-backed conversion and invalid-factor rejection");
 await File.WriteAllTextAsync("evidence/api/fixture.json",
     System.Text.Json.JsonSerializer.Serialize(new { project = project.ProjectId, other = other.ProjectId,
         item = item.FinalBidItemId, steel = steel.MaterialId }));
+
+// Synthetic-only workbook: no independent or partner data is ever committed to the repository.
+using (var workbook = new XLWorkbook())
+{
+    var sheet = workbook.Worksheets.Add("結構體明細");
+    var headers = new[] { "項次", "工項名稱", "規格／說明", "單位", "數量", "單價", "複價", "工種分類" };
+    for (var i = 0; i < headers.Length; i++) sheet.Cell(1, i + 1).Value = headers[i];
+    sheet.Cell(2, 1).Value = "1";
+    sheet.Cell(2, 2).Value = "SD420W 鋼筋材料";
+    sheet.Cell(2, 3).Value = "D19";
+    sheet.Cell(2, 4).Value = "kg";
+    sheet.Cell(2, 5).Value = 100m;
+    sheet.Cell(2, 6).Value = 40m;
+    sheet.Cell(2, 7).Value = 4000m;
+    sheet.Cell(2, 8).Value = "結構體工程";
+    sheet.Cell(3, 1).Value = "2";
+    sheet.Cell(3, 2).Value = "預拌混凝土";
+    sheet.Cell(3, 3).Value = "3000 PSI";
+    sheet.Cell(3, 4).Value = "m3";
+    sheet.Cell(3, 5).Value = 10m;
+    sheet.Cell(3, 6).Value = 2600m;
+    sheet.Cell(3, 7).Value = 26000m;
+    sheet.Cell(3, 8).Value = "結構體工程";
+    var decoy = workbook.Worksheets.Add("比價表");
+    for (var i = 0; i < headers.Length; i++) decoy.Cell(1, i + 1).Value = headers[i];
+    decoy.Cell(2, 1).Value = "1";
+    decoy.Cell(2, 2).Value = "不得匯入比價表";
+    decoy.Cell(2, 4).Value = "式";
+    decoy.Cell(2, 5).Value = 1m;
+    decoy.Cell(2, 6).Value = 99999m;
+    decoy.Cell(2, 7).Value = 99999m;
+    decoy.Cell(2, 8).Value = "結構體工程";
+    workbook.SaveAs("evidence/api/synthetic-final-bid.xlsx");
+}
+Console.WriteLine("PASS generated fully synthetic multi-sheet upload fixture");
