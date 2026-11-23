@@ -7,7 +7,7 @@ import hashlib
 import json
 from pathlib import Path
 
-from intake import CASES, LINES, digest, index, read, require, write
+from intake import create_private_output, CASES, LINES, digest, index, read, require, write
 
 FIELDS={"line_id","item","spec","unit","quantity","unit_price","amount","price_state"}
 def sheets(path, selectors):
@@ -94,7 +94,7 @@ def prepare(source, config_path, output):
         require(fp not in seen_content,"Duplicate normalized workbook content")
         seen_content.add(fp)
         result.extend(batch)
-    output.mkdir()
+    create_private_output(output)
     write(output/"cases.csv",CASES,cases)
     write(output/"lines.csv",LINES,result)
     write(output/"PRIVATE_line_provenance.csv",tuple(private[0]),private)

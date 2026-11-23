@@ -1,0 +1,22 @@
+{
+  "baseline": "1cebf7f81a0071191ef438ff901e8309783cc3fd",
+  "archive_verification": {
+    "research_sha256": "bab494ecead36bac0b089aff9509df43f4712be7ab0898fe93375e7c5df391a5",
+    "research_members_verified": 205,
+    "test_ids": 12,
+    "evidence_references": 45,
+    "operations_sha256": "cd5dbd7d89a91601341978e527f9947fba1178d2d6a8e8ef47696bf74838b7b0",
+    "operations_members_verified": 24
+  },
+  "targeted_checks": {
+    "source": "existing frozen synthetic factory",
+    "checkout_output_rejected": true,
+    "checkout_remained_empty": true,
+    "outside_checkout_created": true,
+    "original_manifest_members_verified": 9,
+    "python_compile": true
+  },
+  "new_research_experiment_runs": 0,
+  "qualified_external_input_found": false,
+  "t03_participants": 0
+}

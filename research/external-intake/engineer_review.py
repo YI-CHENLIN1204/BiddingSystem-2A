@@ -3,7 +3,7 @@ import argparse
 from collections import Counter
 import json
 from pathlib import Path
-from intake import LINES, digest, index, opaque, read, require, write
+from intake import create_private_output, LINES, digest, index, opaque, read, require, write
 
 KEY=("case_id","line_id")
 GOLD=KEY+("estimable","material_code","spec_code","unit_code","quantity_status","price_status","should_abstain","reason_code")
@@ -26,7 +26,7 @@ def reconcile(blind,left,right,out,decisions):
     require(d.keys()<=conflicts,"Only disputed rows can be adjudicated")
     for row in d.values():
         validate(row)
-    out.mkdir()
+    create_private_output(out)
     write(out/"reviewer-1.csv",GOLD,a.values())
     write(out/"reviewer-2.csv",GOLD,b.values())
     write(out/"disputes-1.csv",GOLD,[a[k] for k in a if k in conflicts])
@@ -88,7 +88,7 @@ def score(gold,pred,expected_prediction_sha,out):
         metrics[field]=dict(n=len(values),rate=ratio(sum(values),len(values)))
     metrics["review_seconds_total"]=sum(x["review_seconds"] for x in rows)
     metrics["corrections_total"]=sum(x["corrections"] for x in rows)
-    out.mkdir()
+    create_private_output(out)
     write(out/"scored-lines.csv",tuple(rows[0]),rows)
     (out/"metrics.json").write_text(json.dumps(dict(gold_sha256=digest(gold),
         predictions_sha256=digest(pred),metrics=metrics),indent=2),encoding="utf-8")

@@ -10,6 +10,8 @@ from collections import defaultdict
 from pathlib import Path
 from statistics import mean, median
 
+from intake import create_private_output
+
 PHASES = ("setup", "mapping", "review", "error_detection", "error_correction", "maintenance")
 SEED = 20261122
 
@@ -59,7 +61,7 @@ def analyze(source, destination):
                           manual_correct_rate=quality["manual"][1], assisted_correct_rate=quality["assisted"][1],
                           assisted_false_auto_rate=quality["assisted"][2],
                           assisted_unresolved_rate=quality["assisted"][3]))
-    destination.mkdir(parents=True, exist_ok=False)
+    create_private_output(destination, parents=True)
     good = {s: [p["saved_seconds"] for p in pairs if p["quality_accepted"] and p["sequence"] == s] for s in ("AB", "BA")}
     result = dict(status="NOT RUN" if not pairs else "PARTIAL", operators=len(pairs),
                   quality_pass_pairs=sum(map(len, good.values())), sequence_counts={s:len(v) for s,v in good.items()},

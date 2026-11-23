@@ -17,6 +17,15 @@ def require(condition, message):
     if not condition:
         raise ValueError(message)
 
+def create_private_output(path, *, parents=False):
+    resolved = path.resolve()
+    require(
+        not any((parent / ".git").exists() for parent in (resolved, *resolved.parents)),
+        "Use a custodian-controlled output directory outside every Git working tree",
+    )
+    path.mkdir(parents=parents, exist_ok=False)
+
+
 def read(path, fields):
     with path.open(encoding="utf-8-sig",newline="") as stream:
         reader=csv.DictReader(stream)
@@ -94,7 +103,7 @@ def assign(directory, output, validation_start, blind_start):
     for row in cases:
         stamp=date.fromisoformat(row["estimate_date"])
         row["split"]="blind" if stamp>=blind_start else "validation" if stamp>=validation_start else "train"
-    output.mkdir()
+    create_private_output(output)
     write(output/"cases.csv",CASES,cases)
     write(output/"lines.csv",LINES,lines)
     validate(output)
@@ -114,7 +123,7 @@ def freeze(directory, output):
     clean_lines=[{k:(token(k,v) if k=="case_id" else token(k,row["case_id"]+"\0"+v) if k=="line_id" else v)
                   for k,v in row.items()} for row in lines]
     blind={r["case_id"] for r in clean_cases if r["split"]=="blind"}
-    output.mkdir()
+    create_private_output(output)
     for child in ("model","private"):
         (output/child).mkdir()
     model=output/"model"
@@ -131,7 +140,7 @@ def freeze(directory, output):
 
 def verify_source(directory, manifest):
     data=json.loads(manifest.read_text(encoding="utf-8-sig"))
-    hashes=data.get("file_sha256") or data.get("files")
+    hashes=data.get("file_sha256") or data.get("files_sha256") or data.get("files")
     require(isinstance(hashes,dict) and hashes,"Manifest requires a non-empty file_sha256 mapping")
     for name,expected in hashes.items():
         rel=PurePosixPath(name)
@@ -159,7 +168,7 @@ def reconcile(left,right,output,decision=None):
     for row in [*a.values(),*b.values(),*adjudicated.values()]:
         require(all(opaque(v) for v in row.values()),"Review values must be reviewed codes")
         require(row["classification"] in {"normal","anomaly","inconclusive"},"Invalid class")
-    output.mkdir()
+    create_private_output(output)
     for name, group in (("left",a),("right",b)):
         write(output/f"disputes-{name}.csv",LABELS,[group[k] for k in disputed])
     pending=set(disputed)-adjudicated.keys()

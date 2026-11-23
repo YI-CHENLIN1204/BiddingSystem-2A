@@ -1,6 +1,10 @@
 # 崴正營造 2A 外部研究作業包
 
+先閱讀[資料提供清單](SUPPLIER_CHECKLIST.md)、[工程師作業](ENGINEER_PROTOCOL.md)、[教授驗收說明](PROFESSOR_ACCEPTANCE.md)及 [啟動閘](LAUNCH_GATE.md)。
+
 ## 資料保管員
+
+命令從本資料夾執行，範例參數皆須換成實際路徑及日期（YYYY-MM-DD）。Python 至少 3.10，XLSX 使用 requirements.txt 指定版本。所有外部輸入、金鑰、日誌及輸出均留在受控空間，位於任何 Git 工作樹之外。程式拒絕寫入可識別的 Git 工作樹。請在確認受控輸出路徑後才執行，並限制存取權。封裝僅能使用空白模板、公開程式和明確核准的檔案清單。原 manifest 先比對由資料權責人透過獨立可信管道提供的 SHA，再驗逐檔 SHA。
 
 取得書面授權、正式住宅快照原始 CSV、原 manifest 與最終決標檔。保留原件唯讀。最少交付 build 式樣見 templates/cases.csv、templates/lines.csv 與 final-award-map.json。每案例填原檔相對路徑、核准版本、原 SHA-256、授權碼、首次可用日、幣別、明細工作表清單與 header_row。CSV 用 ["csv"]，Excel 用實際欄名及指定分頁。原始清單及欄位碼表只留私有空間。確切日期與罕見案例組合也需授權審閱。
 
